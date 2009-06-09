@@ -15,17 +15,23 @@ setup(name='pudb',
 
           easy_install pudb
 
+      Here's a screenshot:
+
+      .. image:: http://tiker.net/pub/pudb-screenshot.png
+
       Features
       --------
 
       Why would you want to use pudb?
       
+      * Easy to use!
       * Syntax Highlighting
-      * Better code awareness than line-based `pdb`
-      * Use only a single keystroke for most commands
+      * Offers Better situational awareness than CLI-based `pdb`
+      * Single keystroke for most commands
       * Self-documenting
       * Set breakpoints visually
       * Easy access to a Python shell
+      * Almost as lightweight as Python's included debugger, `pdb`.  
 
       Getting Started
       ---------------
@@ -38,7 +44,15 @@ setup(name='pudb',
 
           python -m pudb my-script.py
 
-      It is almost as lightweight as Python's included debugger, `pdb`.  
+      Getting the Development Version
+      -------------------------------
+
+      You may obtain the development version using the `Git <http://git-scm.org/>`_
+      version control tool.::
+
+          git clone http://git.tiker.net/trees/pudb.git
+
+      You may also `browse the code <http://git.tiker.net/pudb.git>`_ online.
       """,
       author='Andreas Kloeckner',
       author_email='inform@tiker.net',

@@ -72,7 +72,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 # debugger interface ----------------------------------------------------------
 class Debugger(bdb.Bdb):
-    def __init__(self, steal_output):
+    def __init__(self, steal_output=False):
         bdb.Bdb.__init__(self)
         self.ui = DebuggerUI(self)
         self.steal_output = steal_output
