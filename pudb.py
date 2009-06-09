@@ -10,6 +10,13 @@ import urwid
 import bdb
 from code import InteractiveConsole
 
+try:
+    import readline
+    import rlcompleter
+    HAVE_READLINE = True
+except ImportError:
+    HAVE_READLINE = False
+
 # TODO: Pop open local variables
 
 
@@ -185,7 +192,19 @@ class Debugger(bdb.Bdb):
 
 # UI stuff --------------------------------------------------------------------
 class MyConsole(InteractiveConsole):
-    pass
+    def __init__(self, locals):
+        InteractiveConsole.__init__(self, locals)
+
+        if HAVE_READLINE:
+            import os
+            import atexit
+
+            histfile = os.path.join(os.environ["HOME"], ".pudbhist")
+            if os.access(histfile, os.R_OK):
+                readline.read_history_file(histfile)
+            atexit.register(readline.write_history_file, histfile)
+            readline.parse_and_bind("tab: complete")
+
 
 
 
