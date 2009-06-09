@@ -592,7 +592,10 @@ class DebuggerUI(object):
             else:
                 banner = ""
 
-            loc = self.debugger.curframe.f_locals
+            curframe = self.debugger.curframe
+            loc = curframe.f_locals.copy()
+            loc.update(curframe.f_globals)
+
             cons = MyConsole(loc)
             cons.interact(banner)
             self.screen.start()
