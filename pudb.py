@@ -173,7 +173,7 @@ class Debugger(bdb.Bdb):
         # Start with fresh empty copy of globals and locals and tell the script
         # that it's being run as __main__ to avoid scripts being able to access
         # the debugger's namespace.
-        globals_ = {"__name__" : "__main__"}
+        globals_ = {"__name__" : "__main__", "__file__": filename }
         locals_ = globals_
 
         # When bdb sets tracing, a number of call and line events happens
