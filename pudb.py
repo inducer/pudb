@@ -1089,16 +1089,22 @@ class DebuggerUI(object):
 
         loc_list = []
 
+        def format_value(v):
+            try:
+                return str(v)
+            except:
+                return "*** ERROR in str() ***"
+
         if "__return__" in vars:
             loc_list.append(
                     urwid.AttrWrap(
-                        SelectableText("Return: %s" % locals["__return__"],
+                        SelectableText("Return: %s" % format_value(locals["__return__"]),
                             wrap="clip"), 
                         "return value", "focused return value"))
 
         loc_list.extend(
                 urwid.AttrWrap(
-                    SelectableText("%s: %s" % (var, locals[var]),
+                    SelectableText("%s: %s" % (var, format_value(locals[var])),
                         wrap="clip"), 
                     None, "focused variable")
                 for var in vars
