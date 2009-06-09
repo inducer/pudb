@@ -44,7 +44,7 @@ License:
 
 PuDB is licensed to you under the MIT/X Consortium license:
 
-Copyright (c) 2008 Andreas Klöckner
+Copyright (c) 2009 Andreas Klöckner
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -239,7 +239,7 @@ class PostSignalWrap(SignalWrap):
 
 
 class SourceLine(urwid.FlowWidget):
-    def __init__(self, dbg_ui, text, attr):
+    def __init__(self, dbg_ui, text, attr=None):
         self.dbg_ui = dbg_ui
         self.text = text
         self.attr = attr
@@ -296,12 +296,11 @@ class SourceLine(urwid.FlowWidget):
         attr = [("source", 2)] + attr
 
         # clipping ------------------------------------------------------------
-
         if len(text) > maxcol:
             text = text[:maxcol]
+            attr = rle_subseg(attr, 0, maxcol)
 
         # shipout -------------------------------------------------------------
-
         from urwid.util import apply_target_encoding
         txt, cs = apply_target_encoding(text)
 
@@ -315,7 +314,7 @@ class SourceLine(urwid.FlowWidget):
 
 class DebuggerUI(object):
     CAPTION_TEXT = (u"PuDB - The Python Urwid debugger - F1 for help"
-            u" - © Andreas Klöckner 2008")
+            u" - © Andreas Klöckner 2009")
 
     def __init__(self, dbg):
         self.debugger = dbg
@@ -482,9 +481,16 @@ class DebuggerUI(object):
 
         def run_shell(w, size, key):
             self.screen.stop()
+
+            if not hasattr(self, "shell_ret_message_shown"):
+                banner = "Hit Ctrl-D to return to PuDB."
+                self.shell_ret_message_shown = True
+            else:
+                banner = ""
+
             loc = self.debugger.curframe.f_locals
             cons = MyConsole(loc)
-            cons.interact("")
+            cons.interact(banner)
             self.screen.start()
 
         class RHColumnFocuser:
@@ -541,10 +547,27 @@ class DebuggerUI(object):
                 raise RuntimeError, "no valid current file"
 
         def pick_module(w, size, key):
+            from os.path import splitext
+
+            def mod_exists(mod):
+                if not hasattr(mod, "__file__"):
+                    return False
+                filename = mod.__file__
+
+                base, ext = splitext(filename)
+                ext = ext.lower()
+
+                from os.path import exists
+
+                if ext == ".pyc":
+                    return exists(base+".py")
+                else:
+                    return ext == ".py"
+
             import sys
             modules = sorted(name
                     for name, mod in sys.modules.iteritems()
-                    if hasattr(mod, "__file__"))
+                    if mod_exists(mod))
 
             def build_filtered_mod_list(filt_string=""):
                 return [urwid.AttrWrap(SelectableText(mod),
@@ -564,9 +587,10 @@ class DebuggerUI(object):
 
                     return result
 
-            edit = FilterEdit("Filter: ")
+            edit = FilterEdit([("label", "Filter: ")])
             w = urwid.Pile([
-                ("flow", edit),
+                ("flow", urwid.AttrWrap(edit, "value")),
+                ("fixed", 1, urwid.SolidFill()),
                 urwid.AttrWrap(lb, "selectable")])
 
             result = self.dialog(w, [
@@ -579,7 +603,6 @@ class DebuggerUI(object):
                 mod = sys.modules[widget.get_text()[0]]
                 filename = self.debugger.canonic(mod.__file__)
 
-                from os.path import splitext
                 base, ext = splitext(filename)
                 if ext == ".pyc":
                     ext = ".py"
@@ -693,7 +716,15 @@ class DebuggerUI(object):
 
     @staticmethod
     def setup_palette(screen):
-        screen.register_palette([
+
+        if hasattr(urwid.escape, "_fg_attr_xterm"):
+            def add_setting(color, setting):
+                return color
+        else:
+            def add_setting(color, setting):
+                return color+","+setting
+
+        palette = [
             ("header", "black", "light gray", "standout"),
 
             ("breakpoint source", "yellow", "dark red"),
@@ -704,12 +735,14 @@ class DebuggerUI(object):
             ("variables", "black", "dark cyan"),
             ("focused variable", "black", "dark green"),
             ("return value", "yellow", "dark blue"),
-            ("focused return value", "white", "light blue"),
+            ("focused return value", "white", "dark blue"),
 
             ("stack", "black", "dark cyan", "standout"),
             ("focused frame", "black", "dark green"),
-            ("current frame", "white,bold", "dark cyan"),
-            ("focused current frame", "white,bold", "dark green", "bold"),
+            ("current frame", add_setting("white", "bold"), 
+                "dark cyan"),
+            ("focused current frame", add_setting("white", "bold"), 
+                "dark green", "bold"),
 
             ("breakpoint", "black", "dark cyan"),
             ("focused breakpoint", "black", "dark green"),
@@ -721,16 +754,16 @@ class DebuggerUI(object):
             ("focused button", "light cyan", "black"),
 
             ("background", "black", "light gray"),
-            ("hotkey", "black,underline", "light gray", "underline"),
-            ("focused sidebar", "yellow", "dark gray", "standout"),
+            ("hotkey", add_setting("black", "underline"), "light gray", "underline"),
+            ("focused sidebar", "yellow", "light gray", "standout"),
 
-            ("warning", "white,bold", "dark red", "standout"),
+            ("warning", add_setting("white", "bold"), "dark red", "standout"),
 
             ("label", "black", "light gray"),
             ("value", "black", "dark cyan"),
             ("fixed value", "dark gray", "dark cyan"),
 
-            ("dialog title", "white, bold", "dark cyan"),
+            ("dialog title", add_setting("white", "bold"), "dark cyan"),
 
             # highlighting
             ("source", "yellow", "dark blue"),
@@ -738,11 +771,12 @@ class DebuggerUI(object):
             ("current source", "black", "dark cyan"),
             ("current focused source", "white", "dark cyan"),
 
-            ("keyword", "white,bold", "dark blue"),
+            ("keyword", add_setting("white", "bold"), "dark blue"),
             ("literal", "light magenta", "dark blue"),
             ("punctuation", "light gray", "dark blue"),
             ("comment", "light gray", "dark blue"),
-            ])
+            ]
+        screen.register_palette(palette)
     
     # UI enter/exit -----------------------------------------------------------
     def show(self):
@@ -874,13 +908,19 @@ class DebuggerUI(object):
     def set_current_file(self, fname):
         if self.shown_file != fname:
             try:
-                inf = open(fname)
-            except IOError:
-                self.source[:] = [SourceLine(self, fname)]
-            else:
+                inf = open(fname, "r")
                 self.source[:] = self.format_source(inf.readlines())
-            self.shown_file = fname
+                inf.close()
+            except:
+                from traceback import format_exception
+                import sys
 
+                self.message("Trouble loading '%s':\n\n%s" % (
+                    fname, "".join(format_exception(*sys.exc_info()))))
+                self.source[:] = [SourceLine(self, 
+                    "Error while loading '%s'." % fname)]
+
+            self.shown_file = fname
             self.current_line = None
 
     def set_current_line(self, fname, line):

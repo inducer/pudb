@@ -12,7 +12,6 @@ def fermat(n):
             for z in range(1, x**n+y**n + 1):
                 #from pudb import set_trace; set_trace()
                 if x**n + y**n == z**n:
-                    fuckin
                     yield x, y, z
 
 print "SF", simple_func(10)
