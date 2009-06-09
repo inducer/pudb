@@ -7,7 +7,7 @@ use_setuptools()
 from setuptools import setup
 
 setup(name='pudb',
-      version='0.90.3',
+      version='0.90.4',
       description='Python Urwid debugger',
       long_description="""
       PuDB is a visual debugger for Python. It runs in the same terminal
@@ -26,12 +26,11 @@ setup(name='pudb',
       
       * Easy to use!
       * Syntax Highlighting
-      * Offers Better situational awareness than CLI-based `pdb`
+      * Offers better situational awareness than CLI-based debuggers
       * Single keystroke for most commands
       * Self-documenting
       * Set breakpoints visually
       * Easy access to a Python shell
-      * Almost as lightweight as Python's included debugger, `pdb`.  
 
       Getting Started
       ---------------
