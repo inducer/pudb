@@ -1,1 +1,2 @@
 include debug_me.py
+include ez_setup.py
