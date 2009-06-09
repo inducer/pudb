@@ -31,6 +31,8 @@ Keys:
     j/k - up/down
     h/l - scroll left/right
     g/G - start/end
+    / - search
+    ,/. - search next/previous
 
     V - focus variables
     S - focus stack
@@ -217,14 +219,6 @@ class SignalWrap(urwid.WidgetWrap):
         self.event_listeners.append((mask, handler))
 
     def keypress(self, size, key):
-        for mask, handler in self.event_listeners:
-            if mask is None or mask == key:
-                return handler(self, size, key)
-
-        return self._w.keypress(size, key)
-
-class PostSignalWrap(SignalWrap):
-    def keypress(self, size, key):
         result = self._w.keypress(size, key)
 
         if result is not None:
@@ -244,12 +238,17 @@ class SourceLine(urwid.FlowWidget):
         self.attr = attr
         self.has_breakpoint = False
         self.is_current = False
+        self.highlight = False
 
     def selectable(self):
         return True
 
     def set_current(self, is_current):
         self.is_current = is_current
+        self._invalidate()
+
+    def set_highlight(self, highlight):
+        self.highlight = highlight
         self._invalidate()
 
     def set_breakpoint(self, has_breakpoint):
@@ -274,7 +273,7 @@ class SourceLine(urwid.FlowWidget):
         else:
             bp = " "
 
-        if focus:
+        if focus or self.highlight:
             attrs.append("focused")
 
         if not attrs and self.attr is not None:
@@ -311,6 +310,81 @@ class SourceLine(urwid.FlowWidget):
 
 
 
+
+class SearchBox(urwid.Edit):
+    def __init__(self, ui):
+        self.ui = ui
+        urwid.Edit.__init__(self,
+                [("label", "Search: ") ], 
+                self.ui.last_search or "")
+        self.highlight_line = None
+
+        _, self.search_start = self.ui.source.get_focus()
+
+    def keypress(self, size, key):
+        result = urwid.Edit.keypress(self, size, key)
+
+        if result is not None:
+            if key == "esc":
+                self.cancel_search()
+                return None
+            elif key == "enter":
+                if self.get_edit_text():
+                    self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[1])
+                else:
+                    self.cancel_search()
+                return None
+        else:
+            if self.do_search(1, self.search_start):
+                self.ui.search_attrwrap.set_attr("value")
+            else:
+                self.ui.search_attrwrap.set_attr("invalid value")
+
+        return result
+
+    def cancel_highlight(self):
+        if self.highlight_line is not None:
+            self.highlight_line.set_highlight(False)
+            self.highlight_line = None
+
+    def do_search(self, dir, start=None):
+        self.cancel_highlight()
+
+        if start is None:
+            _, start = self.ui.source.get_focus()
+        s = self.ui.search_box.get_edit_text()
+
+        case_insensitive = s.lower() == s
+
+        i = start+dir
+        while i != start:
+            sline = self.ui.source[i].text
+            if case_insensitive:
+                sline = sline.lower()
+
+            if s in sline:
+                sl = self.ui.source[i]
+                sl.set_highlight(True)
+                self.highlight_line = sl
+                self.ui.source.set_focus(i)
+                return True
+
+            last_i = i
+            i = (i+dir) % len(self.ui.source)
+
+        return False
+
+    def cancel_search(self):
+        self.cancel_highlight()
+
+        self.ui.search_box = None
+        del self.ui.lhs_col.item_types[0]
+        del self.ui.lhs_col.widget_list[0]
+        self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
+
+
+
+
 class DebuggerUI(object):
     CAPTION_TEXT = (u"PuDB - The Python Urwid debugger - F1 for help"
             u" - © Andreas Klöckner 2009")
@@ -319,9 +393,16 @@ class DebuggerUI(object):
         self.debugger = dbg
         Attr = urwid.AttrWrap
 
+        self.search_box = None
+        self.last_search = None
+
         self.source = urwid.SimpleListWalker([])
         self.source_list = urwid.ListBox(self.source)
         self.source_hscroll_start = 0
+
+        self.lhs_col = urwid.Pile([
+            ("weight", 1, urwid.AttrWrap(self.source_list, "source"))
+            ])
 
         self.locals = urwid.SimpleListWalker([])
         self.var_list = urwid.ListBox(self.locals)
@@ -358,8 +439,7 @@ class DebuggerUI(object):
         self.columns = urwid.AttrWrap(
                 urwid.Columns(
                     [
-                        ("weight", 3, 
-                            urwid.AttrWrap(self.source_list, "source")), 
+                        ("weight", 3, self.lhs_col), 
                         ("weight", 1, self.rhs_col), 
                         ],
                     dividechars=1),
@@ -524,6 +604,35 @@ class DebuggerUI(object):
             for sl in self.source:
                 sl._invalidate()
 
+        def search(w, size, key):
+            if self.search_box is None:
+                _, search_start = self.source.get_focus()
+
+                self.search_box = SearchBox(self)
+                self.search_attrwrap = urwid.AttrWrap(self.search_box, "value")
+
+                self.lhs_col.item_types.insert(
+                        0, ("flow", None))
+                self.lhs_col.widget_list.insert( 0, self.search_attrwrap)
+
+                self.columns.set_focus(self.lhs_col)
+                self.lhs_col.set_focus(self.search_attrwrap)
+            else:
+                self.columns.set_focus(self.lhs_col)
+                self.lhs_col.set_focus(self.search_attrwrap)
+
+        def search_next(w, size, key):
+            if self.search_box is not None:
+                self.search_box.do_search(1)
+            else:
+                self.message("No previous search term.")
+
+        def search_previous(w, size, key):
+            if self.search_box is not None:
+                self.search_box.do_search(-1)
+            else:
+                self.message("No previous search term.")
+
         def toggle_breakpoint(w, size, key):
             if self.shown_file:
                 sline, pos = self.source.get_focus()
@@ -632,6 +741,10 @@ class DebuggerUI(object):
         self.top.listen("h", scroll_left)
         self.top.listen("l", scroll_right)
 
+        self.top.listen("/", search)
+        self.top.listen(",", search_previous)
+        self.top.listen(".", search_next)
+
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
@@ -677,7 +790,7 @@ class DebuggerUI(object):
         Attr = urwid.AttrWrap
 
         if bind_enter_esc:
-            content = PostSignalWrap(content)
+            content = SignalWrap(content)
             def enter(w, size, key): self.quit_event_loop = [True]
             def esc(w, size, key): self.quit_event_loop = [False]
             content.listen("enter", enter)
@@ -761,6 +874,7 @@ class DebuggerUI(object):
             ("label", "black", "light gray"),
             ("value", "black", "dark cyan"),
             ("fixed value", "dark gray", "dark cyan"),
+            ("invalid value", "light red", "dark cyan"),
 
             ("dialog title", add_setting("white", "bold"), "dark cyan"),
 
@@ -900,7 +1014,8 @@ class DebuggerUI(object):
                     if subself.current_line:
                         shipout_line()
 
-            highlight("".join(lines), PythonLexer(), UrwidFormatter())
+            highlight("".join(l.replace("\t", 8*" ") for l in lines), 
+                    PythonLexer(), UrwidFormatter())
 
             return result
 
