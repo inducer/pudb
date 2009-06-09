@@ -7,7 +7,7 @@ use_setuptools()
 from setuptools import setup
 
 setup(name='pudb',
-      version='0.90',
+      version='0.90.1',
       description='Python Urwid debugger',
       long_description="""
       PuDB is a visual debugger for Python. It runs in the same terminal
@@ -53,10 +53,15 @@ setup(name='pudb',
           git clone http://git.tiker.net/trees/pudb.git
 
       You may also `browse the code <http://git.tiker.net/pudb.git>`_ online.
+
+      PuDB relies on the following excellent pieces of software:
+
+      * Ian Ward's `urwid <http://excess.org/urwid>`_ console UI library
+      * Georg Brandl's `pygments <http://pygments.org>`_ syntax highlighter
       """,
       author='Andreas Kloeckner',
       author_email='inform@tiker.net',
-      setup_requires=[
+      install_requires=[
           "urwid>=0.9.8.4",
           "pygments>=1.0",
           ],

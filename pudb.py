@@ -6,7 +6,6 @@ import urwid
 import bdb
 from code import InteractiveConsole
 
-# TODO: Syntax highlighting
 # TODO: Pop open local variables
 
 
