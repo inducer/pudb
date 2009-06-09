@@ -1133,7 +1133,7 @@ class DebuggerUI(object):
         name = basename(fname)
 
         if name == "__init__.py":
-            name = "..."+dirname(filename)[:-10]+name
+            name = "..."+dirname(fname)[:-10]+name
         return name
 
     def update_breakpoints(self):
