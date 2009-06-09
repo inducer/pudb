@@ -944,6 +944,14 @@ class DebuggerUI(object):
         prev_quit_loop = self.quit_event_loop
 
         try:
+            import pygments
+        except ImportError:
+            if not hasattr(self, "pygments_message_shown"):
+                self.pygments_message_shown = True
+                self.message("Package 'pygments' not found. "
+                        "Syntax highlighting disabled.")
+
+        try:
             if toplevel is None:
                 toplevel = self.top
 
