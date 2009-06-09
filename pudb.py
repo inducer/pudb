@@ -1,7 +1,11 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import urwid.raw_display
+try:
+    import urwid.curses_display as display
+except ImportError:
+    import urwid.raw_display as display
+
 import urwid
 import bdb
 from code import InteractiveConsole
@@ -273,8 +277,10 @@ class SourceLine(urwid.FlowWidget):
         else:
             bp = " "
 
-        if focus or self.highlight:
+        if focus:
             attrs.append("focused")
+        elif self.highlight:
+            attrs.append("highlighted")
 
         if not attrs and self.attr is not None:
             attr = self.attr
@@ -763,7 +769,7 @@ class DebuggerUI(object):
         self.top.listen("?", help)
 
         # setup ---------------------------------------------------------------
-        self.screen = urwid.raw_display.Screen()
+        self.screen = display.Screen()
         self.setup_palette(self.screen)
 
         self.show_count = 0
@@ -881,8 +887,10 @@ class DebuggerUI(object):
             # highlighting
             ("source", "yellow", "dark blue"),
             ("focused source", "black", "dark green"),
+            ("highlighted source", "black", "dark magenta"),
             ("current source", "black", "dark cyan"),
             ("current focused source", "white", "dark cyan"),
+            ("current highlighted source", "white", "dark cyan"),
 
             ("keyword", add_setting("white", "bold"), "dark blue"),
             ("literal", "light magenta", "dark blue"),
