@@ -72,15 +72,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 # debugger interface ----------------------------------------------------------
 class Debugger(bdb.Bdb):
-    def __init__(self, steal_output=True):
+    def __init__(self, steal_output):
         bdb.Bdb.__init__(self)
         self.ui = DebuggerUI(self)
+        self.steal_output = steal_output
 
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
 
         self.ignore_stack_start = 0
         self.post_mortem = False
+
+        if steal_output:
+            raise NotImplementedError("output stealing")
+            import sys
+            from cStringIO import StringIO
+            self.stolen_output = sys.stderr = sys.stdout = StringIO()
+            sys.stdin = StringIO("") # avoid spurious hangs
 
     def enter_post_mortem(self, exc_tuple):
         self.post_mortem = True
@@ -987,12 +995,13 @@ def post_mortem(t):
     p.interaction(t.tb_frame, t)
 
 def pm():
+    import sys
     post_mortem(sys.last_traceback)
 
 def main():
     import sys
     if not sys.argv[1:]:
-        print "usage: %s scriptfile [arg] ..." % sys.argv[0]
+        print "usage: %s scriptfile [-s] [arg] ..." % sys.argv[0]
         sys.exit(2)
 
     mainpyfile =  sys.argv[1]
@@ -1001,8 +1010,12 @@ def main():
         print 'Error:', mainpyfile, 'does not exist'
         sys.exit(1)
 
-    # Hide "pdb.py" from argument list
-    del sys.argv[0]         
+    # Hide "pudb.py" from argument list
+    del sys.argv[0]
+
+    steal_output = sys.argv[0] == "-s"
+    if steal_output:
+        del sys.argv[0]
 
     # Replace pdb's dir with script's dir in front of module search path.
     sys.path[0] = dirname(mainpyfile)
@@ -1013,7 +1026,7 @@ def main():
     # have a "restart" command which would allow explicit specification of
     # command line arguments.
 
-    dbg = Debugger()
+    dbg = Debugger(steal_output=steal_output)
     try:
         dbg._runscript(mainpyfile)
     except:

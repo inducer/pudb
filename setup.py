@@ -13,6 +13,7 @@ setup(name='pudb',
       author_email='inform@tiker.net',
       requires=[
           "urwid>=0.9.8.4",
+          "pygments>=1.0",
           ],
       url='http://pypi.python.org/pypi/pudb',
       py_modules="pudb")
