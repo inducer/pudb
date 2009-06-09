@@ -411,7 +411,7 @@ class SearchBox(urwid.Edit):
 
 
 class DebuggerUI(object):
-    CAPTION_TEXT = (u"PuDB - The Python Urwid debugger - F1 for help"
+    CAPTION_TEXT = (u"PuDB - The Python Urwid debugger - Hit ? for help"
             u" - © Andreas Klöckner 2009")
 
     def __init__(self, dbg):
