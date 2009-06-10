@@ -178,7 +178,7 @@ class Debugger(bdb.Bdb):
                 or frame.f_lineno<= 0):
                 return
             self._wait_for_mainpyfile = False
-            #self.bottom_frame = frame
+            self.bottom_frame = frame
 
         self.interaction(frame)
 
