@@ -1,5 +1,22 @@
 def simple_func(x):
     x += 1
+
+    s = range(20)
+    z = None
+    w = ()
+
+    y = dict((i, i**2) for i in s)
+
+    k = set(range(5, 99))
+
+    try:
+        x.invalid
+    except AttributeError:
+        pass
+
+    #import sys
+    #sys.exit(1)
+
     return 2*x
 
 def fermat(n):
@@ -7,7 +24,7 @@ def fermat(n):
     Warning! Untested with n > 2.
     """
     from itertools import count
-    for x in count(1):
+    for x in range(20):
         for y in range(1, x+1):
             for z in range(1, x**n+y**n + 1):
                 #from pudb import set_trace; set_trace()

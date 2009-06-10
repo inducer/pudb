@@ -5,9 +5,10 @@ from ez_setup import use_setuptools
 use_setuptools()
 
 from setuptools import setup
+from pudb import VERSION
 
 setup(name='pudb',
-      version='0.90.6',
+      version=VERSION,
       description='Python Urwid debugger',
       long_description="""
       PuDB is a visual debugger for Python. It runs in the same terminal
@@ -84,5 +85,5 @@ setup(name='pudb',
           "Topic :: Terminals",
           "Topic :: Utilities",
           ],
-      py_modules=["pudb"])
+      packages=["pudb"])
 
