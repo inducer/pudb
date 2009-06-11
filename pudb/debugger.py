@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
 import urwid
 import bdb
 from code import InteractiveConsole
@@ -635,8 +636,8 @@ class DebuggerUI(object):
 
         self.columns = urwid.Columns(
                     [
-                        self.lhs_col, 
-                        ("fixed", 40, self.rhs_col), 
+                        ("weight", 1, self.lhs_col), 
+                        ("weight", 0.5, self.rhs_col), 
                         ],
                     dividechars=1)
 
@@ -871,17 +872,19 @@ class DebuggerUI(object):
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
         def grow_sidebar(w, size, key):
-            _, width = self.columns.column_types[1]
-            width += 5
-            if width <= 75:
-                self.columns.column_types[1] = "fixed", width
+            _, weight = self.columns.column_types[1]
+
+            if weight < 5:
+                weight *= 1.25
+                self.columns.column_types[1] = "weight", weight
                 self.columns._invalidate()
 
         def shrink_sidebar(w, size, key):
-            _, width = self.columns.column_types[1]
-            width -= 5
-            if width >= 10:
-                self.columns.column_types[1] = "fixed", width
+            _, weight = self.columns.column_types[1]
+
+            if weight > 1/5:
+                weight /= 1.25
+                self.columns.column_types[1] = "weight", weight
                 self.columns._invalidate()
 
         def move_home(w, size, key):
@@ -1081,10 +1084,7 @@ class DebuggerUI(object):
         self.top.listen("?", help)
 
         # setup ---------------------------------------------------------------
-        try:
-            import urwid.curses_display as display
-        except ImportError:
-            import urwid.raw_display as display
+        import urwid.raw_display as display
 
         self.screen = display.Screen()
         self.setup_palette(self.screen)
