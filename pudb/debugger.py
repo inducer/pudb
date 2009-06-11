@@ -48,6 +48,20 @@ Keys:
 
     f1/?/H - show this help screen
 
+Keys in variables list:
+
+    \ - expand/collapse
+    t/r/s - show type/repr/str for this variable
+    enter - edit options
+
+Keys in stack list:
+
+    enter - jump to frame
+
+Keys in breakpoints view:
+
+    enter - edit breakpoint
+
 License:
 --------
 
@@ -121,7 +135,7 @@ class Debugger(bdb.Bdb):
         stack, index = self.get_stack(frame, tb)
 
         for i, (s_frame, lineno) in enumerate(stack):
-            if s_frame is self.bottom_frame:
+            if s_frame is self.bottom_frame and index >= i:
                 stack = stack[i:]
                 index -= i
 
@@ -567,6 +581,14 @@ class SearchBox(urwid.Edit):
 
 
 
+class InspectInfo(object):
+    def __init__(self):
+        self.show_detail = False
+        self.display_type = "type"
+
+
+
+
 class DebuggerUI(object):
     def __init__(self, dbg):
         self.debugger = dbg
@@ -574,7 +596,7 @@ class DebuggerUI(object):
 
         self.search_box = None
 
-        self.vars_with_detail = {}
+        self.inspect_info = {}
 
         self.source = urwid.SimpleListWalker([])
         self.source_list = urwid.ListBox(self.source)
@@ -625,17 +647,74 @@ class DebuggerUI(object):
             header))
 
         # variable listeners --------------------------------------------------
-        def toggle_variable_detail(w, size, key):
-            cpath = self.debugger.get_call_path()
-            id_path_to_detail = self.vars_with_detail.setdefault(cpath, {})
-
+        def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
-            id_path_to_detail[var.id_path] = not id_path_to_detail.get(
-                    var.id_path, False)
+
+            cpath = self.debugger.get_call_path()
+            id_path_to_iinfo = self.inspect_info.setdefault(cpath, {})
+            iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
+
+            if key == "\\": iinfo.show_detail = not iinfo.show_detail
+            elif key == "t": iinfo.display_type = "type"
+            elif key == "r": iinfo.display_type = "repr"
+            elif key == "s": iinfo.display_type = "str"
 
             self.set_locals(self.debugger.curframe.f_locals)
 
-        self.var_list.listen("enter", toggle_variable_detail)
+        def edit_variable_detail(w, size, key):
+            var, pos = self.var_list._w.get_focus()
+
+            cpath = self.debugger.get_call_path()
+            id_path_to_iinfo = self.inspect_info.setdefault(cpath, {})
+            iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
+
+            def make_lv(label, value):
+                return urwid.AttrWrap(urwid.Text([
+                    ("label", label), str(value)]),
+                    "fixed value", "fixed value")
+
+            expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
+
+            rb_grp = []
+            rb_show_type = urwid.RadioButton(rb_grp, "Show Type", 
+                    iinfo.display_type == "type")
+            rb_show_repr = urwid.RadioButton(rb_grp, "Show repr()",
+                    iinfo.display_type == "repr")
+            rb_show_str = urwid.RadioButton(rb_grp, "Show str()",
+                    iinfo.display_type == "str")
+
+            def make_lv(label, value):
+                return urwid.AttrWrap(urwid.Text([
+                    ("label", label), str(value)]),
+                    "fixed value", "fixed value")
+
+            lb = urwid.ListBox([
+                #make_lv("Call Path:       ", cpath),
+                make_lv("Identifier Path: ", var.id_path),
+                urwid.Text(""),
+                ]+rb_grp+[
+                urwid.Text(""),
+                expanded_checkbox,
+                ])
+
+            if self.dialog(lb, [
+                ("OK", True),
+                ("Cancel", False),
+                ], title="Variable Inspection Options"):
+                
+                iinfo.show_detail = expanded_checkbox.get_state()
+
+                if rb_show_type.get_state(): iinfo.display_type = "type"
+                elif rb_show_repr.get_state(): iinfo.display_type = "repr"
+                elif rb_show_str.get_state(): iinfo.display_type = "str"
+
+            self.set_locals(self.debugger.curframe.f_locals)
+
+        self.var_list.listen("\\", change_var_state)
+        self.var_list.listen("t", change_var_state)
+        self.var_list.listen("r", change_var_state)
+        self.var_list.listen("s", change_var_state)
+        self.var_list.listen("enter", edit_variable_detail)
 
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
@@ -1377,7 +1456,7 @@ class DebuggerUI(object):
         loc_list = []
 
         cpath = self.debugger.get_call_path()
-        id_path_to_detail = self.vars_with_detail.get(cpath, {})
+        id_path_to_iinfo = self.inspect_info.get(cpath, {})
 
         try:
             import numpy
@@ -1396,16 +1475,26 @@ class DebuggerUI(object):
             elif isinstance(value, type):
                 loc_list.append(Variable(prefix, label, "type "+value.__name__, id_path, attr_prefix))
             else:
+                iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
+
                 if isinstance(value, numpy.ndarray):
                     loc_list.append(Variable(prefix, label, 
                         "ndarray %s %s" % (value.dtype, value.shape), 
                         id_path, attr_prefix))
                 else:
-                    loc_list.append(Variable(prefix, label, type(value).__name__, id_path, attr_prefix))
+                    if iinfo.display_type == "type":
+                        displayed_value = type(value).__name__
+                    elif iinfo.display_type == "repr":
+                        displayed_value = repr(value)
+                    elif iinfo.display_type == "str":
+                        displayed_value = str(value)
+                    else:
+                        displayed_value = "ERROR: Invalid display_type"
 
-                do_detail = id_path_to_detail.get(id_path, False)
+                    loc_list.append(Variable(prefix, label, 
+                        displayed_value, id_path, attr_prefix))
 
-                if not do_detail:
+                if not iinfo.show_detail:
                     return
 
                 # set ---------------------------------------------------------
@@ -1413,7 +1502,8 @@ class DebuggerUI(object):
                     for i, entry in enumerate(value):
                         if i % 10 == 0 and i: 
                             cont_id_path = "%s.cont-%d" % (id_path, i)
-                            if not id_path_to_detail.get(cont_id_path, False):
+                            if not id_path_to_iinfo.get(
+                                    cont_id_path, InspectInfo()).show_detail:
                                 loc_list.append(Variable(
                                     prefix+"  ", "...", None, cont_id_path))
                                 break
@@ -1424,14 +1514,8 @@ class DebuggerUI(object):
                         loc_list.append(Variable(prefix+"  ", "<empty>", None))
                     return
 
-                # dict --------------------------------------------------------
+                # containers --------------------------------------------------
                 key_it = None
-                try:
-                    key_it = value.iterkeys()
-                except:
-                    pass
-
-                # list, tuple -------------------------------------------------
                 try:
                     l = len(value)
                 except:
@@ -1439,12 +1523,18 @@ class DebuggerUI(object):
                 else:
                     key_it = xrange(l)
 
+                try:
+                    key_it = value.iterkeys()
+                except:
+                    pass
+
                 if key_it is not None:
                     cnt = 0
                     for key in key_it:
                         if cnt % 10 == 0 and cnt: 
                             cont_id_path = "%s.cont-%d" % (id_path, cnt)
-                            if not id_path_to_detail.get(cont_id_path, False):
+                            if not id_path_to_iinfo.get(
+                                    cont_id_path, InspectInfo()).show_detail:
                                 loc_list.append(Variable(
                                     prefix+"  ", "...", None, cont_id_path))
                                 break
@@ -1458,6 +1548,17 @@ class DebuggerUI(object):
 
                 # class types -------------------------------------------------
                 try:
+                    key_it = value.__slots__
+                except:
+                    pass
+                else:
+                    for key in key_it:
+                        if hasattr(value, key):
+                            add_var(prefix+"  ", 
+                                    ".%s" % key, getattr(value, key), 
+                                    "%s.%s" % (id_path, key))
+
+                try:
                     key_it = value.__dict__.iterkeys()
                 except:
                     pass
@@ -1466,7 +1567,6 @@ class DebuggerUI(object):
                         add_var(prefix+"  ", 
                                 ".%s" % key, getattr(value, key), 
                                 "%s.%s" % (id_path, key))
-                    return
 
 
         if "__return__" in vars:
