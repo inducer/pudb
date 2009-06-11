@@ -345,7 +345,9 @@ class Variable(urwid.FlowWidget):
     SIZE_LIMIT = 20
 
     def rows(self, size, focus=False):
-        if len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT:
+        if (self.prefix is not None 
+                and self.var_label is not None 
+                and len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT):
             return 2
         else:
             return 1
