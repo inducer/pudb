@@ -55,6 +55,8 @@ Keys in variables list:
     \ - expand/collapse
     t/r/s - show type/repr/str for this variable
     enter - edit options
+    h - toggle highlighting
+    w - toggle watching
 
 Keys in stack list:
 
@@ -233,6 +235,40 @@ class Debugger(bdb.Bdb):
 
 
 # UI stuff --------------------------------------------------------------------
+def make_canvas(txt, attr, maxcol, fill_attr=None):
+    processed_txt = []
+    processed_attr = []
+    processed_cs = []
+
+    for line, line_attr in zip(txt, attr):
+        # filter out zero-length attrs
+        line_attr = [(aname, l) for aname, l in line_attr if l > 0]
+
+        diff = maxcol - len(line)
+        if diff > 0:
+            line += " "*diff
+            line_attr.append((fill_attr, diff))
+        else:
+            from urwid.util import rle_subseg
+            line = line[:maxcol]
+            line_attr = rle_subseg(line_attr, 0, maxcol)
+        
+        from urwid.util import apply_target_encoding
+        line, line_cs = apply_target_encoding(line)
+
+        processed_txt.append(line)
+        processed_attr.append(line_attr)
+        processed_cs.append(line_cs)
+
+    return urwid.TextCanvas(
+            processed_txt, 
+            processed_attr, 
+            processed_cs, 
+            maxcol=maxcol)
+
+
+
+
 class MyConsole(InteractiveConsole):
     def __init__(self, locals):
         InteractiveConsole.__init__(self, locals)
@@ -307,51 +343,50 @@ class Variable(urwid.FlowWidget):
     def selectable(self):
         return True
 
-    def rows(self, (maxcol,), focus=False):
-        return 1
+    SIZE_LIMIT = 20
 
-    def render(self, (maxcol,), focus=False):
+    def rows(self, size, focus=False):
+        if len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT:
+            return 2
+        else:
+            return 1
+
+    def render(self, size, focus=False):
+        maxcol = size[0]
         if focus:
             apfx = "focused "+self.attr_prefix+" "
         else:
             apfx = self.attr_prefix+" "
 
-
         if self.value_str is not None:
             if self.var_label is not None:
-                text = self.prefix + self.var_label +": " + self.value_str
+                if len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT:
+                    # label too long? generate separate value line
+                    text = [self.prefix + self.var_label,
+                            self.prefix+"  " + self.value_str]
 
-                attr = [
-                        (apfx+"label", len(self.prefix)+len(self.var_label)+2),
-                        (apfx+"value", len(self.value_str)),
-                        ]
+                    attr = [[(apfx+"label", len(self.prefix)+len(self.var_label))],
+                            [(apfx+"value", len(self.prefix)+2+len(self.value_str))]]
+                else:
+                    text = [self.prefix + self.var_label +": " + self.value_str]
+
+                    attr = [[
+                            (apfx+"label", len(self.prefix)+len(self.var_label)+2),
+                            (apfx+"value", len(self.value_str)),
+                            ]]
             else:
-                text = self.prefix + self.value_str
+                text = [self.prefix + self.value_str]
 
-                attr = [
+                attr = [[
                         (apfx+"label", len(self.prefix)),
                         (apfx+"value", len(self.value_str)),
-                        ]
+                        ]]
         else:
-            text = self.prefix + self.var_label
+            text = [self.prefix + self.var_label]
 
-            attr = [ (apfx+"label", len(self.prefix) + len(self.var_label)), ]
+            attr = [[ (apfx+"label", len(self.prefix) + len(self.var_label)), ]]
 
-        attr = [(aname, l) for aname, l in attr if l > 0]
-
-        diff = maxcol - len(text)
-        if diff > 0:
-            text += " "*diff
-            attr.append((apfx+"value", diff))
-        else:
-            from urwid.util import rle_subseg
-            text = text[:maxcol]
-            attr = rle_subseg(attr, 0, maxcol)
-        
-        from urwid.util import apply_target_encoding
-        txt, cs = apply_target_encoding(text)
-
-        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol) 
+        return make_canvas(text, attr, maxcol, apfx+"value")
 
     def keypress(self, size, key):
         return key
@@ -396,19 +431,7 @@ class StackFrame(urwid.FlowWidget):
         text += loc
         attr.append((apfx+"frame location", len(loc)))
 
-        diff = maxcol - len(text)
-        if diff > 0:
-            text += " "*diff
-            attr.append((apfx+"frame location", diff))
-        else:
-            from urwid.util import rle_subseg
-            text = text[:maxcol]
-            attr = rle_subseg(attr, 0, maxcol)
-        
-        from urwid.util import apply_target_encoding
-        txt, cs = apply_target_encoding(text)
-
-        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol) 
+        return make_canvas([text], [attr], maxcol, apfx+"frame location")
 
     def keypress(self, size, key):
         return key
@@ -587,6 +610,8 @@ class InspectInfo(object):
     def __init__(self):
         self.show_detail = False
         self.display_type = "type"
+        self.highlighted = False
+        self.watched = False
 
 
 
@@ -660,6 +685,8 @@ class DebuggerUI(object):
             elif key == "t": iinfo.display_type = "type"
             elif key == "r": iinfo.display_type = "repr"
             elif key == "s": iinfo.display_type = "str"
+            elif key == "h": iinfo.highlighted = not iinfo.highlighted
+            elif key == "w": iinfo.watched = not iinfo.watched
 
             self.set_locals(self.debugger.curframe.f_locals)
 
@@ -675,8 +702,6 @@ class DebuggerUI(object):
                     ("label", label), str(value)]),
                     "fixed value", "fixed value")
 
-            expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
-
             rb_grp = []
             rb_show_type = urwid.RadioButton(rb_grp, "Show Type", 
                     iinfo.display_type == "type")
@@ -684,6 +709,10 @@ class DebuggerUI(object):
                     iinfo.display_type == "repr")
             rb_show_str = urwid.RadioButton(rb_grp, "Show str()",
                     iinfo.display_type == "str")
+
+            expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
+            highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
+            watched_checkbox = urwid.CheckBox("Watched", iinfo.highlighted)
 
             def make_lv(label, value):
                 return urwid.AttrWrap(urwid.Text([
@@ -697,6 +726,8 @@ class DebuggerUI(object):
                 ]+rb_grp+[
                 urwid.Text(""),
                 expanded_checkbox,
+                highlighted_checkbox,
+                watched_checkbox,
                 ])
 
             if self.dialog(lb, [
@@ -705,6 +736,8 @@ class DebuggerUI(object):
                 ], title="Variable Inspection Options"):
                 
                 iinfo.show_detail = expanded_checkbox.get_state()
+                iinfo.highlighted = highlighted_checkbox.get_state()
+                iinfo.watched = watched_checkbox.get_state()
 
                 if rb_show_type.get_state(): iinfo.display_type = "type"
                 elif rb_show_repr.get_state(): iinfo.display_type = "repr"
@@ -716,6 +749,8 @@ class DebuggerUI(object):
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
+        self.var_list.listen("h", change_var_state)
+        self.var_list.listen("w", change_var_state)
         self.var_list.listen("enter", edit_variable_detail)
 
         # stack listeners -----------------------------------------------------
@@ -743,15 +778,20 @@ class DebuggerUI(object):
             enabled_checkbox = urwid.CheckBox(
                     "Enabled", bp.enabled)
             cond_edit = urwid.Edit([
-                ("label", "Condition: ")
+                ("label", "Condition:               ")
                 ], cond)
+            ign_count_edit = urwid.IntEdit([
+                ("label", "Ignore the next N times: ")
+                ], bp.ignore)
 
             lb = urwid.ListBox([
                 make_lv("File: ", bp.file),
                 make_lv("Line: ", bp.line),
                 make_lv("Hits: ", bp.hits),
+                urwid.Text(""),
                 enabled_checkbox,
-                urwid.AttrWrap(cond_edit, "value", "value")
+                urwid.AttrWrap(cond_edit, "value", "value"),
+                urwid.AttrWrap(ign_count_edit, "value", "value"),
                 ])
 
             result = self.dialog(lb, [
@@ -762,6 +802,7 @@ class DebuggerUI(object):
 
             if result == True:
                 bp.enabled = enabled_checkbox.get_state()
+                bp.ignore = int(ign_count_edit.value())
                 cond = cond_edit.get_edit_text()
                 if cond:
                     bp.cond = cond
@@ -1188,11 +1229,22 @@ class DebuggerUI(object):
             ("current breakpoint focused source", "white", "dark red"),
 
             ("variables", "black", "dark cyan"),
+            ("variable separator", "light gray", "dark cyan"),
 
             ("var label", "dark blue", "dark cyan"),
             ("var value", "black", "dark cyan"),
             ("focused var label", "dark blue", "dark green"),
             ("focused var value", "black", "dark green"),
+
+            ("highlighted var label", "white", "dark cyan"),
+            ("highlighted var value", "black", "dark cyan"),
+            ("focused highlighted var label", "white", "dark green"),
+            ("focused highlighted var value", "black", "dark green"),
+
+            ("return label", "white", "dark blue"),
+            ("return value", "black", "dark cyan"),
+            ("focused return label", "light gray", "dark blue"),
+            ("focused return value", "black", "dark green"),
 
             ("return label", "white", "dark blue"),
             ("return value", "black", "dark cyan"),
@@ -1469,8 +1521,9 @@ class DebuggerUI(object):
 
     def set_locals(self, locals):
         vars = locals.keys()
-        vars.sort()
+        vars.sort(key=lambda n: n.lower())
 
+        watch_list = []
         loc_list = []
 
         cpath = self.debugger.get_call_path()
@@ -1482,23 +1535,33 @@ class DebuggerUI(object):
         except ImportError:
             HAVE_NUMPY = 0
 
-        def add_var(prefix, label, value, id_path=None, attr_prefix=None):
+        def add_var(prefix, var_label, value_str, id_path=None, attr_prefix=None):
+            iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
+            if iinfo.highlighted:
+                attr_prefix = "highlighted var"
+
+            if iinfo.watched:
+                watch_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
+
+            loc_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
+
+        def display_var(prefix, label, value, id_path=None, attr_prefix=None):
             if id_path is None:
                 id_path = label
 
-            if isinstance(value, (int, float, long, complex)):
-                loc_list.append(Variable(prefix, label, repr(value), id_path, attr_prefix))
-            elif isinstance(value, (str, unicode)):
-                loc_list.append(Variable(prefix, label, repr(value)[:200], id_path, attr_prefix))
-            elif isinstance(value, type):
-                loc_list.append(Variable(prefix, label, "type "+value.__name__, id_path, attr_prefix))
-            else:
-                iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
+            iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
 
+            if isinstance(value, (int, float, long, complex)):
+                add_var(prefix, label, repr(value), id_path, attr_prefix)
+            elif isinstance(value, (str, unicode)):
+                add_var(prefix, label, repr(value)[:200], id_path, attr_prefix)
+            elif isinstance(value, type):
+                add_var(prefix, label, "type "+value.__name__, id_path, attr_prefix)
+            else:
                 if isinstance(value, numpy.ndarray):
-                    loc_list.append(Variable(prefix, label, 
+                    add_var(prefix, label, 
                         "ndarray %s %s" % (value.dtype, value.shape), 
-                        id_path, attr_prefix))
+                        id_path, attr_prefix)
                 else:
                     if iinfo.display_type == "type":
                         displayed_value = type(value).__name__
@@ -1509,8 +1572,8 @@ class DebuggerUI(object):
                     else:
                         displayed_value = "ERROR: Invalid display_type"
 
-                    loc_list.append(Variable(prefix, label, 
-                        displayed_value, id_path, attr_prefix))
+                    add_var(prefix, label, 
+                        displayed_value, id_path, attr_prefix)
 
                 if not iinfo.show_detail:
                     return
@@ -1522,14 +1585,13 @@ class DebuggerUI(object):
                             cont_id_path = "%s.cont-%d" % (id_path, i)
                             if not id_path_to_iinfo.get(
                                     cont_id_path, InspectInfo()).show_detail:
-                                loc_list.append(Variable(
-                                    prefix+"  ", "...", None, cont_id_path))
+                                add_var(prefix+"  ", "...", None, cont_id_path)
                                 break
 
-                        add_var(prefix+"  ", None, entry,
+                        display_var(prefix+"  ", None, entry,
                             "%s[%d]" % (id_path, i))
                     if not value:
-                        loc_list.append(Variable(prefix+"  ", "<empty>", None))
+                        add_var(prefix+"  ", "<empty>", None)
                     return
 
                 # containers --------------------------------------------------
@@ -1553,15 +1615,15 @@ class DebuggerUI(object):
                             cont_id_path = "%s.cont-%d" % (id_path, cnt)
                             if not id_path_to_iinfo.get(
                                     cont_id_path, InspectInfo()).show_detail:
-                                loc_list.append(Variable(
-                                    prefix+"  ", "...", None, cont_id_path))
+                                add_var(
+                                    prefix+"  ", "...", None, cont_id_path)
                                 break
 
-                        add_var(prefix+"  ", repr(key), value[key],
+                        display_var(prefix+"  ", repr(key), value[key],
                             "%s[%r]" % (id_path, key))
                         cnt += 1
                     if not cnt:
-                        loc_list.append(Variable(prefix+"  ", "<empty>", None))
+                        add_var(prefix+"  ", "<empty>", None)
                     return
 
                 # class types -------------------------------------------------
@@ -1571,8 +1633,11 @@ class DebuggerUI(object):
                     pass
                 else:
                     for key in key_it:
+                        if key[0] == "_":
+                            continue
+
                         if hasattr(value, key):
-                            add_var(prefix+"  ", 
+                            display_var(prefix+"  ", 
                                     ".%s" % key, getattr(value, key), 
                                     "%s.%s" % (id_path, key))
 
@@ -1581,18 +1646,25 @@ class DebuggerUI(object):
                 except:
                     pass
                 else:
-                    for count, key in enumerate(key_it):
-                        add_var(prefix+"  ", 
-                                ".%s" % key, getattr(value, key), 
-                                "%s.%s" % (id_path, key))
-
+                    for key in key_it:
+                        if key[0] != "_":
+                            display_var(prefix+"  ", 
+                                    ".%s" % key, getattr(value, key), 
+                                    "%s.%s" % (id_path, key))
 
         if "__return__" in vars:
-            add_var("", "Return", locals["__return__"], attr_prefix="return")
+            display_var("", "Return", locals["__return__"], attr_prefix="return")
 
         for var in vars:
             if not var[0] in "_.":
-                add_var("", var, locals[var])
+                display_var("", var, locals[var])
+
+        if watch_list:
+            loc_list = (watch_list 
+                    + [urwid.AttrWrap(
+                        urwid.Text("---", align="center"), 
+                        "variable separator")]
+                    + loc_list)
 
         self.locals[:] = loc_list
 
