@@ -90,6 +90,7 @@ def main():
                     ("Quit", "quit"),
                     ],
                 focus_buttons=True,
+                bind_enter_esc=False,
                 title="Finished")
 
             if result == "quit":
