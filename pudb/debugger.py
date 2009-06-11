@@ -38,6 +38,7 @@ Keys:
     ctrl-u/d - page up/down
     h/l - scroll left/right
     g/G - start/end
+    L - go to line
     / - search
     ,/. - search next/previous
 
@@ -890,6 +891,22 @@ class DebuggerUI(object):
         def move_end(w, size, key):
             self.source.set_focus(len(self.source))
 
+        def go_to_line(w, size, key):
+            _, line = self.source.get_focus()
+
+            lineno_edit = urwid.IntEdit([
+                ("label", "Line number: ")
+                ], line+1)
+
+            if self.dialog(
+                    urwid.ListBox([ urwid.AttrWrap(lineno_edit, "value") ]),
+                    [
+                        ("OK", True),
+                        ("Cancel", False),
+                        ], title="Go to Line Number"):
+                lineno = min(max(0, int(lineno_edit.value())-1), len(self.source)-1)
+                self.source.set_focus(lineno)
+
         def move_down(w, size, key):
             w.keypress(size, "down")
 
@@ -1071,6 +1088,7 @@ class DebuggerUI(object):
         self.top.listen("end", move_end)
         self.top.listen("g", move_home)
         self.top.listen("G", move_end)
+        self.top.listen("L", go_to_line)
 
         self.top.listen("b", toggle_breakpoint)
         self.top.listen("m", pick_module)
