@@ -176,7 +176,8 @@ class Debugger(bdb.Bdb):
         self.ui.call_with_ui(self.ui.interaction, exc_tuple)
 
     def get_call_path(self):
-        return "/".join(str(id(frame.f_code)) for frame, lineno in self.stack)
+        return "/".join(str(id(frame.f_code)) 
+                for frame, lineno in self.stack[:self.curindex+1])
 
     def user_call(self, frame, argument_list):
         """This method is called when there is the remote possibility
