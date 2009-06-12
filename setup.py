@@ -42,7 +42,7 @@ setup(name='pudb',
 
       into the piece of code you want to debug, or run the entire script with::
 
-          python -m pudb my-script.py
+          python -m pudb.run my-script.py
 
       Getting the Development Version
       -------------------------------
