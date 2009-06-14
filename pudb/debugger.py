@@ -1479,13 +1479,12 @@ class DebuggerUI(object):
             if fname == "<string>":
                 self.source[:] = [SourceLine(self, fname)]
             else:
+                breakpoints = self.debugger.get_file_breaks(
+                        self.debugger.canonic(fname))
                 try:
-                    inf = open(fname, "r")
-                    breakpoints = self.debugger.get_file_breaks(
-                            self.debugger.canonic(fname))
+                    from linecache import getlines
                     self.source[:] = self.format_source(
-                            inf.readlines(), set(breakpoints))
-                    inf.close()
+                            getlines(fname), set(breakpoints))
                 except:
                     from traceback import format_exception
                     import sys
