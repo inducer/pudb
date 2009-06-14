@@ -581,6 +581,10 @@ class SearchBox(urwid.Edit):
         case_insensitive = s.lower() == s
 
         i = start+dir
+
+        if i >= len(self.ui.source):
+            i = 0
+
         while i != start:
             sline = self.ui.source[i].text
             if case_insensitive:
@@ -1034,6 +1038,8 @@ class DebuggerUI(object):
         def pick_module(w, size, key):
             from os.path import splitext
 
+            import sys
+
             def mod_exists(mod):
                 if not hasattr(mod, "__file__"):
                     return False
@@ -1049,15 +1055,32 @@ class DebuggerUI(object):
                 else:
                     return ext == ".py"
 
-            import sys
-            modules = sorted(name
-                    for name, mod in sys.modules.iteritems()
-                    if mod_exists(mod))
+            new_mod_text = SelectableText("-- update me --")
+            new_mod_entry = urwid.AttrWrap(new_mod_text,
+                    None, "focused selectable")
 
             def build_filtered_mod_list(filt_string=""):
-                return [urwid.AttrWrap(SelectableText(mod),
+                modules = sorted(name
+                        for name, mod in sys.modules.items()
+                        if mod_exists(mod))
+
+                result = [urwid.AttrWrap(SelectableText(mod),
                         None, "focused selectable")
                         for mod in modules if filt_string in mod]
+                new_mod_text.set_text("<<< IMPORT MODULE '%s' >>>" % filt_string)
+                result.append(new_mod_entry)
+                return result
+
+            def show_mod(mod):
+                filename = self.debugger.canonic(mod.__file__)
+
+                base, ext = splitext(filename)
+                if ext == ".pyc":
+                    ext = ".py"
+                    filename = base+".py"
+
+                self.set_current_file(filename)
+                self.source_list.set_focus(0)
 
             mod_list = urwid.SimpleListWalker(build_filtered_mod_list())
             lb = urwid.ListBox(mod_list)
@@ -1072,29 +1095,52 @@ class DebuggerUI(object):
 
                     return result
 
-            edit = FilterEdit([("label", "Filter: ")])
+            filt_edit = FilterEdit([("label", "Filter: ")])
             w = urwid.Pile([
-                ("flow", urwid.AttrWrap(edit, "value")),
+                ("flow", urwid.AttrWrap(filt_edit, "value")),
                 ("fixed", 1, urwid.SolidFill()),
                 urwid.AttrWrap(lb, "selectable")])
 
-            result = self.dialog(w, [
-                ("OK", True),
-                ("Cancel", False),
-                ], title="Pick Module")
+            while True:
+                result = self.dialog(w, [
+                    ("OK", True),
+                    ("Cancel", False),
+                    ("Reload", "reload"),
+                    ], title="Pick Module")
 
-            if result:
-                widget, pos = lb.get_focus()
-                mod = sys.modules[widget.get_text()[0]]
-                filename = self.debugger.canonic(mod.__file__)
+                if result == True:
+                    widget, pos = lb.get_focus()
+                    if widget is new_mod_entry:
+                        new_mod_name = filt_edit.get_edit_text()
+                        try:
+                            __import__(str(new_mod_name))
+                        except:
+                            from traceback import format_exception
+                            import sys
 
-                base, ext = splitext(filename)
-                if ext == ".pyc":
-                    ext = ".py"
-                    filename = base+".py"
-
-                self.set_current_file(filename)
-                self.source_list.set_focus(0)
+                            self.message("Could not import module '%s':\n\n%s" % (
+                                new_mod_name, "".join(format_exception(*sys.exc_info()))),
+                                title="Import Error")
+                        else:
+                            show_mod(sys.modules[str(new_mod_name)])
+                            break
+                    else:
+                        show_mod(sys.modules[widget.get_text()[0]])
+                        break
+                elif result == False:
+                    break
+                elif result == "reload":
+                    widget, pos = lb.get_focus()
+                    if widget is not new_mod_entry:
+                        mod_name = widget.get_text()[0]
+                        mod = sys.modules[mod_name]
+                        reload(mod)
+                        self.message("'%s' was successfully reloaded." % mod_name)
+                elif result == "import":
+                    mod = import_new_module(filt_edit.get_edit_text())
+                    if mod is not None:
+                        show_mod(mod)
+                    break
 
         def quit(w, size, key):
             self.debugger.set_quit()
