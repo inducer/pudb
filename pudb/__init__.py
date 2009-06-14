@@ -29,3 +29,10 @@ def post_mortem(t):
 def pm():
     import sys
     post_mortem(sys.last_traceback)
+
+
+
+
+if __name__ == "__main__":
+    print "To keep Python 2.6 happy, you now need to type 'python -m pudb.run'."
+    print "Sorry for the inconvenience."
