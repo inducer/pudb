@@ -1242,13 +1242,19 @@ class DebuggerUI(object):
             content.listen("enter", enter)
             content.listen("esc", esc)
 
+        button_widgets = []
+        for btn_descr in buttons_and_results:
+            if btn_descr is None:
+                button_widgets.append(urwid.Text(""))
+            else:
+                btn_text, btn_result = btn_descr
+                button_widgets.append(
+                        Attr(urwid.Button(btn_text, ResultSetter(btn_result)),
+                            "button", "focused button"))
+
         w = urwid.Columns([
             content,
-            ("fixed", 15, urwid.ListBox([
-                Attr(urwid.Button(btn_text, ResultSetter(btn_result)),
-                    "button", "focused button")
-                for btn_text, btn_result in buttons_and_results
-                ])),
+            ("fixed", 15, urwid.ListBox(button_widgets)),
             ], dividechars=1)
 
         if focus_buttons:
