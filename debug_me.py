@@ -1,9 +1,3 @@
-print "START"
-
-a = [
-        1
-        for i in range(10)]
-
 def simple_func(x):
     x += 1
 
