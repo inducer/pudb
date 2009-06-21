@@ -814,6 +814,8 @@ class DebuggerUI(object):
             result = self.dialog(lb, [
                 ("OK", True),
                 ("Cancel", False),
+                None,
+                ("Delete", "del"),
                 ("Location", "loc"),
                 ], title="Edit Breakpoint")
 
@@ -828,6 +830,13 @@ class DebuggerUI(object):
             elif result == "loc":
                 self.show_line(bp.line, bp.file)
                 self.columns.set_focus(0)
+            elif result == "del":
+                if self.shown_file == bp.file:
+                    self.source[bp.line-1].set_breakpoint(False)
+
+                err = self.debugger.clear_break(bp.file, bp.line)
+                if err:
+                    self.message("Error clearing breakpoint:\n"+ err)
 
         self.bp_list.listen("enter", examine_breakpoint)
 
