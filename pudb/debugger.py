@@ -1542,12 +1542,13 @@ class DebuggerUI(object):
             return result
 
     def set_current_file(self, fname):
+        fname = self.debugger.canonic(fname)
+
         if self.shown_file != fname:
             if fname == "<string>":
                 self.source[:] = [SourceLine(self, fname)]
             else:
-                breakpoints = self.debugger.get_file_breaks(
-                        self.debugger.canonic(fname))
+                breakpoints = self.debugger.get_file_breaks(fname)
                 try:
                     from linecache import getlines
                     self.source[:] = self.format_source(
