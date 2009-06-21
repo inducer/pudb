@@ -1261,8 +1261,10 @@ class DebuggerUI(object):
 
     @staticmethod
     def setup_palette(screen):
+        from urwid.raw_display import Screen as RawScreen
 
-        if hasattr(urwid.escape, "_fg_attr_xterm"):
+        if hasattr(urwid.escape, "_fg_attr_xterm") \
+                or not isinstance(screen, RawScreen):
             def add_setting(color, setting):
                 return color
         else:
