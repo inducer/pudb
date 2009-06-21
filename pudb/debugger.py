@@ -235,6 +235,53 @@ class Debugger(bdb.Bdb):
 
 
 
+def generate_executable_lines_for_code(code):
+    l = code.co_firstlineno
+    yield l
+    for c in code.co_lnotab[1::2]:
+        l += ord(c)
+        yield l
+
+
+
+
+def get_executable_lines_for_file(filename):
+    # inspired by rpdb2
+
+    from linecache import getlines
+    codes = [compile("".join(getlines(filename)), filename, "exec")]
+
+    from types import CodeType
+
+    execable_lines = set()
+
+    while codes:
+        code = codes.pop()
+        execable_lines |= set(generate_executable_lines_for_code(code))
+        codes.extend(const
+                for const in code.co_consts
+                if isinstance(const, CodeType))
+
+    return execable_lines
+
+
+
+
+def get_breakpoint_invalid_reason(filename, lineno):
+    # simple logic stolen from pdb
+    import linecache
+    line = linecache.getline(filename, lineno)
+    if not line:
+        return "Line is beyond end of file."
+
+    if lineno not in get_executable_lines_for_file(filename):
+        return "No executable statement found in line."
+
+
+
+
+
+
 # UI stuff --------------------------------------------------------------------
 def make_canvas(txt, attr, maxcol, fill_attr=None):
     processed_txt = []
@@ -878,15 +925,23 @@ class DebuggerUI(object):
                 self.message("Post-mortem mode: Can't modify state.")
             else:
                 sline, pos = self.source.get_focus()
-                canon_file = self.debugger.canonic(self.shown_file)
                 lineno = pos+1
 
-                err = self.debugger.set_break(self.shown_file, pos+1, temporary=True)
-                if err:
-                    self.message("Error dealing with breakpoint:\n"+ err)
+                invalid_reason = get_breakpoint_invalid_reason(
+                        self.shown_file, lineno)
 
-                self.debugger.set_continue()
-                end()
+                if invalid_reason is not None:
+                    self.message(
+                        "Cannot run to the line you indicated, "
+                        "for the following reason:\n\n"
+                        + invalid_reason)
+                else:
+                    err = self.debugger.set_break(self.shown_file, pos+1, temporary=True)
+                    if err:
+                        self.message("Error dealing with breakpoint:\n"+ err)
+
+                    self.debugger.set_continue()
+                    end()
 
         def show_traceback(w, size, key):
             if self.current_exc_tuple is not None:
@@ -1036,16 +1091,35 @@ class DebuggerUI(object):
         def toggle_breakpoint(w, size, key):
             if self.shown_file:
                 sline, pos = self.source.get_focus()
-                canon_file = self.debugger.canonic(self.shown_file)
                 lineno = pos+1
 
-                existing_breaks = self.debugger.get_breaks(canon_file, lineno)
+                existing_breaks = self.debugger.get_breaks(
+                        self.shown_file, lineno)
                 if existing_breaks:
-                    err = self.debugger.clear_break(canon_file, lineno)
+                    err = self.debugger.clear_break(self.shown_file, lineno)
                     sline.set_breakpoint(False)
                 else:
-                    err = self.debugger.set_break(self.shown_file, pos+1)
-                    sline.set_breakpoint(True)
+                    invalid_reason = get_breakpoint_invalid_reason(
+                            self.shown_file, pos+1)
+
+                    if invalid_reason is not None:
+                        do_set = not self.dialog(urwid.ListBox([
+                            urwid.Text("The breakpoint you just set may be "
+                                "invalid, for the following reason:\n\n"
+                                + invalid_reason),
+                            ]), [
+                            ("Cancel", True),
+                            ("Set Anyway", False),
+                            ], title="Possibly Invalid Breakpoint",
+                            focus_buttons=True)
+                    else:
+                        do_set = True
+
+                    if do_set:
+                        err = self.debugger.set_break(self.shown_file, pos+1)
+                        sline.set_breakpoint(True)
+                    else:
+                        err = None
 
                 if err:
                     self.message("Error dealing with breakpoint:\n"+ err)
