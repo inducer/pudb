@@ -1661,6 +1661,7 @@ class DebuggerUI(object):
                 key_it = None
                 try:
                     l = len(value)
+                    value[0]
                 except:
                     pass
                 else:
