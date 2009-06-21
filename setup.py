@@ -24,7 +24,7 @@ setup(name='pudb',
       --------
 
       Why would you want to use pudb?
-      
+
       * Easy to use!
       * Syntax Highlighting
       * Offers better situational awareness than CLI-based debuggers

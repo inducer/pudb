@@ -1,4 +1,4 @@
-VERSION = "0.91.5"
+VERSION = "0.92"
 
 
 
@@ -34,5 +34,4 @@ def pm():
 
 
 if __name__ == "__main__":
-    print "To keep Python 2.6 happy, you now need to type 'python -m pudb.run'."
-    print "Sorry for the inconvenience."
+    print "You now need to type 'python -m pudb.run'. Sorry."
