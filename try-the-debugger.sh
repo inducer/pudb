@@ -1,3 +1,3 @@
 #! /bin/sh
 
-python -m pudb debug_me.py
+python -m pudb.run debug_me.py
