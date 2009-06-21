@@ -1721,22 +1721,20 @@ class DebuggerUI(object):
             elif isinstance(value, type):
                 add_var(prefix, label, "type "+value.__name__, id_path, attr_prefix)
             else:
-                if isinstance(value, numpy.ndarray):
-                    add_var(prefix, label,
-                        "ndarray %s %s" % (value.dtype, value.shape),
-                        id_path, attr_prefix)
-                else:
-                    if iinfo.display_type == "type":
-                        displayed_value = type(value).__name__
-                    elif iinfo.display_type == "repr":
-                        displayed_value = repr(value)
-                    elif iinfo.display_type == "str":
-                        displayed_value = str(value)
+                if iinfo.display_type == "type":
+                    if HAVE_NUMPY and isinstance(value, numpy.ndarray):
+                        displayed_value = "ndarray %s %s" % (value.dtype, value.shape)
                     else:
-                        displayed_value = "ERROR: Invalid display_type"
+                        displayed_value = type(value).__name__
+                elif iinfo.display_type == "repr":
+                    displayed_value = repr(value)
+                elif iinfo.display_type == "str":
+                    displayed_value = str(value)
+                else:
+                    displayed_value = "ERROR: Invalid display_type"
 
-                    add_var(prefix, label,
-                        displayed_value, id_path, attr_prefix)
+                add_var(prefix, label,
+                    displayed_value, id_path, attr_prefix)
 
                 if not iinfo.show_detail:
                     return
