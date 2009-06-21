@@ -580,7 +580,10 @@ class SearchBox(urwid.Edit):
 
         case_insensitive = s.lower() == s
 
-        i = start+dir
+        if start > len(self.ui.source):
+            start = 0
+
+        i = (start+dir) % len(self.ui.source)
 
         if i >= len(self.ui.source):
             i = 0
