@@ -1690,13 +1690,21 @@ class DebuggerUI(object):
         except ImportError:
             HAVE_NUMPY = 0
 
+        watch_prefixes = []
+
         def add_var(prefix, var_label, value_str, id_path=None, attr_prefix=None):
             iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
             if iinfo.highlighted:
                 attr_prefix = "highlighted var"
 
-            if iinfo.watched:
+            watched = iinfo.watched
+            for wp in watch_prefixes:
+                if id_path.startswith(wp):
+                    watched = True
+
+            if watched:
                 watch_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
+                watch_prefixes.append(id_path)
 
             loc_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
 
