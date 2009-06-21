@@ -57,6 +57,7 @@ Keys in variables list:
     enter - edit options
     h - toggle highlighting
     w - toggle watching
+    * - toggle private members
 
 Keys in stack list:
 
@@ -175,9 +176,8 @@ class Debugger(bdb.Bdb):
 
         self.ui.call_with_ui(self.ui.interaction, exc_tuple)
 
-    def get_call_path(self):
-        return "/".join(str(id(frame.f_code)) 
-                for frame, lineno in self.stack[:self.curindex+1])
+    def get_stack_situation_id(self):
+        return str(id(self.stack[self.curindex][0].f_code))
 
     def user_call(self, frame, argument_list):
         """This method is called when there is the remote possibility
@@ -212,7 +212,7 @@ class Debugger(bdb.Bdb):
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
         frame.f_locals['__exc_tuple__'] = exc_tuple
-        self.interaction(frame, exc_tuple) 
+        self.interaction(frame, exc_tuple)
 
     def _runscript(self, filename):
         # Start with fresh empty copy of globals and locals and tell the script
@@ -230,6 +230,53 @@ class Debugger(bdb.Bdb):
         self.mainpyfile = self.canonic(filename)
         statement = 'execfile( "%s")' % filename
         self.run(statement, globals=globals_, locals=locals_)
+
+
+
+
+
+def generate_executable_lines_for_code(code):
+    l = code.co_firstlineno
+    yield l
+    for c in code.co_lnotab[1::2]:
+        l += ord(c)
+        yield l
+
+
+
+
+def get_executable_lines_for_file(filename):
+    # inspired by rpdb2
+
+    from linecache import getlines
+    codes = [compile("".join(getlines(filename)), filename, "exec")]
+
+    from types import CodeType
+
+    execable_lines = set()
+
+    while codes:
+        code = codes.pop()
+        execable_lines |= set(generate_executable_lines_for_code(code))
+        codes.extend(const
+                for const in code.co_consts
+                if isinstance(const, CodeType))
+
+    return execable_lines
+
+
+
+
+def get_breakpoint_invalid_reason(filename, lineno):
+    # simple logic stolen from pdb
+    import linecache
+    line = linecache.getline(filename, lineno)
+    if not line:
+        return "Line is beyond end of file."
+
+    if lineno not in get_executable_lines_for_file(filename):
+        return "No executable statement found in line."
+
 
 
 
@@ -253,7 +300,7 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
             from urwid.util import rle_subseg
             line = line[:maxcol]
             line_attr = rle_subseg(line_attr, 0, maxcol)
-        
+
         from urwid.util import apply_target_encoding
         line, line_cs = apply_target_encoding(line)
 
@@ -262,9 +309,9 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
         processed_cs.append(line_cs)
 
     return urwid.TextCanvas(
-            processed_txt, 
-            processed_attr, 
-            processed_cs, 
+            processed_txt,
+            processed_attr,
+            processed_cs,
             maxcol=maxcol)
 
 
@@ -347,8 +394,8 @@ class Variable(urwid.FlowWidget):
     SIZE_LIMIT = 20
 
     def rows(self, size, focus=False):
-        if (self.prefix is not None 
-                and self.var_label is not None 
+        if (self.prefix is not None
+                and self.var_label is not None
                 and len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT):
             return 2
         else:
@@ -500,8 +547,8 @@ class SourceLine(urwid.FlowWidget):
         text = self.text
         if self.dbg_ui.source_hscroll_start:
             text = text[hscroll:]
-            attr = rle_subseg(attr, 
-                    self.dbg_ui.source_hscroll_start, 
+            attr = rle_subseg(attr,
+                    self.dbg_ui.source_hscroll_start,
                     rle_len(attr))
 
         text = crnt+bp+text
@@ -516,7 +563,7 @@ class SourceLine(urwid.FlowWidget):
         from urwid.util import apply_target_encoding
         txt, cs = apply_target_encoding(text)
 
-        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol) 
+        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol)
 
     def keypress(self, size, key):
         return key
@@ -580,7 +627,10 @@ class SearchBox(urwid.Edit):
 
         case_insensitive = s.lower() == s
 
-        i = start+dir
+        if start > len(self.ui.source):
+            start = 0
+
+        i = (start+dir) % len(self.ui.source)
 
         if i >= len(self.ui.source):
             i = 0
@@ -619,6 +669,7 @@ class InspectInfo(object):
         self.display_type = "type"
         self.highlighted = False
         self.watched = False
+        self.show_private_members = False
 
 
 
@@ -629,6 +680,7 @@ class DebuggerUI(object):
         Attr = urwid.AttrWrap
 
         self.search_box = None
+        self.last_module_filter = ""
 
         self.inspect_info = {}
 
@@ -655,37 +707,37 @@ class DebuggerUI(object):
         self.rhs_col = urwid.Pile([
             Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Variables:"))),
-                Attr(self.var_list, "variables"), 
+                Attr(self.var_list, "variables"),
                 ]), None, "focused sidebar"),
             Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Stack:"))),
-                Attr(self.stack_list, "stack"), 
+                Attr(self.stack_list, "stack"),
                 ]), None, "focused sidebar"),
             Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Breakpoints:"))),
-                Attr(self.bp_list, "breakpoint"), 
+                Attr(self.bp_list, "breakpoint"),
                 ]), None, "focused sidebar"),
             ])
 
         self.columns = urwid.Columns(
                     [
-                        ("weight", 1, self.lhs_col), 
-                        ("weight", 0.5, self.rhs_col), 
+                        ("weight", 1, self.lhs_col),
+                        ("weight", 0.5, self.rhs_col),
                         ],
                     dividechars=1)
 
         self.caption = urwid.Text("")
         header = urwid.AttrWrap(self.caption, "header")
         self.top = SignalWrap(urwid.Frame(
-            urwid.AttrWrap(self.columns, "background"), 
+            urwid.AttrWrap(self.columns, "background"),
             header))
 
         # variable listeners --------------------------------------------------
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
-            cpath = self.debugger.get_call_path()
-            id_path_to_iinfo = self.inspect_info.setdefault(cpath, {})
+            ssid = self.debugger.get_stack_situation_id()
+            id_path_to_iinfo = self.inspect_info.setdefault(ssid, {})
             iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
 
             if key == "\\": iinfo.show_detail = not iinfo.show_detail
@@ -694,14 +746,15 @@ class DebuggerUI(object):
             elif key == "s": iinfo.display_type = "str"
             elif key == "h": iinfo.highlighted = not iinfo.highlighted
             elif key == "w": iinfo.watched = not iinfo.watched
+            elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
 
             self.set_locals(self.debugger.curframe.f_locals)
 
         def edit_variable_detail(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
-            cpath = self.debugger.get_call_path()
-            id_path_to_iinfo = self.inspect_info.setdefault(cpath, {})
+            ssid = self.debugger.get_stack_situation_id()
+            id_path_to_iinfo = self.inspect_info.setdefault(ssid, {})
             iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
 
             def make_lv(label, value):
@@ -710,7 +763,7 @@ class DebuggerUI(object):
                     "fixed value", "fixed value")
 
             rb_grp = []
-            rb_show_type = urwid.RadioButton(rb_grp, "Show Type", 
+            rb_show_type = urwid.RadioButton(rb_grp, "Show Type",
                     iinfo.display_type == "type")
             rb_show_repr = urwid.RadioButton(rb_grp, "Show repr()",
                     iinfo.display_type == "repr")
@@ -720,6 +773,8 @@ class DebuggerUI(object):
             expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
             highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
             watched_checkbox = urwid.CheckBox("Watched", iinfo.highlighted)
+            show_private_checkbox = urwid.CheckBox("Show private members",
+                    iinfo.show_private_members)
 
             def make_lv(label, value):
                 return urwid.AttrWrap(urwid.Text([
@@ -727,7 +782,7 @@ class DebuggerUI(object):
                     "fixed value", "fixed value")
 
             lb = urwid.ListBox([
-                #make_lv("Call Path:       ", cpath),
+                #make_lv("Stack Situation: ", ssid),
                 make_lv("Identifier Path: ", var.id_path),
                 urwid.Text(""),
                 ]+rb_grp+[
@@ -735,16 +790,18 @@ class DebuggerUI(object):
                 expanded_checkbox,
                 highlighted_checkbox,
                 watched_checkbox,
+                show_private_checkbox,
                 ])
 
             if self.dialog(lb, [
                 ("OK", True),
                 ("Cancel", False),
                 ], title="Variable Inspection Options"):
-                
+
                 iinfo.show_detail = expanded_checkbox.get_state()
                 iinfo.highlighted = highlighted_checkbox.get_state()
                 iinfo.watched = watched_checkbox.get_state()
+                iinfo.show_private_members = show_private_checkbox.get_state()
 
                 if rb_show_type.get_state(): iinfo.display_type = "type"
                 elif rb_show_repr.get_state(): iinfo.display_type = "repr"
@@ -776,7 +833,7 @@ class DebuggerUI(object):
                 return urwid.AttrWrap(urwid.Text([
                     ("label", label), str(value)]),
                     "fixed value", "fixed value")
-        
+
             if bp.cond is None:
                 cond = ""
             else:
@@ -804,6 +861,8 @@ class DebuggerUI(object):
             result = self.dialog(lb, [
                 ("OK", True),
                 ("Cancel", False),
+                None,
+                ("Delete", "del"),
                 ("Location", "loc"),
                 ], title="Edit Breakpoint")
 
@@ -818,6 +877,13 @@ class DebuggerUI(object):
             elif result == "loc":
                 self.show_line(bp.line, bp.file)
                 self.columns.set_focus(0)
+            elif result == "del":
+                if self.shown_file == bp.file:
+                    self.source[bp.line-1].set_breakpoint(False)
+
+                err = self.debugger.clear_break(bp.file, bp.line)
+                if err:
+                    self.message("Error clearing breakpoint:\n"+ err)
 
         self.bp_list.listen("enter", examine_breakpoint)
 
@@ -859,15 +925,23 @@ class DebuggerUI(object):
                 self.message("Post-mortem mode: Can't modify state.")
             else:
                 sline, pos = self.source.get_focus()
-                canon_file = self.debugger.canonic(self.shown_file)
                 lineno = pos+1
 
-                err = self.debugger.set_break(self.shown_file, pos+1, temporary=True)
-                if err:
-                    self.message("Error dealing with breakpoint:\n"+ err)
+                invalid_reason = get_breakpoint_invalid_reason(
+                        self.shown_file, lineno)
 
-                self.debugger.set_continue()
-                end()
+                if invalid_reason is not None:
+                    self.message(
+                        "Cannot run to the line you indicated, "
+                        "for the following reason:\n\n"
+                        + invalid_reason)
+                else:
+                    err = self.debugger.set_break(self.shown_file, pos+1, temporary=True)
+                    if err:
+                        self.message("Error dealing with breakpoint:\n"+ err)
+
+                    self.debugger.set_continue()
+                    end()
 
         def show_traceback(w, size, key):
             if self.current_exc_tuple is not None:
@@ -879,7 +953,7 @@ class DebuggerUI(object):
                         [
                             ("Close", "close"),
                             ("Location", "location")
-                            ], 
+                            ],
                         title="Exception Viewer",
                         focus_buttons=True,
                         bind_enter_esc=False)
@@ -974,7 +1048,7 @@ class DebuggerUI(object):
             w.keypress(size, "up")
         def scroll_left(w, size, key):
             self.source_hscroll_start = max(
-                    0, 
+                    0,
                     self.source_hscroll_start - 4)
             for sl in self.source:
                 sl._invalidate()
@@ -1017,16 +1091,35 @@ class DebuggerUI(object):
         def toggle_breakpoint(w, size, key):
             if self.shown_file:
                 sline, pos = self.source.get_focus()
-                canon_file = self.debugger.canonic(self.shown_file)
                 lineno = pos+1
 
-                existing_breaks = self.debugger.get_breaks(canon_file, lineno)
+                existing_breaks = self.debugger.get_breaks(
+                        self.shown_file, lineno)
                 if existing_breaks:
-                    err = self.debugger.clear_break(canon_file, lineno)
+                    err = self.debugger.clear_break(self.shown_file, lineno)
                     sline.set_breakpoint(False)
                 else:
-                    err = self.debugger.set_break(self.shown_file, pos+1)
-                    sline.set_breakpoint(True)
+                    invalid_reason = get_breakpoint_invalid_reason(
+                            self.shown_file, pos+1)
+
+                    if invalid_reason is not None:
+                        do_set = not self.dialog(urwid.ListBox([
+                            urwid.Text("The breakpoint you just set may be "
+                                "invalid, for the following reason:\n\n"
+                                + invalid_reason),
+                            ]), [
+                            ("Cancel", True),
+                            ("Set Anyway", False),
+                            ], title="Possibly Invalid Breakpoint",
+                            focus_buttons=True)
+                    else:
+                        do_set = True
+
+                    if do_set:
+                        err = self.debugger.set_break(self.shown_file, pos+1)
+                        sline.set_breakpoint(True)
+                    else:
+                        err = None
 
                 if err:
                     self.message("Error dealing with breakpoint:\n"+ err)
@@ -1082,9 +1175,6 @@ class DebuggerUI(object):
                 self.set_current_file(filename)
                 self.source_list.set_focus(0)
 
-            mod_list = urwid.SimpleListWalker(build_filtered_mod_list())
-            lb = urwid.ListBox(mod_list)
-
             class FilterEdit(urwid.Edit):
                 def keypress(self, size, key):
                     result = urwid.Edit.keypress(self, size, key)
@@ -1095,7 +1185,13 @@ class DebuggerUI(object):
 
                     return result
 
-            filt_edit = FilterEdit([("label", "Filter: ")])
+            filt_edit = FilterEdit([("label", "Filter: ")],
+                    self.last_module_filter)
+
+            mod_list = urwid.SimpleListWalker(
+                    build_filtered_mod_list(filt_edit.get_edit_text()))
+            lb = urwid.ListBox(mod_list)
+
             w = urwid.Pile([
                 ("flow", urwid.AttrWrap(filt_edit, "value")),
                 ("fixed", 1, urwid.SolidFill()),
@@ -1106,7 +1202,9 @@ class DebuggerUI(object):
                     ("OK", True),
                     ("Cancel", False),
                     ("Reload", "reload"),
+
                     ], title="Pick Module")
+                self.last_module_filter = filt_edit.get_edit_text()
 
                 if result == True:
                     widget, pos = lb.get_focus()
@@ -1209,7 +1307,7 @@ class DebuggerUI(object):
                 urwid.ListBox([urwid.Text(msg)]),
                 [("OK", True)], title=title, **kwargs)
 
-    def dialog(self, content, buttons_and_results, 
+    def dialog(self, content, buttons_and_results,
             title=None, bind_enter_esc=True, focus_buttons=False):
         class ResultSetter:
             def __init__(subself, res):
@@ -1217,7 +1315,7 @@ class DebuggerUI(object):
 
             def __call__(subself, btn):
                 self.quit_event_loop = [subself.res]
-            
+
         Attr = urwid.AttrWrap
 
         if bind_enter_esc:
@@ -1227,13 +1325,19 @@ class DebuggerUI(object):
             content.listen("enter", enter)
             content.listen("esc", esc)
 
+        button_widgets = []
+        for btn_descr in buttons_and_results:
+            if btn_descr is None:
+                button_widgets.append(urwid.Text(""))
+            else:
+                btn_text, btn_result = btn_descr
+                button_widgets.append(
+                        Attr(urwid.Button(btn_text, ResultSetter(btn_result)),
+                            "button", "focused button"))
+
         w = urwid.Columns([
-            content, 
-            ("fixed", 15, urwid.ListBox([
-                Attr(urwid.Button(btn_text, ResultSetter(btn_result)), 
-                    "button", "focused button")
-                for btn_text, btn_result in buttons_and_results
-                ])),
+            content,
+            ("fixed", 15, urwid.ListBox(button_widgets)),
             ], dividechars=1)
 
         if focus_buttons:
@@ -1242,7 +1346,7 @@ class DebuggerUI(object):
         if title is not None:
             w = urwid.Pile([
                 ("flow", urwid.AttrWrap(
-                    urwid.Text(title, align="center"), 
+                    urwid.Text(title, align="center"),
                     "dialog title")),
                 ("fixed", 1, urwid.SolidFill()),
                 w])
@@ -1311,9 +1415,9 @@ class DebuggerUI(object):
             ("frame location", "light gray", "dark cyan"),
             ("focused frame location", "light gray", "dark green"),
 
-            ("current frame name", add_setting("white", "bold"), 
+            ("current frame name", add_setting("white", "bold"),
                 "dark cyan"),
-            ("focused current frame name", add_setting("white", "bold"), 
+            ("focused current frame name", add_setting("white", "bold"),
                 "dark green", "bold"),
             ("current frame class", "dark blue", "dark cyan"),
             ("focused current frame class", "dark blue", "dark green"),
@@ -1357,7 +1461,7 @@ class DebuggerUI(object):
 
             ]
         screen.register_palette(palette)
-    
+
     # UI enter/exit -----------------------------------------------------------
     def show(self):
         if self.show_count == 0:
@@ -1416,7 +1520,7 @@ class DebuggerUI(object):
         self.current_exc_tuple = exc_tuple
 
         from pudb import VERSION
-        caption = [(None, 
+        caption = [(None,
             u"PuDB %s - The Python Urwid debugger - Hit ? for help"
             u" - © Andreas Klöckner 2009"
             % VERSION)]
@@ -1433,12 +1537,12 @@ class DebuggerUI(object):
                     + "".join(format_exception(*exc_tuple)),
                     title="Program Terminated for Uncaught Exception")
             caption.extend([
-                (None, " "), 
+                (None, " "),
                 ("warning", "[POST-MORTEM MODE]")
                 ])
         elif exc_tuple is not None:
             caption.extend([
-                (None, " "), 
+                (None, " "),
                 ("warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
                 ])
 
@@ -1449,7 +1553,7 @@ class DebuggerUI(object):
         try:
             import pygments
         except ImportError:
-            return [SourceLine(self, 
+            return [SourceLine(self,
                 line.rstrip("\n\r").replace("\t", 8*" "), None,
                 has_breakpoint=i+1 in breakpoints)
                 for i, line in enumerate(lines)]
@@ -1479,7 +1583,7 @@ class DebuggerUI(object):
                 def format(subself, tokensource, outfile):
                     def add_snippet(ttype, s):
                         if not s:
-                            return 
+                            return
 
                         while not ttype in ATTR_MAP:
                             if ttype.parent is not None:
@@ -1495,7 +1599,7 @@ class DebuggerUI(object):
 
                     def shipout_line():
                         result.append(
-                                SourceLine(self, 
+                                SourceLine(self,
                                     subself.current_line,
                                     subself.current_attr,
                                     has_breakpoint=subself.lineno in breakpoints))
@@ -1517,18 +1621,19 @@ class DebuggerUI(object):
                     if subself.current_line:
                         shipout_line()
 
-            highlight("".join(l.replace("\t", 8*" ") for l in lines), 
+            highlight("".join(l.replace("\t", 8*" ") for l in lines),
                     PythonLexer(), UrwidFormatter())
 
             return result
 
     def set_current_file(self, fname):
+        fname = self.debugger.canonic(fname)
+
         if self.shown_file != fname:
             if fname == "<string>":
                 self.source[:] = [SourceLine(self, fname)]
             else:
-                breakpoints = self.debugger.get_file_breaks(
-                        self.debugger.canonic(fname))
+                breakpoints = self.debugger.get_file_breaks(fname)
                 try:
                     from linecache import getlines
                     self.source[:] = self.format_source(
@@ -1540,7 +1645,7 @@ class DebuggerUI(object):
                     self.message("Could not load source file '%s':\n\n%s" % (
                         fname, "".join(format_exception(*sys.exc_info()))),
                         title="Source Code Load Error")
-                    self.source[:] = [SourceLine(self, 
+                    self.source[:] = [SourceLine(self,
                         "Error while loading '%s'." % fname)]
 
             self.shown_file = fname
@@ -1576,8 +1681,8 @@ class DebuggerUI(object):
         watch_list = []
         loc_list = []
 
-        cpath = self.debugger.get_call_path()
-        id_path_to_iinfo = self.inspect_info.get(cpath, {})
+        ssid = self.debugger.get_stack_situation_id()
+        id_path_to_iinfo = self.inspect_info.get(ssid, {})
 
         try:
             import numpy
@@ -1609,8 +1714,8 @@ class DebuggerUI(object):
                 add_var(prefix, label, "type "+value.__name__, id_path, attr_prefix)
             else:
                 if isinstance(value, numpy.ndarray):
-                    add_var(prefix, label, 
-                        "ndarray %s %s" % (value.dtype, value.shape), 
+                    add_var(prefix, label,
+                        "ndarray %s %s" % (value.dtype, value.shape),
                         id_path, attr_prefix)
                 else:
                     if iinfo.display_type == "type":
@@ -1622,7 +1727,7 @@ class DebuggerUI(object):
                     else:
                         displayed_value = "ERROR: Invalid display_type"
 
-                    add_var(prefix, label, 
+                    add_var(prefix, label,
                         displayed_value, id_path, attr_prefix)
 
                 if not iinfo.show_detail:
@@ -1631,7 +1736,7 @@ class DebuggerUI(object):
                 # set ---------------------------------------------------------
                 if isinstance(value, (set, frozenset)):
                     for i, entry in enumerate(value):
-                        if i % 10 == 0 and i: 
+                        if i % 10 == 0 and i:
                             cont_id_path = "%s.cont-%d" % (id_path, i)
                             if not id_path_to_iinfo.get(
                                     cont_id_path, InspectInfo()).show_detail:
@@ -1648,6 +1753,7 @@ class DebuggerUI(object):
                 key_it = None
                 try:
                     l = len(value)
+                    value[0]
                 except:
                     pass
                 else:
@@ -1661,7 +1767,7 @@ class DebuggerUI(object):
                 if key_it is not None:
                     cnt = 0
                     for key in key_it:
-                        if cnt % 10 == 0 and cnt: 
+                        if cnt % 10 == 0 and cnt:
                             cont_id_path = "%s.cont-%d" % (id_path, cnt)
                             if not id_path_to_iinfo.get(
                                     cont_id_path, InspectInfo()).show_detail:
@@ -1683,12 +1789,12 @@ class DebuggerUI(object):
                     pass
                 else:
                     for key in key_it:
-                        if key[0] == "_":
+                        if key[0] == "_" and not iinfo.show_private_members:
                             continue
 
                         if hasattr(value, key):
-                            display_var(prefix+"  ", 
-                                    ".%s" % key, getattr(value, key), 
+                            display_var(prefix+"  ",
+                                    ".%s" % key, getattr(value, key),
                                     "%s.%s" % (id_path, key))
 
                 try:
@@ -1697,10 +1803,12 @@ class DebuggerUI(object):
                     pass
                 else:
                     for key in key_it:
-                        if key[0] != "_":
-                            display_var(prefix+"  ", 
-                                    ".%s" % key, getattr(value, key), 
-                                    "%s.%s" % (id_path, key))
+                        if key[0] == "_" and not iinfo.show_private_members:
+                            continue
+
+                        display_var(prefix+"  ",
+                                ".%s" % key, getattr(value, key),
+                                "%s.%s" % (id_path, key))
 
         if "__return__" in vars:
             display_var("", "Return", locals["__return__"], attr_prefix="return")
@@ -1710,9 +1818,9 @@ class DebuggerUI(object):
                 display_var("", var, locals[var])
 
         if watch_list:
-            loc_list = (watch_list 
+            loc_list = (watch_list
                     + [urwid.AttrWrap(
-                        urwid.Text("---", align="center"), 
+                        urwid.Text("---", align="center"),
                         "variable separator")]
                     + loc_list)
 
