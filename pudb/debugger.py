@@ -1591,8 +1591,20 @@ class DebuggerUI(object):
                 breakpoints = self.debugger.get_file_breaks(fname)
                 try:
                     from linecache import getlines
+                    lines = getlines(fname)
+
+                    from pudb.lowlevel import detect_encoding
+                    source_enc, _ = detect_encoding(iter(lines).next)
+
+                    decoded_lines = []
+                    for l in lines:
+                        if hasattr(l, "decode"):
+                            decoded_lines.append(l.decode(source_enc))
+                        else:
+                            decoded_lines.append(l)
+
                     self.source[:] = self.format_source(
-                            getlines(fname), set(breakpoints))
+                            decoded_lines, set(breakpoints))
                 except:
                     from traceback import format_exception
                     import sys
