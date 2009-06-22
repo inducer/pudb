@@ -1726,11 +1726,15 @@ class DebuggerUI(object):
                 key_it = None
                 try:
                     l = len(value)
-                    value[0]
                 except:
                     pass
                 else:
-                    key_it = xrange(l)
+                    try:
+                        value[0]
+                    except IndexError:
+                        key_it = xrange(l)
+                    except:
+                        pass
 
                 try:
                     key_it = value.iterkeys()
