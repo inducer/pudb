@@ -235,53 +235,6 @@ class Debugger(bdb.Bdb):
 
 
 
-def generate_executable_lines_for_code(code):
-    l = code.co_firstlineno
-    yield l
-    for c in code.co_lnotab[1::2]:
-        l += ord(c)
-        yield l
-
-
-
-
-def get_executable_lines_for_file(filename):
-    # inspired by rpdb2
-
-    from linecache import getlines
-    codes = [compile("".join(getlines(filename)), filename, "exec")]
-
-    from types import CodeType
-
-    execable_lines = set()
-
-    while codes:
-        code = codes.pop()
-        execable_lines |= set(generate_executable_lines_for_code(code))
-        codes.extend(const
-                for const in code.co_consts
-                if isinstance(const, CodeType))
-
-    return execable_lines
-
-
-
-
-def get_breakpoint_invalid_reason(filename, lineno):
-    # simple logic stolen from pdb
-    import linecache
-    line = linecache.getline(filename, lineno)
-    if not line:
-        return "Line is beyond end of file."
-
-    if lineno not in get_executable_lines_for_file(filename):
-        return "No executable statement found in line."
-
-
-
-
-
-
 # UI stuff --------------------------------------------------------------------
 def make_canvas(txt, attr, maxcol, fill_attr=None):
     processed_txt = []
@@ -927,6 +880,7 @@ class DebuggerUI(object):
                 sline, pos = self.source.get_focus()
                 lineno = pos+1
 
+                from pudb.lowlevel import get_breakpoint_invalid_reason
                 invalid_reason = get_breakpoint_invalid_reason(
                         self.shown_file, lineno)
 
@@ -1099,6 +1053,7 @@ class DebuggerUI(object):
                     err = self.debugger.clear_break(self.shown_file, lineno)
                     sline.set_breakpoint(False)
                 else:
+                    from pudb.lowlevel import get_breakpoint_invalid_reason
                     invalid_reason = get_breakpoint_invalid_reason(
                             self.shown_file, pos+1)
 
