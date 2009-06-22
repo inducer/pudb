@@ -1,23 +1,29 @@
 def main():
     import sys
-    if not sys.argv[1:]:
-        print "usage: %s scriptfile [-s] [arg] ..." % sys.argv[0]
+
+    from optparse import OptionParser
+    parser = OptionParser(
+            usage="usage: %prog [options] SCRIPT-TO-RUN [SCRIPT-ARGUMENTS]")
+
+    parser.add_option("-s", "--steal-output", action="store_true"),
+    parser.add_option("--pre-run", metavar="COMMAND",
+            help="Run command before each program run")
+    parser.disable_interspersed_args()
+    options, args = parser.parse_args()
+
+    if len(args) < 1:
+        parser.print_help()
         sys.exit(2)
 
-    mainpyfile =  sys.argv[1]
+    mainpyfile =  args[0]
     from os.path import exists, dirname
     if not exists(mainpyfile):
         print 'Error:', mainpyfile, 'does not exist'
         sys.exit(1)
 
-    # Hide "pudb.py" from argument list
-    del sys.argv[0]
+    sys.argv = args
 
-    steal_output = sys.argv[0] == "-s"
-    if steal_output:
-        del sys.argv[0]
-
-    # Replace pdb's dir with script's dir in front of module search path.
+    # Replace pudb's dir with script's dir in front of module search path.
     sys.path[0] = dirname(mainpyfile)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
@@ -26,15 +32,22 @@ def main():
     # have a "restart" command which would allow explicit specification of
     # command line arguments.
 
-    from os import getpid
-
-    start_pid = getpid()
-
     from pudb.debugger import Debugger
-    dbg = Debugger(steal_output=steal_output)
+    dbg = Debugger(steal_output=options.steal_output)
 
     while True:
+        if options.pre_run:
+            from subprocess import call
+            retcode = call(options.pre_run, close_fds=True, shell=True)
+            if retcode:
+                print "*** WARNING: pre-run process exited with code %d." % retcode
+            pre_run_msg = ("\n\nIf you decide to restart, '%s' will be run prior to "
+                    "actually restarting." % options.pre_run)
+        else:
+            pre_run_msg = ""
+
         status_msg = ""
+
         try:
             dbg._runscript(mainpyfile)
         except SystemExit, se:
@@ -43,24 +56,21 @@ def main():
             dbg.post_mortem = True
             dbg.interaction(None, sys.exc_info())
 
-        if getpid() == start_pid:
-            import urwid
-            result = dbg.ui.call_with_ui(dbg.ui.dialog,
-                urwid.ListBox([urwid.Text(
-                    "Your PuDB session has ended.\n\n%s"
-                    "Would you like to quit PuDB or restart your program?"
-                    % status_msg)]),
-                [
-                    ("Restart", "restart"),
-                    ("Quit", "quit"),
-                    ],
-                focus_buttons=True,
-                bind_enter_esc=False,
-                title="Finished")
+        import urwid
+        result = dbg.ui.call_with_ui(dbg.ui.dialog,
+            urwid.ListBox([urwid.Text(
+                ("Your PuDB session has ended.\n\n%s"
+                "Would you like to quit PuDB or restart your program?"
+                % status_msg)+pre_run_msg)]),
+            [
+                ("Restart", "restart"),
+                ("Quit", "quit"),
+                ],
+            focus_buttons=True,
+            bind_enter_esc=False,
+            title="Finished")
 
-            if result == "quit":
-                return
-        else:
+        if result == "quit":
             return
 
         dbg.restart()
