@@ -93,12 +93,14 @@ class SignalWrap(urwid.WidgetWrap):
 
 # debugger-specific stuff -----------------------------------------------------
 class Variable(urwid.FlowWidget):
-    def __init__(self, prefix, var_label, value_str, id_path=None, attr_prefix=None):
+    def __init__(self, prefix, var_label, value_str, id_path=None, attr_prefix=None,
+            is_watch=False):
         self.prefix = prefix
         self.var_label = var_label
         self.value_str = value_str
         self.id_path = id_path
         self.attr_prefix = attr_prefix or "var"
+        self.is_watch = is_watch
 
     def selectable(self):
         return True

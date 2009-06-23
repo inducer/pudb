@@ -73,8 +73,10 @@ Keys in variables list:
     t/r/s - show type/repr/str for this variable
     enter - edit options
     h - toggle highlighting
-    w - toggle watching
+    t - toggle repetition at top
     * - toggle private members
+    n/insert - add new watch expression
+    d/delete - delete watch expression
 
 Keys in stack list:
 
@@ -260,12 +262,17 @@ from pudb.ui_tools import make_hotkey_markup, labelled_value, \
 
 
 
+class FrameVarInfo(object):
+    def __init__(self):
+        self.id_path_to_iinfo = {}
+        self.watches = []
+
 class InspectInfo(object):
     def __init__(self):
         self.show_detail = False
         self.display_type = "type"
         self.highlighted = False
-        self.watched = False
+        self.repeated_at_top = False
         self.show_private_members = False
 
 
@@ -279,7 +286,7 @@ class DebuggerUI(object):
         self.search_box = None
         self.last_module_filter = ""
 
-        self.inspect_info = {}
+        self.frame_var_info = {}
 
         self.source = urwid.SimpleListWalker([])
         self.source_list = urwid.ListBox(self.source)
@@ -333,8 +340,8 @@ class DebuggerUI(object):
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
-            ssid = self.debugger.get_stack_situation_id()
-            id_path_to_iinfo = self.inspect_info.setdefault(ssid, {})
+            id_path_to_iinfo = self.get_frame_var_info(read_only=False) \
+                    .id_path_to_iinfo
             iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
 
             if key == "\\": iinfo.show_detail = not iinfo.show_detail
@@ -342,16 +349,16 @@ class DebuggerUI(object):
             elif key == "r": iinfo.display_type = "repr"
             elif key == "s": iinfo.display_type = "str"
             elif key == "h": iinfo.highlighted = not iinfo.highlighted
-            elif key == "w": iinfo.watched = not iinfo.watched
+            elif key == "t": iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
 
             self.set_locals(self.debugger.curframe.f_locals)
 
-        def edit_variable_detail(w, size, key):
+        def edit_inspector_detail(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
-            ssid = self.debugger.get_stack_situation_id()
-            id_path_to_iinfo = self.inspect_info.setdefault(ssid, {})
+            id_path_to_iinfo = self.get_frame_var_info(read_only=False) \
+                    .id_path_to_iinfo
             iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
 
             rb_grp = []
@@ -364,19 +371,18 @@ class DebuggerUI(object):
 
             expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
             highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
-            watched_checkbox = urwid.CheckBox("Watched", iinfo.highlighted)
+            repeated_at_top_checkbox = urwid.CheckBox("Repeated at top", iinfo.repeated_at_top)
             show_private_checkbox = urwid.CheckBox("Show private members",
                     iinfo.show_private_members)
 
             lb = urwid.ListBox([
-                #labelled_value("Stack Situation: ", ssid),
                 labelled_value("Identifier Path: ", var.id_path),
                 urwid.Text(""),
                 ]+rb_grp+[
                 urwid.Text(""),
                 expanded_checkbox,
                 highlighted_checkbox,
-                watched_checkbox,
+                repeated_at_top_checkbox,
                 show_private_checkbox,
                 ])
 
@@ -387,7 +393,7 @@ class DebuggerUI(object):
 
                 iinfo.show_detail = expanded_checkbox.get_state()
                 iinfo.highlighted = highlighted_checkbox.get_state()
-                iinfo.watched = watched_checkbox.get_state()
+                iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_private_members = show_private_checkbox.get_state()
 
                 if rb_show_type.get_state(): iinfo.display_type = "type"
@@ -396,13 +402,23 @@ class DebuggerUI(object):
 
             self.set_locals(self.debugger.curframe.f_locals)
 
+        def insert_watch(w, size, key):
+            pass
+
+        def delete_watch(w, size, key):
+            pass
+
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
         self.var_list.listen("h", change_var_state)
-        self.var_list.listen("w", change_var_state)
-        self.var_list.listen("enter", edit_variable_detail)
+        self.var_list.listen("t", change_var_state)
+        self.var_list.listen("enter", edit_inspector_detail)
+        self.var_list.listen("n", insert_watch)
+        self.var_list.listen("insert", insert_watch)
+        self.var_list.listen("d", delete_watch)
+        self.var_list.listen("delete", delete_watch)
 
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
@@ -1202,15 +1218,23 @@ class DebuggerUI(object):
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
+    def get_frame_var_info(self, read_only, ssid=None):
+        if ssid is None:
+            ssid = self.debugger.get_stack_situation_id()
+        if read_only:
+            return self.frame_var_info.get(ssid, FrameVarInfo())
+        else:
+            return self.frame_var_info.setdefault(ssid, FrameVarInfo())
+
     def set_locals(self, locals):
         vars = locals.keys()
         vars.sort(key=lambda n: n.lower())
 
-        watch_list = []
+        top_list = []
         loc_list = []
 
-        ssid = self.debugger.get_stack_situation_id()
-        id_path_to_iinfo = self.inspect_info.get(ssid, {})
+        frame_var_info = self.get_frame_var_info(read_only=True)
+        id_path_to_iinfo = frame_var_info.id_path_to_iinfo
 
         try:
             import numpy
@@ -1230,21 +1254,23 @@ class DebuggerUI(object):
 
         STR_SAFE_TYPES = get_str_safe_types()
 
-        watch_prefixes = []
+        top_id_path_prefixes = []
 
         def add_var(prefix, var_label, value_str, id_path=None, attr_prefix=None):
             iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
             if iinfo.highlighted:
                 attr_prefix = "highlighted var"
 
-            watched = iinfo.watched
-            for wp in watch_prefixes:
-                if id_path.startswith(wp):
-                    watched = True
+            repeated_at_top = iinfo.repeated_at_top
+            if repeated_at_top:
+                top_id_path_prefixes.append(id_path)
 
-            if watched:
-                watch_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
-                watch_prefixes.append(id_path)
+            for tipp in top_id_path_prefixes:
+                if id_path.startswith(tipp):
+                    repeated_at_top = True
+
+            if repeated_at_top:
+                top_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
 
             loc_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
 
@@ -1381,11 +1407,13 @@ class DebuggerUI(object):
             if not var[0] in "_.":
                 display_var("", var, locals[var])
 
-        if watch_list:
-            loc_list = (watch_list
-                    + [urwid.AttrWrap(
-                        urwid.Text("---", align="center"),
-                        "variable separator")]
+        separator = urwid.AttrWrap(
+                urwid.Text("---", align="center"),
+                "variable separator")
+
+        if top_list:
+            loc_list = (top_list
+                    + [separator]
                     + loc_list)
 
         self.locals[:] = loc_list
