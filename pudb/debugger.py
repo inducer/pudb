@@ -73,7 +73,7 @@ Keys in variables list:
     t/r/s - show type/repr/str for this variable
     enter - edit options
     h - toggle highlighting
-    t - toggle repetition at top
+    @ - toggle repetition at top
     * - toggle private members
     n/insert - add new watch expression
     d/delete - delete watch expression
@@ -290,10 +290,11 @@ class DebuggerUI(object):
 
         self.source = urwid.SimpleListWalker([])
         self.source_list = urwid.ListBox(self.source)
+        self.source_sigwrap = SignalWrap(self.source_list)
         self.source_hscroll_start = 0
 
         self.lhs_col = urwid.Pile([
-            ("weight", 1, urwid.AttrWrap(self.source_list, "source"))
+            ("weight", 1, urwid.AttrWrap(self.source_sigwrap, "source"))
             ])
 
         self.locals = urwid.SimpleListWalker([])
@@ -349,7 +350,7 @@ class DebuggerUI(object):
             elif key == "r": iinfo.display_type = "repr"
             elif key == "s": iinfo.display_type = "str"
             elif key == "h": iinfo.highlighted = not iinfo.highlighted
-            elif key == "t": iinfo.repeated_at_top = not iinfo.repeated_at_top
+            elif key == "@": iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
 
             self.set_locals(self.debugger.curframe.f_locals)
@@ -413,7 +414,7 @@ class DebuggerUI(object):
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
         self.var_list.listen("h", change_var_state)
-        self.var_list.listen("t", change_var_state)
+        self.var_list.listen("@", change_var_state)
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
@@ -541,92 +542,6 @@ class DebuggerUI(object):
 
                     self.debugger.set_continue()
                     end()
-
-        def show_traceback(w, size, key):
-            if self.current_exc_tuple is not None:
-                from traceback import format_exception
-
-                result = self.dialog(
-                        urwid.ListBox([urwid.Text(
-                            "".join(format_exception(*self.current_exc_tuple)))]),
-                        [
-                            ("Close", "close"),
-                            ("Location", "location")
-                            ],
-                        title="Exception Viewer",
-                        focus_buttons=True,
-                        bind_enter_esc=False)
-
-                if result == "location":
-                    self.debugger.set_frame_index(len(self.debugger.stack)-1)
-
-            else:
-                self.message("No exception available.")
-
-        def show_output(w, size, key):
-            self.screen.stop()
-            raw_input("Hit Enter to return:")
-            self.screen.start()
-
-        def run_shell(w, size, key):
-            self.screen.stop()
-
-            if not hasattr(self, "shell_ret_message_shown"):
-                banner = "Hit Ctrl-D to return to PuDB."
-                self.shell_ret_message_shown = True
-            else:
-                banner = ""
-
-            class SetPropagatingDict(dict):
-                def __init__(self, source_dicts, target_dict):
-                    dict.__init__(self)
-                    for s in source_dicts:
-                        self.update(s)
-
-                    self.target_dict = target_dict
-
-                def __setitem__(self, key, value):
-                    dict.__setitem__(self, key, value)
-                    self.target_dict[key] = value
-
-                def __delitem__(self, key):
-                    dict.__delitem__(self, key)
-                    del self.target_dict[key]
-
-            curframe = self.debugger.curframe
-            loc = SetPropagatingDict(
-                    [curframe.f_locals, curframe.f_globals],
-                    curframe.f_locals)
-
-            cons = InteractiveConsole(loc)
-            cons.interact(banner)
-            self.screen.start()
-
-            self.set_locals(curframe.f_locals)
-
-        class RHColumnFocuser:
-            def __init__(self, idx):
-                self.idx = idx
-
-            def __call__(subself, w, size, key):
-                self.columns.set_focus(self.rhs_col)
-                self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
-
-        def grow_sidebar(w, size, key):
-            _, weight = self.columns.column_types[1]
-
-            if weight < 5:
-                weight *= 1.25
-                self.columns.column_types[1] = "weight", weight
-                self.columns._invalidate()
-
-        def shrink_sidebar(w, size, key):
-            _, weight = self.columns.column_types[1]
-
-            if weight > 1/5:
-                weight /= 1.25
-                self.columns.column_types[1] = "weight", weight
-                self.columns._invalidate()
 
         def move_home(w, size, key):
             self.source.set_focus(0)
@@ -862,6 +777,120 @@ class DebuggerUI(object):
                         show_mod(mod)
                     break
 
+        self.source_sigwrap.listen("n", next)
+        self.source_sigwrap.listen("s", step)
+        self.source_sigwrap.listen("f", finish)
+        self.source_sigwrap.listen("r", finish)
+        self.source_sigwrap.listen("c", cont)
+        self.source_sigwrap.listen("t", run_to_cursor)
+
+        self.source_sigwrap.listen("j", move_down)
+        self.source_sigwrap.listen("k", move_up)
+        self.source_sigwrap.listen("ctrl d", page_down)
+        self.source_sigwrap.listen("ctrl u", page_up)
+        self.source_sigwrap.listen("h", scroll_left)
+        self.source_sigwrap.listen("l", scroll_right)
+
+        self.source_sigwrap.listen("/", search)
+        self.source_sigwrap.listen(",", search_previous)
+        self.source_sigwrap.listen(".", search_next)
+
+        self.source_sigwrap.listen("home", move_home)
+        self.source_sigwrap.listen("end", move_end)
+        self.source_sigwrap.listen("g", move_home)
+        self.source_sigwrap.listen("G", move_end)
+        self.source_sigwrap.listen("L", go_to_line)
+
+        self.source_sigwrap.listen("b", toggle_breakpoint)
+        self.source_sigwrap.listen("m", pick_module)
+
+        # top-level listeners -------------------------------------------------
+        def show_output(w, size, key):
+            self.screen.stop()
+            raw_input("Hit Enter to return:")
+            self.screen.start()
+
+        def show_traceback(w, size, key):
+            if self.current_exc_tuple is not None:
+                from traceback import format_exception
+
+                result = self.dialog(
+                        urwid.ListBox([urwid.Text(
+                            "".join(format_exception(*self.current_exc_tuple)))]),
+                        [
+                            ("Close", "close"),
+                            ("Location", "location")
+                            ],
+                        title="Exception Viewer",
+                        focus_buttons=True,
+                        bind_enter_esc=False)
+
+                if result == "location":
+                    self.debugger.set_frame_index(len(self.debugger.stack)-1)
+
+            else:
+                self.message("No exception available.")
+
+        def run_shell(w, size, key):
+            self.screen.stop()
+
+            if not hasattr(self, "shell_ret_message_shown"):
+                banner = "Hit Ctrl-D to return to PuDB."
+                self.shell_ret_message_shown = True
+            else:
+                banner = ""
+
+            class SetPropagatingDict(dict):
+                def __init__(self, source_dicts, target_dict):
+                    dict.__init__(self)
+                    for s in source_dicts:
+                        self.update(s)
+
+                    self.target_dict = target_dict
+
+                def __setitem__(self, key, value):
+                    dict.__setitem__(self, key, value)
+                    self.target_dict[key] = value
+
+                def __delitem__(self, key):
+                    dict.__delitem__(self, key)
+                    del self.target_dict[key]
+
+            curframe = self.debugger.curframe
+            loc = SetPropagatingDict(
+                    [curframe.f_locals, curframe.f_globals],
+                    curframe.f_locals)
+
+            cons = InteractiveConsole(loc)
+            cons.interact(banner)
+            self.screen.start()
+
+            self.set_locals(curframe.f_locals)
+
+        class RHColumnFocuser:
+            def __init__(self, idx):
+                self.idx = idx
+
+            def __call__(subself, w, size, key):
+                self.columns.set_focus(self.rhs_col)
+                self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
+
+        def grow_sidebar(w, size, key):
+            _, weight = self.columns.column_types[1]
+
+            if weight < 5:
+                weight *= 1.25
+                self.columns.column_types[1] = "weight", weight
+                self.columns._invalidate()
+
+        def shrink_sidebar(w, size, key):
+            _, weight = self.columns.column_types[1]
+
+            if weight > 1/5:
+                weight /= 1.25
+                self.columns.column_types[1] = "weight", weight
+                self.columns._invalidate()
+
         def quit(w, size, key):
             self.debugger.set_quit()
             end()
@@ -869,42 +898,15 @@ class DebuggerUI(object):
         def help(w, size, key):
             self.message(HELP_TEXT, title="PuDB Help")
 
-        self.top.listen("n", next)
-        self.top.listen("s", step)
-        self.top.listen("f", finish)
-        self.top.listen("r", finish)
-        self.top.listen("c", cont)
-        self.top.listen("t", run_to_cursor)
-        self.top.listen("e", show_traceback)
-
         self.top.listen("o", show_output)
         self.top.listen("!", run_shell)
-
-        self.top.listen("j", move_down)
-        self.top.listen("k", move_up)
-        self.top.listen("ctrl d", page_down)
-        self.top.listen("ctrl u", page_up)
-        self.top.listen("h", scroll_left)
-        self.top.listen("l", scroll_right)
-
-        self.top.listen("/", search)
-        self.top.listen(",", search_previous)
-        self.top.listen(".", search_next)
+        self.top.listen("e", show_traceback)
 
         self.top.listen("+", grow_sidebar)
         self.top.listen("-", shrink_sidebar)
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
-
-        self.top.listen("home", move_home)
-        self.top.listen("end", move_end)
-        self.top.listen("g", move_home)
-        self.top.listen("G", move_end)
-        self.top.listen("L", go_to_line)
-
-        self.top.listen("b", toggle_breakpoint)
-        self.top.listen("m", pick_module)
 
         self.top.listen("q", quit)
         self.top.listen("H", help)
