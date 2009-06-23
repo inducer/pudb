@@ -14,7 +14,7 @@ def setup_readline():
     import os
     import atexit
 
-    histfile = os.path.join(os.environ["HOME"], ".pudbhist")
+    histfile = os.path.join(os.environ["HOME"], ".pudb-history")
     if os.access(histfile, os.R_OK):
         readline.read_history_file(histfile)
     atexit.register(readline.write_history_file, histfile)
@@ -71,12 +71,11 @@ Keys in variables list:
 
     \ - expand/collapse
     t/r/s - show type/repr/str for this variable
-    enter - edit options
     h - toggle highlighting
     @ - toggle repetition at top
     * - toggle private members
     n/insert - add new watch expression
-    d/delete - delete watch expression
+    enter - edit options (also to delete)
 
 Keys in stack list:
 
@@ -152,7 +151,7 @@ class Debugger(bdb.Bdb):
         self.curindex = index
         self.curframe, lineno = self.stack[index]
         self.ui.set_current_line(lineno, self.curframe.f_code.co_filename)
-        self.ui.set_locals(self.curframe.f_locals)
+        self.ui.update_var_view(self.curframe.f_locals)
         self.ui.update_stack()
 
     def get_shortened_stack(self, frame, tb):
@@ -256,37 +255,22 @@ class Debugger(bdb.Bdb):
 
 # UI stuff --------------------------------------------------------------------
 from pudb.ui_tools import make_hotkey_markup, labelled_value, \
-        SelectableText, SignalWrap, Variable, StackFrame, SourceLine, \
+        SelectableText, SignalWrap, StackFrame, \
         SearchBox
+from pudb.var_view import FrameVarInfoKeeper
 
 
 
 
-class FrameVarInfo(object):
-    def __init__(self):
-        self.id_path_to_iinfo = {}
-        self.watches = []
-
-class InspectInfo(object):
-    def __init__(self):
-        self.show_detail = False
-        self.display_type = "type"
-        self.highlighted = False
-        self.repeated_at_top = False
-        self.show_private_members = False
-
-
-
-
-class DebuggerUI(object):
+class DebuggerUI(FrameVarInfoKeeper):
     def __init__(self, dbg):
+        FrameVarInfoKeeper.__init__(self)
+
         self.debugger = dbg
         Attr = urwid.AttrWrap
 
         self.search_box = None
         self.last_module_filter = ""
-
-        self.frame_var_info = {}
 
         self.source = urwid.SimpleListWalker([])
         self.source_list = urwid.ListBox(self.source)
@@ -341,9 +325,8 @@ class DebuggerUI(object):
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
-            id_path_to_iinfo = self.get_frame_var_info(read_only=False) \
-                    .id_path_to_iinfo
-            iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
+            iinfo = self.get_frame_var_info(read_only=False) \
+                    .get_inspect_info(var.id_path, read_only=False)
 
             if key == "\\": iinfo.show_detail = not iinfo.show_detail
             elif key == "t": iinfo.display_type = "type"
@@ -353,14 +336,35 @@ class DebuggerUI(object):
             elif key == "@": iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
 
-            self.set_locals(self.debugger.curframe.f_locals)
+            self.update_var_view()
 
         def edit_inspector_detail(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
-            id_path_to_iinfo = self.get_frame_var_info(read_only=False) \
-                    .id_path_to_iinfo
-            iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
+            fvi = self.get_frame_var_info(read_only=False)
+            iinfo = fvi.get_inspect_info(var.id_path, read_only=False)
+
+            buttons = [
+                ("OK", True),
+                ("Cancel", False),
+                ]
+
+            if var.watch_expr is not None:
+                watch_edit = urwid.Edit([
+                    ("label", "Watch expression: ")
+                    ], var.watch_expr.expression)
+                id_segment = [urwid.AttrWrap(watch_edit, "value"), urwid.Text("")]
+
+                buttons.extend([None, ("Delete", "del")])
+
+                title = "Watch Expression Options"
+            else:
+                id_segment = [
+                        labelled_value("Identifier Path: ", var.id_path),
+                        urwid.Text(""),
+                        ]
+
+                title = "Variable Inspection Options"
 
             rb_grp = []
             rb_show_type = urwid.RadioButton(rb_grp, "Show Type",
@@ -376,10 +380,8 @@ class DebuggerUI(object):
             show_private_checkbox = urwid.CheckBox("Show private members",
                     iinfo.show_private_members)
 
-            lb = urwid.ListBox([
-                labelled_value("Identifier Path: ", var.id_path),
-                urwid.Text(""),
-                ]+rb_grp+[
+            lb = urwid.ListBox(
+                id_segment+rb_grp+[
                 urwid.Text(""),
                 expanded_checkbox,
                 highlighted_checkbox,
@@ -387,11 +389,9 @@ class DebuggerUI(object):
                 show_private_checkbox,
                 ])
 
-            if self.dialog(lb, [
-                ("OK", True),
-                ("Cancel", False),
-                ], title="Variable Inspection Options"):
+            result = self.dialog(lb, buttons, title=title)
 
+            if result == True:
                 iinfo.show_detail = expanded_checkbox.get_state()
                 iinfo.highlighted = highlighted_checkbox.get_state()
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
@@ -401,13 +401,35 @@ class DebuggerUI(object):
                 elif rb_show_repr.get_state(): iinfo.display_type = "repr"
                 elif rb_show_str.get_state(): iinfo.display_type = "str"
 
-            self.set_locals(self.debugger.curframe.f_locals)
+                if var.watch_expr is not None:
+                    var.watch_expr.expression = watch_edit.get_edit_text()
+
+            elif result == "del":
+                for i, watch_expr in enumerate(fvi.watches):
+                    if watch_expr is var.watch_expr:
+                        del fvi.watches[i]
+
+            self.update_var_view()
 
         def insert_watch(w, size, key):
-            pass
+            watch_edit = urwid.Edit([
+                ("label", "Watch expression: ")
+                ])
 
-        def delete_watch(w, size, key):
-            pass
+            if self.dialog(
+                    urwid.ListBox([
+                        urwid.AttrWrap(watch_edit, "value")
+                        ]),
+                    [
+                        ("OK", True),
+                        ("Cancel", False),
+                        ], title="Add Watch Expression"):
+
+                from pudb.var_view import WatchExpression
+                we = WatchExpression(watch_edit.get_edit_text())
+                fvi = self.get_frame_var_info(read_only=False)
+                fvi.watches.append(we)
+                self.update_var_view()
 
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen("t", change_var_state)
@@ -418,8 +440,6 @@ class DebuggerUI(object):
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
-        self.var_list.listen("d", delete_watch)
-        self.var_list.listen("delete", delete_watch)
 
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
@@ -557,9 +577,9 @@ class DebuggerUI(object):
                 ], line+1)
 
             if self.dialog(
-                    urwid.ListBox([ 
+                    urwid.ListBox([
                         labelled_value("File :", self.shown_file),
-                        urwid.AttrWrap(lineno_edit, "value") 
+                        urwid.AttrWrap(lineno_edit, "value")
                         ]),
                     [
                         ("OK", True),
@@ -865,7 +885,7 @@ class DebuggerUI(object):
             cons.interact(banner)
             self.screen.start()
 
-            self.set_locals(curframe.f_locals)
+            self.update_var_view(curframe.f_locals)
 
         class RHColumnFocuser:
             def __init__(self, idx):
@@ -1083,84 +1103,8 @@ class DebuggerUI(object):
         self.caption.set_text(caption)
         self.event_loop()
 
-    def format_source(self, lines, breakpoints):
-        try:
-            import pygments
-        except ImportError:
-            return [SourceLine(self,
-                line.rstrip("\n\r").replace("\t", 8*" "), None,
-                has_breakpoint=i+1 in breakpoints)
-                for i, line in enumerate(lines)]
-        else:
-            from pygments import highlight
-            from pygments.lexers import PythonLexer
-            from pygments.formatter import Formatter
-            import pygments.token as t
-
-            result = []
-
-            ATTR_MAP = {
-                    t.Token: "source",
-                    t.Keyword: "keyword",
-                    t.Literal: "literal",
-                    t.Punctuation: "punctuation",
-                    t.Comment: "comment",
-                    }
-
-            class UrwidFormatter(Formatter):
-                def __init__(subself, **options):
-                    Formatter.__init__(subself, **options)
-                    subself.current_line = ""
-                    subself.current_attr = []
-                    subself.lineno = 1
-
-                def format(subself, tokensource, outfile):
-                    def add_snippet(ttype, s):
-                        if not s:
-                            return
-
-                        while not ttype in ATTR_MAP:
-                            if ttype.parent is not None:
-                                ttype = ttype.parent
-                            else:
-                                raise RuntimeError(
-                                        "untreated token type: %s" % str(ttype))
-
-                        attr = ATTR_MAP[ttype]
-
-                        subself.current_line += s
-                        subself.current_attr.append((attr, len(s)))
-
-                    def shipout_line():
-                        result.append(
-                                SourceLine(self,
-                                    subself.current_line,
-                                    subself.current_attr,
-                                    has_breakpoint=subself.lineno in breakpoints))
-                        subself.current_line = ""
-                        subself.current_attr = []
-                        subself.lineno += 1
-
-                    for ttype, value in tokensource:
-                        while True:
-                            newline_pos = value.find("\n")
-                            if newline_pos == -1:
-                                add_snippet(ttype, value)
-                                break
-                            else:
-                                add_snippet(ttype, value[:newline_pos])
-                                shipout_line()
-                                value = value[newline_pos+1:]
-
-                    if subself.current_line:
-                        shipout_line()
-
-            highlight("".join(l.replace("\t", 8*" ") for l in lines),
-                    PythonLexer(), UrwidFormatter())
-
-            return result
-
     def set_current_file(self, fname):
+        from pudb.source_view import SourceLine, format_source
         fname = self.debugger.canonic(fname)
 
         if self.shown_file != fname:
@@ -1182,7 +1126,7 @@ class DebuggerUI(object):
                         else:
                             decoded_lines.append(l)
 
-                    self.source[:] = self.format_source(
+                    self.source[:] = format_source(self,
                             decoded_lines, set(breakpoints))
                 except:
                     from traceback import format_exception
@@ -1220,205 +1164,14 @@ class DebuggerUI(object):
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
-    def get_frame_var_info(self, read_only, ssid=None):
-        if ssid is None:
-            ssid = self.debugger.get_stack_situation_id()
-        if read_only:
-            return self.frame_var_info.get(ssid, FrameVarInfo())
-        else:
-            return self.frame_var_info.setdefault(ssid, FrameVarInfo())
+    def update_var_view(self, locals=None):
+        if locals is None:
+            locals = self.debugger.curframe.f_locals
 
-    def set_locals(self, locals):
-        vars = locals.keys()
-        vars.sort(key=lambda n: n.lower())
-
-        top_list = []
-        loc_list = []
-
-        frame_var_info = self.get_frame_var_info(read_only=True)
-        id_path_to_iinfo = frame_var_info.id_path_to_iinfo
-
-        try:
-            import numpy
-            HAVE_NUMPY = 1
-        except ImportError:
-            HAVE_NUMPY = 0
-
-        def get_str_safe_types():
-            import types
-
-            return tuple(getattr(types, s) for s in
-                "BuiltinFunctionType BuiltinMethodType  ClassType "
-                "CodeType FileType FrameType FunctionType GetSetDescriptorType "
-                "LambdaType MemberDescriptorType MethodType ModuleType "
-                "SliceType TypeType TracebackType UnboundMethodType XRangeType".split()
-                if hasattr(types, s))
-
-        STR_SAFE_TYPES = get_str_safe_types()
-
-        top_id_path_prefixes = []
-
-        def add_var(prefix, var_label, value_str, id_path=None, attr_prefix=None):
-            iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
-            if iinfo.highlighted:
-                attr_prefix = "highlighted var"
-
-            repeated_at_top = iinfo.repeated_at_top
-            if repeated_at_top:
-                top_id_path_prefixes.append(id_path)
-
-            for tipp in top_id_path_prefixes:
-                if id_path.startswith(tipp):
-                    repeated_at_top = True
-
-            if repeated_at_top:
-                top_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
-
-            loc_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
-
-        def display_var(prefix, label, value, id_path=None, attr_prefix=None):
-            if id_path is None:
-                id_path = label
-
-            iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
-
-            if isinstance(value, (int, float, long, complex)):
-                add_var(prefix, label, repr(value), id_path, attr_prefix)
-            elif isinstance(value, (str, unicode)):
-                add_var(prefix, label, repr(value)[:200], id_path, attr_prefix)
-            else:
-                if iinfo.display_type == "type":
-                    if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-                        displayed_value = "ndarray %s %s" % (value.dtype, value.shape)
-                    elif isinstance(value, STR_SAFE_TYPES):
-                        displayed_value = str(value)
-                    else:
-                        displayed_value = type(value).__name__
-                elif iinfo.display_type == "repr":
-                    displayed_value = repr(value)
-                elif iinfo.display_type == "str":
-                    displayed_value = str(value)
-                else:
-                    displayed_value = "ERROR: Invalid display_type"
-
-                add_var(prefix, label,
-                    displayed_value, id_path, attr_prefix)
-
-                if not iinfo.show_detail:
-                    return
-
-                # set ---------------------------------------------------------
-                if isinstance(value, (set, frozenset)):
-                    for i, entry in enumerate(value):
-                        if i % 10 == 0 and i:
-                            cont_id_path = "%s.cont-%d" % (id_path, i)
-                            if not id_path_to_iinfo.get(
-                                    cont_id_path, InspectInfo()).show_detail:
-                                add_var(prefix+"  ", "...", None, cont_id_path)
-                                break
-
-                        display_var(prefix+"  ", None, entry,
-                            "%s[%d]" % (id_path, i))
-                    if not value:
-                        add_var(prefix+"  ", "<empty>", None)
-                    return
-
-                # containers --------------------------------------------------
-                key_it = None
-                try:
-                    l = len(value)
-                except:
-                    pass
-                else:
-                    try:
-                        value[0]
-                    except IndexError:
-                        key_it = []
-                    except:
-                        pass
-                    else:
-                        key_it = xrange(l)
-
-                try:
-                    key_it = value.iterkeys()
-                except:
-                    pass
-
-                if key_it is not None:
-                    cnt = 0
-                    for key in key_it:
-                        if cnt % 10 == 0 and cnt:
-                            cont_id_path = "%s.cont-%d" % (id_path, cnt)
-                            if not id_path_to_iinfo.get(
-                                    cont_id_path, InspectInfo()).show_detail:
-                                add_var(
-                                    prefix+"  ", "...", None, cont_id_path)
-                                break
-
-                        display_var(prefix+"  ", repr(key), value[key],
-                            "%s[%r]" % (id_path, key))
-                        cnt += 1
-                    if not cnt:
-                        add_var(prefix+"  ", "<empty>", None)
-                    return
-
-                # class types -------------------------------------------------
-                key_its = []
-                try:
-                    key_its.append(value.__slots__)
-                except:
-                    pass
-
-                try:
-                    key_its.append(value.__dict__.iterkeys())
-                except:
-                    pass
-
-                if not key_its:
-                    try:
-                        key_its.append(dir(value))
-                    except:
-                        pass
-
-                cnt = 0
-                cnt_omitted = 0
-                for key_it in key_its:
-                    for key in key_it:
-                        if key[0] == "_" and not iinfo.show_private_members:
-                            cnt_omitted += 1
-                            continue
-
-                        cnt += 1
-                        display_var(prefix+"  ",
-                                ".%s" % key, getattr(value, key),
-                                "%s.%s" % (id_path, key))
-
-                if not cnt:
-                    if cnt_omitted:
-                        add_var(prefix+"  ", "<omitted private attributes>", None)
-                    else:
-                        add_var(prefix+"  ", "<empty>", None)
-
-                if not key_its:
-                    add_var(prefix+"  ", "<?>", None)
-
-        if "__return__" in vars:
-            display_var("", "Return", locals["__return__"], attr_prefix="return")
-
-        for var in vars:
-            if not var[0] in "_.":
-                display_var("", var, locals[var])
-
-        separator = urwid.AttrWrap(
-                urwid.Text("---", align="center"),
-                "variable separator")
-
-        if top_list:
-            loc_list = (top_list
-                    + [separator]
-                    + loc_list)
-
-        self.locals[:] = loc_list
+        from pudb.var_view import make_var_view
+        self.locals[:] = make_var_view(
+                self.get_frame_var_info(read_only=True),
+                locals)
 
     def _get_bp_list(self):
         return [bp

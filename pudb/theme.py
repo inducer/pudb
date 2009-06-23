@@ -15,7 +15,7 @@ def get_palette(may_use_fancy_formats):
         ("current breakpoint focused source", "white", "dark red"),
 
         ("variables", "black", "dark cyan"),
-        ("variable separator", "light gray", "dark cyan"),
+        ("variable separator", "dark cyan", "light gray"),
 
         ("var label", "dark blue", "dark cyan"),
         ("var value", "black", "dark cyan"),
@@ -52,8 +52,8 @@ def get_palette(may_use_fancy_formats):
             "dark green", "bold"),
         ("current frame class", "dark blue", "dark cyan"),
         ("focused current frame class", "dark blue", "dark green"),
-        ("current frame location", "light gray", "dark cyan"),
-        ("focused current frame location", "light gray", "dark green"),
+        ("current frame location", "light cyan", "dark cyan"),
+        ("focused current frame location", "light cyan", "dark green"),
 
         ("breakpoint", "black", "dark cyan"),
         ("focused breakpoint", "black", "dark green"),

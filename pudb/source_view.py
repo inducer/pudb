@@ -1,0 +1,165 @@
+import urwid
+
+
+
+
+class SourceLine(urwid.FlowWidget):
+    def __init__(self, dbg_ui, text, attr=None, has_breakpoint=False):
+        self.dbg_ui = dbg_ui
+        self.text = text
+        self.attr = attr
+        self.has_breakpoint = has_breakpoint
+        self.is_current = False
+        self.highlight = False
+
+    def selectable(self):
+        return True
+
+    def set_current(self, is_current):
+        self.is_current = is_current
+        self._invalidate()
+
+    def set_highlight(self, highlight):
+        self.highlight = highlight
+        self._invalidate()
+
+    def set_breakpoint(self, has_breakpoint):
+        self.has_breakpoint = has_breakpoint
+        self._invalidate()
+
+    def rows(self, (maxcol,), focus=False):
+        return 1
+
+    def render(self, (maxcol,), focus=False):
+        hscroll = self.dbg_ui.source_hscroll_start
+        attrs = []
+        if self.is_current:
+            crnt = ">"
+            attrs.append("current")
+        else:
+            crnt = " "
+
+        if self.has_breakpoint:
+            bp = "*"
+            attrs.append("breakpoint")
+        else:
+            bp = " "
+
+        if focus:
+            attrs.append("focused")
+        elif self.highlight:
+            if not self.has_breakpoint:
+                attrs.append("highlighted")
+
+        if not attrs and self.attr is not None:
+            attr = self.attr
+        else:
+            attr = [(" ".join(attrs+["source"]), hscroll+maxcol-2)]
+
+        from urwid.util import rle_subseg, rle_len
+
+        text = self.text
+        if self.dbg_ui.source_hscroll_start:
+            text = text[hscroll:]
+            attr = rle_subseg(attr,
+                    self.dbg_ui.source_hscroll_start,
+                    rle_len(attr))
+
+        text = crnt+bp+text
+        attr = [("source", 2)] + attr
+
+        # clipping ------------------------------------------------------------
+        if len(text) > maxcol:
+            text = text[:maxcol]
+            attr = rle_subseg(attr, 0, maxcol)
+
+        # shipout -------------------------------------------------------------
+        from urwid.util import apply_target_encoding
+        txt, cs = apply_target_encoding(text)
+
+        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol)
+
+    def keypress(self, size, key):
+        return key
+
+
+
+
+
+def format_source(debugger_ui, lines, breakpoints):
+    try:
+        import pygments
+    except ImportError:
+        return [SourceLine(debugger_ui,
+            line.rstrip("\n\r").replace("\t", 8*" "), None,
+            has_breakpoint=i+1 in breakpoints)
+            for i, line in enumerate(lines)]
+    else:
+        from pygments import highlight
+        from pygments.lexers import PythonLexer
+        from pygments.formatter import Formatter
+        import pygments.token as t
+
+        result = []
+
+        ATTR_MAP = {
+                t.Token: "source",
+                t.Keyword: "keyword",
+                t.Literal: "literal",
+                t.Punctuation: "punctuation",
+                t.Comment: "comment",
+                }
+
+        class UrwidFormatter(Formatter):
+            def __init__(subself, **options):
+                Formatter.__init__(subself, **options)
+                subself.current_line = ""
+                subself.current_attr = []
+                subself.lineno = 1
+
+            def format(subself, tokensource, outfile):
+                def add_snippet(ttype, s):
+                    if not s:
+                        return
+
+                    while not ttype in ATTR_MAP:
+                        if ttype.parent is not None:
+                            ttype = ttype.parent
+                        else:
+                            raise RuntimeError(
+                                    "untreated token type: %s" % str(ttype))
+
+                    attr = ATTR_MAP[ttype]
+
+                    subself.current_line += s
+                    subself.current_attr.append((attr, len(s)))
+
+                def shipout_line():
+                    result.append(
+                            SourceLine(debugger_ui,
+                                subself.current_line,
+                                subself.current_attr,
+                                has_breakpoint=subself.lineno in breakpoints))
+                    subself.current_line = ""
+                    subself.current_attr = []
+                    subself.lineno += 1
+
+                for ttype, value in tokensource:
+                    while True:
+                        newline_pos = value.find("\n")
+                        if newline_pos == -1:
+                            add_snippet(ttype, value)
+                            break
+                        else:
+                            add_snippet(ttype, value[:newline_pos])
+                            shipout_line()
+                            value = value[newline_pos+1:]
+
+                if subself.current_line:
+                    shipout_line()
+
+        highlight("".join(l.replace("\t", 8*" ") for l in lines),
+                PythonLexer(), UrwidFormatter())
+
+        return result
+
