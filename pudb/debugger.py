@@ -561,13 +561,32 @@ class DebuggerUI(object):
             else:
                 banner = ""
 
+            class SetPropagatingDict(dict):
+                def __init__(self, source_dicts, target_dict):
+                    dict.__init__(self)
+                    for s in source_dicts:
+                        self.update(s)
+
+                    self.target_dict = target_dict
+
+                def __setitem__(self, key, value):
+                    dict.__setitem__(self, key, value)
+                    self.target_dict[key] = value
+
+                def __delitem__(self, key):
+                    dict.__delitem__(self, key)
+                    del self.target_dict[key]
+
             curframe = self.debugger.curframe
-            loc = curframe.f_locals.copy()
-            loc.update(curframe.f_globals)
+            loc = SetPropagatingDict(
+                    [curframe.f_locals, curframe.f_globals],
+                    curframe.f_locals)
 
             cons = InteractiveConsole(loc)
             cons.interact(banner)
             self.screen.start()
+
+            self.set_locals(curframe.f_locals)
 
         class RHColumnFocuser:
             def __init__(self, idx):
