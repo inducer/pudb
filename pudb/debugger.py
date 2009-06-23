@@ -6,14 +6,31 @@ import urwid
 import bdb
 from code import InteractiveConsole
 
+
+
+
+# readline wrangling ----------------------------------------------------------
+def setup_readline():
+    import os
+    import atexit
+
+    histfile = os.path.join(os.environ["HOME"], ".pudb-history")
+    if os.access(histfile, os.R_OK):
+        readline.read_history_file(histfile)
+    atexit.register(readline.write_history_file, histfile)
+    readline.parse_and_bind("tab: complete")
+
+
+
+
 try:
     import readline
     import rlcompleter
     HAVE_READLINE = True
 except ImportError:
     HAVE_READLINE = False
-
-# TODO: Pop open local variables
+else:
+    setup_readline()
 
 
 
@@ -54,10 +71,11 @@ Keys in variables list:
 
     \ - expand/collapse
     t/r/s - show type/repr/str for this variable
-    enter - edit options
     h - toggle highlighting
-    w - toggle watching
+    @ - toggle repetition at top
     * - toggle private members
+    n/insert - add new watch expression
+    enter - edit options (also to delete)
 
 Keys in stack list:
 
@@ -133,7 +151,7 @@ class Debugger(bdb.Bdb):
         self.curindex = index
         self.curframe, lineno = self.stack[index]
         self.ui.set_current_line(lineno, self.curframe.f_code.co_filename)
-        self.ui.set_locals(self.curframe.f_locals)
+        self.ui.update_var_view(self.curframe.f_locals)
         self.ui.update_stack()
 
     def get_shortened_stack(self, frame, tb):
@@ -236,413 +254,31 @@ class Debugger(bdb.Bdb):
 
 
 # UI stuff --------------------------------------------------------------------
-def make_canvas(txt, attr, maxcol, fill_attr=None):
-    processed_txt = []
-    processed_attr = []
-    processed_cs = []
+from pudb.ui_tools import make_hotkey_markup, labelled_value, \
+        SelectableText, SignalWrap, StackFrame, \
+        SearchBox
+from pudb.var_view import FrameVarInfoKeeper
 
-    for line, line_attr in zip(txt, attr):
-        # filter out zero-length attrs
-        line_attr = [(aname, l) for aname, l in line_attr if l > 0]
 
-        diff = maxcol - len(line)
-        if diff > 0:
-            line += " "*diff
-            line_attr.append((fill_attr, diff))
-        else:
-            from urwid.util import rle_subseg
-            line = line[:maxcol]
-            line_attr = rle_subseg(line_attr, 0, maxcol)
 
-        from urwid.util import apply_target_encoding
-        line, line_cs = apply_target_encoding(line)
 
-        processed_txt.append(line)
-        processed_attr.append(line_attr)
-        processed_cs.append(line_cs)
-
-    return urwid.TextCanvas(
-            processed_txt,
-            processed_attr,
-            processed_cs,
-            maxcol=maxcol)
-
-
-
-
-class MyConsole(InteractiveConsole):
-    def __init__(self, locals):
-        InteractiveConsole.__init__(self, locals)
-
-        if HAVE_READLINE:
-            import os
-            import atexit
-
-            histfile = os.path.join(os.environ["HOME"], ".pudbhist")
-            if os.access(histfile, os.R_OK):
-                readline.read_history_file(histfile)
-            atexit.register(readline.write_history_file, histfile)
-            readline.parse_and_bind("tab: complete")
-
-
-
-
-
-class SelectableText(urwid.Text):
-    def selectable(self):
-        return True
-
-    def keypress(self, size, key):
-        return key
-
-
-
-def make_hotkey_markup(s):
-    import re
-    match = re.match(r"^([^_]*)_(.)(.*)$", s)
-    assert match is not None
-
-    return [
-            (None, match.group(1)),
-            ("hotkey", match.group(2)),
-            (None, match.group(3)),
-            ]
-
-
-
-
-
-class SignalWrap(urwid.WidgetWrap):
-    def __init__(self, w):
-        urwid.WidgetWrap.__init__(self, w)
-        self.event_listeners = []
-
-    def listen(self, mask, handler):
-        self.event_listeners.append((mask, handler))
-
-    def keypress(self, size, key):
-        result = self._w.keypress(size, key)
-
-        if result is not None:
-            for mask, handler in self.event_listeners:
-                if mask is None or mask == key:
-                    return handler(self, size, key)
-
-        return result
-
-
-
-
-class Variable(urwid.FlowWidget):
-    def __init__(self, prefix, var_label, value_str, id_path=None, attr_prefix=None):
-        self.prefix = prefix
-        self.var_label = var_label
-        self.value_str = value_str
-        self.id_path = id_path
-        self.attr_prefix = attr_prefix or "var"
-
-    def selectable(self):
-        return True
-
-    SIZE_LIMIT = 20
-
-    def rows(self, size, focus=False):
-        if (self.prefix is not None
-                and self.var_label is not None
-                and len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT):
-            return 2
-        else:
-            return 1
-
-    def render(self, size, focus=False):
-        maxcol = size[0]
-        if focus:
-            apfx = "focused "+self.attr_prefix+" "
-        else:
-            apfx = self.attr_prefix+" "
-
-        if self.value_str is not None:
-            if self.var_label is not None:
-                if len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT:
-                    # label too long? generate separate value line
-                    text = [self.prefix + self.var_label,
-                            self.prefix+"  " + self.value_str]
-
-                    attr = [[(apfx+"label", len(self.prefix)+len(self.var_label))],
-                            [(apfx+"value", len(self.prefix)+2+len(self.value_str))]]
-                else:
-                    text = [self.prefix + self.var_label +": " + self.value_str]
-
-                    attr = [[
-                            (apfx+"label", len(self.prefix)+len(self.var_label)+2),
-                            (apfx+"value", len(self.value_str)),
-                            ]]
-            else:
-                text = [self.prefix + self.value_str]
-
-                attr = [[
-                        (apfx+"label", len(self.prefix)),
-                        (apfx+"value", len(self.value_str)),
-                        ]]
-        else:
-            text = [self.prefix + self.var_label]
-
-            attr = [[ (apfx+"label", len(self.prefix) + len(self.var_label)), ]]
-
-        return make_canvas(text, attr, maxcol, apfx+"value")
-
-    def keypress(self, size, key):
-        return key
-
-
-
-
-class StackFrame(urwid.FlowWidget):
-    def __init__(self, is_current, name, class_name, filename, line):
-        self.is_current = is_current
-        self.name = name
-        self.class_name = class_name
-        self.filename = filename
-        self.line = line
-
-    def selectable(self):
-        return True
-
-    def rows(self, (maxcol,), focus=False):
-        return 1
-
-    def render(self, (maxcol,), focus=False):
-        if focus:
-            apfx = "focused "
-        else:
-            apfx = ""
-
-        if self.is_current:
-            apfx += "current "
-            crnt_pfx = ">> "
-        else:
-            crnt_pfx = "   "
-
-        text = crnt_pfx+self.name
-        attr = [(apfx+"frame name", 3+len(self.name))]
-
-        if self.class_name is not None:
-            text += " [%s]" % self.class_name
-            attr.append((apfx+"frame class", len(self.class_name)+3))
-
-        loc = " %s:%d" % (self.filename, self.line)
-        text += loc
-        attr.append((apfx+"frame location", len(loc)))
-
-        return make_canvas([text], [attr], maxcol, apfx+"frame location")
-
-    def keypress(self, size, key):
-        return key
-
-
-
-
-class SourceLine(urwid.FlowWidget):
-    def __init__(self, dbg_ui, text, attr=None, has_breakpoint=False):
-        self.dbg_ui = dbg_ui
-        self.text = text
-        self.attr = attr
-        self.has_breakpoint = has_breakpoint
-        self.is_current = False
-        self.highlight = False
-
-    def selectable(self):
-        return True
-
-    def set_current(self, is_current):
-        self.is_current = is_current
-        self._invalidate()
-
-    def set_highlight(self, highlight):
-        self.highlight = highlight
-        self._invalidate()
-
-    def set_breakpoint(self, has_breakpoint):
-        self.has_breakpoint = has_breakpoint
-        self._invalidate()
-
-    def rows(self, (maxcol,), focus=False):
-        return 1
-
-    def render(self, (maxcol,), focus=False):
-        hscroll = self.dbg_ui.source_hscroll_start
-        attrs = []
-        if self.is_current:
-            crnt = ">"
-            attrs.append("current")
-        else:
-            crnt = " "
-
-        if self.has_breakpoint:
-            bp = "*"
-            attrs.append("breakpoint")
-        else:
-            bp = " "
-
-        if focus:
-            attrs.append("focused")
-        elif self.highlight:
-            if not self.has_breakpoint:
-                attrs.append("highlighted")
-
-        if not attrs and self.attr is not None:
-            attr = self.attr
-        else:
-            attr = [(" ".join(attrs+["source"]), hscroll+maxcol-2)]
-
-        from urwid.util import rle_subseg, rle_len
-
-        text = self.text
-        if self.dbg_ui.source_hscroll_start:
-            text = text[hscroll:]
-            attr = rle_subseg(attr,
-                    self.dbg_ui.source_hscroll_start,
-                    rle_len(attr))
-
-        text = crnt+bp+text
-        attr = [("source", 2)] + attr
-
-        # clipping ------------------------------------------------------------
-        if len(text) > maxcol:
-            text = text[:maxcol]
-            attr = rle_subseg(attr, 0, maxcol)
-
-        # shipout -------------------------------------------------------------
-        from urwid.util import apply_target_encoding
-        txt, cs = apply_target_encoding(text)
-
-        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol)
-
-    def keypress(self, size, key):
-        return key
-
-
-
-
-
-class SearchBox(urwid.Edit):
-    def __init__(self, ui):
-        self.ui = ui
-        urwid.Edit.__init__(self, [("label", "Search: ") ], "")
-        self.highlight_line = None
-
-        _, self.search_start = self.ui.source.get_focus()
-
-        from time import time
-        self.search_start_time = time()
-
-    def restart_search(self):
-        from time import time
-        now = time()
-
-        if self.search_start_time > 5:
-            self.set_edit_text("")
-
-        self.search_time = now
-
-    def keypress(self, size, key):
-        result = urwid.Edit.keypress(self, size, key)
-
-        if result is not None:
-            if key == "esc":
-                self.cancel_search()
-                return None
-            elif key == "enter":
-                if self.get_edit_text():
-                    self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[1])
-                else:
-                    self.cancel_search()
-                return None
-        else:
-            if self.do_search(1, self.search_start):
-                self.ui.search_attrwrap.set_attr("value")
-            else:
-                self.ui.search_attrwrap.set_attr("invalid value")
-
-        return result
-
-    def cancel_highlight(self):
-        if self.highlight_line is not None:
-            self.highlight_line.set_highlight(False)
-            self.highlight_line = None
-
-    def do_search(self, dir, start=None):
-        self.cancel_highlight()
-
-        if start is None:
-            _, start = self.ui.source.get_focus()
-        s = self.ui.search_box.get_edit_text()
-
-        case_insensitive = s.lower() == s
-
-        if start > len(self.ui.source):
-            start = 0
-
-        i = (start+dir) % len(self.ui.source)
-
-        if i >= len(self.ui.source):
-            i = 0
-
-        while i != start:
-            sline = self.ui.source[i].text
-            if case_insensitive:
-                sline = sline.lower()
-
-            if s in sline:
-                sl = self.ui.source[i]
-                sl.set_highlight(True)
-                self.highlight_line = sl
-                self.ui.source.set_focus(i)
-                return True
-
-            last_i = i
-            i = (i+dir) % len(self.ui.source)
-
-        return False
-
-    def cancel_search(self):
-        self.cancel_highlight()
-
-        self.ui.search_box = None
-        del self.ui.lhs_col.item_types[0]
-        del self.ui.lhs_col.widget_list[0]
-        self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
-
-
-
-
-class InspectInfo(object):
-    def __init__(self):
-        self.show_detail = False
-        self.display_type = "type"
-        self.highlighted = False
-        self.watched = False
-        self.show_private_members = False
-
-
-
-
-class DebuggerUI(object):
+class DebuggerUI(FrameVarInfoKeeper):
     def __init__(self, dbg):
+        FrameVarInfoKeeper.__init__(self)
+
         self.debugger = dbg
         Attr = urwid.AttrWrap
 
         self.search_box = None
         self.last_module_filter = ""
 
-        self.inspect_info = {}
-
         self.source = urwid.SimpleListWalker([])
         self.source_list = urwid.ListBox(self.source)
+        self.source_sigwrap = SignalWrap(self.source_list)
         self.source_hscroll_start = 0
 
         self.lhs_col = urwid.Pile([
-            ("weight", 1, urwid.AttrWrap(self.source_list, "source"))
+            ("weight", 1, urwid.AttrWrap(self.source_sigwrap, "source"))
             ])
 
         self.locals = urwid.SimpleListWalker([])
@@ -689,31 +325,46 @@ class DebuggerUI(object):
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
-            ssid = self.debugger.get_stack_situation_id()
-            id_path_to_iinfo = self.inspect_info.setdefault(ssid, {})
-            iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
+            iinfo = self.get_frame_var_info(read_only=False) \
+                    .get_inspect_info(var.id_path, read_only=False)
 
             if key == "\\": iinfo.show_detail = not iinfo.show_detail
             elif key == "t": iinfo.display_type = "type"
             elif key == "r": iinfo.display_type = "repr"
             elif key == "s": iinfo.display_type = "str"
             elif key == "h": iinfo.highlighted = not iinfo.highlighted
-            elif key == "w": iinfo.watched = not iinfo.watched
+            elif key == "@": iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
 
-            self.set_locals(self.debugger.curframe.f_locals)
+            self.update_var_view()
 
-        def edit_variable_detail(w, size, key):
+        def edit_inspector_detail(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
-            ssid = self.debugger.get_stack_situation_id()
-            id_path_to_iinfo = self.inspect_info.setdefault(ssid, {})
-            iinfo = id_path_to_iinfo.setdefault(var.id_path, InspectInfo())
+            fvi = self.get_frame_var_info(read_only=False)
+            iinfo = fvi.get_inspect_info(var.id_path, read_only=False)
 
-            def make_lv(label, value):
-                return urwid.AttrWrap(urwid.Text([
-                    ("label", label), str(value)]),
-                    "fixed value", "fixed value")
+            buttons = [
+                ("OK", True),
+                ("Cancel", False),
+                ]
+
+            if var.watch_expr is not None:
+                watch_edit = urwid.Edit([
+                    ("label", "Watch expression: ")
+                    ], var.watch_expr.expression)
+                id_segment = [urwid.AttrWrap(watch_edit, "value"), urwid.Text("")]
+
+                buttons.extend([None, ("Delete", "del")])
+
+                title = "Watch Expression Options"
+            else:
+                id_segment = [
+                        labelled_value("Identifier Path: ", var.id_path),
+                        urwid.Text(""),
+                        ]
+
+                title = "Variable Inspection Options"
 
             rb_grp = []
             rb_show_type = urwid.RadioButton(rb_grp, "Show Type",
@@ -725,50 +376,70 @@ class DebuggerUI(object):
 
             expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
             highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
-            watched_checkbox = urwid.CheckBox("Watched", iinfo.highlighted)
+            repeated_at_top_checkbox = urwid.CheckBox("Repeated at top", iinfo.repeated_at_top)
             show_private_checkbox = urwid.CheckBox("Show private members",
                     iinfo.show_private_members)
 
-            def make_lv(label, value):
-                return urwid.AttrWrap(urwid.Text([
-                    ("label", label), str(value)]),
-                    "fixed value", "fixed value")
-
-            lb = urwid.ListBox([
-                #make_lv("Stack Situation: ", ssid),
-                make_lv("Identifier Path: ", var.id_path),
-                urwid.Text(""),
-                ]+rb_grp+[
+            lb = urwid.ListBox(
+                id_segment+rb_grp+[
                 urwid.Text(""),
                 expanded_checkbox,
                 highlighted_checkbox,
-                watched_checkbox,
+                repeated_at_top_checkbox,
                 show_private_checkbox,
                 ])
 
-            if self.dialog(lb, [
-                ("OK", True),
-                ("Cancel", False),
-                ], title="Variable Inspection Options"):
+            result = self.dialog(lb, buttons, title=title)
 
+            if result == True:
                 iinfo.show_detail = expanded_checkbox.get_state()
                 iinfo.highlighted = highlighted_checkbox.get_state()
-                iinfo.watched = watched_checkbox.get_state()
+                iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_private_members = show_private_checkbox.get_state()
 
                 if rb_show_type.get_state(): iinfo.display_type = "type"
                 elif rb_show_repr.get_state(): iinfo.display_type = "repr"
                 elif rb_show_str.get_state(): iinfo.display_type = "str"
 
-            self.set_locals(self.debugger.curframe.f_locals)
+                if var.watch_expr is not None:
+                    var.watch_expr.expression = watch_edit.get_edit_text()
+
+            elif result == "del":
+                for i, watch_expr in enumerate(fvi.watches):
+                    if watch_expr is var.watch_expr:
+                        del fvi.watches[i]
+
+            self.update_var_view()
+
+        def insert_watch(w, size, key):
+            watch_edit = urwid.Edit([
+                ("label", "Watch expression: ")
+                ])
+
+            if self.dialog(
+                    urwid.ListBox([
+                        urwid.AttrWrap(watch_edit, "value")
+                        ]),
+                    [
+                        ("OK", True),
+                        ("Cancel", False),
+                        ], title="Add Watch Expression"):
+
+                from pudb.var_view import WatchExpression
+                we = WatchExpression(watch_edit.get_edit_text())
+                fvi = self.get_frame_var_info(read_only=False)
+                fvi.watches.append(we)
+                self.update_var_view()
 
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
         self.var_list.listen("h", change_var_state)
-        self.var_list.listen("w", change_var_state)
-        self.var_list.listen("enter", edit_variable_detail)
+        self.var_list.listen("@", change_var_state)
+        self.var_list.listen("enter", edit_inspector_detail)
+        self.var_list.listen("n", insert_watch)
+        self.var_list.listen("insert", insert_watch)
 
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
@@ -781,11 +452,6 @@ class DebuggerUI(object):
         def examine_breakpoint(w, size, key):
             _, pos = self.bp_list._w.get_focus()
             bp = self._get_bp_list()[pos]
-
-            def make_lv(label, value):
-                return urwid.AttrWrap(urwid.Text([
-                    ("label", label), str(value)]),
-                    "fixed value", "fixed value")
 
             if bp.cond is None:
                 cond = ""
@@ -802,9 +468,9 @@ class DebuggerUI(object):
                 ], bp.ignore)
 
             lb = urwid.ListBox([
-                make_lv("File: ", bp.file),
-                make_lv("Line: ", bp.line),
-                make_lv("Hits: ", bp.hits),
+                labelled_value("File: ", bp.file),
+                labelled_value("Line: ", bp.line),
+                labelled_value("Hits: ", bp.hits),
                 urwid.Text(""),
                 enabled_checkbox,
                 urwid.AttrWrap(cond_edit, "value", "value"),
@@ -897,73 +563,6 @@ class DebuggerUI(object):
                     self.debugger.set_continue()
                     end()
 
-        def show_traceback(w, size, key):
-            if self.current_exc_tuple is not None:
-                from traceback import format_exception
-
-                result = self.dialog(
-                        urwid.ListBox([urwid.Text(
-                            "".join(format_exception(*self.current_exc_tuple)))]),
-                        [
-                            ("Close", "close"),
-                            ("Location", "location")
-                            ],
-                        title="Exception Viewer",
-                        focus_buttons=True,
-                        bind_enter_esc=False)
-
-                if result == "location":
-                    self.debugger.set_frame_index(len(self.debugger.stack)-1)
-
-            else:
-                self.message("No exception available.")
-
-        def show_output(w, size, key):
-            self.screen.stop()
-            raw_input("Hit Enter to return:")
-            self.screen.start()
-
-        def run_shell(w, size, key):
-            self.screen.stop()
-
-            if not hasattr(self, "shell_ret_message_shown"):
-                banner = "Hit Ctrl-D to return to PuDB."
-                self.shell_ret_message_shown = True
-            else:
-                banner = ""
-
-            curframe = self.debugger.curframe
-            loc = curframe.f_locals.copy()
-            loc.update(curframe.f_globals)
-
-            cons = MyConsole(loc)
-            cons.interact(banner)
-            self.screen.start()
-
-        class RHColumnFocuser:
-            def __init__(self, idx):
-                self.idx = idx
-
-            def __call__(subself, w, size, key):
-                self.columns.set_focus(self.rhs_col)
-                self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
-
-        def grow_sidebar(w, size, key):
-            _, weight = self.columns.column_types[1]
-
-            if weight < 5:
-                weight *= 1.25
-                self.columns.column_types[1] = "weight", weight
-                self.columns._invalidate()
-
-        def shrink_sidebar(w, size, key):
-            _, weight = self.columns.column_types[1]
-
-            if weight > 1/5:
-                weight /= 1.25
-                self.columns.column_types[1] = "weight", weight
-                self.columns._invalidate()
-
         def move_home(w, size, key):
             self.source.set_focus(0)
 
@@ -978,7 +577,10 @@ class DebuggerUI(object):
                 ], line+1)
 
             if self.dialog(
-                    urwid.ListBox([ urwid.AttrWrap(lineno_edit, "value") ]),
+                    urwid.ListBox([
+                        labelled_value("File :", self.shown_file),
+                        urwid.AttrWrap(lineno_edit, "value")
+                        ]),
                     [
                         ("OK", True),
                         ("Cancel", False),
@@ -1195,6 +797,120 @@ class DebuggerUI(object):
                         show_mod(mod)
                     break
 
+        self.source_sigwrap.listen("n", next)
+        self.source_sigwrap.listen("s", step)
+        self.source_sigwrap.listen("f", finish)
+        self.source_sigwrap.listen("r", finish)
+        self.source_sigwrap.listen("c", cont)
+        self.source_sigwrap.listen("t", run_to_cursor)
+
+        self.source_sigwrap.listen("j", move_down)
+        self.source_sigwrap.listen("k", move_up)
+        self.source_sigwrap.listen("ctrl d", page_down)
+        self.source_sigwrap.listen("ctrl u", page_up)
+        self.source_sigwrap.listen("h", scroll_left)
+        self.source_sigwrap.listen("l", scroll_right)
+
+        self.source_sigwrap.listen("/", search)
+        self.source_sigwrap.listen(",", search_previous)
+        self.source_sigwrap.listen(".", search_next)
+
+        self.source_sigwrap.listen("home", move_home)
+        self.source_sigwrap.listen("end", move_end)
+        self.source_sigwrap.listen("g", move_home)
+        self.source_sigwrap.listen("G", move_end)
+        self.source_sigwrap.listen("L", go_to_line)
+
+        self.source_sigwrap.listen("b", toggle_breakpoint)
+        self.source_sigwrap.listen("m", pick_module)
+
+        # top-level listeners -------------------------------------------------
+        def show_output(w, size, key):
+            self.screen.stop()
+            raw_input("Hit Enter to return:")
+            self.screen.start()
+
+        def show_traceback(w, size, key):
+            if self.current_exc_tuple is not None:
+                from traceback import format_exception
+
+                result = self.dialog(
+                        urwid.ListBox([urwid.Text(
+                            "".join(format_exception(*self.current_exc_tuple)))]),
+                        [
+                            ("Close", "close"),
+                            ("Location", "location")
+                            ],
+                        title="Exception Viewer",
+                        focus_buttons=True,
+                        bind_enter_esc=False)
+
+                if result == "location":
+                    self.debugger.set_frame_index(len(self.debugger.stack)-1)
+
+            else:
+                self.message("No exception available.")
+
+        def run_shell(w, size, key):
+            self.screen.stop()
+
+            if not hasattr(self, "shell_ret_message_shown"):
+                banner = "Hit Ctrl-D to return to PuDB."
+                self.shell_ret_message_shown = True
+            else:
+                banner = ""
+
+            class SetPropagatingDict(dict):
+                def __init__(self, source_dicts, target_dict):
+                    dict.__init__(self)
+                    for s in source_dicts:
+                        self.update(s)
+
+                    self.target_dict = target_dict
+
+                def __setitem__(self, key, value):
+                    dict.__setitem__(self, key, value)
+                    self.target_dict[key] = value
+
+                def __delitem__(self, key):
+                    dict.__delitem__(self, key)
+                    del self.target_dict[key]
+
+            curframe = self.debugger.curframe
+            loc = SetPropagatingDict(
+                    [curframe.f_locals, curframe.f_globals],
+                    curframe.f_locals)
+
+            cons = InteractiveConsole(loc)
+            cons.interact(banner)
+            self.screen.start()
+
+            self.update_var_view(curframe.f_locals)
+
+        class RHColumnFocuser:
+            def __init__(self, idx):
+                self.idx = idx
+
+            def __call__(subself, w, size, key):
+                self.columns.set_focus(self.rhs_col)
+                self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
+
+        def grow_sidebar(w, size, key):
+            _, weight = self.columns.column_types[1]
+
+            if weight < 5:
+                weight *= 1.25
+                self.columns.column_types[1] = "weight", weight
+                self.columns._invalidate()
+
+        def shrink_sidebar(w, size, key):
+            _, weight = self.columns.column_types[1]
+
+            if weight > 1/5:
+                weight /= 1.25
+                self.columns.column_types[1] = "weight", weight
+                self.columns._invalidate()
+
         def quit(w, size, key):
             self.debugger.set_quit()
             end()
@@ -1202,42 +918,15 @@ class DebuggerUI(object):
         def help(w, size, key):
             self.message(HELP_TEXT, title="PuDB Help")
 
-        self.top.listen("n", next)
-        self.top.listen("s", step)
-        self.top.listen("f", finish)
-        self.top.listen("r", finish)
-        self.top.listen("c", cont)
-        self.top.listen("t", run_to_cursor)
-        self.top.listen("e", show_traceback)
-
         self.top.listen("o", show_output)
         self.top.listen("!", run_shell)
-
-        self.top.listen("j", move_down)
-        self.top.listen("k", move_up)
-        self.top.listen("ctrl d", page_down)
-        self.top.listen("ctrl u", page_up)
-        self.top.listen("h", scroll_left)
-        self.top.listen("l", scroll_right)
-
-        self.top.listen("/", search)
-        self.top.listen(",", search_previous)
-        self.top.listen(".", search_next)
+        self.top.listen("e", show_traceback)
 
         self.top.listen("+", grow_sidebar)
         self.top.listen("-", shrink_sidebar)
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
-
-        self.top.listen("home", move_home)
-        self.top.listen("end", move_end)
-        self.top.listen("g", move_home)
-        self.top.listen("G", move_end)
-        self.top.listen("L", go_to_line)
-
-        self.top.listen("b", toggle_breakpoint)
-        self.top.listen("m", pick_module)
 
         self.top.listen("q", quit)
         self.top.listen("H", help)
@@ -1321,101 +1010,11 @@ class DebuggerUI(object):
     @staticmethod
     def setup_palette(screen):
         from urwid.raw_display import Screen as RawScreen
+        may_use_fancy_formats = isinstance(screen, RawScreen) and \
+                not hasattr(urwid.escape, "_fg_attr_xterm")
 
-        if hasattr(urwid.escape, "_fg_attr_xterm") \
-                or not isinstance(screen, RawScreen):
-            def add_setting(color, setting):
-                return color
-        else:
-            def add_setting(color, setting):
-                return color+","+setting
-
-        palette = [
-            ("header", "black", "light gray", "standout"),
-
-            ("breakpoint source", "yellow", "dark red"),
-            ("breakpoint focused source", "black", "dark red"),
-            ("current breakpoint source", "black", "dark red"),
-            ("current breakpoint focused source", "white", "dark red"),
-
-            ("variables", "black", "dark cyan"),
-            ("variable separator", "light gray", "dark cyan"),
-
-            ("var label", "dark blue", "dark cyan"),
-            ("var value", "black", "dark cyan"),
-            ("focused var label", "dark blue", "dark green"),
-            ("focused var value", "black", "dark green"),
-
-            ("highlighted var label", "white", "dark cyan"),
-            ("highlighted var value", "black", "dark cyan"),
-            ("focused highlighted var label", "white", "dark green"),
-            ("focused highlighted var value", "black", "dark green"),
-
-            ("return label", "white", "dark blue"),
-            ("return value", "black", "dark cyan"),
-            ("focused return label", "light gray", "dark blue"),
-            ("focused return value", "black", "dark green"),
-
-            ("return label", "white", "dark blue"),
-            ("return value", "black", "dark cyan"),
-            ("focused return label", "light gray", "dark blue"),
-            ("focused return value", "black", "dark green"),
-
-            ("stack", "black", "dark cyan"),
-
-            ("frame name", "black", "dark cyan"),
-            ("focused frame name", "black", "dark green"),
-            ("frame class", "dark blue", "dark cyan"),
-            ("focused frame class", "dark blue", "dark green"),
-            ("frame location", "light gray", "dark cyan"),
-            ("focused frame location", "light gray", "dark green"),
-
-            ("current frame name", add_setting("white", "bold"),
-                "dark cyan"),
-            ("focused current frame name", add_setting("white", "bold"),
-                "dark green", "bold"),
-            ("current frame class", "dark blue", "dark cyan"),
-            ("focused current frame class", "dark blue", "dark green"),
-            ("current frame location", "light gray", "dark cyan"),
-            ("focused current frame location", "light gray", "dark green"),
-
-            ("breakpoint", "black", "dark cyan"),
-            ("focused breakpoint", "black", "dark green"),
-
-            ("selectable", "black", "dark cyan"),
-            ("focused selectable", "black", "dark green"),
-
-            ("button", "white", "dark blue"),
-            ("focused button", "light cyan", "black"),
-
-            ("background", "black", "light gray"),
-            ("hotkey", add_setting("black", "underline"), "light gray", "underline"),
-            ("focused sidebar", "yellow", "light gray", "standout"),
-
-            ("warning", add_setting("white", "bold"), "dark red", "standout"),
-
-            ("label", "black", "light gray"),
-            ("value", "black", "dark cyan"),
-            ("fixed value", "dark gray", "dark cyan"),
-            ("invalid value", "light red", "dark cyan"),
-
-            ("dialog title", add_setting("white", "bold"), "dark cyan"),
-
-            # highlighting
-            ("source", "yellow", "dark blue"),
-            ("focused source", "black", "dark green"),
-            ("highlighted source", "black", "dark magenta"),
-            ("current source", "black", "dark cyan"),
-            ("current focused source", "white", "dark cyan"),
-            ("current highlighted source", "white", "dark cyan"),
-
-            ("keyword", add_setting("white", "bold"), "dark blue"),
-            ("literal", "light magenta", "dark blue"),
-            ("punctuation", "light gray", "dark blue"),
-            ("comment", "light gray", "dark blue"),
-
-            ]
-        screen.register_palette(palette)
+        from pudb.theme import get_palette
+        screen.register_palette(get_palette(may_use_fancy_formats))
 
     # UI enter/exit -----------------------------------------------------------
     def show(self):
@@ -1504,84 +1103,8 @@ class DebuggerUI(object):
         self.caption.set_text(caption)
         self.event_loop()
 
-    def format_source(self, lines, breakpoints):
-        try:
-            import pygments
-        except ImportError:
-            return [SourceLine(self,
-                line.rstrip("\n\r").replace("\t", 8*" "), None,
-                has_breakpoint=i+1 in breakpoints)
-                for i, line in enumerate(lines)]
-        else:
-            from pygments import highlight
-            from pygments.lexers import PythonLexer
-            from pygments.formatter import Formatter
-            import pygments.token as t
-
-            result = []
-
-            ATTR_MAP = {
-                    t.Token: "source",
-                    t.Keyword: "keyword",
-                    t.Literal: "literal",
-                    t.Punctuation: "punctuation",
-                    t.Comment: "comment",
-                    }
-
-            class UrwidFormatter(Formatter):
-                def __init__(subself, **options):
-                    Formatter.__init__(subself, **options)
-                    subself.current_line = ""
-                    subself.current_attr = []
-                    subself.lineno = 1
-
-                def format(subself, tokensource, outfile):
-                    def add_snippet(ttype, s):
-                        if not s:
-                            return
-
-                        while not ttype in ATTR_MAP:
-                            if ttype.parent is not None:
-                                ttype = ttype.parent
-                            else:
-                                raise RuntimeError(
-                                        "untreated token type: %s" % str(ttype))
-
-                        attr = ATTR_MAP[ttype]
-
-                        subself.current_line += s
-                        subself.current_attr.append((attr, len(s)))
-
-                    def shipout_line():
-                        result.append(
-                                SourceLine(self,
-                                    subself.current_line,
-                                    subself.current_attr,
-                                    has_breakpoint=subself.lineno in breakpoints))
-                        subself.current_line = ""
-                        subself.current_attr = []
-                        subself.lineno += 1
-
-                    for ttype, value in tokensource:
-                        while True:
-                            newline_pos = value.find("\n")
-                            if newline_pos == -1:
-                                add_snippet(ttype, value)
-                                break
-                            else:
-                                add_snippet(ttype, value[:newline_pos])
-                                shipout_line()
-                                value = value[newline_pos+1:]
-
-                    if subself.current_line:
-                        shipout_line()
-
-            highlight("".join(l.replace("\t", 8*" ") for l in lines),
-                    PythonLexer(), UrwidFormatter())
-
-            return result
-
     def set_current_file(self, fname):
+        from pudb.source_view import SourceLine, format_source
         fname = self.debugger.canonic(fname)
 
         if self.shown_file != fname:
@@ -1603,7 +1126,7 @@ class DebuggerUI(object):
                         else:
                             decoded_lines.append(l)
 
-                    self.source[:] = self.format_source(
+                    self.source[:] = format_source(self,
                             decoded_lines, set(breakpoints))
                 except:
                     from traceback import format_exception
@@ -1641,167 +1164,14 @@ class DebuggerUI(object):
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
-    def set_locals(self, locals):
-        vars = locals.keys()
-        vars.sort(key=lambda n: n.lower())
+    def update_var_view(self, locals=None):
+        if locals is None:
+            locals = self.debugger.curframe.f_locals
 
-        watch_list = []
-        loc_list = []
-
-        ssid = self.debugger.get_stack_situation_id()
-        id_path_to_iinfo = self.inspect_info.get(ssid, {})
-
-        try:
-            import numpy
-            HAVE_NUMPY = 1
-        except ImportError:
-            HAVE_NUMPY = 0
-
-        watch_prefixes = []
-
-        def add_var(prefix, var_label, value_str, id_path=None, attr_prefix=None):
-            iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
-            if iinfo.highlighted:
-                attr_prefix = "highlighted var"
-
-            watched = iinfo.watched
-            for wp in watch_prefixes:
-                if id_path.startswith(wp):
-                    watched = True
-
-            if watched:
-                watch_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
-                watch_prefixes.append(id_path)
-
-            loc_list.append(Variable(prefix, var_label, value_str, id_path, attr_prefix))
-
-        def display_var(prefix, label, value, id_path=None, attr_prefix=None):
-            if id_path is None:
-                id_path = label
-
-            iinfo = id_path_to_iinfo.get(id_path, InspectInfo())
-
-            if isinstance(value, (int, float, long, complex)):
-                add_var(prefix, label, repr(value), id_path, attr_prefix)
-            elif isinstance(value, (str, unicode)):
-                add_var(prefix, label, repr(value)[:200], id_path, attr_prefix)
-            elif isinstance(value, type):
-                add_var(prefix, label, "type "+value.__name__, id_path, attr_prefix)
-            else:
-                if iinfo.display_type == "type":
-                    if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-                        displayed_value = "ndarray %s %s" % (value.dtype, value.shape)
-                    else:
-                        displayed_value = type(value).__name__
-                elif iinfo.display_type == "repr":
-                    displayed_value = repr(value)
-                elif iinfo.display_type == "str":
-                    displayed_value = str(value)
-                else:
-                    displayed_value = "ERROR: Invalid display_type"
-
-                add_var(prefix, label,
-                    displayed_value, id_path, attr_prefix)
-
-                if not iinfo.show_detail:
-                    return
-
-                # set ---------------------------------------------------------
-                if isinstance(value, (set, frozenset)):
-                    for i, entry in enumerate(value):
-                        if i % 10 == 0 and i:
-                            cont_id_path = "%s.cont-%d" % (id_path, i)
-                            if not id_path_to_iinfo.get(
-                                    cont_id_path, InspectInfo()).show_detail:
-                                add_var(prefix+"  ", "...", None, cont_id_path)
-                                break
-
-                        display_var(prefix+"  ", None, entry,
-                            "%s[%d]" % (id_path, i))
-                    if not value:
-                        add_var(prefix+"  ", "<empty>", None)
-                    return
-
-                # containers --------------------------------------------------
-                key_it = None
-                try:
-                    l = len(value)
-                except:
-                    pass
-                else:
-                    try:
-                        value[0]
-                    except IndexError:
-                        key_it = xrange(l)
-                    except:
-                        pass
-
-                try:
-                    key_it = value.iterkeys()
-                except:
-                    pass
-
-                if key_it is not None:
-                    cnt = 0
-                    for key in key_it:
-                        if cnt % 10 == 0 and cnt:
-                            cont_id_path = "%s.cont-%d" % (id_path, cnt)
-                            if not id_path_to_iinfo.get(
-                                    cont_id_path, InspectInfo()).show_detail:
-                                add_var(
-                                    prefix+"  ", "...", None, cont_id_path)
-                                break
-
-                        display_var(prefix+"  ", repr(key), value[key],
-                            "%s[%r]" % (id_path, key))
-                        cnt += 1
-                    if not cnt:
-                        add_var(prefix+"  ", "<empty>", None)
-                    return
-
-                # class types -------------------------------------------------
-                try:
-                    key_it = value.__slots__
-                except:
-                    pass
-                else:
-                    for key in key_it:
-                        if key[0] == "_" and not iinfo.show_private_members:
-                            continue
-
-                        if hasattr(value, key):
-                            display_var(prefix+"  ",
-                                    ".%s" % key, getattr(value, key),
-                                    "%s.%s" % (id_path, key))
-
-                try:
-                    key_it = value.__dict__.iterkeys()
-                except:
-                    pass
-                else:
-                    for key in key_it:
-                        if key[0] == "_" and not iinfo.show_private_members:
-                            continue
-
-                        display_var(prefix+"  ",
-                                ".%s" % key, getattr(value, key),
-                                "%s.%s" % (id_path, key))
-
-        if "__return__" in vars:
-            display_var("", "Return", locals["__return__"], attr_prefix="return")
-
-        for var in vars:
-            if not var[0] in "_.":
-                display_var("", var, locals[var])
-
-        if watch_list:
-            loc_list = (watch_list
-                    + [urwid.AttrWrap(
-                        urwid.Text("---", align="center"),
-                        "variable separator")]
-                    + loc_list)
-
-        self.locals[:] = loc_list
+        from pudb.var_view import make_var_view
+        self.locals[:] = make_var_view(
+                self.get_frame_var_info(read_only=True),
+                locals)
 
     def _get_bp_list(self):
         return [bp
@@ -1855,6 +1225,3 @@ class DebuggerUI(object):
                 "".join(format_exception(
                     exc_type, exc_value, traceback)),
                 title="Exception Occurred")
-
-
-
