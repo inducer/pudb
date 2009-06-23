@@ -605,7 +605,10 @@ class DebuggerUI(object):
                 ], line+1)
 
             if self.dialog(
-                    urwid.ListBox([ urwid.AttrWrap(lineno_edit, "value") ]),
+                    urwid.ListBox([ 
+                        labelled_value("File :", self.shown_file),
+                        urwid.AttrWrap(lineno_edit, "value") 
+                        ]),
                     [
                         ("OK", True),
                         ("Cancel", False),
