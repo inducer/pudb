@@ -1197,6 +1197,18 @@ class DebuggerUI(object):
         except ImportError:
             HAVE_NUMPY = 0
 
+        def get_str_safe_types():
+            import types
+
+            return tuple(getattr(types, s) for s in
+                "BuiltinFunctionType BuiltinMethodType  ClassType "
+                "CodeType FileType FrameType FunctionType GetSetDescriptorType "
+                "LambdaType MemberDescriptorType MethodType ModuleType "
+                "SliceType TypeType TracebackType UnboundMethodType XRangeType".split()
+                if hasattr(types, s))
+
+        STR_SAFE_TYPES = get_str_safe_types()
+
         watch_prefixes = []
 
         def add_var(prefix, var_label, value_str, id_path=None, attr_prefix=None):
@@ -1225,12 +1237,12 @@ class DebuggerUI(object):
                 add_var(prefix, label, repr(value), id_path, attr_prefix)
             elif isinstance(value, (str, unicode)):
                 add_var(prefix, label, repr(value)[:200], id_path, attr_prefix)
-            elif isinstance(value, type):
-                add_var(prefix, label, "type "+value.__name__, id_path, attr_prefix)
             else:
                 if iinfo.display_type == "type":
                     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
                         displayed_value = "ndarray %s %s" % (value.dtype, value.shape)
+                    elif isinstance(value, STR_SAFE_TYPES):
+                        displayed_value = str(value)
                     else:
                         displayed_value = type(value).__name__
                 elif iinfo.display_type == "repr":
@@ -1272,9 +1284,11 @@ class DebuggerUI(object):
                     try:
                         value[0]
                     except IndexError:
-                        key_it = xrange(l)
+                        key_it = []
                     except:
                         pass
+                    else:
+                        key_it = xrange(l)
 
                 try:
                     key_it = value.iterkeys()
@@ -1300,32 +1314,44 @@ class DebuggerUI(object):
                     return
 
                 # class types -------------------------------------------------
+                key_its = []
                 try:
-                    key_it = value.__slots__
+                    key_its.append(value.__slots__)
                 except:
                     pass
-                else:
-                    for key in key_it:
-                        if key[0] == "_" and not iinfo.show_private_members:
-                            continue
-
-                        if hasattr(value, key):
-                            display_var(prefix+"  ",
-                                    ".%s" % key, getattr(value, key),
-                                    "%s.%s" % (id_path, key))
 
                 try:
-                    key_it = value.__dict__.iterkeys()
+                    key_its.append(value.__dict__.iterkeys())
                 except:
                     pass
-                else:
+
+                if not key_its:
+                    try:
+                        key_its.append(dir(value))
+                    except:
+                        pass
+
+                cnt = 0
+                cnt_omitted = 0
+                for key_it in key_its:
                     for key in key_it:
                         if key[0] == "_" and not iinfo.show_private_members:
+                            cnt_omitted += 1
                             continue
 
+                        cnt += 1
                         display_var(prefix+"  ",
                                 ".%s" % key, getattr(value, key),
                                 "%s.%s" % (id_path, key))
+
+                if not cnt:
+                    if cnt_omitted:
+                        add_var(prefix+"  ", "<omitted private attributes>", None)
+                    else:
+                        add_var(prefix+"  ", "<empty>", None)
+
+                if not key_its:
+                    add_var(prefix+"  ", "<?>", None)
 
         if "__return__" in vars:
             display_var("", "Return", locals["__return__"], attr_prefix="return")
