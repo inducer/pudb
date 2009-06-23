@@ -6,12 +6,31 @@ import urwid
 import bdb
 from code import InteractiveConsole
 
+
+
+
+# readline wrangling ----------------------------------------------------------
+def setup_readline():
+    import os
+    import atexit
+
+    histfile = os.path.join(os.environ["HOME"], ".pudbhist")
+    if os.access(histfile, os.R_OK):
+        readline.read_history_file(histfile)
+    atexit.register(readline.write_history_file, histfile)
+    readline.parse_and_bind("tab: complete")
+
+
+
+
 try:
     import readline
     import rlcompleter
     HAVE_READLINE = True
 except ImportError:
     HAVE_READLINE = False
+else:
+    setup_readline()
 
 
 
@@ -237,23 +256,6 @@ class Debugger(bdb.Bdb):
 from pudb.ui_tools import make_hotkey_markup, labelled_value, \
         SelectableText, SignalWrap, Variable, StackFrame, SourceLine, \
         SearchBox
-
-
-
-
-class MyConsole(InteractiveConsole):
-    def __init__(self, locals):
-        InteractiveConsole.__init__(self, locals)
-
-        if HAVE_READLINE:
-            import os
-            import atexit
-
-            histfile = os.path.join(os.environ["HOME"], ".pudbhist")
-            if os.access(histfile, os.R_OK):
-                readline.read_history_file(histfile)
-            atexit.register(readline.write_history_file, histfile)
-            readline.parse_and_bind("tab: complete")
 
 
 
@@ -563,7 +565,7 @@ class DebuggerUI(object):
             loc = curframe.f_locals.copy()
             loc.update(curframe.f_globals)
 
-            cons = MyConsole(loc)
+            cons = InteractiveConsole(loc)
             cons.interact(banner)
             self.screen.start()
 
