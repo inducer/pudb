@@ -56,11 +56,15 @@ def main():
             dbg.post_mortem = True
             dbg.interaction(None, sys.exc_info())
 
+        def quit_debugger(w, size, key):
+            dbg.ui.quit_event_loop = ["quit"]
+
         import urwid
         result = dbg.ui.call_with_ui(dbg.ui.dialog,
             urwid.ListBox([urwid.Text(
                 ("Your PuDB session has ended.\n\n%s"
-                "Would you like to quit PuDB or restart your program?"
+                "Would you like to quit PuDB or restart your program?\n"
+                "You may hit 'q' to quit."
                 % status_msg)+pre_run_msg)]),
             [
                 ("Restart", "restart"),
@@ -68,7 +72,8 @@ def main():
                 ],
             focus_buttons=True,
             bind_enter_esc=False,
-            title="Finished")
+            title="Finished",
+            extra_bindings=[("q", quit_debugger)])
 
         if result == "quit":
             return

@@ -952,7 +952,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 [("OK", True)], title=title, **kwargs)
 
     def dialog(self, content, buttons_and_results,
-            title=None, bind_enter_esc=True, focus_buttons=False):
+            title=None, bind_enter_esc=True, focus_buttons=False,
+            extra_bindings=[]):
         class ResultSetter:
             def __init__(subself, res):
                 subself.res = res
@@ -994,6 +995,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "dialog title")),
                 ("fixed", 1, urwid.SolidFill()),
                 w])
+
+        w = SignalWrap(w)
+        for key, binding in extra_bindings:
+            w.listen(key, binding)
 
         w = urwid.LineBox(w)
 
