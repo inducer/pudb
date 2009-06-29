@@ -151,7 +151,7 @@ class Debugger(bdb.Bdb):
         self.curindex = index
         self.curframe, lineno = self.stack[index]
         self.ui.set_current_line(lineno, self.curframe.f_code.co_filename)
-        self.ui.update_var_view(self.curframe.f_locals)
+        self.ui.update_var_view()
         self.ui.update_stack()
 
     def get_shortened_stack(self, frame, tb):
@@ -885,7 +885,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             cons.interact(banner)
             self.screen.start()
 
-            self.update_var_view(curframe.f_locals)
+            self.update_var_view()
 
         class RHColumnFocuser:
             def __init__(self, idx):
@@ -1169,14 +1169,16 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
-    def update_var_view(self, locals=None):
+    def update_var_view(self, locals=None, globals=None):
         if locals is None:
             locals = self.debugger.curframe.f_locals
+        if globals is None:
+            globals = self.debugger.curframe.f_globals
 
         from pudb.var_view import make_var_view
         self.locals[:] = make_var_view(
                 self.get_frame_var_info(read_only=True),
-                locals)
+                locals, globals)
 
     def _get_bp_list(self):
         return [bp

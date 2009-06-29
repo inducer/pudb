@@ -328,7 +328,7 @@ class TopAndMainVariableWalker(ValueWalker):
 # top level -------------------------------------------------------------------
 SEPARATOR = urwid.AttrWrap(urwid.Text(""), "variable separator")
 
-def make_var_view(frame_var_info, locals):
+def make_var_view(frame_var_info, locals, globals):
     vars = locals.keys()
     vars.sort(key=lambda n: n.lower())
 
@@ -338,7 +338,7 @@ def make_var_view(frame_var_info, locals):
 
     for watch_expr in frame_var_info.watches:
         try:
-            value = eval(watch_expr.expression, locals)
+            value = eval(watch_expr.expression, globals, locals)
         except:
             value = WatchEvalError()
 
