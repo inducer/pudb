@@ -314,11 +314,11 @@ class TopAndMainVariableWalker(ValueWalker):
             attr_prefix = "highlighted var"
 
         repeated_at_top = iinfo.repeated_at_top
-        if repeated_at_top:
+        if repeated_at_top and id_path is not None:
             self.top_id_path_prefixes.append(id_path)
 
         for tipp in self.top_id_path_prefixes:
-            if id_path.startswith(tipp):
+            if id_path is not None and id_path.startswith(tipp):
                 repeated_at_top = True
 
         if repeated_at_top:
