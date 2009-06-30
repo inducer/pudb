@@ -881,6 +881,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     [curframe.f_locals, curframe.f_globals],
                     curframe.f_locals)
 
+            if HAVE_READLINE:
+                readline.set_completer(
+                        rlcompleter.Completer(loc).complete)
+
             cons = InteractiveConsole(loc)
             cons.interact(banner)
             self.screen.start()
