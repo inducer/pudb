@@ -242,8 +242,14 @@ class ValueWalker:
                         continue
 
                     cnt += 1
+
+                    try:
+                        attr_value = getattr(value, key)
+                    except:
+                        attr_value = WatchEvalError()
+
                     self.walk_value(prefix+"  ",
-                            ".%s" % key, getattr(value, key),
+                            ".%s" % key, attr_value,
                             "%s.%s" % (id_path, key))
 
             if not cnt:
