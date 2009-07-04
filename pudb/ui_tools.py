@@ -172,9 +172,9 @@ class SearchBox(urwid.Edit):
                 return None
         else:
             if self.do_search(1, self.search_start):
-                self.ui.search_attrwrap.set_attr("value")
+                self.ui.search_attrwrap.set_attr("search box")
             else:
-                self.ui.search_attrwrap.set_attr("invalid value")
+                self.ui.search_attrwrap.set_attr("search not found")
 
         return result
 

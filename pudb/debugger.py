@@ -619,7 +619,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 _, search_start = self.source.get_focus()
 
                 self.search_box = SearchBox(self)
-                self.search_attrwrap = urwid.AttrWrap(self.search_box, "value")
+                self.search_attrwrap = urwid.AttrWrap(
+                        self.search_box, "search box")
 
                 self.lhs_col.item_types.insert(
                         0, ("flow", None))
