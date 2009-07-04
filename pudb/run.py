@@ -7,7 +7,8 @@ def main():
 
     parser.add_option("-s", "--steal-output", action="store_true"),
     parser.add_option("--pre-run", metavar="COMMAND",
-            help="Run command before each program run")
+            help="Run command before each program run",
+            default="")
     parser.disable_interspersed_args()
     options, args = parser.parse_args()
 
@@ -41,10 +42,7 @@ def main():
             retcode = call(options.pre_run, close_fds=True, shell=True)
             if retcode:
                 print "*** WARNING: pre-run process exited with code %d." % retcode
-            pre_run_msg = ("\n\nIf you decide to restart, '%s' will be run prior to "
-                    "actually restarting." % options.pre_run)
-        else:
-            pre_run_msg = ""
+                raw_input("[Hit Enter]")
 
         status_msg = ""
 
@@ -60,12 +58,18 @@ def main():
             dbg.ui.quit_event_loop = ["quit"]
 
         import urwid
+        pre_run_edit = urwid.Edit("", options.pre_run)
+
         result = dbg.ui.call_with_ui(dbg.ui.dialog,
             urwid.ListBox([urwid.Text(
-                ("Your PuDB session has ended.\n\n%s"
+                "Your PuDB session has ended.\n\n%s"
                 "Would you like to quit PuDB or restart your program?\n"
                 "You may hit 'q' to quit."
-                % status_msg)+pre_run_msg)]),
+                % status_msg),
+                urwid.Text("\n\nIf you decide to restart, this command will be run prior to "
+                "actually restarting:"),
+                urwid.AttrWrap(pre_run_edit, "value")
+                ]),
             [
                 ("Restart", "restart"),
                 ("Quit", "quit"),
@@ -77,6 +81,8 @@ def main():
 
         if result == "quit":
             return
+
+        options.pre_run = pre_run_edit.get_edit_text()
 
         dbg.restart()
 
