@@ -71,9 +71,11 @@ def get_palette(may_use_fancy_formats):
         ("warning", add_setting("white", "bold"), "dark red", "standout"),
 
         ("label", "black", "light gray"),
-        ("value", "black", "dark cyan"),
-        ("fixed value", "dark gray", "dark cyan"),
-        ("invalid value", "light red", "dark cyan"),
+        ("value", "yellow", "dark blue"),
+        ("fixed value", "light gray", "dark blue"),
+
+        ("search box", "black", "dark cyan"),
+        ("search not found", "white", "dark red"),
 
         ("dialog title", add_setting("white", "bold"), "dark cyan"),
 

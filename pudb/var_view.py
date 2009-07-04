@@ -233,26 +233,26 @@ class ValueWalker:
                 except:
                     pass
 
-            cnt = 0
+            keys = [key for key_it in key_its for key in key_it]
+            keys.sort()
+
             cnt_omitted = 0
-            for key_it in key_its:
-                for key in key_it:
-                    if key[0] == "_" and not iinfo.show_private_members:
-                        cnt_omitted += 1
-                        continue
 
-                    cnt += 1
+            for key in keys:
+                if key[0] == "_" and not iinfo.show_private_members:
+                    cnt_omitted += 1
+                    continue
 
-                    try:
-                        attr_value = getattr(value, key)
-                    except:
-                        attr_value = WatchEvalError()
+                try:
+                    attr_value = getattr(value, key)
+                except:
+                    attr_value = WatchEvalError()
 
-                    self.walk_value(prefix+"  ",
-                            ".%s" % key, attr_value,
-                            "%s.%s" % (id_path, key))
+                self.walk_value(prefix+"  ",
+                        ".%s" % key, attr_value,
+                        "%s.%s" % (id_path, key))
 
-            if not cnt:
+            if not keys:
                 if cnt_omitted:
                     self.add_item(prefix+"  ", "<omitted private attributes>", None)
                 else:
