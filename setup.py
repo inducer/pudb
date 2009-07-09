@@ -70,6 +70,13 @@ setup(name='pudb',
 
           python -m pudb.run my-script.py
 
+      Programming PuDB
+      ----------------
+
+      At the programming language level, PuDB displays the same interface
+      as Python's built-in `pdb module <http://docs.python.org/library/pdb.html>`_.
+      Just replace `pdb` with `pudb`.
+
       License and Dependencies
       ------------------------
 
