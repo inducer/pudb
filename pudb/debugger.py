@@ -4,33 +4,6 @@
 from __future__ import division
 import urwid
 import bdb
-from code import InteractiveConsole
-
-
-
-
-# readline wrangling ----------------------------------------------------------
-def setup_readline():
-    import os
-    import atexit
-
-    histfile = os.path.join(os.environ["HOME"], ".pudb-history")
-    if os.access(histfile, os.R_OK):
-        readline.read_history_file(histfile)
-    atexit.register(readline.write_history_file, histfile)
-    readline.parse_and_bind("tab: complete")
-
-
-
-
-try:
-    import readline
-    import rlcompleter
-    HAVE_READLINE = True
-except ImportError:
-    HAVE_READLINE = False
-else:
-    setup_readline()
 
 
 
@@ -853,41 +826,69 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("No exception available.")
 
         def run_shell(w, size, key):
+            import pudb.shell as shell
+
+            if shell.HAVE_IPYTHON and shell.USE_IPYTHON == "ask":
+                def ipython(w, size, key):
+                    self.quit_event_loop = ["ipython"]
+                def classic(w, size, key):
+                    self.quit_event_loop = ["classic"]
+                def cancel(w, size, key):
+                    self.quit_event_loop = [False]
+
+                result = dbg.ui.dialog(
+                    urwid.ListBox([urwid.Text(
+                        "You've asked to enter a Python shell.\n\n"
+                        "You appear to have IPython installed. If you wish to use it, "
+                        "you may hit '!' again or select the corresponding button on the "
+                        "right. If you prefer the 'classic' Python shell, hit 'c' or "
+                        "select that button instead.\n\n"
+                        "Sorry for bothering you, I won't ask again in this session."
+                        )]),
+                    [
+                        ("IPython", "ipython"),
+                        ("Classic", "classic"),
+                        ("Cancel", False),
+                        ],
+                    focus_buttons=True,
+                    bind_enter_esc=False,
+                    title="Shell Requested",
+                    extra_bindings=[
+                        ("!", ipython),
+                        ("c", classic),
+                        ("esc", cancel),
+                        ])
+
+                if result == False:
+                    return
+                elif result == "ipython":
+                    shell.USE_IPYTHON = use_ipython = True
+                elif result == "classic":
+                    shell.USE_IPYTHON = use_ipython = False
+
+            elif shell.HAVE_IPYTHON and shell.USE_IPYTHON:
+                use_ipython = True
+            else:
+                use_ipython = False
+
             self.screen.stop()
 
-            if not hasattr(self, "shell_ret_message_shown"):
-                banner = "Hit Ctrl-D to return to PuDB."
-                self.shell_ret_message_shown = True
+            if not hasattr(self, "have_been_to_shell"):
+                self.have_been_to_shell = True
+                first_shell_run = True
             else:
-                banner = ""
-
-            class SetPropagatingDict(dict):
-                def __init__(self, source_dicts, target_dict):
-                    dict.__init__(self)
-                    for s in source_dicts:
-                        self.update(s)
-
-                    self.target_dict = target_dict
-
-                def __setitem__(self, key, value):
-                    dict.__setitem__(self, key, value)
-                    self.target_dict[key] = value
-
-                def __delitem__(self, key):
-                    dict.__delitem__(self, key)
-                    del self.target_dict[key]
+                first_shell_run = False
 
             curframe = self.debugger.curframe
-            loc = SetPropagatingDict(
-                    [curframe.f_locals, curframe.f_globals],
-                    curframe.f_locals)
 
-            if HAVE_READLINE:
-                readline.set_completer(
-                        rlcompleter.Completer(loc).complete)
+            if use_ipython:
+                runner = shell.run_ipython_shell
+            else:
+                runner = shell.run_classic_shell
 
-            cons = InteractiveConsole(loc)
-            cons.interact(banner)
+            runner(curframe.f_locals, curframe.f_globals, 
+                    first_shell_run)
+
             self.screen.start()
 
             self.update_var_view()
