@@ -90,7 +90,7 @@ License:
 
 PuDB is licensed to you under the MIT/X Consortium license:
 
-Copyright (c) 2009 Andreas Klöckner
+Copyright (c) 2009 Andreas Kloeckner
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -1086,7 +1086,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         from pudb import VERSION
         caption = [(None,
             u"PuDB %s - The Python Urwid debugger - Hit ? for help"
-            u" - © Andreas Klöckner 2009"
+            u" - (C) Andreas Kloeckner 2009"
             % VERSION)]
 
         if self.debugger.post_mortem:
