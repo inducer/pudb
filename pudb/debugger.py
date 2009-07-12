@@ -196,6 +196,13 @@ class Debugger(bdb.Bdb):
         """This function is called when a return trap is set here."""
         frame.f_locals['__return__'] = return_value
 
+        if self._wait_for_mainpyfile:
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
+                or frame.f_lineno<= 0):
+                return
+            self._wait_for_mainpyfile = False
+            self.bottom_frame = frame
+
         if "__exc_tuple__" not in frame.f_locals:
             self.interaction(frame)
 
