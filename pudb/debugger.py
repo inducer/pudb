@@ -483,6 +483,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 err = self.debugger.clear_break(bp.file, bp.line)
                 if err:
                     self.message("Error clearing breakpoint:\n"+ err)
+                else:
+                    self.update_breakpoints()
 
         self.bp_list.listen("enter", examine_breakpoint)
 
