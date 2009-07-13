@@ -82,6 +82,9 @@ def run_ipython_shell(locals, globals, first_time):
     else:
         banner = ""
 
+    # avoid IPython's namespace litter
+    ns = locals.copy()
+
     from IPython.Shell import IPShell
-    IPShell(user_ns=locals, user_global_ns=globals) \
+    IPShell(user_ns=ns, user_global_ns=globals) \
             .mainloop(banner=banner)
