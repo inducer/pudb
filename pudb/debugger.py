@@ -849,22 +849,22 @@ class DebuggerUI(FrameVarInfoKeeper):
                     urwid.ListBox([urwid.Text(
                         "You've asked to enter a Python shell.\n\n"
                         "You appear to have IPython installed. If you wish to use it, "
-                        "you may hit '!' again or select the corresponding button on the "
-                        "right. If you prefer the 'classic' Python shell, hit 'c' or "
+                        "you may hit 'i' or select the corresponding button on the "
+                        "right. If you prefer the 'classic' Python shell, hit '!' again or "
                         "select that button instead.\n\n"
                         "Sorry for bothering you, I won't ask again in this session."
                         )]),
                     [
-                        ("IPython", "ipython"),
                         ("Classic", "classic"),
+                        ("IPython", "ipython"),
                         ("Cancel", False),
                         ],
                     focus_buttons=True,
                     bind_enter_esc=False,
                     title="Shell Requested",
                     extra_bindings=[
-                        ("!", ipython),
-                        ("c", classic),
+                        ("!", classic),
+                        ("i", ipython),
                         ("esc", cancel),
                         ])
 
