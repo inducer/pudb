@@ -90,7 +90,8 @@ setup(name='pudb',
 
       At the programming language level, PuDB displays the same interface
       as Python's built-in `pdb module <http://docs.python.org/library/pdb.html>`_.
-      Just replace `pdb` with `pudb`.
+      Just replace `pdb` with `pudb`. 
+      (One exception: `run` is called `runstatement`.)
 
       License and Dependencies
       ------------------------

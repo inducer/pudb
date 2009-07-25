@@ -1,4 +1,4 @@
-NUM_VERSION = (0, 92, 10)
+NUM_VERSION = (0, 92, 11)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 
 
@@ -92,7 +92,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
 
     sys.path = prev_sys_path
 
-def run_statement(statement, globals=None, locals=None):
+def runstatement(statement, globals=None, locals=None):
     _get_debugger().run(statement, globals, locals)
 
 def runeval(expression, globals=None, locals=None):
