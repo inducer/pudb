@@ -70,6 +70,21 @@ setup(name='pudb',
 
           python -m pudb.run my-script.py
 
+      IPython integration
+      ^^^^^^^^^^^^^^^^^^^
+
+      PuDB ships with IPython integration. Just stick the line::
+
+          import pudb.ipython
+
+      into your `$HOME/.ipython/ipy_user_conf.py`, and then you may use the magic 
+      command::
+
+          %pudb script.py [args]
+
+      where `[args]` represents optional arguments, to launch PuDB from within
+      IPython.
+
       Programming PuDB
       ----------------
 

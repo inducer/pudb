@@ -1,4 +1,5 @@
-VERSION = "0.92.9"
+NUM_VERSION = (0, 92, 10)
+VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 
 
 
@@ -16,7 +17,82 @@ def _get_debugger():
 
 
 
-def run(statement, globals=None, locals=None):
+def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
+    from pudb.debugger import Debugger
+    dbg = Debugger(steal_output=steal_output)
+
+    # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
+    # modified by the script being debugged. It's a bad idea when it was
+    # changed by the user from the command line. The best approach would be to
+    # have a "restart" command which would allow explicit specification of
+    # command line arguments.
+
+    import sys
+    if args is not None:
+        prev_sys_argv = sys.argv[:]
+        sys.argv = [mainpyfile] + args
+
+    # replace pudb's dir with script's dir in front of module search path.
+    from os.path import dirname
+    prev_sys_path = sys.path[:]
+    sys.path[0] = dirname(mainpyfile)
+
+    while True:
+        if pre_run:
+            from subprocess import call
+            retcode = call(pre_run, close_fds=True, shell=True)
+            if retcode:
+                print "*** WARNING: pre-run process exited with code %d." % retcode
+                raw_input("[Hit Enter]")
+
+        status_msg = ""
+
+        try:
+            dbg._runscript(mainpyfile)
+        except SystemExit, se:
+            status_msg = "The debuggee exited normally with status code was %d.\n\n" % se.code
+        except:
+            dbg.post_mortem = True
+            dbg.interaction(None, sys.exc_info())
+
+        def quit_debugger(w, size, key):
+            dbg.ui.quit_event_loop = ["quit"]
+
+        import urwid
+        pre_run_edit = urwid.Edit("", pre_run)
+
+        result = dbg.ui.call_with_ui(dbg.ui.dialog,
+            urwid.ListBox([urwid.Text(
+                "Your PuDB session has ended.\n\n%s"
+                "Would you like to quit PuDB or restart your program?\n"
+                "You may hit 'q' to quit."
+                % status_msg),
+                urwid.Text("\n\nIf you decide to restart, this command will be run prior to "
+                "actually restarting:"),
+                urwid.AttrWrap(pre_run_edit, "value")
+                ]),
+            [
+                ("Restart", "restart"),
+                ("Quit", "quit"),
+                ],
+            focus_buttons=True,
+            bind_enter_esc=False,
+            title="Finished",
+            extra_bindings=[("q", quit_debugger)])
+
+        if result == "quit":
+            return
+
+        pre_run = pre_run_edit.get_edit_text()
+
+        dbg.restart()
+
+    if args is not None:
+        sys.argv = prev_sys_argv
+
+    sys.path = prev_sys_path
+
+def run_statement(statement, globals=None, locals=None):
     _get_debugger().run(statement, globals, locals)
 
 def runeval(expression, globals=None, locals=None):

@@ -24,7 +24,7 @@ def fermat(n):
     Warning! Untested with n > 2.
     """
     from itertools import count
-    for x in range(20):
+    for x in range(100):
         for y in range(1, x+1):
             for z in range(1, x**n+y**n + 1):
                 #from pudb import set_trace; set_trace()
@@ -36,3 +36,4 @@ print "SF", simple_func(10)
 for i in fermat(2):
     print i
 
+print "FINISHED"
