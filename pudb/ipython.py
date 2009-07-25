@@ -16,7 +16,7 @@ def pudb_f(self, arg):
     if not arg.strip():
         print __doc__
         return
-        
+
     from IPython.genutils import arg_split
     args = arg_split(arg)
 
@@ -26,6 +26,6 @@ def pudb_f(self, arg):
         raise IPython.ipapi.UsageError("%%pudb: file %s does not exist" % path)
 
     from pudb import runscript
-    runscript(path, args)
-    
+    ip.IP.history_saving_wrapper(lambda: runscript(path, args))()
+
 ip.expose_magic('pudb', pudb_f)
