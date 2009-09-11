@@ -19,8 +19,6 @@ setup(name='pudb',
       excellent (but nowadays ancient) DOS-based Turbo Pascal or C tools, PuDB's UI 
       might look familiar.
 
-
-
       Here's a screenshot:
 
       .. image:: http://tiker.net/pub/pudb-screenshot.png
@@ -52,6 +50,8 @@ setup(name='pudb',
       * PuDB places special emphasis on exception handling. A post-mortem mode makes 
         it easy to retrace a crashing program's last steps.
 
+      * IPython integration (see `wiki <http://wiki.tiker.net/PuDB>`_)
+
       Installing
       ----------
 
@@ -70,20 +70,11 @@ setup(name='pudb',
 
           python -m pudb.run my-script.py
 
-      IPython integration
-      ^^^^^^^^^^^^^^^^^^^
+      Documentation
+      -------------
 
-      PuDB ships with IPython integration. Just stick the line::
-
-          import pudb.ipython
-
-      into your `$HOME/.ipython/ipy_user_conf.py`, and then you may use the magic 
-      command::
-
-          %pudb script.py [args]
-
-      where `[args]` represents optional arguments, to launch PuDB from within
-      IPython.
+      PuDB has a `wiki <http://wiki.tiker.net/PuDB>`_, where documentation and
+      debugging wisdom are collected.
 
       Programming PuDB
       ----------------
