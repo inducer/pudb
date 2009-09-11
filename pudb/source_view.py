@@ -159,7 +159,7 @@ def format_source(debugger_ui, lines, breakpoints):
                     shipout_line()
 
         highlight("".join(l.replace("\t", 8*" ") for l in lines),
-                PythonLexer(), UrwidFormatter())
+                PythonLexer(stripnl=False), UrwidFormatter())
 
         return result
 

@@ -1,3 +1,4 @@
+
 def simple_func(x):
     x += 1
 
