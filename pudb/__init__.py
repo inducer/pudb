@@ -1,4 +1,4 @@
-NUM_VERSION = (0, 92, 12)
+NUM_VERSION = (0, 92, 13)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 
 
