@@ -39,6 +39,7 @@ Keys:
     +/- - grow/shrink sidebar
 
     f1/?/H - show this help screen
+    q - quit
 
 Keys in variables list:
 
