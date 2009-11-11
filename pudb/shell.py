@@ -86,5 +86,5 @@ def run_ipython_shell(locals, globals, first_time):
     ns = locals.copy()
 
     from IPython.Shell import IPShell
-    IPShell(user_ns=ns, user_global_ns=globals) \
+    IPShell(argv=[], user_ns=ns, user_global_ns=globals) \
             .mainloop(banner=banner)
