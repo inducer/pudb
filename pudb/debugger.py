@@ -116,6 +116,9 @@ class Debugger(bdb.Bdb):
         self.post_mortem = False
 
     def restart(self):
+        from linecache import checkcache
+        checkcache()
+        self.ui.set_current_file('<string>')
         self.setup_state()
 
     def do_clear(self, arg):
