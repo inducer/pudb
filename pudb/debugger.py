@@ -214,7 +214,9 @@ class Debugger(bdb.Bdb):
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
         frame.f_locals['__exc_tuple__'] = exc_tuple
-        self.interaction(frame, exc_tuple)
+
+        if not self._wait_for_mainpyfile:
+            self.interaction(frame, exc_tuple)
 
     def _runscript(self, filename):
         # Start with fresh empty copy of globals and locals and tell the script
