@@ -21,6 +21,7 @@ Keys:
     e - show traceback [post-mortem or in exception state]
 
     ! - invoke python shell in current environment
+    o - show console/output screen
 
     b - toggle breakpoint
     m - open module
