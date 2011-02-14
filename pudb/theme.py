@@ -57,6 +57,8 @@ def get_palette(may_use_fancy_formats):
 
         ("breakpoint", "black", "dark cyan"),
         ("focused breakpoint", "black", "dark green"),
+        ("current breakpoint", add_setting("white", "bold"), "dark cyan"),
+        ("focused current breakpoint", add_setting("white", "bold"), "dark green", "bold"),
 
         ("selectable", "black", "dark cyan"),
         ("focused selectable", "black", "dark green"),
@@ -91,6 +93,7 @@ def get_palette(may_use_fancy_formats):
         ("literal", "light magenta", "dark blue"),
         ("punctuation", "light gray", "dark blue"),
         ("comment", "light gray", "dark blue"),
+        ("bp_star", "dark red", "dark blue"),
 
         ]
 

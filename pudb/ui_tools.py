@@ -134,6 +134,39 @@ class StackFrame(urwid.FlowWidget):
     def keypress(self, size, key):
         return key
 
+class BreakpointFrame(urwid.FlowWidget):
+    def __init__(self, is_current, filename, line):
+        self.is_current = is_current
+        self.filename = filename
+        self.line = line
+
+    def selectable(self):
+        return True
+
+    def rows(self, (maxcol,), focus=False):
+        return 1
+
+    def render(self, (maxcol,), focus=False):
+        if focus:
+            apfx = "focused "
+        else:
+            apfx = ""
+
+        if self.is_current:
+            apfx += "current "
+            crnt_pfx = ">> "
+        else:
+            crnt_pfx = "   "
+
+        loc = " %s:%d" % (self.filename, self.line)
+        text = crnt_pfx+loc
+        attr = [(apfx+"breakpoint", len(loc))]
+
+        return make_canvas([text], [attr], maxcol, apfx+"breakpoint")
+
+    def keypress(self, size, key):
+        return key
+
 
 
 

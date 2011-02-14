@@ -117,6 +117,7 @@ class Debugger(bdb.Bdb):
         self.bottom_frame = None
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
+        self.current_bp = None
         self.post_mortem = False
 
     def restart(self):
@@ -206,6 +207,12 @@ class Debugger(bdb.Bdb):
             self._wait_for_mainpyfile = False
             self.bottom_frame = frame
 
+        if self.get_break(self.canonic(frame.f_code.co_filename), frame.f_lineno):
+            self.current_bp = (self.canonic(frame.f_code.co_filename), frame.f_lineno)
+        else:
+            self.current_bp = None
+        self.ui.update_breakpoints()
+
         self.interaction(frame)
 
     def user_return(self, frame, return_value):
@@ -253,7 +260,7 @@ class Debugger(bdb.Bdb):
 
 # UI stuff --------------------------------------------------------------------
 from pudb.ui_tools import make_hotkey_markup, labelled_value, \
-        SelectableText, SignalWrap, StackFrame, \
+        SelectableText, SignalWrap, StackFrame, BreakpointFrame, \
         SearchBox
 from pudb.var_view import FrameVarInfoKeeper
 
@@ -1239,13 +1246,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         return name
 
     def update_breakpoints(self):
-        def format_bp(bp):
-            return "%s:%d" % (self._format_fname(bp.file), bp.line)
-
         self.bp_walker[:] = [
-                urwid.AttrWrap(
-                    SelectableText(format_bp(bp), wrap="clip"),
-                    None, "focused breakpoint")
+                BreakpointFrame(self.debugger.current_bp == (bp.file, bp.line),
+                    self._format_fname(bp.file), bp.line)
                 for bp in self._get_bp_list()]
 
     def update_stack(self):
