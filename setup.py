@@ -110,7 +110,7 @@ setup(name='pudb',
       author='Andreas Kloeckner',
       author_email='inform@tiker.net',
       install_requires=[
-          "urwid>=0.9.8.4",
+          "urwid>=0.9.9.1",
           "pygments>=1.0",
           ],
       url='http://pypi.python.org/pypi/pudb',
