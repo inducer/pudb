@@ -4,11 +4,11 @@ import urwid
 
 
 class SourceLine(urwid.FlowWidget):
-    def __init__(self, dbg_ui, text, lineno='', attr=None, has_breakpoint=False):
+    def __init__(self, dbg_ui, text, line_nr='', attr=None, has_breakpoint=False):
         self.dbg_ui = dbg_ui
         self.text = text
         self.attr = attr
-        self.lineno = lineno
+        self.line_nr = line_nr
         self.has_breakpoint = has_breakpoint
         self.is_current = False
         self.highlight = False
@@ -32,6 +32,9 @@ class SourceLine(urwid.FlowWidget):
         return 1
 
     def render(self, (maxcol,), focus=False):
+        from pudb import CONFIG
+        render_line_nr = CONFIG["line_numbers"]
+
         hscroll = self.dbg_ui.source_hscroll_start
         attrs = []
         if self.is_current:
@@ -53,7 +56,9 @@ class SourceLine(urwid.FlowWidget):
                 attrs.append("highlighted")
 
         if not attrs and self.attr is not None:
-            attr = [("lineno", len(self.lineno))]+self.attr
+            attr = self.attr
+            if render_line_nr:
+                attr = [("line number", len(self.line_nr))] + attr
         else:
             attr = [(" ".join(attrs+["source"]), hscroll+maxcol-2)]
 
@@ -66,7 +71,10 @@ class SourceLine(urwid.FlowWidget):
                     self.dbg_ui.source_hscroll_start,
                     rle_len(attr))
 
-        text = crnt+bp+self.lineno+text
+        if render_line_nr:
+            text = self.line_nr + text
+
+        text = crnt+bp+text
         attr = [("source", 1), ("bp_star", 1)] + attr
 
         # clipping ------------------------------------------------------------
@@ -88,13 +96,13 @@ class SourceLine(urwid.FlowWidget):
 
 
 def format_source(debugger_ui, lines, breakpoints):
-    lineno_str = "%%%dd "%(len(str(len(lines))))
+    lineno_format = "%%%dd "%(len(str(len(lines))))
     try:
         import pygments
     except ImportError:
         return [SourceLine(debugger_ui,
             line.rstrip("\n\r").replace("\t", 8*" "), 
-            lineno_str%(i+1), None,
+            lineno_format % (i+1), None,
             has_breakpoint=i+1 in breakpoints)
             for i, line in enumerate(lines)]
     else:
@@ -143,7 +151,7 @@ def format_source(debugger_ui, lines, breakpoints):
                     result.append(
                             SourceLine(debugger_ui,
                                 subself.current_line,
-                                lineno_str%subself.lineno,
+                                lineno_format % subself.lineno,
                                 subself.current_attr,
                                 has_breakpoint=subself.lineno in breakpoints))
                     subself.current_line = ""

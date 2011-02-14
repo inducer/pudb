@@ -1,4 +1,9 @@
-def get_palette(may_use_fancy_formats):
+THEMES = ["classic", "vim"]
+
+
+
+
+def get_palette(may_use_fancy_formats, theme="classic"):
     if may_use_fancy_formats:
         def add_setting(color, setting):
             return color+","+setting
@@ -6,7 +11,7 @@ def get_palette(may_use_fancy_formats):
         def add_setting(color, setting):
             return color
 
-    return [
+    palette = [
         ("header", "black", "light gray", "standout"),
 
         ("breakpoint source", "yellow", "dark red"),
@@ -75,6 +80,7 @@ def get_palette(may_use_fancy_formats):
         ("label", "black", "light gray"),
         ("value", "yellow", "dark blue"),
         ("fixed value", "light gray", "dark blue"),
+        ("group head", add_setting("black", "bold"), "light gray"),
 
         ("search box", "black", "dark cyan"),
         ("search not found", "white", "dark red"),
@@ -89,7 +95,7 @@ def get_palette(may_use_fancy_formats):
         ("current focused source", "white", "dark cyan"),
         ("current highlighted source", "white", "dark cyan"),
 
-        ("lineno", "light gray", "dark blue"),
+        ("line number", "light gray", "dark blue"),
         ("keyword", add_setting("white", "bold"), "dark blue"),
         ("name", "light cyan", "dark blue"),
         ("literal", "light magenta", "dark blue"),
@@ -98,4 +104,38 @@ def get_palette(may_use_fancy_formats):
         ("bp_star", "dark red", "dark blue"),
 
         ]
+
+    palette_dict = dict(
+            (entry[0], entry[1:]) for entry in palette)
+
+    if theme == "classic":
+        pass
+    elif theme == "vim":
+        palette_dict.update({
+            "source": ("black", "default"),
+            "keyword": ("brown", "default"),
+            "kw_namespace": ("dark magenta", "default"),
+            "literal": ("black", "default"),
+            "string": ("dark red", "default"),
+            "punctuation": ("black", "default"),
+            "comment": ("dark blue", "default"),
+            "classname": ("dark cyan", "default"),
+            "name": ("dark cyan", "default"),
+            "line number": ("dark gray", "default"),
+            "bp_star": ("dark red", "default"),
+            })
+    else:
+        try:
+            symbols = {
+                    "palette": palette_dict,
+                    "add_setting": add_setting,
+                    }
+            execfile(theme, symbols)
+        except:
+            print "Error when importing theme:"
+            from traceback import print_exc
+            print_exc()
+            raw_input("Hit enter:")
+
+    return [(key,)+value for key, value in palette_dict.iteritems()]
 

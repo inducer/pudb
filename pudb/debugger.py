@@ -13,6 +13,8 @@ Welcome to PuDB, the Python Urwid debugger.
 -------------------------------------------
 
 Keys:
+    Ctrl-p - edit preferences
+
     n - step over ("next")
     s - step into
     c - continue
@@ -135,7 +137,7 @@ class Debugger(bdb.Bdb):
         self.ui.set_current_line(lineno, self.curframe.f_code.co_filename)
         self.ui.update_var_view()
         self.ui.update_stack()
-    
+
     def move_up_frame(self):
         if self.curindex > 0:
             self.set_frame_index(self.curindex-1)
@@ -346,6 +348,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         def edit_inspector_detail(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
+            if var is None:
+                return
+
             fvi = self.get_frame_var_info(read_only=False)
             iinfo = fvi.get_inspect_info(var.id_path, read_only=False)
 
@@ -465,7 +470,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # stack listeners -----------------------------------------------------
         def examine_breakpoint(w, size, key):
-            _, pos = self.bp_list._w.get_focus()
+            bp_entry, pos = self.bp_list._w.get_focus()
+
+            if bp_entry is None:
+                return
+
             bp = self._get_bp_list()[pos]
 
             if bp.cond is None:
@@ -870,50 +879,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("No exception available.")
 
         def run_shell(w, size, key):
-            import pudb.shell as shell
-
-            if shell.HAVE_IPYTHON and shell.USE_IPYTHON == "ask":
-                def ipython(w, size, key):
-                    self.quit_event_loop = ["ipython"]
-                def classic(w, size, key):
-                    self.quit_event_loop = ["classic"]
-                def cancel(w, size, key):
-                    self.quit_event_loop = [False]
-
-                result = dbg.ui.dialog(
-                    urwid.ListBox([urwid.Text(
-                        "You've asked to enter a Python shell.\n\n"
-                        "You appear to have IPython installed. If you wish to use it, "
-                        "you may hit 'i' or select the corresponding button on the "
-                        "right. If you prefer the 'classic' Python shell, hit '!' again or "
-                        "select that button instead.\n\n"
-                        "Sorry for bothering you, I won't ask again in this session."
-                        )]),
-                    [
-                        ("Classic", "classic"),
-                        ("IPython", "ipython"),
-                        ("Cancel", False),
-                        ],
-                    focus_buttons=True,
-                    bind_enter_esc=False,
-                    title="Shell Requested",
-                    extra_bindings=[
-                        ("!", classic),
-                        ("i", ipython),
-                        ("esc", cancel),
-                        ])
-
-                if result == False:
-                    return
-                elif result == "ipython":
-                    shell.USE_IPYTHON = use_ipython = True
-                elif result == "classic":
-                    shell.USE_IPYTHON = use_ipython = False
-
-            elif shell.HAVE_IPYTHON and shell.USE_IPYTHON:
-                use_ipython = True
-            else:
-                use_ipython = False
 
             self.screen.stop()
 
@@ -925,12 +890,14 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             curframe = self.debugger.curframe
 
-            if use_ipython:
+            from pudb import CONFIG
+            import pudb.shell as shell
+            if shell.HAVE_IPYTHON and CONFIG["shell"] == "ipython":
                 runner = shell.run_ipython_shell
             else:
                 runner = shell.run_classic_shell
 
-            runner(curframe.f_locals, curframe.f_globals, 
+            runner(curframe.f_locals, curframe.f_globals,
                     first_shell_run)
 
             self.screen.start()
@@ -965,8 +932,19 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.set_quit()
             end()
 
+        def do_edit_config(w, size, key):
+            from pudb.settings import edit_config, save_config
+            from pudb import CONFIG
+            edit_config(self, CONFIG)
+            save_config(CONFIG)
+            self.setup_palette(self.screen)
+
+            for sl in self.source:
+                sl._invalidate()
+
         def help(w, size, key):
             self.message(HELP_TEXT, title="PuDB Help")
+
 
         self.top.listen("o", show_output)
         self.top.listen("!", run_shell)
@@ -979,6 +957,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("B", RHColumnFocuser(2))
 
         self.top.listen("q", quit)
+        self.top.listen("ctrl p", do_edit_config)
         self.top.listen("H", help)
         self.top.listen("f1", help)
         self.top.listen("?", help)
@@ -1068,8 +1047,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         may_use_fancy_formats = isinstance(screen, RawScreen) and \
                 not hasattr(urwid.escape, "_fg_attr_xterm")
 
+        from pudb import CONFIG
         from pudb.theme import get_palette
-        screen.register_palette(get_palette(may_use_fancy_formats))
+        screen.register_palette(
+                get_palette(may_use_fancy_formats, CONFIG["theme"]))
 
     # UI enter/exit -----------------------------------------------------------
     def show(self):
@@ -1101,6 +1082,30 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
+        from pudb import CONFIG
+        WELCOME_LEVEL = "b"
+        if CONFIG["seen_welcome"] < WELCOME_LEVEL:
+            CONFIG["seen_welcome"] = WELCOME_LEVEL
+            from pudb import VERSION
+            self.message("Welcome to PudB %s!\n\n"
+                    "PuDB is a full-screen, console-based visual debugger for Python. "
+                    " Its goal is to provide all the niceties of modern GUI-based "
+                    "debuggers in a more lightweight and keyboard-friendly package. "
+                    "PuDB allows you to debug code right where you write and test it--in "
+                    "a terminal. If you've worked with the excellent (but nowadays "
+                    "ancient) DOS-based Turbo Pascal or C tools, PuDB's UI might "
+                    "look familiar.\n\n"
+                    "New features in version 0.93:\n\n"
+                    "- Stored preferences (no more pesky IPython prompt!)\n"
+                    "- Themes\n"
+                    "- Line numbers (optional)\n"
+                    "\nHit Ctrl-P to set up PuDB.\n\n"
+                    "If you're new here, welcome! The help screen (invoked by hitting "
+                    "'?' after this message) should get you on your way." % VERSION)
+
+            from pudb.settings import save_config
+            save_config(CONFIG)
+
         try:
             if toplevel is None:
                 toplevel = self.top
@@ -1130,8 +1135,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         from pudb import VERSION
         caption = [(None,
-            u"PuDB %s - The Python Urwid debugger - Hit ? for help"
-            u" - (C) Andreas Kloeckner 2009"
+            u"PuDB %s - ?:help, n:next, s:step into, b:breakpoint, o:console,"
+            "t:run to cursor, !:python shell"
             % VERSION)]
 
         if self.debugger.post_mortem:

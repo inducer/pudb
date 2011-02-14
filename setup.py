@@ -70,11 +70,14 @@ setup(name='pudb',
 
           python -m pudb.run my-script.py
 
-      Documentation
-      -------------
+      Documentation and Support
+      -------------------------
 
       PuDB has a `wiki <http://wiki.tiker.net/PuDB>`_, where documentation and
       debugging wisdom are collected.
+
+      PuDB also has a `mailing list <http://lists.tiker.net/listinfo/pudb>`_ that
+      you may use to submit patches and requests for help.
 
       Programming PuDB
       ----------------

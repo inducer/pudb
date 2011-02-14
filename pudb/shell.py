@@ -4,7 +4,6 @@ except ImportError:
     HAVE_IPYTHON = False
 else:
     HAVE_IPYTHON = True
-    USE_IPYTHON = "ask"
 
 
 
