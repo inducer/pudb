@@ -4,10 +4,11 @@ import urwid
 
 
 class SourceLine(urwid.FlowWidget):
-    def __init__(self, dbg_ui, text, attr=None, has_breakpoint=False):
+    def __init__(self, dbg_ui, text, lineno='', attr=None, has_breakpoint=False):
         self.dbg_ui = dbg_ui
         self.text = text
         self.attr = attr
+        self.lineno = lineno
         self.has_breakpoint = has_breakpoint
         self.is_current = False
         self.highlight = False
@@ -52,7 +53,7 @@ class SourceLine(urwid.FlowWidget):
                 attrs.append("highlighted")
 
         if not attrs and self.attr is not None:
-            attr = self.attr
+            attr = [("lineno", len(self.lineno))]+self.attr
         else:
             attr = [(" ".join(attrs+["source"]), hscroll+maxcol-2)]
 
@@ -65,8 +66,8 @@ class SourceLine(urwid.FlowWidget):
                     self.dbg_ui.source_hscroll_start,
                     rle_len(attr))
 
-        text = crnt+bp+text
-        attr = [("source", 2)] + attr
+        text = crnt+bp+self.lineno+text
+        attr = [("source", 1), ("bp_star", 1)] + attr
 
         # clipping ------------------------------------------------------------
         if len(text) > maxcol:
@@ -87,11 +88,13 @@ class SourceLine(urwid.FlowWidget):
 
 
 def format_source(debugger_ui, lines, breakpoints):
+    lineno_str = "%%%dd "%(len(str(len(lines))))
     try:
         import pygments
     except ImportError:
         return [SourceLine(debugger_ui,
-            line.rstrip("\n\r").replace("\t", 8*" "), None,
+            line.rstrip("\n\r").replace("\t", 8*" "), 
+            lineno_str%(i+1), None,
             has_breakpoint=i+1 in breakpoints)
             for i, line in enumerate(lines)]
     else:
@@ -138,6 +141,7 @@ def format_source(debugger_ui, lines, breakpoints):
                     result.append(
                             SourceLine(debugger_ui,
                                 subself.current_line,
+                                lineno_str%subself.lineno,
                                 subself.current_attr,
                                 has_breakpoint=subself.lineno in breakpoints))
                     subself.current_line = ""

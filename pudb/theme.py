@@ -89,6 +89,7 @@ def get_palette(may_use_fancy_formats):
         ("current focused source", "white", "dark cyan"),
         ("current highlighted source", "white", "dark cyan"),
 
+        ("lineno", "light gray", "dark blue"),
         ("keyword", add_setting("white", "bold"), "dark blue"),
         ("literal", "light magenta", "dark blue"),
         ("punctuation", "light gray", "dark blue"),
