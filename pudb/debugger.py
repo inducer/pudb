@@ -20,6 +20,9 @@ Keys:
     t - run to cursor
     e - show traceback [post-mortem or in exception state]
 
+    u - move up one stack frame
+    d - move down one stack frame
+
     ! - invoke python shell in current environment
     o - show console/output screen
 
@@ -131,6 +134,14 @@ class Debugger(bdb.Bdb):
         self.ui.set_current_line(lineno, self.curframe.f_code.co_filename)
         self.ui.update_var_view()
         self.ui.update_stack()
+    
+    def move_up_frame(self):
+        if self.curindex > 0:
+            self.set_frame_index(self.curindex-1)
+
+    def move_down_frame(self):
+        if self.curindex < len(self.stack)-1:
+            self.set_frame_index(self.curindex+1)
 
     def get_shortened_stack(self, frame, tb):
         stack, index = self.get_stack(frame, tb)
@@ -434,6 +445,16 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.set_frame_index(pos)
 
         self.stack_list.listen("enter", examine_frame)
+
+        def move_stack_up(w, size, key):
+            self.debugger.move_up_frame()
+        def move_stack_down(w, size, key):
+            self.debugger.move_down_frame()
+
+        self.stack_list.listen("u", move_stack_up)
+        self.stack_list.listen("d", move_stack_down)
+        self.source_sigwrap.listen("u", move_stack_up)
+        self.source_sigwrap.listen("d", move_stack_down)
 
         # stack listeners -----------------------------------------------------
         def examine_breakpoint(w, size, key):
