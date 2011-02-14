@@ -91,6 +91,7 @@ def get_palette(may_use_fancy_formats):
 
         ("lineno", "light gray", "dark blue"),
         ("keyword", add_setting("white", "bold"), "dark blue"),
+        ("name", "light cyan", "dark blue"),
         ("literal", "light magenta", "dark blue"),
         ("punctuation", "light gray", "dark blue"),
         ("comment", "light gray", "dark blue"),

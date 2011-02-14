@@ -109,6 +109,8 @@ def format_source(debugger_ui, lines, breakpoints):
                 t.Token: "source",
                 t.Keyword: "keyword",
                 t.Literal: "literal",
+                t.Name.Function: "name",
+                t.Name.Class: "name",
                 t.Punctuation: "punctuation",
                 t.Comment: "comment",
                 }
