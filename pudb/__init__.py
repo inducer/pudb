@@ -14,6 +14,27 @@ def _get_debugger():
     else:
         return CURRENT_DEBUGGER[0]
 
+def load_breakpoints(dbg):
+    import os
+    # Read $HOME/.pudbrc
+    rcLines = []
+    rcFilenames = [".pudbrc"]
+    if 'HOME' in os.environ:
+        envHome = os.environ["HOME"]
+        rcFilenames.append(os.path.join(envHome, ".pudbrc"))
+        rcFilenames.append(os.path.join(envHome, ".pudb-bp"))
+    for fname in rcFilenames:
+        try:
+            rcFile = open(fname)
+        except IOError:
+            pass
+        else:
+            rcLines.extend([l.strip() for l in rcFile.readlines()])
+            rcFile.close()
+
+    from lowlevel import parse_breakpoints
+    for filename, lineno, temp, cond, funcname in parse_breakpoints(rcLines):
+        dbg.set_break(filename, lineno, temp, cond, funcname)
 
 
 
@@ -36,6 +57,10 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
     from os.path import dirname
     prev_sys_path = sys.path[:]
     sys.path[0] = dirname(mainpyfile)
+
+    sys.path.append(dirname(__file__))
+
+    load_breakpoints(dbg)
 
     while True:
         if pre_run:
@@ -103,7 +128,9 @@ def runcall(*args, **kwds):
 
 def set_trace():
     import sys
-    _get_debugger().set_trace(sys._getframe().f_back)
+    dbg = _get_debugger()
+    load_breakpoints(dbg)
+    dbg.set_trace(sys._getframe().f_back)
 
 
 

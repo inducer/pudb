@@ -106,6 +106,17 @@ class Debugger(bdb.Bdb):
             from cStringIO import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("") # avoid spurious hangs
+    def save_breakpoints(self):
+        import os
+        bps= [bp
+                for fn, bp_lst in self.get_all_breaks().iteritems()
+                for lineno in bp_lst
+                for bp in self.get_breaks(fn, lineno)
+                if not bp.temporary]
+        bp_histfile = os.path.join(os.environ["HOME"], ".pudb-bp")
+        histfile = open(bp_histfile, 'w')
+        for bp in bps:
+            histfile.write("b %s:%d\n"%(bp.file, bp.line))
 
     def enter_post_mortem(self, exc_tuple):
         self.post_mortem = True
@@ -436,6 +447,21 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_list.listen("enter", examine_frame)
 
         # stack listeners -----------------------------------------------------
+        def save_breakpoints(w, size, key):
+            self.debugger.save_breakpoints()
+
+        def delete_breakpoint(w, size, key):
+            _, pos = self.bp_list._w.get_focus()
+            bp = self._get_bp_list()[pos]
+            if self.shown_file == bp.file:
+                self.source[bp.line-1].set_breakpoint(False)
+
+            err = self.debugger.clear_break(bp.file, bp.line)
+            if err:
+                self.message("Error clearing breakpoint:\n"+ err)
+            else:
+                self.update_breakpoints()
+
         def examine_breakpoint(w, size, key):
             _, pos = self.bp_list._w.get_focus()
             bp = self._get_bp_list()[pos]
@@ -494,9 +520,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.update_breakpoints()
 
         self.bp_list.listen("enter", examine_breakpoint)
+        self.bp_list.listen("d", delete_breakpoint)
+        self.bp_list.listen("s", save_breakpoints)
 
         # top-level listeners -------------------------------------------------
         def end():
+            self.debugger.save_breakpoints()
             self.quit_event_loop = True
 
         def next(w, size, key):
