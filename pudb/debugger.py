@@ -827,6 +827,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("k", move_up)
         self.source_sigwrap.listen("ctrl d", page_down)
         self.source_sigwrap.listen("ctrl u", page_up)
+        self.source_sigwrap.listen("ctrl f", page_down)
+        self.source_sigwrap.listen("ctrl b", page_up)
         self.source_sigwrap.listen("h", scroll_left)
         self.source_sigwrap.listen("l", scroll_right)
 
