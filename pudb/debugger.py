@@ -111,6 +111,17 @@ class Debugger(bdb.Bdb):
             from cStringIO import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("") # avoid spurious hangs
+    def save_breakpoints(self):
+        import os
+        bps= [bp
+                for fn, bp_lst in self.get_all_breaks().iteritems()
+                for lineno in bp_lst
+                for bp in self.get_breaks(fn, lineno)
+                if not bp.temporary]
+        bp_histfile = os.path.join(os.environ["HOME"], ".pudb-bp")
+        histfile = open(bp_histfile, 'w')
+        for bp in bps:
+            histfile.write("b %s:%d\n"%(bp.file, bp.line))
 
     def enter_post_mortem(self, exc_tuple):
         self.post_mortem = True
@@ -469,6 +480,21 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("d", move_stack_down)
 
         # stack listeners -----------------------------------------------------
+        def save_breakpoints(w, size, key):
+            self.debugger.save_breakpoints()
+
+        def delete_breakpoint(w, size, key):
+            _, pos = self.bp_list._w.get_focus()
+            bp = self._get_bp_list()[pos]
+            if self.shown_file == bp.file:
+                self.source[bp.line-1].set_breakpoint(False)
+
+            err = self.debugger.clear_break(bp.file, bp.line)
+            if err:
+                self.message("Error clearing breakpoint:\n"+ err)
+            else:
+                self.update_breakpoints()
+
         def examine_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
 
@@ -531,9 +557,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.update_breakpoints()
 
         self.bp_list.listen("enter", examine_breakpoint)
+        self.bp_list.listen("d", delete_breakpoint)
+        self.bp_list.listen("s", save_breakpoints)
 
         # top-level listeners -------------------------------------------------
         def end():
+            self.debugger.save_breakpoints()
             self.quit_event_loop = True
 
         def next(w, size, key):
@@ -835,6 +864,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("k", move_up)
         self.source_sigwrap.listen("ctrl d", page_down)
         self.source_sigwrap.listen("ctrl u", page_up)
+        self.source_sigwrap.listen("ctrl f", page_down)
+        self.source_sigwrap.listen("ctrl b", page_up)
         self.source_sigwrap.listen("h", scroll_left)
         self.source_sigwrap.listen("l", scroll_right)
 
@@ -912,6 +943,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.columns.set_focus(self.rhs_col)
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
+        def max_sidebar(w, size, key):
+            _, weight = self.columns.column_types[1]
+
+            if weight < 5:
+                weight *= 7.0710678
+                self.columns.column_types[1] = "weight", weight
+                self.columns._invalidate()
+
+        def min_sidebar(w, size, key):
+            self.columns.column_types[1] = "weight", 1/10
+            self.columns._invalidate()
+
         def grow_sidebar(w, size, key):
             _, weight = self.columns.column_types[1]
 
@@ -950,8 +993,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("!", run_shell)
         self.top.listen("e", show_traceback)
 
+        self.top.listen("=", max_sidebar)
         self.top.listen("+", grow_sidebar)
-        self.top.listen("-", shrink_sidebar)
+        self.top.listen("-", min_sidebar)
+        self.top.listen("_", shrink_sidebar)
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
@@ -1274,7 +1319,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self._format_fname(code.co_filename), lineno)
 
         self.stack_walker[:] = [make_frame_ui(fl)
-                for fl in self.debugger.stack]
+                for fl in self.debugger.stack[::-1]]
 
     def show_exception(self, exc_type, exc_value, traceback):
         from traceback import format_exception
