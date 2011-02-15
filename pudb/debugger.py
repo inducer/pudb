@@ -948,6 +948,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.columns.set_focus(self.rhs_col)
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
+        def max_sidebar(w, size, key):
+            _, weight = self.columns.column_types[1]
+
+            if weight < 5:
+                weight *= 7.0710678
+                self.columns.column_types[1] = "weight", weight
+                self.columns._invalidate()
+
+        def min_sidebar(w, size, key):
+            self.columns.column_types[1] = "weight", 1/10
+            self.columns._invalidate()
+
         def grow_sidebar(w, size, key):
             _, weight = self.columns.column_types[1]
 
@@ -975,8 +987,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("!", run_shell)
         self.top.listen("e", show_traceback)
 
+        self.top.listen("=", max_sidebar)
         self.top.listen("+", grow_sidebar)
-        self.top.listen("-", shrink_sidebar)
+        self.top.listen("-", min_sidebar)
+        self.top.listen("_", shrink_sidebar)
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
