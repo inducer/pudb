@@ -1290,7 +1290,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self._format_fname(code.co_filename), lineno)
 
         self.stack_walker[:] = [make_frame_ui(fl)
-                for fl in self.debugger.stack]
+                for fl in self.debugger.stack[::-1]]
 
     def show_exception(self, exc_type, exc_value, traceback):
         from traceback import format_exception
