@@ -14,6 +14,8 @@ xdg_config_dirs = [xdg_config_home] + \
     os.environ.get('XDG_CONFIG_DIRS', '/etc/xdg').split(':')
 
 def get_save_config_path(*resource):
+    if not resource:
+        resource = [XDG_CONF_RESOURCE]
     resource = os.path.join(*resource)
     assert not resource.startswith('/')
     path = os.path.join(xdg_config_home, resource)
@@ -77,7 +79,7 @@ def save_config(conf_dict):
         cparser.set(CONF_SECTION, key, val)
 
     try:
-        outf = open(join(get_save_config_path(XDG_CONF_RESOURCE),
+        outf = open(join(get_save_config_path(),
             CONF_FILE_NAME), "w")
         cparser.write(outf)
         outf.close()
@@ -237,7 +239,7 @@ def save_breakpoints(bp_list):
     """
 
     from os.path import join
-    bp_histfile = join(get_save_config_path("pudb"), "saved-breakpoints")
+    bp_histfile = join(get_save_config_path(), "saved-breakpoints")
     histfile = open(bp_histfile, 'w')
     for bp in bp_list:
         histfile.write("b %s:%d\n"%(bp.file, bp.line))

@@ -14,7 +14,11 @@ def setup_readline():
     import os
     import atexit
 
-    histfile = os.path.join(os.environ["HOME"], ".pudb-history")
+    from pudb.settings import get_save_config_path
+    histfile = os.path.join(
+            get_save_config_path(),
+            "shell-history")
+
     if os.access(histfile, os.R_OK):
         readline.read_history_file(histfile)
     atexit.register(readline.write_history_file, histfile)
