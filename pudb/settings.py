@@ -13,7 +13,7 @@ xdg_config_home = os.environ.get('XDG_CONFIG_HOME',
 xdg_config_dirs = [xdg_config_home] + \
     os.environ.get('XDG_CONFIG_DIRS', '/etc/xdg').split(':')
 
-def save_config_path(*resource):
+def get_save_config_path(*resource):
     resource = os.path.join(*resource)
     assert not resource.startswith('/')
     path = os.path.join(xdg_config_home, resource)
@@ -24,6 +24,13 @@ def save_config_path(*resource):
 # end LGPL violation
 
 CONF_SECTION = "pudb"
+XDG_CONF_RESOURCE = "pudb"
+CONF_FILE_NAME = "pudb.cfg"
+SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints"
+BREAKPOINTS_FILE_NAME = "breakpoints"
+
+
+
 
 def load_config():
     from os.path import join, isdir
@@ -33,7 +40,7 @@ def load_config():
     conf_dict = {}
     try:
         cparser.read([
-            join(cdir, 'pudb', 'pudb.cfg')
+            join(cdir, XDG_CONF_RESOURCE, CONF_FILE_NAME)
             for cdir in xdg_config_dirs if isdir(cdir)])
 
         if cparser.has_section(CONF_SECTION):
@@ -70,7 +77,8 @@ def save_config(conf_dict):
         cparser.set(CONF_SECTION, key, val)
 
     try:
-        outf = open(join(save_config_path("pudb"), "pudb.cfg"), "w")
+        outf = open(join(get_save_config_path(XDG_CONF_RESOURCE),
+            CONF_FILE_NAME), "w")
         cparser.write(outf)
         outf.close()
     except:
@@ -143,3 +151,98 @@ def edit_config(ui, conf_dict):
         conf_dict["line_numbers"] = cb_line_numbers.get_state()
 
 
+
+
+
+# {{{ breakpoint saving
+
+def parse_breakpoints(lines):
+    # b [ (filename:lineno | function) [, "condition"] ]
+
+    breakpoints = []
+    for arg in lines:
+        if not arg:
+            continue
+        arg = arg[1:]
+
+        filename = None
+        lineno = None
+        cond = None
+        comma = arg.find(',')
+
+        if comma > 0:
+            # parse stuff after comma: "condition"
+            cond = arg[comma+1:].lstrip()
+            arg = arg[:comma].rstrip()
+
+        colon = arg.rfind(':')
+        funcname = None
+
+        if colon > 0:
+            filename = arg[:colon].strip()
+
+            from pudb.lowlevel import lookup_module
+            f = lookup_module(filename)
+
+            if not f:
+                continue
+            else:
+                filename = f
+
+            arg = arg[colon+1:].lstrip()
+            try:
+                lineno = int(arg)
+            except ValueError, msg:
+                continue
+        else:
+            continue
+
+        from pudb.lowlevel import get_breakpoint_invalid_reason
+        if get_breakpoint_invalid_reason(filename, lineno) is None:
+            breakpoints.append((filename, lineno, False, cond, funcname))
+
+    return breakpoints
+
+
+
+
+def load_breakpoints(dbg):
+    from os.path import join, isdir
+
+    file_names = [
+            join(cdir, XDG_CONF_RESOURCE, name)
+            for cdir in xdg_config_dirs if isdir(cdir)
+            for name in [SAVED_BREAKPOINTS_FILE_NAME, BREAKPOINTS_FILE_NAME]
+            ]
+
+    lines = []
+    for fname in file_names:
+        try:
+            rcFile = open(fname)
+        except IOError:
+            pass
+        else:
+            lines.extend([l.strip() for l in rcFile.readlines()])
+            rcFile.close()
+
+    return parse_breakpoints(lines)
+
+
+
+
+
+def save_breakpoints(bp_list):
+    """
+    :arg bp_list: a list of tuples `(file_name, line)`
+    """
+
+    from os.path import join
+    bp_histfile = join(get_save_config_path("pudb"), "saved-breakpoints")
+    histfile = open(bp_histfile, 'w')
+    for bp in bp_list:
+        histfile.write("b %s:%d\n"%(bp.file, bp.line))
+    histfile.close()
+
+# }}}
+
+# vim:foldmethod=marker

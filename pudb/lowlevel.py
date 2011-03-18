@@ -1,4 +1,3 @@
-import sys, os
 # breakpoint validity ---------------------------------------------------------
 def generate_executable_lines_for_code(code):
     l = code.co_firstlineno
@@ -43,51 +42,17 @@ def get_breakpoint_invalid_reason(filename, lineno):
         return "No executable statement found in line."
 
 
-def parse_breakpoints(lines):
-    # b [ ([filename:]lineno | function) [, "condition"] ]
-    breakpoints = []
-    for arg in lines:
-        if not arg: continue
-        arg = arg[1:]
 
-        filename = None
-        lineno = None
-        cond = None
-        comma = arg.find(',')
-        if comma > 0:
-            # parse stuff after comma: "condition"
-            cond = arg[comma+1:].lstrip()
-            arg = arg[:comma].rstrip()
-        colon = arg.rfind(':')
-        funcname = None
-        if colon > 0:
-            filename = arg[:colon].strip()
-            f = lookupmodule(filename)
-            if not f: continue
-            else: filename = f
-            arg = arg[colon+1:].lstrip()
-            try:
-                lineno = int(arg)
-            except ValueError, msg:
-                continue
-        else:
-            continue
-
-        if not filename:
-            filename = defaultFile
-        invalid_reason = get_breakpoint_invalid_reason(filename, lineno)
-        if invalid_reason is None:
-            # now set the breakpoint
-            breakpoints.append((filename, lineno, False, cond, funcname))
-    return breakpoints
-
-
-def lookupmodule(filename):
+def lookup_module(filename):
     """Helper function for break/clear parsing -- may be overridden.
 
     lookupmodule() translates (possibly incomplete) file or module name
     into an absolute file name.
     """
+
+    # stolen from pdb
+    import os, sys
+
     if os.path.isabs(filename) and  os.path.exists(filename):
         return filename
     f = os.path.join(sys.path[0], filename)
@@ -105,6 +70,8 @@ def lookupmodule(filename):
         if os.path.exists(fullname):
             return fullname
     return None
+
+
 
 
 # file encoding detection -----------------------------------------------------

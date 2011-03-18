@@ -43,6 +43,7 @@ Keys:
     S - focus stack
     B - focus breakpoint list
     +/- - grow/shrink sidebar
+    _/= - minimize/maximize sidebar
 
     f1/?/H - show this help screen
     q - quit
@@ -70,7 +71,7 @@ License:
 
 PuDB is licensed to you under the MIT/X Consortium license:
 
-Copyright (c) 2009 Andreas Kloeckner
+Copyright (c) 2009,10,11 Andreas Kloeckner and contributors
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -111,17 +112,15 @@ class Debugger(bdb.Bdb):
             from cStringIO import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("") # avoid spurious hangs
+
     def save_breakpoints(self):
-        import os
-        bps= [bp
-                for fn, bp_lst in self.get_all_breaks().iteritems()
-                for lineno in bp_lst
-                for bp in self.get_breaks(fn, lineno)
-                if not bp.temporary]
-        bp_histfile = os.path.join(os.environ["HOME"], ".pudb-bp")
-        histfile = open(bp_histfile, 'w')
-        for bp in bps:
-            histfile.write("b %s:%d\n"%(bp.file, bp.line))
+        from pudb.settings import save_breakpoints
+        save_breakpoints([
+            bp
+            for fn, bp_lst in self.get_all_breaks().iteritems()
+            for lineno in bp_lst
+            for bp in self.get_breaks(fn, lineno)
+            if not bp.temporary])
 
     def enter_post_mortem(self, exc_tuple):
         self.post_mortem = True
@@ -465,7 +464,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
             _, pos = self.stack_list._w.get_focus()
-            self.debugger.set_frame_index(pos)
+            self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
 
         self.stack_list.listen("enter", examine_frame)
 
@@ -944,15 +943,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
         def max_sidebar(w, size, key):
-            _, weight = self.columns.column_types[1]
-
-            if weight < 5:
-                weight *= 7.0710678
-                self.columns.column_types[1] = "weight", weight
-                self.columns._invalidate()
+            self.columns.column_types[1] = "weight", 5
+            self.columns._invalidate()
 
         def min_sidebar(w, size, key):
-            self.columns.column_types[1] = "weight", 1/10
+            self.columns.column_types[1] = "weight", 1/5
             self.columns._invalidate()
 
         def grow_sidebar(w, size, key):
@@ -995,8 +990,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.top.listen("=", max_sidebar)
         self.top.listen("+", grow_sidebar)
-        self.top.listen("-", min_sidebar)
-        self.top.listen("_", shrink_sidebar)
+        self.top.listen("_", min_sidebar)
+        self.top.listen("-", shrink_sidebar)
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
@@ -1128,7 +1123,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Syntax highlighting disabled.")
 
         from pudb import CONFIG
-        WELCOME_LEVEL = "b"
+        WELCOME_LEVEL = "d"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1140,6 +1135,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "a terminal. If you've worked with the excellent (but nowadays "
                     "ancient) DOS-based Turbo Pascal or C tools, PuDB's UI might "
                     "look familiar.\n\n"
+                    "New features in version 2011.1:\n\n"
+                    "- Breakpoints saved between sessions\n"
+                    "- A new 'dark vim' theme\n"
+                    "(both contributed by Naveen Michaud-Agrawal)\n\n"
                     "New features in version 0.93:\n\n"
                     "- Stored preferences (no more pesky IPython prompt!)\n"
                     "- Themes\n"
