@@ -65,6 +65,7 @@ Keys in stack list:
 Keys in breakpoints view:
 
     enter - edit breakpoint
+    d - delete breakpoint
 
 License:
 --------
