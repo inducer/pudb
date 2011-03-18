@@ -1180,8 +1180,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         from pudb import VERSION
         caption = [(None,
-            u"PuDB %s - ?:help, n:next, s:step into, b:breakpoint, o:console,"
-            "t:run to cursor, !:python shell"
+            u"PuDB %s - ?:help  n:next  s:step into  b:breakpoint  o:output "
+            "t:run to cursor  !:python shell"
             % VERSION)]
 
         if self.debugger.post_mortem:
