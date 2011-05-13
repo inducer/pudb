@@ -1,6 +1,9 @@
 import os
 from ConfigParser import ConfigParser
 
+import __builtin__
+original_open = __builtin__.open
+
 # minor LGPL violation: stolen from python-xdg
 
 _home = os.environ.get('HOME', '/')
@@ -41,9 +44,10 @@ def load_config():
 
     conf_dict = {}
     try:
-        cparser.read([
-            join(cdir, XDG_CONF_RESOURCE, CONF_FILE_NAME)
-            for cdir in xdg_config_dirs if isdir(cdir)])
+        for fname in [
+                join(cdir, XDG_CONF_RESOURCE, CONF_FILE_NAME)
+                for cdir in xdg_config_dirs if isdir(cdir)]:
+            cparser.readfp(original_open(fname, "rt"))
 
         if cparser.has_section(CONF_SECTION):
             conf_dict.update(dict(cparser.items(CONF_SECTION)))
@@ -79,7 +83,7 @@ def save_config(conf_dict):
         cparser.set(CONF_SECTION, key, val)
 
     try:
-        outf = open(join(get_save_config_path(),
+        outf = original_open(join(get_save_config_path(),
             CONF_FILE_NAME), "w")
         cparser.write(outf)
         outf.close()
@@ -220,7 +224,7 @@ def load_breakpoints(dbg):
     lines = []
     for fname in file_names:
         try:
-            rcFile = open(fname)
+            rcFile = original_open(fname)
         except IOError:
             pass
         else:
@@ -240,7 +244,7 @@ def save_breakpoints(bp_list):
 
     from os.path import join
     bp_histfile = join(get_save_config_path(), "saved-breakpoints")
-    histfile = open(bp_histfile, 'w')
+    histfile = original_open(bp_histfile, 'w')
     for bp in bp_list:
         histfile.write("b %s:%d\n"%(bp.file, bp.line))
     histfile.close()
