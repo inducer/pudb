@@ -1136,6 +1136,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "a terminal. If you've worked with the excellent (but nowadays "
                     "ancient) DOS-based Turbo Pascal or C tools, PuDB's UI might "
                     "look familiar.\n\n"
+                    "New features in version 2011.2:\n\n"
+                    "- Fix for post-mortem debugging (submitted by 'Sundance')\n\n"
                     "New features in version 2011.1:\n\n"
                     "- Breakpoints saved between sessions\n"
                     "- A new 'dark vim' theme\n"
