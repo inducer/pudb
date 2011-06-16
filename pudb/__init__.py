@@ -143,7 +143,14 @@ def post_mortem(exc_info=None):
 
 def pm():
     import sys
-    post_mortem(sys.last_traceback)
+    try:
+        e_type = sys.last_type
+        e_value = sys.last_value
+        tb = sys.last_traceback
+    except AttributeError:
+        ## No exception on record. Do nothing.
+        return
+    post_mortem((e_type, e_value, tb))
 
 
 
