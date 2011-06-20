@@ -61,7 +61,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
         try:
             dbg._runscript(mainpyfile)
         except SystemExit, se:
-            status_msg = "The debuggee exited normally with status code was %d.\n\n" % se.code
+            status_msg = "The debuggee exited normally with status code %s.\n\n" % se.code
         except:
             dbg.post_mortem = True
             dbg.interaction(None, sys.exc_info())
