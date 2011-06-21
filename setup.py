@@ -1,16 +1,33 @@
 #!/usr/bin/env python
 
+"""
+TODO: Write bootstrap code covering setuptools and distutils.
+
 from ez_setup import use_setuptools
 
 use_setuptools()
 
 from setuptools import setup
-from pudb import VERSION
+"""
 
-setup(name='pudb',
-      version=VERSION,
-      description='A full-screen, console-based Python debugger',
-      long_description="""
+try:
+    from setuptools import setup, Extension
+    have_setuptools = True
+except ImportError:
+    from distutils.core import setup, Extension
+    have_setuptools = False
+
+try:
+    PYTHON3 = not str is bytes
+except NameError:
+    PYTHON3 = False
+
+#from pudb import VERSION
+
+setup_d = {'name':'pudb',
+      'version':'11.2',
+      'description':'A full-screen, console-based Python debugger',
+      'long_description':"""
       PuDB is a full-screen, console-based visual debugger for Python.
 
       Its goal is to provide all the niceties of modern GUI-based debuggers in a
@@ -107,14 +124,14 @@ setup(name='pudb',
       You may also `browse the code <http://git.tiker.net/pudb.git>`_ online.
 
       """,
-      author='Andreas Kloeckner',
-      author_email='inform@tiker.net',
-      install_requires=[
+      'author':'Andreas Kloeckner',
+      'author_email':'inform@tiker.net',
+      'install_requires':[
           "urwid>=0.9.9.1",
           "pygments>=1.0",
           ],
-      url='http://pypi.python.org/pypi/pudb',
-      classifiers=[
+      'url':'http://pypi.python.org/pypi/pudb',
+      'classifiers':[
           "Development Status :: 4 - Beta",
           "Environment :: Console",
           "Environment :: Console :: Curses",
@@ -133,4 +150,11 @@ setup(name='pudb',
           "Topic :: Terminals",
           "Topic :: Utilities",
           ],
-      packages=["pudb"])
+      'packages':["pudb"]
+      }
+
+if PYTHON3:
+    setup_d['use_2to3'] = True
+
+if __name__ == "__main__":
+    setup(**setup_d)
