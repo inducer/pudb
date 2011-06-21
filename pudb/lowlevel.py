@@ -129,8 +129,7 @@ def detect_encoding(readline):
         return encoding
 
     first = read_or_stop()
-    BOM_UTF8 = BOM_UTF8.decode('utf-8')
-    if first.startswith(BOM_UTF8):
+    if first.startswith(BOM_UTF8.decode('utf-8')):
         bom_found = True
         first = first[3:]
     if not first:
