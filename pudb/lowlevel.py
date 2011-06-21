@@ -108,7 +108,8 @@ def detect_encoding(readline):
 
     def find_cookie(line):
         try:
-            line_string = line.decode('ascii')
+            #line_string = line.decode('ascii')
+            line_string = line
         except UnicodeDecodeError:
             return None
 
@@ -128,6 +129,7 @@ def detect_encoding(readline):
         return encoding
 
     first = read_or_stop()
+    BOM_UTF8 = BOM_UTF8.decode('utf-8')
     if first.startswith(BOM_UTF8):
         bom_found = True
         first = first[3:]

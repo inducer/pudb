@@ -76,6 +76,8 @@ def save_config(conf_dict):
     cparser.add_section(CONF_SECTION)
 
     for key, val in conf_dict.iteritems():
+        if type(val) not in ('str','unicode'):
+            val = str(val)
         cparser.set(CONF_SECTION, key, val)
 
     try:

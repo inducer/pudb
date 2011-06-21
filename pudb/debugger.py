@@ -264,7 +264,8 @@ class Debugger(bdb.Bdb):
         # user_call for details).
         self._wait_for_mainpyfile = 1
         self.mainpyfile = self.canonic(filename)
-        statement = 'execfile( "%s")' % filename
+        #statement = 'execfile( "%s")' % filename
+        statement = "exec(compile(open('%s').read(),'%s','exec'))" % filename
         self.run(statement, globals=globals_, locals=locals_)
 
 
