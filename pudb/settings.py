@@ -99,7 +99,7 @@ def edit_config(ui, conf_dict):
     shells = ["classic", "ipython"]
 
     shell_rb_grp = []
-    shell_rbs = [ 
+    shell_rbs = [
             urwid.RadioButton(shell_rb_grp, name,
                 conf_dict["shell"] == name)
             for name in shells]
@@ -110,7 +110,7 @@ def edit_config(ui, conf_dict):
 
     theme_rb_grp = []
     theme_edit = urwid.Edit(edit_text=conf_dict["theme"])
-    theme_rbs = [ 
+    theme_rbs = [
             urwid.RadioButton(theme_rb_grp, name,
                 conf_dict["theme"] == name)
             for name in THEMES]+[
@@ -135,7 +135,7 @@ def edit_config(ui, conf_dict):
             [
                 ("OK", True),
                 ("Cancel", False),
-                ], 
+                ],
             title="Edit Preferences"):
         for shell, shell_rb in zip(shells, shell_rbs):
             if shell_rb.get_state():

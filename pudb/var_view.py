@@ -385,4 +385,3 @@ class FrameVarInfoKeeper(object):
             return self.frame_var_info.get(ssid, FrameVarInfo())
         else:
             return self.frame_var_info.setdefault(ssid, FrameVarInfo())
-

@@ -230,4 +230,3 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             raw_input("Hit enter:")
 
     return [(key,)+value for key, value in palette_dict.iteritems()]
-
