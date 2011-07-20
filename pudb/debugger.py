@@ -748,6 +748,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def change_var_state(w, size, key, button=None, x=None, y=None, focus=None):
             var, pos = self.var_list._w.get_focus()
+            if not var:
+                return
 
             iinfo = self.get_frame_var_info(read_only=False) \
                     .get_inspect_info(var.id_path, read_only=False)
