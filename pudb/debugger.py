@@ -581,62 +581,59 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("s", save_breakpoints)
 
         # top-level listeners -------------------------------------------------
+        def non_post_mortem_only(do_end=True):
+            def wrap_f(f):
+                def wrap2_f(*args):
+                    if self.debugger.post_mortem:
+                        self.message("Post-mortem mode: Can't modify state.")
+                        return
+                    f(*args)
+                    if do_end:
+                        end()
+                return warp2_f
+            return wrap_f
+
         def end():
             self.debugger.save_breakpoints()
             self.quit_event_loop = True
-
+        
+        @non_post_mortem_only()
         def next(w, size, *args):
-            if self.debugger.post_mortem:
-                self.message("Post-mortem mode: Can't modify state.")
-            else:
-                self.debugger.set_next(self.debugger.curframe)
-                end()
+            self.debugger.set_next(self.debugger.curframe)
 
+        @non_post_mortem_only()
         def step(w, size, *args):
-            if self.debugger.post_mortem:
-                self.message("Post-mortem mode: Can't modify state.")
-            else:
-                self.debugger.set_step()
-                end()
+            self.debugger.set_step()
 
+        @non_post_mortem_only()
         def finish(w, size, key):
-            if self.debugger.post_mortem:
-                self.message("Post-mortem mode: Can't modify state.")
-            else:
-                self.debugger.set_return(self.debugger.curframe)
-                end()
+            self.debugger.set_return(self.debugger.curframe)
 
-
+        @non_post_mortem_only()
         def cont(w, size, key):
-            if self.debugger.post_mortem:
-                self.message("Post-mortem mode: Can't modify state.")
+            self.debugger.set_continue()
+
+        @non_post_mortem_only(do_end=False)
+        def run_to_cursor(w, size, *args):
+            sline, pos = self.source.get_focus()
+            lineno = pos+1
+
+            from pudb.lowlevel import get_breakpoint_invalid_reason
+            invalid_reason = get_breakpoint_invalid_reason(
+                    self.shown_file, lineno)
+
+            if invalid_reason is not None:
+                self.message(
+                    "Cannot run to the line you indicated, "
+                    "for the following reason:\n\n"
+                    + invalid_reason)
             else:
+                err = self.debugger.set_break(self.shown_file, pos+1, temporary=True)
+                if err:
+                    self.message("Error dealing with breakpoint:\n"+ err)
+
                 self.debugger.set_continue()
                 end()
-
-        def run_to_cursor(w, size, *args):
-            if self.debugger.post_mortem:
-                self.message("Post-mortem mode: Can't modify state.")
-            else:
-                sline, pos = self.source.get_focus()
-                lineno = pos+1
-
-                from pudb.lowlevel import get_breakpoint_invalid_reason
-                invalid_reason = get_breakpoint_invalid_reason(
-                        self.shown_file, lineno)
-
-                if invalid_reason is not None:
-                    self.message(
-                        "Cannot run to the line you indicated, "
-                        "for the following reason:\n\n"
-                        + invalid_reason)
-                else:
-                    err = self.debugger.set_break(self.shown_file, pos+1, temporary=True)
-                    if err:
-                        self.message("Error dealing with breakpoint:\n"+ err)
-
-                    self.debugger.set_continue()
-                    end()
 
         def move_home(w, size, key):
             self.source.set_focus(0)
