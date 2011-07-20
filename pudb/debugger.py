@@ -1061,9 +1061,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         if bind_enter_esc:
             content = SignalWrap(content)
             def enter(w, size, key): self.quit_event_loop = [True]
-            def esc(w, size, key): self.quit_event_loop = [False]
+            def esc(w, *args): self.quit_event_loop = [False]
             content.listen("enter", enter)
             content.listen("esc", esc)
+            content.listen_mouse_event("mouse press", 3, esc)
 
         button_widgets = []
         for btn_descr in buttons_and_results:
