@@ -1,3 +1,5 @@
+import time
+
 import urwid
 
 
@@ -74,9 +76,13 @@ class SignalWrap(urwid.WidgetWrap):
     def __init__(self, w):
         urwid.WidgetWrap.__init__(self, w)
         self.event_listeners = []
+        self.mouse_event_listeners = []
 
     def listen(self, mask, handler):
         self.event_listeners.append((mask, handler))
+
+    def listen_mouse_event(self, event, button, handler):
+        self.mouse_event_listeners.append((event, button, handler))
 
     def keypress(self, size, key):
         result = self._w.keypress(size, key)
@@ -88,6 +94,15 @@ class SignalWrap(urwid.WidgetWrap):
 
         return result
 
+    def mouse_event(self, size, event, button, x, y, focus=True):
+        result = self._w.mouse_event(size, event, button, x, y, focus)
+
+        if result is False:
+            for m_event, m_button, handler in self.mouse_event_listeners:
+                if (m_event is None or m_event == event) and (m_button is None or m_button == button):
+                    return handler(self, size, event, button, x, y, focus)
+
+        return result
 
 
 
@@ -257,3 +272,51 @@ class SearchBox(urwid.Edit):
         del self.ui.lhs_col.item_types[0]
         del self.ui.lhs_col.widget_list[0]
         self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
+
+
+class double_press_input_filter:
+  '''
+  A filter generates new mouse event, double press.
+
+  Usage:
+
+    loop = urwid.MainLoop(..., input_filter=double_press_input_filter(), ...)
+
+  When double-press the mouse buttons (1, 2, and 3. Wheels are ignored), the
+  handler shall receive events as follow, in order:
+
+    ('mouse press', 1, 21, 14)
+    ('mouse release', 0, 21, 14)
+    ('mouse press', 1, 21, 14)
+    ('mouse double press', 1, 21, 14)
+    ('mouse release', 0, 21, 14)
+  '''
+  last_press = None
+  last_press_time = -1
+  double_press_timing = 0.25
+  
+  @classmethod
+  def __call__(cls, events, raw):
+
+    i = 0
+    while i < len(events):
+      e = events[i]
+      i += 1
+      if not urwid.is_mouse_event(e) or not urwid.is_mouse_press(e[0]):
+        continue
+
+      if cls.last_press and \
+          time.time() > cls.last_press_time + cls.double_press_timing:
+        cls.last_press = None
+
+      if cls.last_press:
+        if cls.last_press[1] == e[1]:
+          events.insert(i, (e[0].replace('press', 'double press'),) + e[1:])
+          i += 1
+      elif urwid.is_mouse_press(e[0]) and e[1] not in (4, 5):
+        cls.last_press = e
+        cls.last_press_time = time.time()
+        continue
+      cls.last_press = None
+    return events
+
