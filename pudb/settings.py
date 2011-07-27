@@ -54,6 +54,7 @@ def load_config():
     conf_dict.setdefault("theme", "classic")
     conf_dict.setdefault("line_numbers", False)
     conf_dict.setdefault("seen_welcome", "a")
+    conf_dict.setdefault("current_stack_frame", "top")
 
     def hack_bool(name):
         try:
@@ -131,6 +132,15 @@ def edit_config(ui, conf_dict):
                 "box above."),
             ]
 
+    stack_rb_group = []
+    stack_opts = ["top", "bottom"]
+    stack_info = urwid.Text("Show the current stack frame at the\n")
+    stack_rbs = [
+            urwid.RadioButton(stack_rb_group, name,
+                conf_dict["current_stack_frame"] == name)
+            for name in stack_opts
+            ]
+
     if ui.dialog(
             urwid.ListBox(
                 [heading]
@@ -139,7 +149,11 @@ def edit_config(ui, conf_dict):
                 + [urwid.AttrMap(urwid.Text("Shell:\n"), "group head")]
                 + [shell_info]
                 + shell_rbs
-                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")] + theme_rbs,
+                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
+                + theme_rbs
+                + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
+                + [stack_info]
+                + stack_rbs
                 ),
             [
                 ("OK", True),
@@ -161,8 +175,9 @@ def edit_config(ui, conf_dict):
 
         conf_dict["line_numbers"] = cb_line_numbers.get_state()
 
-
-
+        for opt, stack_rb in zip(stack_opts, stack_rbs):
+            if stack_rb.get_state():
+                conf_dict["current_stack_frame"] = opt
 
 
 # {{{ breakpoint saving
