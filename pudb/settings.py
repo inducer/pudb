@@ -94,7 +94,9 @@ def edit_config(ui, conf_dict):
     import urwid
 
     heading = urwid.Text("This is the preferences screen for PuDB\n"
-        "Hit Ctrl-P at any time to get back to it.\n")
+        "Hit Ctrl-P at any time to get back to it.\n\n"
+        "Configuration settings are saved in \n"
+        "%s\n" % get_save_config_path())
 
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",
             bool(conf_dict["line_numbers"]))
