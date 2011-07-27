@@ -22,8 +22,8 @@ Keys:
     t - run to cursor
     e - show traceback [post-mortem or in exception state]
 
-    u - move up one stack frame
-    d - move down one stack frame
+    u - move down one stack frame
+    d - move up one stack frame
 
     ! - invoke python shell in current environment
     o - show console/output screen
@@ -474,8 +474,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         def move_stack_down(w, size, key):
             self.debugger.move_down_frame()
 
-        self.stack_list.listen("u", move_stack_up)
-        self.stack_list.listen("d", move_stack_down)
+        self.stack_list.listen("d", move_stack_up)
+        self.stack_list.listen("u", move_stack_down)
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
 
