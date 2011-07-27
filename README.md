@@ -43,37 +43,45 @@ makes it easy to retrace a crashing program's last steps.
 
 Install PuDB using the command:
 
-```
-easy_install pudb
-```
+``` easy_install pudb ```
+
+or
+
+``` pip install pudb ```
+
+Or, if you have the source,
+
+``` sudo python setup.py install ```
 
 # Getting Started
 
 To start debugging, simply insert:
 
-```python
-from pudb import set_trace; set_trace()
-```
+```python from pudb import set_trace; set_trace() ```
 
 into the piece of code you want to debug, or run the entire script with:
 
-```
-python -m pudb.run my-script.py
-```
+``` python -m pudb.run my-script.py ```
 
 # Documentation
 
-PuDB has a [wiki](http://wiki.tiker.net/PuDB), where documentation and debugging wisdom are collected.
+PuDB has a [wiki](http://wiki.tiker.net/PuDB), where documentation and
+debugging wisdom are collected.
 
-PuDB also has a [mailing list](http://lists.tiker.net/listinfo/pudb) that you may use to submit patches and requests for help.
+PuDB also has a [mailing list](http://lists.tiker.net/listinfo/pudb)
+that you may use to submit patches and requests for help.
 
 # Programming PuDB
 
-At the programming language level, PuDB displays the same interface as Python's built-in [pdb](http://docs.python.org/library/pdb.html) module. Just replace `pdb` with `pudb`. (One exception: `run` is called `runstatement`.)
+At the programming language level, PuDB displays the same interface as
+Python's built-in [pdb](http://docs.python.org/library/pdb.html) module.
+Just replace `pdb` with `pudb`. (One exception: `run` is called
+`runstatement`.)
 
 # License and Dependencies
 
-PuDB is distributed under the MIT license. It relies on the following excellent pieces of software:
+PuDB is distributed under the MIT license. It relies on the following
+excellent pieces of software:
 
 - Ian Ward's [urwid](http://excess.org/urwid) console UI library
 
@@ -81,10 +89,10 @@ PuDB is distributed under the MIT license. It relies on the following excellent 
 
 # Development Version
 
-You may obtain the development version using the Git version control tool.:
+You may obtain the development version using the Git version control
+tool.:
 
-```
-git clone http://git.tiker.net/trees/pudb.git
-```
+``` git clone https://github.com/inducer/pudb.git ```
 
-You may also [browse the code](http://git.tiker.net/pudb.git) online.
+You may also [browse the code](https://github.com/inducer/pudb/) online
+at GitHub, and fork the project there.
