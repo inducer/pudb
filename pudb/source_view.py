@@ -101,7 +101,7 @@ def format_source(debugger_ui, lines, breakpoints):
         import pygments
     except ImportError:
         return [SourceLine(debugger_ui,
-            line.rstrip("\n\r").replace("\t", 8*" "), 
+            line.rstrip("\n\r").replace("\t", 8*" "),
             lineno_format % (i+1), None,
             has_breakpoint=i+1 in breakpoints)
             for i, line in enumerate(lines)]
@@ -120,6 +120,13 @@ def format_source(debugger_ui, lines, breakpoints):
                 t.Name.Function: "name",
                 t.Name.Class: "name",
                 t.Punctuation: "punctuation",
+                t.String: "string",
+                # XXX: Single and Double don't actually work yet.
+                # See https://bitbucket.org/birkenfeld/pygments-main/issue/685
+                t.String.Double: "doublestring",
+                t.String.Single: "singlestring",
+                t.String.Backtick: "backtick",
+                t.String.Doc: "docstring",
                 t.Comment: "comment",
                 }
 
