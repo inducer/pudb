@@ -972,14 +972,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             end()
 
         def do_edit_config(w, size, key):
-            from pudb.settings import edit_config, save_config
-            from pudb import CONFIG
-            edit_config(self, CONFIG)
-            save_config(CONFIG)
-            self.setup_palette(self.screen)
-
-            for sl in self.source:
-                sl._invalidate()
+            self.run_edit_config()
 
         def help(w, size, key):
             self.message(HELP_TEXT, title="PuDB Help")
@@ -1020,6 +1013,17 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.call_with_ui(self.dialog,
                 urwid.ListBox([urwid.Text(msg)]),
                 [("OK", True)], title=title, **kwargs)
+
+    def run_edit_config(self):
+        from pudb.settings import edit_config, save_config
+        from pudb import CONFIG
+        edit_config(self, CONFIG)
+        save_config(CONFIG)
+        self.setup_palette(self.screen)
+
+        for sl in self.source:
+            sl._invalidate()
+
 
     def dialog(self, content, buttons_and_results,
             title=None, bind_enter_esc=True, focus_buttons=False,
@@ -1152,6 +1156,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             from pudb.settings import save_config
             save_config(CONFIG)
+            self.message("Since this is the first time you've used PuDB, \n"
+                "I will show you a configuration screen.  Hit Ctrl-P at any \n"
+                "time to get back to it.")
+            self.run_edit_config()
+
 
         try:
             if toplevel is None:
