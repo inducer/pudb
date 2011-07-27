@@ -244,14 +244,20 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current source": ("white", "light gray"),
             "current focused source": ("white", "brown"),
 
+            "line number": ("light gray", "default"),
             "keyword": ("dark magenta", "default"),
-            "name": ("white", "dark blue"),
+            "name": ("white", "default"),
             "literal": ("dark cyan", "default"),
-            "string": ("light red", "default"),
+            "string": ("dark red", "default"),
+            "doublestring": ("dark red", "default"),
+            "singlestring": ("light blue", "default"),
+            "docstring": ("light red", "default"),
+            "backtick": ("light green", "default"),
             "punctuation": ("white", "default"),
             "comment": ("dark green", "default"),
             "classname": ("dark cyan", "default"),
             "funcname": ("white", "default"),
+            "bp_star": ("dark red", "default"),
 
         })
 
