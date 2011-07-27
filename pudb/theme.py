@@ -80,7 +80,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("label", "black", "light gray"),
         ("value", "yellow", "dark blue"),
         ("fixed value", "light gray", "dark blue"),
-        ("group head", add_setting("black", "bold"), "light gray"),
+        ("group head", add_setting("dark blue", "bold"), "light gray"),
 
         ("search box", "black", "dark cyan"),
         ("search not found", "white", "dark red"),
