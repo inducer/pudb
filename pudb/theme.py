@@ -1,4 +1,4 @@
-THEMES = ["classic", "vim", "dark vim"]
+THEMES = ["classic", "vim", "dark vim", "midnight"]
 
 
 
@@ -80,7 +80,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("label", "black", "light gray"),
         ("value", "yellow", "dark blue"),
         ("fixed value", "light gray", "dark blue"),
-        ("group head", add_setting("black", "bold"), "light gray"),
+        ("group head", add_setting("dark blue", "bold"), "light gray"),
 
         ("search box", "black", "dark cyan"),
         ("search not found", "white", "dark red"),
@@ -216,6 +216,51 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         "comment": ("light blue", "black"),
         "bp_star": ("dark red", "black"),
             })
+    elif theme == "midnight":
+        # Based on XCode's midnight theme
+        # Looks best in a console with green text against black background
+        palette_dict.update({
+            "variables": ("white", "default"),
+
+            "var label": ("dark blue", "default"),
+            "var value": ("white", "default"),
+
+            "stack": ("white", "default"),
+
+            "frame name": ("white", "default"),
+            "frame class": ("dark blue", "default"),
+            "frame location": ("light cyan", "default"),
+
+            "current frame name": (add_setting("white", "bold"), "default"),
+            "current frame class": ("dark blue", "default"),
+            "current frame location": ("light cyan", "default"),
+
+            "breakpoint": ("default", "default"),
+
+            "search box": ("default", "default"),
+
+            "source": ("white", "default"),
+            "highlighted source": ("white", "light cyan"),
+            "current source": ("white", "light gray"),
+            "current focused source": ("white", "brown"),
+
+            "line number": ("light gray", "default"),
+            "keyword": ("dark magenta", "default"),
+            "name": ("white", "default"),
+            "literal": ("dark cyan", "default"),
+            "string": ("dark red", "default"),
+            "doublestring": ("dark red", "default"),
+            "singlestring": ("light blue", "default"),
+            "docstring": ("light red", "default"),
+            "backtick": ("light green", "default"),
+            "punctuation": ("white", "default"),
+            "comment": ("dark green", "default"),
+            "classname": ("dark cyan", "default"),
+            "funcname": ("white", "default"),
+            "bp_star": ("dark red", "default"),
+
+        })
+
     else:
         try:
             symbols = {

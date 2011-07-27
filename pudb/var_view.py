@@ -332,7 +332,7 @@ class TopAndMainVariableWalker(ValueWalker):
 
 
 # top level -------------------------------------------------------------------
-SEPARATOR = urwid.AttrWrap(urwid.Text(""), "variable separator")
+SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 def make_var_view(frame_var_info, locals, globals):
     vars = locals.keys()
