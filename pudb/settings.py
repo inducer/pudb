@@ -121,7 +121,7 @@ def edit_config(ui, conf_dict):
             urwid.RadioButton(theme_rb_grp, "Custom:",
                 not known_theme),
             urwid.Padding(
-                urwid.AttrWrap(theme_edit, "value"),
+                urwid.AttrMap(theme_edit, "value"),
                 left=4),
 
             urwid.Text("\nTo use a custom theme, see example-theme.py in the "
@@ -134,10 +134,10 @@ def edit_config(ui, conf_dict):
                 [heading]
                 + [cb_line_numbers]
                 + [urwid.Text("")]
-                + [urwid.AttrWrap(urwid.Text("Shell:\n"), "group head")]
+                + [urwid.AttrMap(urwid.Text("Shell:\n"), "group head")]
                 + [shell_info]
                 + shell_rbs
-                + [urwid.AttrWrap(urwid.Text("\nTheme:\n"), "group head")] + theme_rbs,
+                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")] + theme_rbs,
                 ),
             [
                 ("OK", True),

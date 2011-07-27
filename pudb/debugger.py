@@ -285,7 +285,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         FrameVarInfoKeeper.__init__(self)
 
         self.debugger = dbg
-        Attr = urwid.AttrWrap
+        Attr = urwid.AttrMap
 
         self.search_box = None
         self.last_module_filter = ""
@@ -296,7 +296,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_hscroll_start = 0
 
         self.lhs_col = urwid.Pile([
-            ("weight", 1, urwid.AttrWrap(self.source_sigwrap, "source"))
+            ("weight", 1, urwid.AttrMap(self.source_sigwrap, "source"))
             ])
 
         self.locals = urwid.SimpleListWalker([])
@@ -334,9 +334,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     dividechars=1)
 
         self.caption = urwid.Text("")
-        header = urwid.AttrWrap(self.caption, "header")
+        header = urwid.AttrMap(self.caption, "header")
         self.top = SignalWrap(urwid.Frame(
-            urwid.AttrWrap(self.columns, "background"),
+            urwid.AttrMap(self.columns, "background"),
             header))
 
         # variable listeners --------------------------------------------------
@@ -374,7 +374,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 watch_edit = urwid.Edit([
                     ("label", "Watch expression: ")
                     ], var.watch_expr.expression)
-                id_segment = [urwid.AttrWrap(watch_edit, "value"), urwid.Text("")]
+                id_segment = [urwid.AttrMap(watch_edit, "value"), urwid.Text("")]
 
                 buttons.extend([None, ("Delete", "del")])
 
@@ -439,7 +439,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             if self.dialog(
                     urwid.ListBox([
-                        urwid.AttrWrap(watch_edit, "value")
+                        urwid.AttrMap(watch_edit, "value")
                         ]),
                     [
                         ("OK", True),
@@ -523,8 +523,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 labelled_value("Hits: ", bp.hits),
                 urwid.Text(""),
                 enabled_checkbox,
-                urwid.AttrWrap(cond_edit, "value", "value"),
-                urwid.AttrWrap(ign_count_edit, "value", "value"),
+                urwid.AttrMap(cond_edit, "value", "value"),
+                urwid.AttrMap(ign_count_edit, "value", "value"),
                 ])
 
             result = self.dialog(lb, [
@@ -634,7 +634,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             if self.dialog(
                     urwid.ListBox([
                         labelled_value("File :", self.shown_file),
-                        urwid.AttrWrap(lineno_edit, "value")
+                        urwid.AttrMap(lineno_edit, "value")
                         ]),
                     [
                         ("OK", True),
@@ -674,18 +674,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                 _, search_start = self.source.get_focus()
 
                 self.search_box = SearchBox(self)
-                self.search_attrwrap = urwid.AttrWrap(
+                self.search_AttrMap = urwid.AttrMap(
                         self.search_box, "search box")
 
                 self.lhs_col.item_types.insert(
                         0, ("flow", None))
-                self.lhs_col.widget_list.insert( 0, self.search_attrwrap)
+                self.lhs_col.widget_list.insert( 0, self.search_AttrMap)
 
                 self.columns.set_focus(self.lhs_col)
-                self.lhs_col.set_focus(self.search_attrwrap)
+                self.lhs_col.set_focus(self.search_AttrMap)
             else:
                 self.columns.set_focus(self.lhs_col)
-                self.lhs_col.set_focus(self.search_attrwrap)
+                self.lhs_col.set_focus(self.search_AttrMap)
                 self.search_box.restart_search()
 
         def search_next(w, size, key):
@@ -762,7 +762,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     return ext == ".py"
 
             new_mod_text = SelectableText("-- update me --")
-            new_mod_entry = urwid.AttrWrap(new_mod_text,
+            new_mod_entry = urwid.AttrMap(new_mod_text,
                     None, "focused selectable")
 
             def build_filtered_mod_list(filt_string=""):
@@ -770,7 +770,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         for name, mod in sys.modules.items()
                         if mod_exists(mod))
 
-                result = [urwid.AttrWrap(SelectableText(mod),
+                result = [urwid.AttrMap(SelectableText(mod),
                         None, "focused selectable")
                         for mod in modules if filt_string in mod]
                 new_mod_text.set_text("<<< IMPORT MODULE '%s' >>>" % filt_string)
@@ -806,9 +806,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             lb = urwid.ListBox(mod_list)
 
             w = urwid.Pile([
-                ("flow", urwid.AttrWrap(filt_edit, "value")),
+                ("flow", urwid.AttrMap(filt_edit, "value")),
                 ("fixed", 1, urwid.SolidFill()),
-                urwid.AttrWrap(lb, "selectable")])
+                urwid.AttrMap(lb, "selectable")])
 
             while True:
                 result = self.dialog(w, [
@@ -1035,7 +1035,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             def __call__(subself, btn):
                 self.quit_event_loop = [subself.res]
 
-        Attr = urwid.AttrWrap
+        Attr = urwid.AttrMap
 
         if bind_enter_esc:
             content = SignalWrap(content)
@@ -1064,7 +1064,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         if title is not None:
             w = urwid.Pile([
-                ("flow", urwid.AttrWrap(
+                ("flow", urwid.AttrMap(
                     urwid.Text(title, align="center"),
                     "dialog title")),
                 ("fixed", 1, urwid.SolidFill()),
