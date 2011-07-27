@@ -1,4 +1,4 @@
-THEMES = ["classic", "vim", "dark vim"]
+THEMES = ["classic", "vim", "dark vim", "midnight"]
 
 
 
