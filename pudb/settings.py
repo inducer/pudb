@@ -86,12 +86,19 @@ def save_config(conf_dict):
     except:
         pass
 
-
-
-
-
 def edit_config(ui, conf_dict):
     import urwid
+
+    old_conf_dict = conf_dict.copy()
+
+    def _update_config(check_box, new_state, new_conf_dict):
+        if new_state:
+            conf_dict.update(new_conf_dict)
+            save_config(conf_dict)
+            ui.setup_palette(ui.screen)
+
+            for sl in ui.source:
+                sl._invalidate()
 
     heading = urwid.Text("This is the preferences screen for PuDB\n"
         "Hit Ctrl-P at any time to get back to it.\n\n"
@@ -99,7 +106,8 @@ def edit_config(ui, conf_dict):
         "%s\n" % get_save_config_path())
 
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",
-            bool(conf_dict["line_numbers"]))
+            bool(conf_dict["line_numbers"]), on_state_change=_update_config,
+                user_data={"line_numbers": not conf_dict["line_numbers"]})
 
     shell_info = urwid.Text("This is the shell that will be used when you hit !\n")
     shells = ["classic", "ipython"]
@@ -118,10 +126,12 @@ def edit_config(ui, conf_dict):
     theme_edit = urwid.Edit(edit_text=conf_dict["theme"])
     theme_rbs = [
             urwid.RadioButton(theme_rb_grp, name,
-                conf_dict["theme"] == name)
+                conf_dict["theme"] == name, on_state_change=_update_config,
+                user_data={"theme": name})
             for name in THEMES]+[
             urwid.RadioButton(theme_rb_grp, "Custom:",
-                not known_theme),
+                not known_theme, on_state_change=_update_config,
+                user_data={"theme": name}),
             urwid.Padding(
                 urwid.AttrMap(theme_edit, "value"),
                 left=4),
@@ -139,7 +149,8 @@ def edit_config(ui, conf_dict):
                 + [urwid.AttrMap(urwid.Text("Shell:\n"), "group head")]
                 + [shell_info]
                 + shell_rbs
-                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")] + theme_rbs,
+                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
+                + theme_rbs,
                 ),
             [
                 ("OK", True),
@@ -161,6 +172,8 @@ def edit_config(ui, conf_dict):
 
         conf_dict["line_numbers"] = cb_line_numbers.get_state()
 
+    else: # User clicked "Cancel"
+        conf_dict.update(old_conf_dict)
 
 
 
