@@ -5,37 +5,8 @@ from __future__ import division
 import urwid
 import bdb
 
-from settings import get_save_config_path
-from theme import THEMES
 
-def _format_string(strings, col_offset=0, line_length=78):
-    """
-    Convert a list of strings into a formatted list.
 
-    col_offset should be the number of spaces preceding the column
-    (i.e., preceding tabs).  line_length should be the desired line length
-    to fit the text into.
-
-    >>> from pudb import debugger
-    >>> l = ["one", "two", "three", "four", "five", "six", "seven", "eight",
-    ... "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen"]
-    >>> print debugger._format_string(l, col_offset=4, line_length=50)
-    one, two, three, four, five, six, seven,
-    eight, nine, ten, eleven, twelve, thirteen,
-    fourteen, and fifteen.
-
-    """
-    lines = [""]
-    strings = strings[:]
-    strings[-1] = "and " + strings[-1]
-    for string in strings:
-        if len(lines[-1]) + len(string) + col_offset < line_length:
-            lines[-1] = lines[-1] + string + ", "
-        else:
-            lines[-1] = lines[-1][:-1] # Remove trailing whitespace
-            lines.append(string + ", ")
-    lines[-1] = lines[-1][:-2] + "."
-    return "\n".join(lines)
 
 HELP_TEXT = """\
 Welcome to PuDB, the Python Urwid debugger.
@@ -96,42 +67,6 @@ Keys in breakpoints view:
     enter - edit breakpoint
     d - delete breakpoint
 
-Configuration
--------------
-
-There is a configuration file for PuDB at
-%s
-
-It contains the following options:
-
-    seen_welcome
-
-        Value used to determine if you've
-        seen the welcome screen.
-
-    line_numbers
-
-        If set to True, it will show the
-        line numbers of the code. The
-        default is False.
-
-    theme
-
-        Change the color theme.  The default
-        themes are:
-        %s
-
-        You can also use custom themes.
-        See the example_theme.py file
-        in the pudb source code.
-
-    shell
-
-        The shell that is called when you type !
-        The default is classic, which uses the default
-        Python shell.  You can set this to ipython
-        to use IPython.
-
 License:
 --------
 
@@ -159,7 +94,8 @@ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
-""" % (get_save_config_path(), _format_string(THEMES, col_offset=8))
+"""
+
 
 
 # debugger interface ----------------------------------------------------------
