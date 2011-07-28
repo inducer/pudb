@@ -80,7 +80,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
                 % status_msg),
                 urwid.Text("\n\nIf you decide to restart, this command will be run prior to "
                 "actually restarting:"),
-                urwid.AttrWrap(pre_run_edit, "value")
+                urwid.AttrMap(pre_run_edit, "value")
                 ]),
             [
                 ("Restart", "restart"),

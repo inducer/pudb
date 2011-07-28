@@ -93,13 +93,19 @@ def save_config(conf_dict):
 def edit_config(ui, conf_dict):
     import urwid
 
+    heading = urwid.Text("This is the preferences screen for PuDB\n"
+        "Hit Ctrl-P at any time to get back to it.\n\n"
+        "Configuration settings are saved in \n"
+        "%s\n" % get_save_config_path())
+
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",
             bool(conf_dict["line_numbers"]))
 
+    shell_info = urwid.Text("This is the shell that will be used when you hit !\n")
     shells = ["classic", "ipython"]
 
     shell_rb_grp = []
-    shell_rbs = [ 
+    shell_rbs = [
             urwid.RadioButton(shell_rb_grp, name,
                 conf_dict["shell"] == name)
             for name in shells]
@@ -110,14 +116,14 @@ def edit_config(ui, conf_dict):
 
     theme_rb_grp = []
     theme_edit = urwid.Edit(edit_text=conf_dict["theme"])
-    theme_rbs = [ 
+    theme_rbs = [
             urwid.RadioButton(theme_rb_grp, name,
                 conf_dict["theme"] == name)
             for name in THEMES]+[
             urwid.RadioButton(theme_rb_grp, "Custom:",
                 not known_theme),
             urwid.Padding(
-                urwid.AttrWrap(theme_edit, "value"),
+                urwid.AttrMap(theme_edit, "value"),
                 left=4),
 
             urwid.Text("\nTo use a custom theme, see example-theme.py in the "
@@ -127,15 +133,18 @@ def edit_config(ui, conf_dict):
 
     if ui.dialog(
             urwid.ListBox(
-                [cb_line_numbers]
+                [heading]
+                + [cb_line_numbers]
                 + [urwid.Text("")]
-                + [urwid.AttrWrap(urwid.Text("Shell:\n"), "group head")] + shell_rbs
-                + [urwid.AttrWrap(urwid.Text("\nTheme:\n"), "group head")] + theme_rbs,
+                + [urwid.AttrMap(urwid.Text("Shell:\n"), "group head")]
+                + [shell_info]
+                + shell_rbs
+                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")] + theme_rbs,
                 ),
             [
                 ("OK", True),
                 ("Cancel", False),
-                ], 
+                ],
             title="Edit Preferences"):
         for shell, shell_rb in zip(shells, shell_rbs):
             if shell_rb.get_state():

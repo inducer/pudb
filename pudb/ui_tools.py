@@ -56,7 +56,7 @@ def make_hotkey_markup(s):
 
 
 def labelled_value(label, value):
-    return urwid.AttrWrap(urwid.Text([
+    return urwid.AttrMap(urwid.Text([
         ("label", label), str(value)]),
         "fixed value", "fixed value")
 
@@ -220,9 +220,9 @@ class SearchBox(urwid.Edit):
                 return None
         else:
             if self.do_search(1, self.search_start):
-                self.ui.search_attrwrap.set_attr("search box")
+                self.ui.search_AttrMap.set_attr("search box")
             else:
-                self.ui.search_attrwrap.set_attr("search not found")
+                self.ui.search_AttrMap.set_attr("search not found")
 
         return result
 
