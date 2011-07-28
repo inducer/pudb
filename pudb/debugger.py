@@ -490,8 +490,15 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
+            from pudb import CONFIG
+
             _, pos = self.stack_list._w.get_focus()
-            self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
+            if CONFIG["current_stack_frame"] == "top":
+                self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
+            elif CONFIG["current_stack_frame"] == "bottom":
+                self.debugger.set_frame_index(pos)
+            else:
+                raise ValueError("invalid value for 'current_stack_frame' pref")
 
         self.stack_list.listen("enter", examine_frame)
 
@@ -1116,11 +1123,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         from pudb.settings import edit_config, save_config
         edit_config(self, CONFIG)
         save_config(CONFIG)
-        self.setup_palette(self.screen)
-
-        for sl in self.source:
-            sl._invalidate()
-
 
     def dialog(self, content, buttons_and_results,
             title=None, bind_enter_esc=True, focus_buttons=False,
@@ -1223,7 +1225,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "d"
+        from pudb import CONFIG
+        WELCOME_LEVEL = "e000"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1235,6 +1238,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "a terminal. If you've worked with the excellent (but nowadays "
                     "ancient) DOS-based Turbo Pascal or C tools, PuDB's UI might "
                     "look familiar.\n\n"
+                    "If you're new here, welcome! The help screen (invoked by hitting "
+                    "'?' after this message) should get you on your way.\n\n"
+                    "New features in version 2011.3:\n\n"
+                    "- Finer-grained string highlighting (submitted by Aaron Meurer)\n"
+                    "- Prefs tweaks, instant-apply, top-down stack (submitted by Aaron Meurer)\n\n"
                     "New features in version 2011.2:\n\n"
                     "- Fix for post-mortem debugging (submitted by 'Sundance')\n\n"
                     "New features in version 2011.1:\n\n"
@@ -1245,15 +1253,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "- Stored preferences (no more pesky IPython prompt!)\n"
                     "- Themes\n"
                     "- Line numbers (optional)\n"
-                    "\nHit Ctrl-P to set up PuDB.\n\n"
-                    "If you're new here, welcome! The help screen (invoked by hitting "
-                    "'?' after this message) should get you on your way." % VERSION)
-
+                    % VERSION)
             from pudb.settings import save_config
             save_config(CONFIG)
-            self.message("Since this is the first time you've used PuDB, \n"
-                "I will show you a configuration screen.  Hit Ctrl-P at any \n"
-                "time to get back to it.")
             self.run_edit_config()
 
 
@@ -1286,7 +1288,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         from pudb import VERSION
         caption = [(None,
-            u"PuDB %s - ?:help  n:next  s:step into  b:breakpoint  o:output "
+            u"PuDB %s - ?:help  n:next  s:step into  b:breakpoint  o:output  "
             "t:run to cursor  !:python shell"
             % VERSION)]
 
@@ -1424,8 +1426,17 @@ class DebuggerUI(FrameVarInfoKeeper):
                     code.co_name, class_name,
                     self._format_fname(code.co_filename), lineno)
 
-        self.stack_walker[:] = [make_frame_ui(fl)
-                for fl in self.debugger.stack[::-1]]
+        from pudb import CONFIG
+
+        if CONFIG["current_stack_frame"] == "top":
+            self.stack_walker[:] = [make_frame_ui(fl)
+                    for fl in self.debugger.stack[::-1]]
+        elif CONFIG["current_stack_frame"] == "bottom":
+            self.stack_walker[:] = [make_frame_ui(fl)
+                    for fl in self.debugger.stack]
+        else:
+            raise ValueError("invalid value for 'current_stack_frame' pref")
+
 
     def show_exception(self, exc_type, exc_value, traceback):
         from traceback import format_exception

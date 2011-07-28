@@ -54,19 +54,22 @@ def load_config():
     conf_dict.setdefault("theme", "classic")
     conf_dict.setdefault("line_numbers", False)
     conf_dict.setdefault("seen_welcome", "a")
+
     conf_dict.setdefault("sidebar_width", 0.5)
     conf_dict.setdefault("variables_height", 1)
     conf_dict.setdefault("stack_height", 1)
     conf_dict.setdefault("breakpoints_height", 1)
 
-    def hack_bool(name):
+    conf_dict.setdefault("current_stack_frame", "top")
+
+    def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
                 conf_dict[name] = False
         except:
             pass
 
-    hack_bool("line_numbers")
+    normalize_bool_inplace("line_numbers")
 
     return conf_dict
 
@@ -93,19 +96,47 @@ def save_config(conf_dict):
 
 
 
-
 def edit_config(ui, conf_dict):
     import urwid
 
-    heading = urwid.Text("This is the preferences screen for PuDB\n"
+    def _update_config(check_box, new_state, option_newvalue):
+        option, newvalue = option_newvalue
+        new_conf_dict = {option: newvalue}
+        if option == "theme":
+            # only activate if the new state of the radio button is 'on'
+            if new_state:
+                if newvalue is None:
+                    newvalue = theme_edit.get_edit_text()
+
+                conf_dict.update(theme=newvalue)
+                ui.setup_palette(ui.screen)
+
+                for sl in ui.source:
+                    sl._invalidate()
+
+        elif option == "line_numbers":
+            new_conf_dict["line_numbers"] = not check_box.get_state()
+            conf_dict.update(new_conf_dict)
+
+            for sl in ui.source:
+                sl._invalidate()
+
+        elif option == "current_stack_frame":
+            # only activate if the new state of the radio button is 'on'
+            if new_state:
+                conf_dict.update(new_conf_dict)
+                ui.update_stack()
+
+    heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
-        "Configuration settings are saved in \n"
-        "%s\n" % get_save_config_path())
+        "Configuration settings are saved in "
+        "%s.\n" % get_save_config_path())
 
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",
-            bool(conf_dict["line_numbers"]))
+            bool(conf_dict["line_numbers"]), on_state_change=_update_config,
+                user_data=("line_numbers", None))
 
-    shell_info = urwid.Text("This is the shell that will be used when you hit !\n")
+    shell_info = urwid.Text("This is the shell that will be used when you hit '!'.\n")
     shells = ["classic", "ipython"]
 
     shell_rb_grp = []
@@ -122,17 +153,30 @@ def edit_config(ui, conf_dict):
     theme_edit = urwid.Edit(edit_text=conf_dict["theme"])
     theme_rbs = [
             urwid.RadioButton(theme_rb_grp, name,
-                conf_dict["theme"] == name)
+                conf_dict["theme"] == name, on_state_change=_update_config,
+                user_data=("theme", name))
             for name in THEMES]+[
             urwid.RadioButton(theme_rb_grp, "Custom:",
-                not known_theme),
+                not known_theme, on_state_change=_update_config,
+                user_data=("theme", None)),
             urwid.Padding(
                 urwid.AttrMap(theme_edit, "value"),
                 left=4),
 
             urwid.Text("\nTo use a custom theme, see example-theme.py in the "
                 "pudb distribution. Enter the full path to a file like it in the "
-                "box above."),
+                "box above. '~' will be expanded to your home directory."),
+            ]
+
+    stack_rb_group = []
+    stack_opts = ["top", "bottom"]
+    stack_info = urwid.Text("Show the current stack frame at the\n")
+    stack_rbs = [
+            urwid.RadioButton(stack_rb_group, name,
+                conf_dict["current_stack_frame"] == name,
+                on_state_change=_update_config,
+                user_data=("current_stack_frame", name))
+            for name in stack_opts
             ]
 
     if ui.dialog(
@@ -143,28 +187,23 @@ def edit_config(ui, conf_dict):
                 + [urwid.AttrMap(urwid.Text("Shell:\n"), "group head")]
                 + [shell_info]
                 + shell_rbs
-                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")] + theme_rbs,
+                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
+                + theme_rbs
+                + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
+                + [stack_info]
+                + stack_rbs
                 ),
             [
-                ("OK", True),
-                ("Cancel", False),
+                ("Close", True),
                 ],
             title="Edit Preferences"):
+
+        # Only update the shell setting here. Instant-apply (above) takes care
+        # of updating everything else.
+
         for shell, shell_rb in zip(shells, shell_rbs):
             if shell_rb.get_state():
                 conf_dict["shell"] = shell
-
-        saw_theme = False
-        for theme, theme_rb in zip(THEMES, theme_rbs):
-            if theme_rb.get_state():
-                conf_dict["theme"] = theme
-                saw_theme = True
-
-        if not saw_theme:
-            conf_dict["theme"] = theme_edit.get_edit_text()
-
-        conf_dict["line_numbers"] = cb_line_numbers.get_state()
-
 
 
 

@@ -99,6 +99,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("keyword", add_setting("white", "bold"), "dark blue"),
         ("name", "light cyan", "dark blue"),
         ("literal", "light magenta", "dark blue"),
+
+        ("string", "light magenta", "dark blue"),
+        ("doublestring", "light magenta", "dark blue"),
+        ("singlestring", "light magenta", "dark blue"),
+        ("docstring", "light magenta", "dark blue"),
+
         ("punctuation", "light gray", "dark blue"),
         ("comment", "light gray", "dark blue"),
         ("bp_star", "dark red", "dark blue"),
@@ -115,8 +121,13 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "source": ("black", "default"),
             "keyword": ("brown", "default"),
             "kw_namespace": ("dark magenta", "default"),
+
             "literal": ("black", "default"),
             "string": ("dark red", "default"),
+            "doublestring": ("dark red", "default"),
+            "singlestring": ("dark red", "default"),
+            "docstring": ("dark red", "default"),
+
             "punctuation": ("black", "default"),
             "comment": ("dark blue", "default"),
             "classname": ("dark cyan", "default"),
@@ -210,7 +221,13 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         "line number": ("dark gray", "black"),
         "keyword": ("yellow", "black"),
+
         "literal": ("dark magenta", "black"),
+        "string": ("dark magenta", "black"),
+        "doublestring": ("dark magenta", "black"),
+        "singlestring": ("dark magenta", "black"),
+        "docstring": ("dark magenta", "black"),
+
         "name": ("light cyan", "black"),
         "punctuation": ("yellow", "black"),
         "comment": ("light blue", "black"),
@@ -267,7 +284,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
                     "palette": palette_dict,
                     "add_setting": add_setting,
                     }
-            execfile(theme, symbols)
+
+            from os.path import expanduser
+            execfile(expanduser(theme), symbols)
         except:
             print "Error when importing theme:"
             from traceback import print_exc
