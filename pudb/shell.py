@@ -6,9 +6,6 @@ else:
     HAVE_IPYTHON = True
 
 
-
-
-
 # readline wrangling ----------------------------------------------------------
 def setup_readline():
     import os
@@ -25,8 +22,6 @@ def setup_readline():
     readline.parse_and_bind("tab: complete")
 
 
-
-
 try:
     import readline
     import rlcompleter
@@ -35,8 +30,6 @@ except ImportError:
     HAVE_READLINE = False
 else:
     setup_readline()
-
-
 
 
 # combined locals/globals dict ------------------------------------------------
@@ -57,8 +50,6 @@ class SetPropagatingDict(dict):
         del self.target_dict[key]
 
 
-
-
 def run_classic_shell(locals, globals, first_time):
     if first_time:
         banner = "Hit Ctrl-D to return to PuDB."
@@ -77,9 +68,8 @@ def run_classic_shell(locals, globals, first_time):
     cons.interact(banner)
 
 
-
-
-def run_ipython_shell(locals, globals, first_time):
+def run_ipython_shell_v10(locals, globals, first_time):
+    '''IPython shell from IPython version 0.10'''
     if first_time:
         banner = "Hit Ctrl-D to return to PuDB."
     else:
@@ -91,3 +81,33 @@ def run_ipython_shell(locals, globals, first_time):
     from IPython.Shell import IPShell
     IPShell(argv=[], user_ns=ns, user_global_ns=globals) \
             .mainloop(banner=banner)
+
+
+def run_ipython_shell_v11(locals, globals, first_time):
+    '''IPython shell from IPython version 0.11'''
+    if first_time:
+        banner = "Hit Ctrl-D to return to PuDB."
+    else:
+        banner = ""
+
+    # avoid IPython's namespace litter
+    ns = locals.copy()
+
+    from IPython.frontend.terminal.interactiveshell import \
+            TerminalInteractiveShell
+    from IPython.frontend.terminal.ipapp import load_default_config
+    # XXX: in the future it could be useful to load a 'pudb' config for the
+    # user (if it exists) that could contain the user's macros and other
+    # niceities.
+    config = load_default_config()
+    shell = TerminalInteractiveShell.instance(config=config, user_ns=ns,
+            user_global_ns=globals, banner2=banner)
+    shell.mainloop(banner)
+
+
+# Set the proper ipython shel
+if HAVE_IPYTHON and hasattr(IPython, 'Shell'):
+    run_ipython_shell = run_ipython_shell_v10
+else:
+    run_ipython_shell = run_ipython_shell_v11
+
