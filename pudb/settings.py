@@ -99,6 +99,21 @@ def save_config(conf_dict):
 def edit_config(ui, conf_dict):
     import urwid
 
+    old_conf_dict = conf_dict.copy()
+
+    def _update_theme():
+        ui.setup_palette(ui.screen)
+
+        for sl in ui.source:
+            sl._invalidate()
+
+    def _update_line_numbers():
+        for sl in ui.source:
+                sl._invalidate()
+
+    def _update_current_stack_frame():
+        ui.update_stack()
+
     def _update_config(check_box, new_state, option_newvalue):
         option, newvalue = option_newvalue
         new_conf_dict = {option: newvalue}
@@ -109,24 +124,18 @@ def edit_config(ui, conf_dict):
                     newvalue = theme_edit.get_edit_text()
 
                 conf_dict.update(theme=newvalue)
-                ui.setup_palette(ui.screen)
-
-                for sl in ui.source:
-                    sl._invalidate()
+                _update_theme()
 
         elif option == "line_numbers":
             new_conf_dict["line_numbers"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
-
-            for sl in ui.source:
-                sl._invalidate()
+            _update_line_numbers()
 
         elif option == "current_stack_frame":
             # only activate if the new state of the radio button is 'on'
             if new_state:
                 conf_dict.update(new_conf_dict)
-                ui.update_stack()
-
+                _update_current_stack_frame()
     heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
         "Configuration settings are saved in "
@@ -194,7 +203,8 @@ def edit_config(ui, conf_dict):
                 + stack_rbs
                 ),
             [
-                ("Close", True),
+                ("OK", True),
+                ("Cancel", False),
                 ],
             title="Edit Preferences"):
 
@@ -205,6 +215,11 @@ def edit_config(ui, conf_dict):
             if shell_rb.get_state():
                 conf_dict["shell"] = shell
 
+    else: # The user chose cancel, revert changes
+        conf_dict.update(old_conf_dict)
+        _update_theme()
+        # _update_line_numbers() is equivalent to _update_theme()
+        _update_current_stack_frame()
 
 
 
