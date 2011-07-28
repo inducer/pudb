@@ -62,6 +62,8 @@ def load_config():
 
     conf_dict.setdefault("current_stack_frame", "top")
 
+    conf_dict.setdefault("stringifier", "type")
+
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
@@ -114,6 +116,9 @@ def edit_config(ui, conf_dict):
     def _update_current_stack_frame():
         ui.update_stack()
 
+    def _update_stringifier():
+        ui.update_var_view()
+
     def _update_config(check_box, new_state, option_newvalue):
         option, newvalue = option_newvalue
         new_conf_dict = {option: newvalue}
@@ -136,6 +141,13 @@ def edit_config(ui, conf_dict):
             if new_state:
                 conf_dict.update(new_conf_dict)
                 _update_current_stack_frame()
+
+        elif option == "stringifier":
+            # only activate if the new state of the radio button is 'on'
+            if new_state:
+                conf_dict.update(new_conf_dict)
+                _update_stringifier()
+
     heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
         "Configuration settings are saved in "
@@ -188,6 +200,20 @@ def edit_config(ui, conf_dict):
             for name in stack_opts
             ]
 
+    stringifier_rb_group = []
+    stringifier_opts = ["type", "str", "repr"]
+    stringifier_info = urwid.Text("This is the default function that will be "
+        "called on variables in the variables list.  Note that you can change "
+        "this on a per-variable basis by selecting a variable and hitting Enter "
+        "or by typing t/s/r.  Note that str and repr will be slower than type "
+        "and have the potential to crash PuDB.")
+    stringifier_rbs = [
+            urwid.RadioButton(stack_rb_group, name,
+                conf_dict["stringifier"] == name,
+                on_state_change=_update_config,
+                user_data=("stringifier", name))
+            for name in stringifier_opts
+            ]
     if ui.dialog(
             urwid.ListBox(
                 [heading]
@@ -201,6 +227,9 @@ def edit_config(ui, conf_dict):
                 + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
                 + [stack_info]
                 + stack_rbs
+                + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
+                + [stringifier_info]
+                + stringifier_rbs
                 ),
             [
                 ("OK", True),
@@ -220,6 +249,7 @@ def edit_config(ui, conf_dict):
         _update_theme()
         # _update_line_numbers() is equivalent to _update_theme()
         _update_current_stack_frame()
+        _update_stringifier()
 
 
 

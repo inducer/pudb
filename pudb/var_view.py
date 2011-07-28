@@ -7,6 +7,8 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
+from pudb import CONFIG
+
 # data ------------------------------------------------------------------------
 class FrameVarInfo(object):
     def __init__(self):
@@ -24,7 +26,7 @@ class FrameVarInfo(object):
 class InspectInfo(object):
     def __init__(self):
         self.show_detail = False
-        self.display_type = "type"
+        self.display_type = CONFIG["stringifier"]
         self.highlighted = False
         self.repeated_at_top = False
         self.show_private_members = False
