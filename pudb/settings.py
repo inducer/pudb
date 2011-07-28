@@ -32,8 +32,6 @@ SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints"
 BREAKPOINTS_FILE_NAME = "breakpoints"
 
 
-
-
 def load_config():
     from os.path import join, isdir
 
@@ -126,7 +124,8 @@ def edit_config(ui, conf_dict):
             # only activate if the new state of the radio button is 'on'
             if new_state:
                 if newvalue is None:
-                    newvalue = theme_edit.get_edit_text()
+                    lb.set_focus(13)
+                    return
 
                 conf_dict.update(theme=newvalue)
                 _update_theme()
@@ -160,9 +159,9 @@ def edit_config(ui, conf_dict):
     shell_info = urwid.Text("This is the shell that will be used when you hit '!'.\n")
     shells = ["classic", "ipython"]
 
-    shell_rb_grp = []
+    shell_rb_group = []
     shell_rbs = [
-            urwid.RadioButton(shell_rb_grp, name,
+            urwid.RadioButton(shell_rb_group, name,
                 conf_dict["shell"] == name)
             for name in shells]
 
@@ -170,14 +169,14 @@ def edit_config(ui, conf_dict):
 
     known_theme = conf_dict["theme"] in THEMES
 
-    theme_rb_grp = []
-    theme_edit = urwid.Edit(edit_text=conf_dict["theme"])
+    theme_rb_group = []
+    theme_edit = urwid.Edit()
     theme_rbs = [
-            urwid.RadioButton(theme_rb_grp, name,
+            urwid.RadioButton(theme_rb_group, name,
                 conf_dict["theme"] == name, on_state_change=_update_config,
                 user_data=("theme", name))
             for name in THEMES]+[
-            urwid.RadioButton(theme_rb_grp, "Custom:",
+            urwid.RadioButton(theme_rb_group, "Custom:",
                 not known_theme, on_state_change=_update_config,
                 user_data=("theme", None)),
             urwid.Padding(
@@ -208,37 +207,44 @@ def edit_config(ui, conf_dict):
         "or by typing t/s/r.  Note that str and repr will be slower than type "
         "and have the potential to crash PuDB.")
     stringifier_rbs = [
-            urwid.RadioButton(stack_rb_group, name,
+            urwid.RadioButton(stringifier_rb_group, name,
                 conf_dict["stringifier"] == name,
                 on_state_change=_update_config,
                 user_data=("stringifier", name))
             for name in stringifier_opts
             ]
-    if ui.dialog(
-            urwid.ListBox(
-                [heading]
-                + [cb_line_numbers]
-                + [urwid.Text("")]
-                + [urwid.AttrMap(urwid.Text("Shell:\n"), "group head")]
-                + [shell_info]
-                + shell_rbs
-                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
-                + theme_rbs
-                + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
-                + [stack_info]
-                + stack_rbs
-                + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
-                + [stringifier_info]
-                + stringifier_rbs
-                ),
-            [
-                ("OK", True),
-                ("Cancel", False),
-                ],
-            title="Edit Preferences"):
 
-        # Only update the shell setting here. Instant-apply (above) takes care
-        # of updating everything else.
+    lb = urwid.ListBox(
+            [heading]
+            + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
+            + [cb_line_numbers]
+            + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
+            + [shell_info]
+            + shell_rbs
+            + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
+            + theme_rbs
+            + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
+            + [stack_info]
+            + stack_rbs
+            + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
+            + [stringifier_info]
+            + stringifier_rbs
+            )
+
+
+    if ui.dialog(lb,         [
+            ("OK", True),
+            ("Cancel", False),
+            ],
+            title="Edit Preferences"):
+        # Only update the settings here that instant-apply (above) doesn't take
+        # care of.
+
+        # if we had a custom theme, it wasn't updated live
+        if theme_rb_group[-1].state:
+            newvalue = theme_edit.get_edit_text()
+            conf_dict.update(theme=newvalue)
+            _update_theme()
 
         for shell, shell_rb in zip(shells, shell_rbs):
             if shell_rb.get_state():
