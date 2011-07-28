@@ -91,10 +91,19 @@ def edit_config(ui, conf_dict):
 
     old_conf_dict = conf_dict.copy()
 
-    def _update_config(check_box, new_state, new_conf_dict):
-        if new_state:
+    def _update_config(check_box, new_state, option_newvalue):
+        option, newvalue = option_newvalue
+        new_conf_dict = {option: newvalue}
+        if option == "theme":
+            if new_state:
+                conf_dict.update(new_conf_dict)
+                ui.setup_palette(ui.screen)
+
+                for sl in ui.source:
+                    sl._invalidate()
+        elif option == "line_numbers":
+            new_conf_dict["line_numbers"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
-            ui.setup_palette(ui.screen)
 
             for sl in ui.source:
                 sl._invalidate()
@@ -106,7 +115,7 @@ def edit_config(ui, conf_dict):
 
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",
             bool(conf_dict["line_numbers"]), on_state_change=_update_config,
-                user_data={"line_numbers": not conf_dict["line_numbers"]})
+                user_data=("line_numbers", None))
 
     shell_info = urwid.Text("This is the shell that will be used when you hit !\n")
     shells = ["classic", "ipython"]
@@ -126,11 +135,11 @@ def edit_config(ui, conf_dict):
     theme_rbs = [
             urwid.RadioButton(theme_rb_grp, name,
                 conf_dict["theme"] == name, on_state_change=_update_config,
-                user_data={"theme": name})
+                user_data=("theme", name))
             for name in THEMES]+[
             urwid.RadioButton(theme_rb_grp, "Custom:",
                 not known_theme, on_state_change=_update_config,
-                user_data={"theme": name}),
+                user_data=("theme", name)),
             urwid.Padding(
                 urwid.AttrMap(theme_edit, "value"),
                 left=4),
