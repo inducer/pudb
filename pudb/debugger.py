@@ -464,8 +464,13 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
+            from pudb import CONFIG
+
             _, pos = self.stack_list._w.get_focus()
-            self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
+            if CONFIG["current_stack_frame"] == "top":
+                self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
+            else: # CONFIG["current_stack_frame"] == "bottom":
+                self.debugger.set_frame_index(pos)
 
         self.stack_list.listen("enter", examine_frame)
 
@@ -1020,6 +1025,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         edit_config(self, CONFIG)
         save_config(CONFIG)
         self.setup_palette(self.screen)
+        self.update_stack()
 
         for sl in self.source:
             sl._invalidate()
@@ -1329,8 +1335,15 @@ class DebuggerUI(FrameVarInfoKeeper):
                     code.co_name, class_name,
                     self._format_fname(code.co_filename), lineno)
 
-        self.stack_walker[:] = [make_frame_ui(fl)
-                for fl in self.debugger.stack[::-1]]
+        from pudb import CONFIG
+
+        if CONFIG["current_stack_frame"] == "top":
+            self.stack_walker[:] = [make_frame_ui(fl)
+                    for fl in self.debugger.stack[::-1]]
+        else: # CONFIG["current_stack_frame"] == "bottom":
+            self.stack_walker[:] = [make_frame_ui(fl)
+                    for fl in self.debugger.stack]
+
 
     def show_exception(self, exc_type, exc_value, traceback):
         from traceback import format_exception
