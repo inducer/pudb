@@ -54,15 +54,16 @@ def load_config():
     conf_dict.setdefault("theme", "classic")
     conf_dict.setdefault("line_numbers", False)
     conf_dict.setdefault("seen_welcome", "a")
+    conf_dict.setdefault("current_stack_frame", "top")
 
-    def hack_bool(name):
+    def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
                 conf_dict[name] = False
         except:
             pass
 
-    hack_bool("line_numbers")
+    normalize_bool_inplace("line_numbers")
 
     return conf_dict
 
@@ -85,6 +86,9 @@ def save_config(conf_dict):
         outf.close()
     except:
         pass
+
+
+
 
 def edit_config(ui, conf_dict):
     import urwid
@@ -149,6 +153,15 @@ def edit_config(ui, conf_dict):
                 "box above."),
             ]
 
+    stack_rb_group = []
+    stack_opts = ["top", "bottom"]
+    stack_info = urwid.Text("Show the current stack frame at the\n")
+    stack_rbs = [
+            urwid.RadioButton(stack_rb_group, name,
+                conf_dict["current_stack_frame"] == name)
+            for name in stack_opts
+            ]
+
     if ui.dialog(
             urwid.ListBox(
                 [heading]
@@ -158,7 +171,10 @@ def edit_config(ui, conf_dict):
                 + [shell_info]
                 + shell_rbs
                 + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
-                + theme_rbs,
+                + theme_rbs
+                + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
+                + [stack_info]
+                + stack_rbs
                 ),
             [
                 ("OK", True),
@@ -180,8 +196,9 @@ def edit_config(ui, conf_dict):
 
         conf_dict["line_numbers"] = cb_line_numbers.get_state()
 
-    else: # User clicked "Cancel"
-        conf_dict.update(old_conf_dict)
+        for opt, stack_rb in zip(stack_opts, stack_rbs):
+            if stack_rb.get_state():
+                conf_dict["current_stack_frame"] = opt
 
 
 
