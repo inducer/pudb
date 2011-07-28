@@ -100,9 +100,9 @@ def edit_config(ui, conf_dict):
             for sl in ui.source:
                 sl._invalidate()
 
-    heading = urwid.Text("This is the preferences screen for PuDB\n"
+    heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
-        "Configuration settings are saved in \n"
+        "Configuration settings are saved in "
         "%s\n" % get_save_config_path())
 
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",

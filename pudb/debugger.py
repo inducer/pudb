@@ -1156,8 +1156,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             from pudb.settings import save_config
             save_config(CONFIG)
-            self.message("Since this is the first time you've used PuDB, \n"
-                "I will show you a configuration screen.  Hit Ctrl-P at any \n"
+            self.message("Since this is the first time you've used PuDB, "
+                "I will now show you the configuration screen.  Hit Ctrl-P at any "
                 "time to get back to it.")
             self.run_edit_config()
 
