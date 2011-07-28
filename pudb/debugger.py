@@ -464,8 +464,13 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
+            from pudb import CONFIG
+
             _, pos = self.stack_list._w.get_focus()
-            self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
+            if CONFIG["current_stack_frame"] == "top":
+                self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
+            else: # CONFIG["current_stack_frame"] == "bottom":
+                self.debugger.set_frame_index(pos)
 
         self.stack_list.listen("enter", examine_frame)
 
