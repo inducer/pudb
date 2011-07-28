@@ -96,3 +96,9 @@ tool.:
 
 You may also [browse the code](https://github.com/inducer/pudb/) online
 at GitHub, and fork the project there.
+
+# FAQs
+
+Q: I navigated to the Variables/Stack/Breakpoints view.  How do I get
+   back to the source view?
+A: Press your left arrow key.
