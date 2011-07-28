@@ -5,7 +5,7 @@ from __future__ import division
 import urwid
 import bdb
 
-
+from pudb import CONFIG
 
 
 HELP_TEXT = """\
@@ -921,7 +921,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             curframe = self.debugger.curframe
 
-            from pudb import CONFIG
             import pudb.shell as shell
             if shell.HAVE_IPYTHON and CONFIG["shell"] == "ipython":
                 runner = shell.run_ipython_shell
@@ -1016,7 +1015,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     def run_edit_config(self):
         from pudb.settings import edit_config, save_config
-        from pudb import CONFIG
         edit_config(self, CONFIG)
         save_config(CONFIG)
         self.setup_palette(self.screen)
@@ -1092,7 +1090,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         may_use_fancy_formats = isinstance(screen, RawScreen) and \
                 not hasattr(urwid.escape, "_fg_attr_xterm")
 
-        from pudb import CONFIG
         from pudb.theme import get_palette
         screen.register_palette(
                 get_palette(may_use_fancy_formats, CONFIG["theme"]))
@@ -1127,7 +1124,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        from pudb import CONFIG
         WELCOME_LEVEL = "d"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
