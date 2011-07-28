@@ -1199,6 +1199,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "- Finer-grained string highlighting (submitted by Aaron Meurer)\n"
                     "- Prefs tweaks, instant-apply, top-down stack (submitted by Aaron Meurer)\n"
                     "- Size changes in sidebar boxes (submitted by Aaron Meurer)\n\n"
+                    "- New theme 'midnight' (submitted by Aaron Meurer)\n\n"
                     "New features in version 2011.2:\n\n"
                     "- Fix for post-mortem debugging (submitted by 'Sundance')\n\n"
                     "New features in version 2011.1:\n\n"
