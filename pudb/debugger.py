@@ -329,7 +329,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.columns = urwid.Columns(
                     [
                         ("weight", 1, self.lhs_col),
-                        ("weight", 0.5, self.rhs_col),
+                        ("weight", float(CONFIG["sidebar_width"]), self.rhs_col),
                         ],
                     dividechars=1)
 
@@ -943,26 +943,46 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
         def max_sidebar(w, size, key):
-            self.columns.column_types[1] = "weight", 5
+            from pudb.settings import save_config
+
+            weight = 5
+            CONFIG["sidebar_width"] = weight
+            save_config(CONFIG)
+
+            self.columns.column_types[1] = "weight", weight
             self.columns._invalidate()
 
         def min_sidebar(w, size, key):
-            self.columns.column_types[1] = "weight", 1/5
+            from pudb.settings import save_config
+
+            weight = 1/5
+            CONFIG["sidebar_width"] = weight
+            save_config(CONFIG)
+
+            self.columns.column_types[1] = "weight", weight
             self.columns._invalidate()
 
         def grow_sidebar(w, size, key):
+            from pudb.settings import save_config
+
             _, weight = self.columns.column_types[1]
 
             if weight < 5:
                 weight *= 1.25
+                CONFIG["sidebar_width"] = weight
+                save_config(CONFIG)
                 self.columns.column_types[1] = "weight", weight
                 self.columns._invalidate()
 
         def shrink_sidebar(w, size, key):
+            from pudb.settings import save_config
+
             _, weight = self.columns.column_types[1]
 
             if weight > 1/5:
                 weight /= 1.25
+                CONFIG["sidebar_width"] = weight
+                save_config(CONFIG)
                 self.columns.column_types[1] = "weight", weight
                 self.columns._invalidate()
 

@@ -54,6 +54,7 @@ def load_config():
     conf_dict.setdefault("theme", "classic")
     conf_dict.setdefault("line_numbers", False)
     conf_dict.setdefault("seen_welcome", "a")
+    conf_dict.setdefault("sidebar_width", 0.5)
 
     def hack_bool(name):
         try:
