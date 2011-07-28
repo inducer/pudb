@@ -108,6 +108,10 @@ def edit_config(ui, conf_dict):
 
             for sl in ui.source:
                 sl._invalidate()
+        elif option == "current_stack_frame":
+            if new_state:
+                conf_dict.update(new_conf_dict)
+                ui.update_stack()
 
     heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
@@ -155,7 +159,9 @@ def edit_config(ui, conf_dict):
     stack_info = urwid.Text("Show the current stack frame at the\n")
     stack_rbs = [
             urwid.RadioButton(stack_rb_group, name,
-                conf_dict["current_stack_frame"] == name)
+                conf_dict["current_stack_frame"] == name,
+                on_state_change=_update_config,
+                user_data=("current_stack_frame", name))
             for name in stack_opts
             ]
 
@@ -196,6 +202,7 @@ def edit_config(ui, conf_dict):
         for opt, stack_rb in zip(stack_opts, stack_rbs):
             if stack_rb.get_state():
                 conf_dict["current_stack_frame"] = opt
+
     else: # User clicked "Cancel"
         conf_dict.update(old_conf_dict)
 
