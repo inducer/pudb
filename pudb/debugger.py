@@ -476,10 +476,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.stack_list.listen("u", move_stack_up)
         self.stack_list.listen("d", move_stack_down)
-        self.source_sigwrap.listen("u", move_stack_up)
-        self.source_sigwrap.listen("d", move_stack_down)
 
-        # stack listeners -----------------------------------------------------
+        # breakpoint listeners -----------------------------------------------------
         def save_breakpoints(w, size, key):
             self.debugger.save_breakpoints()
 
@@ -881,6 +879,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.source_sigwrap.listen("b", toggle_breakpoint)
         self.source_sigwrap.listen("m", pick_module)
+
+        self.source_sigwrap.listen("u", move_stack_up)
+        self.source_sigwrap.listen("d", move_stack_down)
 
         # top-level listeners -------------------------------------------------
         def show_output(w, size, key):
