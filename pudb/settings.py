@@ -94,7 +94,6 @@ def edit_config(ui, conf_dict):
     def _update_config(check_box, new_state, new_conf_dict):
         if new_state:
             conf_dict.update(new_conf_dict)
-            save_config(conf_dict)
             ui.setup_palette(ui.screen)
 
             for sl in ui.source:
