@@ -6,7 +6,7 @@ import urwid
 import bdb
 import time
 
-
+from pudb import CONFIG
 
 
 HELP_TEXT = """\
@@ -43,11 +43,15 @@ Keys:
     V - focus variables
     S - focus stack
     B - focus breakpoint list
-    +/- - grow/shrink sidebar
-    _/= - minimize/maximize sidebar
 
     f1/?/H - show this help screen
     q - quit
+
+Side-bar related:
+
+    +/- - grow/shrink sidebar
+    _/= - minimize/maximize sidebar
+    [/] - grow/shrink relative size of active sidebar box
 
 Keys in variables list:
 
@@ -313,24 +317,24 @@ class DebuggerUI(FrameVarInfoKeeper):
                 urwid.ListBox(self.bp_walker))
 
         self.rhs_col = urwid.Pile([
-            Attr(urwid.Pile([
+            ("weight", float(CONFIG["variables_weight"]), Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Variables:"))),
                 Attr(self.var_list, "variables"),
-                ]), None, "focused sidebar"),
-            Attr(urwid.Pile([
+                ]), None, "focused sidebar"),),
+            ("weight", float(CONFIG["stack_weight"]), Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Stack:"))),
                 Attr(self.stack_list, "stack"),
-                ]), None, "focused sidebar"),
-            Attr(urwid.Pile([
+                ]), None, "focused sidebar"),),
+            ("weight", float(CONFIG["breakpoints_weight"]), Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Breakpoints:"))),
                 Attr(self.bp_list, "breakpoint"),
-                ]), None, "focused sidebar"),
+                ]), None, "focused sidebar"),),
             ])
 
         self.columns = urwid.Columns(
                     [
                         ("weight", 1, self.lhs_col),
-                        ("weight", 0.5, self.rhs_col),
+                        ("weight", float(CONFIG["sidebar_width"]), self.rhs_col),
                         ],
                     dividechars=1)
 
@@ -339,6 +343,26 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top = SignalWrap(urwid.Frame(
             urwid.AttrMap(self.columns, "background"),
             header))
+
+        from functools import partial
+
+        def change_rhs_box(name, index, direction, w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.rhs_col.item_types[index]
+
+            if direction < 0:
+                if weight > 1/5:
+                    weight /= 1.25
+            else:
+                if weight < 5:
+                    weight *= 1.25
+
+            CONFIG[name+"_weight"] = weight
+            save_config(CONFIG)
+            self.rhs_col.item_types[index] = "weight", weight
+            self.rhs_col._invalidate()
+
 
         # variable listeners --------------------------------------------------
         def change_var_state(w, size, *args):
@@ -480,6 +504,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
 
+        self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
+        self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
+
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, *args):
             from pudb import CONFIG
@@ -487,8 +514,10 @@ class DebuggerUI(FrameVarInfoKeeper):
             _, pos = self.stack_list._w.get_focus()
             if CONFIG["current_stack_frame"] == "top":
                 self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
-            else: # CONFIG["current_stack_frame"] == "bottom":
+            elif CONFIG["current_stack_frame"] == "bottom":
                 self.debugger.set_frame_index(pos)
+            else:
+                raise ValueError("invalid value for 'current_stack_frame' pref")
 
         self.stack_list.listen("enter", examine_frame)
         self.stack_list.listen_mouse_event("mouse double press", 1, examine_frame)
@@ -505,7 +534,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
 
-        # breakpoints listeners -----------------------------------------------
+        self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
+        self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
+
+        # breakpoint listeners -----------------------------------------------------
         def save_breakpoints(w, size, key):
             self.debugger.save_breakpoints()
 
@@ -586,6 +618,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen_mouse_event("mouse double press", 1, examine_breakpoint)
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
+
+        self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
+        self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
 
         # top-level listeners -------------------------------------------------
         def non_post_mortem_only(do_end=True):
@@ -912,6 +947,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen_mouse_event("mouse press", 3, toggle_breakpoint)
         self.source_sigwrap.listen("m", pick_module)
 
+        self.source_sigwrap.listen("u", move_stack_up)
+        self.source_sigwrap.listen("d", move_stack_down)
+
         # top-level listeners -------------------------------------------------
         def show_output(w, size, key):
             self.screen.stop()
@@ -951,7 +989,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             curframe = self.debugger.curframe
 
-            from pudb import CONFIG
             import pudb.shell as shell
             if shell.HAVE_IPYTHON and CONFIG["shell"] == "ipython":
                 runner = shell.run_ipython_shell
@@ -974,26 +1011,46 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
         def max_sidebar(w, size, key):
-            self.columns.column_types[1] = "weight", 5
+            from pudb.settings import save_config
+
+            weight = 5
+            CONFIG["sidebar_width"] = weight
+            save_config(CONFIG)
+
+            self.columns.column_types[1] = "weight", weight
             self.columns._invalidate()
 
         def min_sidebar(w, size, key):
-            self.columns.column_types[1] = "weight", 1/5
+            from pudb.settings import save_config
+
+            weight = 1/5
+            CONFIG["sidebar_width"] = weight
+            save_config(CONFIG)
+
+            self.columns.column_types[1] = "weight", weight
             self.columns._invalidate()
 
         def grow_sidebar(w, size, key):
+            from pudb.settings import save_config
+
             _, weight = self.columns.column_types[1]
 
             if weight < 5:
                 weight *= 1.25
+                CONFIG["sidebar_width"] = weight
+                save_config(CONFIG)
                 self.columns.column_types[1] = "weight", weight
                 self.columns._invalidate()
 
         def shrink_sidebar(w, size, key):
+            from pudb.settings import save_config
+
             _, weight = self.columns.column_types[1]
 
             if weight > 1/5:
                 weight /= 1.25
+                CONFIG["sidebar_width"] = weight
+                save_config(CONFIG)
                 self.columns.column_types[1] = "weight", weight
                 self.columns._invalidate()
 
@@ -1048,15 +1105,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     def run_edit_config(self):
         from pudb.settings import edit_config, save_config
-        from pudb import CONFIG
         edit_config(self, CONFIG)
         save_config(CONFIG)
-        self.setup_palette(self.screen)
-        self.update_stack()
-
-        for sl in self.source:
-            sl._invalidate()
-
 
     def dialog(self, content, buttons_and_results,
             title=None, bind_enter_esc=True, focus_buttons=False,
@@ -1126,7 +1176,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         may_use_fancy_formats = isinstance(screen, RawScreen) and \
                 not hasattr(urwid.escape, "_fg_attr_xterm")
 
-        from pudb import CONFIG
         from pudb.theme import get_palette
         screen.register_palette(
                 get_palette(may_use_fancy_formats, CONFIG["theme"]))
@@ -1163,7 +1212,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Syntax highlighting disabled.")
 
         from pudb import CONFIG
-        WELCOME_LEVEL = "d"
+        WELCOME_LEVEL = "e000"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1175,6 +1224,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "a terminal. If you've worked with the excellent (but nowadays "
                     "ancient) DOS-based Turbo Pascal or C tools, PuDB's UI might "
                     "look familiar.\n\n"
+                    "If you're new here, welcome! The help screen (invoked by hitting "
+                    "'?' after this message) should get you on your way.\n\n"
+                    "New features in version 2011.3:\n\n"
+                    "- Finer-grained string highlighting (submitted by Aaron Meurer)\n"
+                    "- Prefs tweaks, instant-apply, top-down stack (submitted by Aaron Meurer)\n"
+                    "- Size changes in sidebar boxes (submitted by Aaron Meurer)\n\n"
+                    "- New theme 'midnight' (submitted by Aaron Meurer)\n\n"
                     "New features in version 2011.2:\n\n"
                     "- Fix for post-mortem debugging (submitted by 'Sundance')\n\n"
                     "New features in version 2011.1:\n\n"
@@ -1185,15 +1241,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "- Stored preferences (no more pesky IPython prompt!)\n"
                     "- Themes\n"
                     "- Line numbers (optional)\n"
-                    "\nHit Ctrl-P to set up PuDB.\n\n"
-                    "If you're new here, welcome! The help screen (invoked by hitting "
-                    "'?' after this message) should get you on your way." % VERSION)
-
+                    % VERSION)
             from pudb.settings import save_config
             save_config(CONFIG)
-            self.message("Since this is the first time you've used PuDB, \n"
-                "I will show you a configuration screen.  Hit Ctrl-P at any \n"
-                "time to get back to it.")
             self.run_edit_config()
 
 
@@ -1229,7 +1279,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         from pudb import VERSION
         caption = [(None,
-            u"PuDB %s - ?:help  n:next  s:step into  b:breakpoint  o:output "
+            u"PuDB %s - ?:help  n:next  s:step into  b:breakpoint  o:output  "
             "t:run to cursor  !:python shell"
             % VERSION)]
 
@@ -1372,9 +1422,11 @@ class DebuggerUI(FrameVarInfoKeeper):
         if CONFIG["current_stack_frame"] == "top":
             self.stack_walker[:] = [make_frame_ui(fl)
                     for fl in self.debugger.stack[::-1]]
-        else: # CONFIG["current_stack_frame"] == "bottom":
+        elif CONFIG["current_stack_frame"] == "bottom":
             self.stack_walker[:] = [make_frame_ui(fl)
                     for fl in self.debugger.stack]
+        else:
+            raise ValueError("invalid value for 'current_stack_frame' pref")
 
 
     def show_exception(self, exc_type, exc_value, traceback):
