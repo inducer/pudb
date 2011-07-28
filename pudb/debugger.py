@@ -312,18 +312,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                 urwid.ListBox(self.bp_walker))
 
         self.rhs_col = urwid.Pile([
-            Attr(urwid.Pile([
+            ("weight", float(CONFIG["variables_height"]), Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Variables:"))),
                 Attr(self.var_list, "variables"),
-                ]), None, "focused sidebar"),
-            Attr(urwid.Pile([
+                ]), None, "focused sidebar"),),
+            ("weight", float(CONFIG["stack_height"]), Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Stack:"))),
                 Attr(self.stack_list, "stack"),
-                ]), None, "focused sidebar"),
-            Attr(urwid.Pile([
+                ]), None, "focused sidebar"),),
+            ("weight", float(CONFIG["breakpoints_height"]), Attr(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Breakpoints:"))),
                 Attr(self.bp_list, "breakpoint"),
-                ]), None, "focused sidebar"),
+                ]), None, "focused sidebar"),),
             ])
 
         self.columns = urwid.Columns(
@@ -452,6 +452,30 @@ class DebuggerUI(FrameVarInfoKeeper):
                 fvi.watches.append(we)
                 self.update_var_view()
 
+        def grow_variables(w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.rhs_col.item_types[0]
+
+            if weight < 5:
+                weight *= 1.25
+                CONFIG["variables_height"] = weight
+                save_config(CONFIG)
+                self.rhs_col.item_types[0] = "weight", weight
+                self.rhs_col._invalidate()
+
+        def shrink_variables(w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.rhs_col.item_types[0]
+
+            if weight > 1/5:
+                weight /= 1.25
+                CONFIG["variables_height"] = weight
+                save_config(CONFIG)
+                self.rhs_col.item_types[0] = "weight", weight
+                self.rhs_col._invalidate()
+
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
@@ -461,6 +485,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
+        self.var_list.listen("[", grow_variables)
+        self.var_list.listen("]", shrink_variables)
 
         # stack listeners -----------------------------------------------------
         def examine_frame(w, size, key):
@@ -474,8 +500,34 @@ class DebuggerUI(FrameVarInfoKeeper):
         def move_stack_down(w, size, key):
             self.debugger.move_down_frame()
 
+        def grow_stack(w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.rhs_col.item_types[1]
+
+            if weight < 5:
+                weight *= 1.25
+                CONFIG["stack_height"] = weight
+                save_config(CONFIG)
+                self.rhs_col.item_types[1] = "weight", weight
+                self.rhs_col._invalidate()
+
+        def shrink_stack(w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.rhs_col.item_types[1]
+
+            if weight > 1/5:
+                weight /= 1.25
+                CONFIG["stack_height"] = weight
+                save_config(CONFIG)
+                self.rhs_col.item_types[1] = "weight", weight
+                self.rhs_col._invalidate()
+
         self.stack_list.listen("u", move_stack_up)
         self.stack_list.listen("d", move_stack_down)
+        self.stack_list.listen("[", grow_stack)
+        self.stack_list.listen("]", shrink_stack)
 
         # breakpoint listeners -----------------------------------------------------
         def save_breakpoints(w, size, key):
@@ -554,9 +606,35 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     self.update_breakpoints()
 
+        def grow_breakpoints(w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.rhs_col.item_types[2]
+
+            if weight < 5:
+                weight *= 1.25
+                CONFIG["breakpoints_height"] = weight
+                save_config(CONFIG)
+                self.rhs_col.item_types[2] = "weight", weight
+                self.rhs_col._invalidate()
+
+        def shrink_breakpoints(w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.rhs_col.item_types[2]
+
+            if weight > 1/5:
+                weight /= 1.25
+                CONFIG["breakpoints_height"] = weight
+                save_config(CONFIG)
+                self.rhs_col.item_types[2] = "weight", weight
+                self.rhs_col._invalidate()
+
         self.bp_list.listen("enter", examine_breakpoint)
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
+        self.bp_list.listen("[", grow_breakpoints)
+        self.bp_list.listen("]", shrink_breakpoints)
 
         # top-level listeners -------------------------------------------------
         def end():
