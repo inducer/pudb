@@ -1130,7 +1130,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Syntax highlighting disabled.")
 
         from pudb import CONFIG
-        WELCOME_LEVEL = "d"
+        WELCOME_LEVEL = "e000"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1142,6 +1142,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "a terminal. If you've worked with the excellent (but nowadays "
                     "ancient) DOS-based Turbo Pascal or C tools, PuDB's UI might "
                     "look familiar.\n\n"
+                    "If you're new here, welcome! The help screen (invoked by hitting "
+                    "'?' after this message) should get you on your way.\n\n"
+                    "New features in version 2011.3:\n\n"
+                    "- Finer-grained string highlighting (submitted by Aaron Meurer)\n"
+                    "- Prefs tweaks, instant-apply, top-down stack (submitted by Aaron Meurer)\n\n"
                     "New features in version 2011.2:\n\n"
                     "- Fix for post-mortem debugging (submitted by 'Sundance')\n\n"
                     "New features in version 2011.1:\n\n"
@@ -1152,9 +1157,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "- Stored preferences (no more pesky IPython prompt!)\n"
                     "- Themes\n"
                     "- Line numbers (optional)\n"
-                    "\nIf you're new here, welcome! The help screen (invoked by hitting "
-                    "'?' after this message) should get you on your way." % VERSION)
-
+                    % VERSION)
             from pudb.settings import save_config
             save_config(CONFIG)
             self.run_edit_config()
