@@ -85,4 +85,6 @@ class SlowString(object):
 fast = FastString()
 slow = SlowString()
 
-# If you are running this in PuDB, run to here.
+# If you are running this in PuDB, set this file as your custom stringifier in
+# the prefs (Ctrl-p) and run to here. Notice how fast shows the string value,
+# but slow shows the type, as the string value takes too long to compute.
