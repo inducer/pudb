@@ -62,6 +62,9 @@ def load_config():
 
     conf_dict.setdefault("stringifier", "type")
 
+    conf_dict.setdefault("custom_theme", "")
+    conf_dict.setdefault("custom_stringifier", "")
+
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
@@ -115,6 +118,8 @@ def edit_config(ui, conf_dict):
         ui.update_stack()
 
     def _update_stringifier():
+        import pudb.var_view
+        pudb.var_view.custom_stringifier_dict = {}
         ui.update_var_view()
 
     def _update_config(check_box, new_state, option_newvalue):
@@ -124,6 +129,8 @@ def edit_config(ui, conf_dict):
             # only activate if the new state of the radio button is 'on'
             if new_state:
                 if newvalue is None:
+                    # Select the custom theme entry dialog
+                    # XXX: Is there a better way to do this?
                     lb.set_focus(13)
                     return
 
@@ -144,7 +151,11 @@ def edit_config(ui, conf_dict):
         elif option == "stringifier":
             # only activate if the new state of the radio button is 'on'
             if new_state:
-                conf_dict.update(new_conf_dict)
+                if newvalue is None:
+                    lb.set_focus(25)
+                    return
+
+                conf_dict.update(stringifier=newvalue)
                 _update_stringifier()
 
     heading = urwid.Text("This is the preferences screen for PuDB. "
@@ -170,7 +181,7 @@ def edit_config(ui, conf_dict):
     known_theme = conf_dict["theme"] in THEMES
 
     theme_rb_group = []
-    theme_edit = urwid.Edit()
+    theme_edit = urwid.Edit(edit_text=conf_dict["custom_theme"])
     theme_rbs = [
             urwid.RadioButton(theme_rb_group, name,
                 conf_dict["theme"] == name, on_state_change=_update_config,
@@ -185,7 +196,9 @@ def edit_config(ui, conf_dict):
 
             urwid.Text("\nTo use a custom theme, see example-theme.py in the "
                 "pudb distribution. Enter the full path to a file like it in the "
-                "box above. '~' will be expanded to your home directory."),
+                "box above. '~' will be expanded to your home directory. "
+                "Note that a custom theme will not be applied until you close "
+                "this dialog."),
             ]
 
     stack_rb_group = []
@@ -199,8 +212,10 @@ def edit_config(ui, conf_dict):
             for name in stack_opts
             ]
 
-    stringifier_rb_group = []
     stringifier_opts = ["type", "str", "repr"]
+    known_stringifier = conf_dict["stringifier"] in stringifier_opts
+    stringifier_rb_group = []
+    stringifier_edit = urwid.Edit(edit_text=conf_dict["custom_stringifier"])
     stringifier_info = urwid.Text("This is the default function that will be "
         "called on variables in the variables list.  Note that you can change "
         "this on a per-variable basis by selecting a variable and hitting Enter "
@@ -212,6 +227,22 @@ def edit_config(ui, conf_dict):
                 on_state_change=_update_config,
                 user_data=("stringifier", name))
             for name in stringifier_opts
+            ]+[
+            urwid.RadioButton(stringifier_rb_group, "Custom:",
+                not known_stringifier, on_state_change=_update_config,
+                user_data=("stringifier", None)),
+            urwid.Padding(
+                urwid.AttrMap(stringifier_edit, "value"),
+                left=4),
+
+            urwid.Text("\nTo use a custom stringifier, see example-stringifier.py "
+                "in the pudb distribution. Enter the full path to a file like "
+                "it in the box above. '~' will be expanded to your home directory. "
+                "The file should contain a function called pudb_stringifier() "
+                "at the module level, which should take a single argument and "
+                "return the desired string form of the object passed to it. "
+                "Note that the variables view will not be updated until you "
+                "close this dialog."),
             ]
 
     lb = urwid.ListBox(
@@ -243,8 +274,14 @@ def edit_config(ui, conf_dict):
         # if we had a custom theme, it wasn't updated live
         if theme_rb_group[-1].state:
             newvalue = theme_edit.get_edit_text()
-            conf_dict.update(theme=newvalue)
+            conf_dict.update(theme=newvalue, custom_theme=newvalue)
             _update_theme()
+
+        # Ditto for custom stringifiers
+        if stringifier_rb_group[-1].state:
+            newvalue = stringifier_edit.get_edit_text()
+            conf_dict.update(stringifier=newvalue, custom_stringifier=newvalue)
+            _update_stringifier()
 
         for shell, shell_rb in zip(shells, shell_rbs):
             if shell_rb.get_state():
