@@ -100,8 +100,12 @@ def run_ipython_shell_v11(locals, globals, first_time):
     # user (if it exists) that could contain the user's macros and other
     # niceities.
     config = load_default_config()
-    shell = TerminalInteractiveShell.instance(config=config, user_ns=ns,
-            user_global_ns=globals, banner2=banner)
+    shell = TerminalInteractiveShell.instance(config=config, banner2=banner)
+    # XXX: there's got to be a better way to do this
+    shell.user_ns = ns
+    shell.user_global_ns = globals
+    shell.init_user_ns()
+    shell.init_completer()
     shell.mainloop(banner)
 
 
