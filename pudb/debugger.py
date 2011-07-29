@@ -55,7 +55,7 @@ Side-bar related:
 Keys in variables list:
 
     \ - expand/collapse
-    t/r/s - show type/repr/str for this variable
+    t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
     @ - toggle repetition at top
     * - toggle private members
@@ -374,6 +374,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "t": iinfo.display_type = "type"
             elif key == "r": iinfo.display_type = "repr"
             elif key == "s": iinfo.display_type = "str"
+            elif key == "c": iinfo.display_type = CONFIG["custom_stringifier"]
             elif key == "h": iinfo.highlighted = not iinfo.highlighted
             elif key == "@": iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
@@ -418,6 +419,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type == "repr")
             rb_show_str = urwid.RadioButton(rb_grp, "Show str()",
                     iinfo.display_type == "str")
+            rb_show_custom = urwid.RadioButton(rb_grp, "Show custom (set in prefs)",
+                    iinfo.display_type == CONFIG["custom_stringifier"])
+
 
             expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
             highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
@@ -442,9 +446,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_private_members = show_private_checkbox.get_state()
 
-                if rb_show_type.get_state(): iinfo.display_type = "type"
-                elif rb_show_repr.get_state(): iinfo.display_type = "repr"
-                elif rb_show_str.get_state(): iinfo.display_type = "str"
+                if rb_show_type.get_state():
+                    iinfo.display_type = "type"
+                elif rb_show_repr.get_state():
+                    iinfo.display_type = "repr"
+                elif rb_show_str.get_state():
+                    iinfo.display_type = "str"
+                elif rb_show_custom.get_state():
+                    iinfo.display_type = CONFIG["custom_stringifier"]
 
                 if var.watch_expr is not None:
                     var.watch_expr.expression = watch_edit.get_edit_text()
@@ -480,6 +489,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
+        self.var_list.listen("c", change_var_state)
         self.var_list.listen("h", change_var_state)
         self.var_list.listen("@", change_var_state)
         self.var_list.listen("enter", edit_inspector_detail)

@@ -32,8 +32,6 @@ SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints"
 BREAKPOINTS_FILE_NAME = "breakpoints"
 
 
-
-
 def load_config():
     from os.path import join, isdir
 
@@ -61,6 +59,11 @@ def load_config():
     conf_dict.setdefault("breakpoints_weight", 1)
 
     conf_dict.setdefault("current_stack_frame", "top")
+
+    conf_dict.setdefault("stringifier", "type")
+
+    conf_dict.setdefault("custom_theme", "")
+    conf_dict.setdefault("custom_stringifier", "")
 
     def normalize_bool_inplace(name):
         try:
@@ -114,6 +117,11 @@ def edit_config(ui, conf_dict):
     def _update_current_stack_frame():
         ui.update_stack()
 
+    def _update_stringifier():
+        import pudb.var_view
+        pudb.var_view.custom_stringifier_dict = {}
+        ui.update_var_view()
+
     def _update_config(check_box, new_state, option_newvalue):
         option, newvalue = option_newvalue
         new_conf_dict = {option: newvalue}
@@ -121,7 +129,10 @@ def edit_config(ui, conf_dict):
             # only activate if the new state of the radio button is 'on'
             if new_state:
                 if newvalue is None:
-                    newvalue = theme_edit.get_edit_text()
+                    # Select the custom theme entry dialog
+                    # XXX: Is there a better way to do this?
+                    lb.set_focus(13)
+                    return
 
                 conf_dict.update(theme=newvalue)
                 _update_theme()
@@ -136,6 +147,17 @@ def edit_config(ui, conf_dict):
             if new_state:
                 conf_dict.update(new_conf_dict)
                 _update_current_stack_frame()
+
+        elif option == "stringifier":
+            # only activate if the new state of the radio button is 'on'
+            if new_state:
+                if newvalue is None:
+                    lb.set_focus(25)
+                    return
+
+                conf_dict.update(stringifier=newvalue)
+                _update_stringifier()
+
     heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
         "Configuration settings are saved in "
@@ -148,9 +170,9 @@ def edit_config(ui, conf_dict):
     shell_info = urwid.Text("This is the shell that will be used when you hit '!'.\n")
     shells = ["classic", "ipython"]
 
-    shell_rb_grp = []
+    shell_rb_group = []
     shell_rbs = [
-            urwid.RadioButton(shell_rb_grp, name,
+            urwid.RadioButton(shell_rb_group, name,
                 conf_dict["shell"] == name)
             for name in shells]
 
@@ -158,14 +180,14 @@ def edit_config(ui, conf_dict):
 
     known_theme = conf_dict["theme"] in THEMES
 
-    theme_rb_grp = []
-    theme_edit = urwid.Edit(edit_text=conf_dict["theme"])
+    theme_rb_group = []
+    theme_edit = urwid.Edit(edit_text=conf_dict["custom_theme"])
     theme_rbs = [
-            urwid.RadioButton(theme_rb_grp, name,
+            urwid.RadioButton(theme_rb_group, name,
                 conf_dict["theme"] == name, on_state_change=_update_config,
                 user_data=("theme", name))
             for name in THEMES]+[
-            urwid.RadioButton(theme_rb_grp, "Custom:",
+            urwid.RadioButton(theme_rb_group, "Custom:",
                 not known_theme, on_state_change=_update_config,
                 user_data=("theme", None)),
             urwid.Padding(
@@ -174,7 +196,9 @@ def edit_config(ui, conf_dict):
 
             urwid.Text("\nTo use a custom theme, see example-theme.py in the "
                 "pudb distribution. Enter the full path to a file like it in the "
-                "box above. '~' will be expanded to your home directory."),
+                "box above. '~' will be expanded to your home directory. "
+                "Note that a custom theme will not be applied until you close "
+                "this dialog."),
             ]
 
     stack_rb_group = []
@@ -188,28 +212,76 @@ def edit_config(ui, conf_dict):
             for name in stack_opts
             ]
 
-    if ui.dialog(
-            urwid.ListBox(
-                [heading]
-                + [cb_line_numbers]
-                + [urwid.Text("")]
-                + [urwid.AttrMap(urwid.Text("Shell:\n"), "group head")]
-                + [shell_info]
-                + shell_rbs
-                + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
-                + theme_rbs
-                + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
-                + [stack_info]
-                + stack_rbs
-                ),
-            [
-                ("OK", True),
-                ("Cancel", False),
-                ],
-            title="Edit Preferences"):
+    stringifier_opts = ["type", "str", "repr"]
+    known_stringifier = conf_dict["stringifier"] in stringifier_opts
+    stringifier_rb_group = []
+    stringifier_edit = urwid.Edit(edit_text=conf_dict["custom_stringifier"])
+    stringifier_info = urwid.Text("This is the default function that will be "
+        "called on variables in the variables list.  Note that you can change "
+        "this on a per-variable basis by selecting a variable and hitting Enter "
+        "or by typing t/s/r.  Note that str and repr will be slower than type "
+        "and have the potential to crash PuDB.")
+    stringifier_rbs = [
+            urwid.RadioButton(stringifier_rb_group, name,
+                conf_dict["stringifier"] == name,
+                on_state_change=_update_config,
+                user_data=("stringifier", name))
+            for name in stringifier_opts
+            ]+[
+            urwid.RadioButton(stringifier_rb_group, "Custom:",
+                not known_stringifier, on_state_change=_update_config,
+                user_data=("stringifier", None)),
+            urwid.Padding(
+                urwid.AttrMap(stringifier_edit, "value"),
+                left=4),
 
-        # Only update the shell setting here. Instant-apply (above) takes care
-        # of updating everything else.
+            urwid.Text("\nTo use a custom stringifier, see example-stringifier.py "
+                "in the pudb distribution. Enter the full path to a file like "
+                "it in the box above. '~' will be expanded to your home directory. "
+                "The file should contain a function called pudb_stringifier() "
+                "at the module level, which should take a single argument and "
+                "return the desired string form of the object passed to it. "
+                "Note that the variables view will not be updated until you "
+                "close this dialog."),
+            ]
+
+    lb = urwid.ListBox(
+            [heading]
+            + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
+            + [cb_line_numbers]
+            + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
+            + [shell_info]
+            + shell_rbs
+            + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
+            + theme_rbs
+            + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
+            + [stack_info]
+            + stack_rbs
+            + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
+            + [stringifier_info]
+            + stringifier_rbs
+            )
+
+
+    if ui.dialog(lb,         [
+            ("OK", True),
+            ("Cancel", False),
+            ],
+            title="Edit Preferences"):
+        # Only update the settings here that instant-apply (above) doesn't take
+        # care of.
+
+        # if we had a custom theme, it wasn't updated live
+        if theme_rb_group[-1].state:
+            newvalue = theme_edit.get_edit_text()
+            conf_dict.update(theme=newvalue, custom_theme=newvalue)
+            _update_theme()
+
+        # Ditto for custom stringifiers
+        if stringifier_rb_group[-1].state:
+            newvalue = stringifier_edit.get_edit_text()
+            conf_dict.update(stringifier=newvalue, custom_stringifier=newvalue)
+            _update_stringifier()
 
         for shell, shell_rb in zip(shells, shell_rbs):
             if shell_rb.get_state():
@@ -220,6 +292,7 @@ def edit_config(ui, conf_dict):
         _update_theme()
         # _update_line_numbers() is equivalent to _update_theme()
         _update_current_stack_frame()
+        _update_stringifier()
 
 
 
