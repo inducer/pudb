@@ -130,8 +130,7 @@ def edit_config(ui, conf_dict):
             if new_state:
                 if newvalue is None:
                     # Select the custom theme entry dialog
-                    # XXX: Is there a better way to do this?
-                    lb.set_focus(13)
+                    lb.set_focus(lb_contents.index(theme_edit_list_item))
                     return
 
                 conf_dict.update(theme=newvalue)
@@ -152,7 +151,7 @@ def edit_config(ui, conf_dict):
             # only activate if the new state of the radio button is 'on'
             if new_state:
                 if newvalue is None:
-                    lb.set_focus(25)
+                    lb.set_focus(lb_contents.index(stringifier_edit_list_item))
                     return
 
                 conf_dict.update(stringifier=newvalue)
@@ -182,6 +181,9 @@ def edit_config(ui, conf_dict):
 
     theme_rb_group = []
     theme_edit = urwid.Edit(edit_text=conf_dict["custom_theme"])
+    theme_edit_list_item = urwid.Padding(
+                urwid.AttrMap(theme_edit, "value"),
+                left=4)
     theme_rbs = [
             urwid.RadioButton(theme_rb_group, name,
                 conf_dict["theme"] == name, on_state_change=_update_config,
@@ -190,10 +192,7 @@ def edit_config(ui, conf_dict):
             urwid.RadioButton(theme_rb_group, "Custom:",
                 not known_theme, on_state_change=_update_config,
                 user_data=("theme", None)),
-            urwid.Padding(
-                urwid.AttrMap(theme_edit, "value"),
-                left=4),
-
+            theme_edit_list_item,
             urwid.Text("\nTo use a custom theme, see example-theme.py in the "
                 "pudb distribution. Enter the full path to a file like it in the "
                 "box above. '~' will be expanded to your home directory. "
@@ -220,7 +219,10 @@ def edit_config(ui, conf_dict):
         "called on variables in the variables list.  Note that you can change "
         "this on a per-variable basis by selecting a variable and hitting Enter "
         "or by typing t/s/r.  Note that str and repr will be slower than type "
-        "and have the potential to crash PuDB.")
+        "and have the potential to crash PuDB.\n")
+    stringifier_edit_list_item = urwid.Padding(
+            urwid.AttrMap(stringifier_edit, "value"),
+            left=4)
     stringifier_rbs = [
             urwid.RadioButton(stringifier_rb_group, name,
                 conf_dict["stringifier"] == name,
@@ -231,10 +233,7 @@ def edit_config(ui, conf_dict):
             urwid.RadioButton(stringifier_rb_group, "Custom:",
                 not known_stringifier, on_state_change=_update_config,
                 user_data=("stringifier", None)),
-            urwid.Padding(
-                urwid.AttrMap(stringifier_edit, "value"),
-                left=4),
-
+            stringifier_edit_list_item,
             urwid.Text("\nTo use a custom stringifier, see example-stringifier.py "
                 "in the pudb distribution. Enter the full path to a file like "
                 "it in the box above. '~' will be expanded to your home directory. "
@@ -245,7 +244,7 @@ def edit_config(ui, conf_dict):
                 "close this dialog."),
             ]
 
-    lb = urwid.ListBox(
+    lb_contents =(
             [heading]
             + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
             + [cb_line_numbers]
@@ -259,9 +258,9 @@ def edit_config(ui, conf_dict):
             + stack_rbs
             + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
             + [stringifier_info]
-            + stringifier_rbs
-            )
+            + stringifier_rbs)
 
+    lb = urwid.ListBox(lb_contents)
 
     if ui.dialog(lb,         [
             ("OK", True),

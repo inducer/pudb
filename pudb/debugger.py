@@ -1191,7 +1191,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Syntax highlighting disabled.")
 
         from pudb import CONFIG
-        WELCOME_LEVEL = "e000"
+        WELCOME_LEVEL = "e001"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1204,19 +1204,21 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "ancient) DOS-based Turbo Pascal or C tools, PuDB's UI might "
                     "look familiar.\n\n"
                     "If you're new here, welcome! The help screen (invoked by hitting "
-                    "'?' after this message) should get you on your way.\n\n"
-                    "New features in version 2011.3:\n\n"
+                    "'?' after this message) should get you on your way.\n"
+                    "\nNew features in version 2011.3:\n\n"
                     "- Finer-grained string highlighting (submitted by Aaron Meurer)\n"
                     "- Prefs tweaks, instant-apply, top-down stack (submitted by Aaron Meurer)\n"
                     "- Size changes in sidebar boxes (submitted by Aaron Meurer)\n"
-                    "- New theme 'midnight' (submitted by Aaron Meurer)\n\n"
-                    "New features in version 2011.2:\n\n"
-                    "- Fix for post-mortem debugging (submitted by 'Sundance')\n\n"
-                    "New features in version 2011.1:\n\n"
+                    "- New theme 'midnight' (submitted by Aaron Meurer)\n"
+                    "- Support for IPython 0.11 (submitted by Chris Farrow)\n"
+                    "- Suport for custom stringifiers (submitted by Aaron Meurer)\n"
+                    "\nNew features in version 2011.2:\n\n"
+                    "- Fix for post-mortem debugging (submitted by 'Sundance')\n"
+                    "\nNew features in version 2011.1:\n\n"
                     "- Breakpoints saved between sessions\n"
                     "- A new 'dark vim' theme\n"
-                    "(both contributed by Naveen Michaud-Agrawal)\n\n"
-                    "New features in version 0.93:\n\n"
+                    "(both contributed by Naveen Michaud-Agrawal)\n"
+                    "\nNew features in version 0.93:\n\n"
                     "- Stored preferences (no more pesky IPython prompt!)\n"
                     "- Themes\n"
                     "- Line numbers (optional)\n"
