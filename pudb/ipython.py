@@ -2,13 +2,14 @@ import os
 
 try:
     from IPython import ipapi
-    ip = ipapi.get()
-    _ipython_version = 0.10
 except ImportError:
     from IPython.frontend.terminal.interactiveshell import \
             TerminalInteractiveShell
     ip = TerminalInteractiveShell.instance()
-    _ipython_version = 0.11
+    _ipython_version = (0, 11)
+else:
+    ip = ipapi.get()
+    _ipython_version = (0, 10)
 
 
 def pudb_f_v10(self, arg):
@@ -66,7 +67,7 @@ def pudb_f_v11(self, arg):
     from pudb import runscript
     runscript(path, args)
 
-if _ipython_version == 0.10:
+if _ipython_version == (0, 10):
     ip.expose_magic('pudb', pudb_f_v10)
 else:
     ip.define_magic('pudb', pudb_f_v11)
