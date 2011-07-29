@@ -753,6 +753,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     .get_inspect_info(var.id_path, read_only=False)
 
             display_types = ("type", "repr", "str")
+            if CONFIG["custom_stringifier"]:
+                display_types.append(CONFIG["custom_stringifier"])
 
             if key == "\\" or (key == 'mouse press' and button == 3):
                 iinfo.show_detail = not iinfo.show_detail
