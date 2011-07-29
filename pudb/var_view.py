@@ -7,6 +7,8 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
+from pudb import CONFIG
+
 # data ------------------------------------------------------------------------
 class FrameVarInfo(object):
     def __init__(self):
@@ -24,7 +26,7 @@ class FrameVarInfo(object):
 class InspectInfo(object):
     def __init__(self):
         self.show_detail = False
-        self.display_type = "type"
+        self.display_type = CONFIG["stringifier"]
         self.highlighted = False
         self.repeated_at_top = False
         self.show_private_members = False
@@ -121,7 +123,43 @@ class VariableWidget(urwid.FlowWidget):
     def keypress(self, size, key):
         return key
 
+custom_stringifier_dict = {}
 
+def get_stringifier(iinfo):
+    if iinfo.display_type == "type":
+        def _stringifier(value):
+            if HAVE_NUMPY and isinstance(value, numpy.ndarray):
+                return "ndarray %s %s" % (value.dtype, value.shape)
+            elif isinstance(value, STR_SAFE_TYPES):
+                return str(value)
+            else:
+                return type(value).__name__
+        return _stringifier
+    elif iinfo.display_type == "repr":
+        return repr
+    elif iinfo.display_type == "str":
+        return str
+    else:
+        try:
+            if not custom_stringifier_dict: # Only execfile once
+                from os.path import expanduser
+                execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
+        except:
+            print "Error when importing custom stringifier:"
+            from traceback import print_exc
+            print_exc()
+            raw_input("Hit enter:")
+            return lambda value: "ERROR: Invalid custom stringifier file."
+        else:
+            if "pudb_stringifier" not in custom_stringifier_dict:
+                print "%s does not contain  " % iinfo.display_type
+                "a function named pudb_stringifier at the module level."
+                raw_input("Hit enter:")
+                return lambda value: ("ERROR: Invalid custom stringifier file: "
+                "pudb_stringifer not defined.")
+            else:
+                return (lambda value:
+                    str(custom_stringifier_dict["pudb_stringifier"](value)))
 
 
 # tree walking ----------------------------------------------------------------
@@ -140,19 +178,7 @@ class ValueWalker:
         elif isinstance(value, (str, unicode)):
             self.add_item(prefix, label, repr(value)[:200], id_path, attr_prefix)
         else:
-            if iinfo.display_type == "type":
-                if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-                    displayed_value = "ndarray %s %s" % (value.dtype, value.shape)
-                elif isinstance(value, STR_SAFE_TYPES):
-                    displayed_value = str(value)
-                else:
-                    displayed_value = type(value).__name__
-            elif iinfo.display_type == "repr":
-                displayed_value = repr(value)
-            elif iinfo.display_type == "str":
-                displayed_value = str(value)
-            else:
-                displayed_value = "ERROR: Invalid display_type"
+            displayed_value = get_stringifier(iinfo)(value)
 
             self.add_item(prefix, label,
                 displayed_value, id_path, attr_prefix)

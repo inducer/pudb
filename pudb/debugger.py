@@ -56,7 +56,7 @@ Side-bar related:
 Keys in variables list:
 
     \ - expand/collapse
-    t/r/s - show type/repr/str for this variable
+    t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
     @ - toggle repetition at top
     * - toggle private members
@@ -393,6 +393,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "t": iinfo.display_type = "type"
             elif key == "r": iinfo.display_type = "repr"
             elif key == "s": iinfo.display_type = "str"
+            elif key == "c": iinfo.display_type = CONFIG["custom_stringifier"]
             elif key == "h" or (event == 'ctrl mouse press' and button == 1):
                 iinfo.highlighted = not iinfo.highlighted
             elif key == "@" or (event == 'ctrl mouse double press' and button == 1):
@@ -443,6 +444,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type == "repr")
             rb_show_str = urwid.RadioButton(rb_grp, "Show str()",
                     iinfo.display_type == "str")
+            rb_show_custom = urwid.RadioButton(rb_grp, "Show custom (set in prefs)",
+                    iinfo.display_type == CONFIG["custom_stringifier"])
+
 
             expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
             highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
@@ -467,9 +471,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_private_members = show_private_checkbox.get_state()
 
-                if rb_show_type.get_state(): iinfo.display_type = "type"
-                elif rb_show_repr.get_state(): iinfo.display_type = "repr"
-                elif rb_show_str.get_state(): iinfo.display_type = "str"
+                if rb_show_type.get_state():
+                    iinfo.display_type = "type"
+                elif rb_show_repr.get_state():
+                    iinfo.display_type = "repr"
+                elif rb_show_str.get_state():
+                    iinfo.display_type = "str"
+                elif rb_show_custom.get_state():
+                    iinfo.display_type = CONFIG["custom_stringifier"]
 
                 if var.watch_expr is not None:
                     var.watch_expr.expression = watch_edit.get_edit_text()
@@ -506,6 +515,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
         self.var_list.listen_mouse_event("mouse press", None, change_var_state)
+        self.var_list.listen("c", change_var_state)
         self.var_list.listen("h", change_var_state)
         self.var_list.listen_mouse_event("ctrl mouse press", 1, change_var_state)
         self.var_list.listen("@", change_var_state)
@@ -1223,7 +1233,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Syntax highlighting disabled.")
 
         from pudb import CONFIG
-        WELCOME_LEVEL = "e000"
+        WELCOME_LEVEL = "e001"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1236,19 +1246,21 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "ancient) DOS-based Turbo Pascal or C tools, PuDB's UI might "
                     "look familiar.\n\n"
                     "If you're new here, welcome! The help screen (invoked by hitting "
-                    "'?' after this message) should get you on your way.\n\n"
-                    "New features in version 2011.3:\n\n"
+                    "'?' after this message) should get you on your way.\n"
+                    "\nNew features in version 2011.3:\n\n"
                     "- Finer-grained string highlighting (submitted by Aaron Meurer)\n"
                     "- Prefs tweaks, instant-apply, top-down stack (submitted by Aaron Meurer)\n"
                     "- Size changes in sidebar boxes (submitted by Aaron Meurer)\n"
-                    "- New theme 'midnight' (submitted by Aaron Meurer)\n\n"
-                    "New features in version 2011.2:\n\n"
-                    "- Fix for post-mortem debugging (submitted by 'Sundance')\n\n"
-                    "New features in version 2011.1:\n\n"
+                    "- New theme 'midnight' (submitted by Aaron Meurer)\n"
+                    "- Support for IPython 0.11 (submitted by Chris Farrow)\n"
+                    "- Suport for custom stringifiers (submitted by Aaron Meurer)\n"
+                    "\nNew features in version 2011.2:\n\n"
+                    "- Fix for post-mortem debugging (submitted by 'Sundance')\n"
+                    "\nNew features in version 2011.1:\n\n"
                     "- Breakpoints saved between sessions\n"
                     "- A new 'dark vim' theme\n"
-                    "(both contributed by Naveen Michaud-Agrawal)\n\n"
-                    "New features in version 0.93:\n\n"
+                    "(both contributed by Naveen Michaud-Agrawal)\n"
+                    "\nNew features in version 0.93:\n\n"
                     "- Stored preferences (no more pesky IPython prompt!)\n"
                     "- Themes\n"
                     "- Line numbers (optional)\n"
