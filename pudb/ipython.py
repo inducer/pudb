@@ -2,12 +2,14 @@ import os
 
 try:
     from IPython import ipapi
+    ip = ipapi.get()
     _ipython_version = 0.10
 except ImportError:
-    from IPython.core import ipapi
+    from IPython.frontend.terminal.interactiveshell import \
+            TerminalInteractiveShell
+    ip = TerminalInteractiveShell.instance()
     _ipython_version = 0.11
 
-ip = ipapi.get()
 
 def pudb_f_v10(self, arg):
     """ Debug a script (like %run -d) in IPython process, using PuDB.
@@ -46,6 +48,8 @@ def pudb_f_v11(self, arg):
         Run script test.py under PuDB.
     """
 
+    # Get the running instance
+
     if not arg.strip():
         print __doc__
         return
@@ -56,11 +60,11 @@ def pudb_f_v11(self, arg):
     path = os.path.abspath(args[0])
     args = args[1:]
     if not os.path.isfile(path):
-        raise ipapi.UsageError("%%pudb: file %s does not exist" % path)
+        from IPython.core.error import UsageError
+        raise UsageError("%%pudb: file %s does not exist" % path)
 
     from pudb import runscript
-    # FIXME: this does not exist - try ip.history_manager
-    ip.history_saving_wrapper(lambda: runscript(path, args))()
+    runscript(path, args)
 
 if _ipython_version == 0.10:
     ip.expose_magic('pudb', pudb_f_v10)
