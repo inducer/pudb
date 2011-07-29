@@ -82,16 +82,12 @@ def run_ipython_shell_v10(locals, globals, first_time):
     IPShell(argv=[], user_ns=ns, user_global_ns=globals) \
             .mainloop(banner=banner)
 
-
 def run_ipython_shell_v11(locals, globals, first_time):
     '''IPython shell from IPython version 0.11'''
     if first_time:
         banner = "Hit Ctrl-D to return to PuDB."
     else:
         banner = ""
-
-    # avoid IPython's namespace litter
-    ns = locals.copy()
 
     from IPython.frontend.terminal.interactiveshell import \
             TerminalInteractiveShell
@@ -100,16 +96,29 @@ def run_ipython_shell_v11(locals, globals, first_time):
     # user (if it exists) that could contain the user's macros and other
     # niceities.
     config = load_default_config()
-    shell = TerminalInteractiveShell.instance(config=config, banner2=banner)
-    # XXX: there's got to be a better way to do this
-    shell.user_ns = ns
+    shell = TerminalInteractiveShell.instance(config=config,
+            banner2=banner)
+    # XXX This avoids a warning about not having unique session/line numbers.
+    # See the HistoryManager.writeout_cache method in IPython.core.history.
+    shell.history_manager.new_session()
+    # Save the originating namespace
+    old_locals = shell.user_ns
+    old_globals = shell.user_global_ns
+    # Update shell with current namespace
+    _update_ns(shell, locals, globals)
+    shell.mainloop(banner)
+    # Restore originating namespace
+    _update_ns(shell, old_locals, old_globals)
+
+def _update_ns(shell, locals, globals):
+    '''Update the IPython 0.11 namespace at every visit'''
+    shell.user_ns = locals.copy()
     shell.user_global_ns = globals
     shell.init_user_ns()
     shell.init_completer()
-    shell.mainloop(banner)
+    return
 
-
-# Set the proper ipython shel
+# Set the proper ipython shell
 if HAVE_IPYTHON and hasattr(IPython, 'Shell'):
     run_ipython_shell = run_ipython_shell_v10
 else:
