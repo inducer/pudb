@@ -387,6 +387,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             key = "" if len(args) != 1 else args[0]
             event, button, x, y, focus = args if len(args) !=1 else (None,)*5
             display_types = ("type", "repr", "str")
+            if CONFIG["custom_stringifier"]:
+                display_types.append(CONFIG["custom_stringifier"])
 
             if key == "\\" or (event == 'mouse press' and button == 3):
                 iinfo.show_detail = not iinfo.show_detail
