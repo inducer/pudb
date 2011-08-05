@@ -148,8 +148,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         "focused var label": ("light gray", "light blue"),
         "focused var value": ("white", "light blue"),
 
-        "highlighted var label": ("light gray", "light green"),
-        "highlighted var value": ("white", "light green"),
+        "highlighted var label": ("light gray", "dark green"),
+        "highlighted var value": ("white", "dark green"),
         "focused highlighted var label": ("light gray", "light blue"),
         "focused highlighted var value": ("white", "light blue"),
 
