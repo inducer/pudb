@@ -205,9 +205,9 @@ class SearchBox(urwid.Edit):
                 return None
         else:
             if self.do_search(1, self.search_start):
-                self.ui.search_AttrMap.set_attr("search box")
+                self.ui.search_AttrMap.set_attr_map({None: "search box"})
             else:
-                self.ui.search_AttrMap.set_attr("search not found")
+                self.ui.search_AttrMap.set_attr_map({None: "search not found"})
 
         return result
 
