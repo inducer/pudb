@@ -347,25 +347,38 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
+            weights = [w for _, w in self.rhs_col.item_types]
+            # Keep at least two lines, box header and one line for content
+            min_weight = 2 * (1.0 * len(weights) / (self.screen.get_cols_rows()[1] - 1))
+            max_weight = len(weights) - (len(weights) - 1) * min_weight
+            if index == len(weights) - 1:
+              weights.append(weights[-2])
+            weights[index] += direction * min_weight
+            weights[index + 1] -= direction * min_weight
+            if len(weights) != len(self.rhs_col.item_types):
+              weights[index - 1] = weights[index + 1]
+              weights = weights[:-1]
+            while True:
+              for idx in range(len(weights)):
+                weights[idx] = min(max_weight, max(min_weight, weights[idx]))
+              adjust = 1.0 * (len(weights) - sum(weights)) / len(weights)
+              weights = [weight + adjust for weight in weights]
+              if adjust == 0.0:
+                break
 
-            _, weight = self.rhs_col.item_types[index]
+            for idx, name in enumerate(['variables', 'stack', 'breakpoints']):
+              CONFIG[name + '_weight'] = weights[idx]
+              self.rhs_col.item_types[idx] = "weight", weights[idx]
 
-            if direction < 0:
-                if weight > 1/5:
-                    weight /= 1.25
-            else:
-                if weight < 5:
-                    weight *= 1.25
-
-            CONFIG[name+"_weight"] = weight
             save_config(CONFIG)
-            self.rhs_col.item_types[index] = "weight", weight
             self.rhs_col._invalidate()
 
 
         # variable listeners --------------------------------------------------
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
+            if not var:
+                return
 
             iinfo = self.get_frame_var_info(read_only=False) \
                     .get_inspect_info(var.id_path, read_only=False)
