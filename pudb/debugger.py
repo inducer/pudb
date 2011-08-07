@@ -425,6 +425,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type == CONFIG["custom_stringifier"])
 
 
+            wrap_checkbox = urwid.CheckBox("Line Wrap", iinfo.wrap)
             expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
             highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
             repeated_at_top_checkbox = urwid.CheckBox("Repeated at top", iinfo.repeated_at_top)
@@ -434,6 +435,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             lb = urwid.ListBox(
                 id_segment+rb_grp+[
                 urwid.Text(""),
+                wrap_checkbox,
                 expanded_checkbox,
                 highlighted_checkbox,
                 repeated_at_top_checkbox,
@@ -444,6 +446,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             if result == True:
                 iinfo.show_detail = expanded_checkbox.get_state()
+                iinfo.wrap = wrap_checkbox.get_state()
                 iinfo.highlighted = highlighted_checkbox.get_state()
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_private_members = show_private_checkbox.get_state()
