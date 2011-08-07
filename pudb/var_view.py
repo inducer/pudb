@@ -222,7 +222,7 @@ class ValueWalker:
         if isinstance(value, (int, float, long, complex)):
             self.add_item(prefix, label, repr(value), id_path, attr_prefix)
         elif isinstance(value, (str, unicode)):
-            self.add_item(prefix, label, repr(value)[:200], id_path, attr_prefix)
+            self.add_item(prefix, label, repr(value), id_path, attr_prefix)
         else:
             displayed_value = get_stringifier(iinfo)(value)
 
