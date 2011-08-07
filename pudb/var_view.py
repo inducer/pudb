@@ -74,7 +74,24 @@ class VariableWidget(urwid.FlowWidget):
 
     SIZE_LIMIT = 20
 
+    def _get_text(self, size):
+        maxcol = size[0] - len(self.prefix) # self.prefix is a padding
+        var_label = self.var_label or ''
+        value_str = self.value_str or ''
+        alltext = var_label + ": " + value_str
+        # The first line is not indented
+        firstline = self.prefix + alltext[:maxcol]
+        if not alltext[maxcol:]:
+            return [firstline]
+        fulllines, rest = divmod(len(alltext) - maxcol, maxcol - 2)
+        restlines = [alltext[(maxcol - 2)*i + maxcol:(maxcol - 2)*i + 2*maxcol - 2]
+            for i in xrange(fulllines + bool(rest))]
+        return [firstline] + ["  " + self.prefix + i for i in restlines]
+
     def rows(self, size, focus=False):
+        if CONFIG["wrap_variables"]:
+            return len(self._get_text(size))
+
         if (self.value_str is not None
                 and self.var_label is not None
                 and len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT):
@@ -83,11 +100,41 @@ class VariableWidget(urwid.FlowWidget):
             return 1
 
     def render(self, size, focus=False):
+        from pudb.ui_tools import make_canvas
+
         maxcol = size[0]
         if focus:
             apfx = "focused "+self.attr_prefix+" "
         else:
             apfx = self.attr_prefix+" "
+
+        var_label = self.var_label or ''
+        value_str = self.value_str or ''
+
+        if CONFIG["wrap_variables"]:
+            text = self._get_text(size)
+
+            extralabel_full, extralabel_rem = divmod(len(var_label[maxcol:]), maxcol)
+            totallen = sum([len(i) for i in text])
+            labellen = (len(self.prefix) # Padding of first line
+
+                      + (len(self.prefix) + 2) # Padding of subsequent lines
+                      * (extralabel_full + bool(extralabel_rem))
+
+                      + len(var_label)
+
+                      + 2 # for ": "
+                      )
+
+            _attr = [(apfx+"label", labellen), (apfx+"value", totallen - labellen)]
+            from urwid.util import rle_subseg
+
+            fullcols, rem = divmod(totallen, maxcol)
+
+            attr = [rle_subseg(_attr, i*maxcol, (i + 1)*maxcol)
+                for i in xrange(fullcols + bool(rem))]
+
+            return make_canvas(text, attr, maxcol, apfx+"value")
 
         if self.value_str is not None:
             if self.var_label is not None:
@@ -117,7 +164,6 @@ class VariableWidget(urwid.FlowWidget):
 
             attr = [[ (apfx+"label", len(self.prefix) + len(self.var_label)), ]]
 
-        from pudb.ui_tools import make_canvas
         return make_canvas(text, attr, maxcol, apfx+"value")
 
     def keypress(self, size, key):

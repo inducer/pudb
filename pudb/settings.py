@@ -65,6 +65,8 @@ def load_config():
     conf_dict.setdefault("custom_theme", "")
     conf_dict.setdefault("custom_stringifier", "")
 
+    conf_dict.setdefault("wrap_variables", True)
+
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
@@ -73,6 +75,7 @@ def load_config():
             pass
 
     normalize_bool_inplace("line_numbers")
+    normalize_bool_inplace("wrap_variables")
 
     return conf_dict
 
