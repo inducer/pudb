@@ -59,6 +59,7 @@ Keys in variables list:
     h - toggle highlighting
     @ - toggle repetition at top
     * - toggle private members
+    w - toggle line wrapping
     n/insert - add new watch expression
     enter - edit options (also to delete)
 
@@ -378,6 +379,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "h": iinfo.highlighted = not iinfo.highlighted
             elif key == "@": iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
+            elif key == "w": iinfo.wrap = not iinfo.wrap
 
             self.update_var_view()
 
@@ -493,6 +495,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("h", change_var_state)
         self.var_list.listen("@", change_var_state)
         self.var_list.listen("*", change_var_state)
+        self.var_list.listen("w", change_var_state)
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)

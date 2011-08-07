@@ -258,6 +258,10 @@ def edit_config(ui, conf_dict):
             bool(conf_dict["wrap_variables"]), on_state_change=_update_config,
                 user_data=("wrap_variables", None))
 
+    wrap_variables_info = urwid.Text("\nNote that you can change this option on "
+                                     "a per-variable basis by selecting the "
+                                     "variable and pressing 'w'.")
+
     lb_contents =(
             [heading]
             + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
@@ -275,6 +279,7 @@ def edit_config(ui, conf_dict):
             + stringifier_rbs
             + [urwid.AttrMap(urwid.Text("\nWrap Variables:\n"), "group head")]
             + [cb_wrap_variables]
+            + [wrap_variables_info]
             )
 
     lb = urwid.ListBox(lb_contents)

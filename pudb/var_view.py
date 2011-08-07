@@ -30,6 +30,7 @@ class InspectInfo(object):
         self.highlighted = False
         self.repeated_at_top = False
         self.show_private_members = False
+        self.wrap = CONFIG["wrap_variables"]
 
 class WatchExpression(object):
     def __init__(self, expression):
@@ -61,13 +62,17 @@ STR_SAFE_TYPES = get_str_safe_types()
 # widget ----------------------------------------------------------------------
 class VariableWidget(urwid.FlowWidget):
     def __init__(self, prefix, var_label, value_str, id_path=None, attr_prefix=None,
-            watch_expr=None):
+            watch_expr=None, iinfo=None):
         self.prefix = prefix
         self.var_label = var_label
         self.value_str = value_str
         self.id_path = id_path
         self.attr_prefix = attr_prefix or "var"
         self.watch_expr = watch_expr
+        if iinfo is None:
+            self.wrap = CONFIG["wrap_variables"]
+        else:
+            self.wrap = iinfo.wrap
 
     def selectable(self):
         return True
@@ -89,7 +94,7 @@ class VariableWidget(urwid.FlowWidget):
         return [firstline] + ["  " + self.prefix + i for i in restlines]
 
     def rows(self, size, focus=False):
-        if CONFIG["wrap_variables"]:
+        if self.wrap:
             return len(self._get_text(size))
 
         if (self.value_str is not None
@@ -111,7 +116,7 @@ class VariableWidget(urwid.FlowWidget):
         var_label = self.var_label or ''
         value_str = self.value_str or ''
 
-        if CONFIG["wrap_variables"]:
+        if self.wrap:
             text = self._get_text(size)
 
             extralabel_full, extralabel_rem = divmod(len(var_label[maxcol:]), maxcol)
@@ -347,8 +352,8 @@ class BasicValueWalker(ValueWalker):
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
 
-        self.widget_list.append(
-                VariableWidget(prefix, var_label, value_str, id_path, attr_prefix))
+        self.widget_list.append(VariableWidget(prefix, var_label, value_str,
+            id_path, attr_prefix, iinfo=iinfo))
 
 
 
@@ -366,7 +371,7 @@ class WatchValueWalker(ValueWalker):
 
         self.widget_list.append(
                 VariableWidget(prefix, var_label, value_str, id_path, attr_prefix,
-                    watch_expr=self.watch_expr))
+                    watch_expr=self.watch_expr, iinfo=iinfo))
 
 
 
@@ -394,11 +399,11 @@ class TopAndMainVariableWalker(ValueWalker):
                 repeated_at_top = True
 
         if repeated_at_top:
-            self.top_widget_list.append(
-                    VariableWidget(prefix, var_label, value_str, id_path, attr_prefix))
+            self.top_widget_list.append(VariableWidget(prefix, var_label,
+                value_str, id_path, attr_prefix, iinfo=iinfo))
 
-        self.main_widget_list.append(
-                VariableWidget(prefix, var_label, value_str, id_path, attr_prefix))
+        self.main_widget_list.append(VariableWidget(prefix, var_label,
+            value_str, id_path, attr_prefix, iinfo=iinfo))
 
 
 
