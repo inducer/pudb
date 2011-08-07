@@ -884,14 +884,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                             show_mod(sys.modules[str(new_mod_name)])
                             break
                     else:
-                        show_mod(sys.modules[widget.get_text()[0]])
+                        show_mod(sys.modules[widget.base_widget.get_text()[0]])
                         break
                 elif result == False:
                     break
                 elif result == "reload":
                     widget, pos = lb.get_focus()
                     if widget is not new_mod_entry:
-                        mod_name = widget.get_text()[0]
+                        mod_name = widget.base_widget.get_text()[0]
                         mod = sys.modules[mod_name]
                         reload(mod)
                         self.message("'%s' was successfully reloaded." % mod_name)
