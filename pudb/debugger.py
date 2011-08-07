@@ -492,6 +492,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("c", change_var_state)
         self.var_list.listen("h", change_var_state)
         self.var_list.listen("@", change_var_state)
+        self.var_list.listen("*", change_var_state)
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
