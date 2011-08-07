@@ -71,6 +71,8 @@ def load_config():
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
                 conf_dict[name] = False
+            else:
+                conf_dict[name] = True
         except:
             pass
 
