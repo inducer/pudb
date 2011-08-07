@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # constants and imports -------------------------------------------------------
 import urwid
 
@@ -168,6 +170,26 @@ class VariableWidget(urwid.FlowWidget):
             text = [self.prefix + self.var_label]
 
             attr = [[ (apfx+"label", len(self.prefix) + len(self.var_label)), ]]
+
+        # Ellipses to show text was cut off
+        encoding = urwid.util.detected_encoding
+
+        if False: # encoding[:3] == "UTF":
+            # Unicode is supported, use single character ellipsis
+            for i in xrange(len(text)):
+                if len(text[i]) > maxcol:
+                    text[i] = (unicode(text[i][:maxcol-3])
+                    + unicode(u'…')) + unicode(text[i][maxcol-2:])
+                    # XXX: This doesn't work.  It just gives a ?
+                    # Strangely, the following does work (it gives the …
+                    # three characters from the right):
+                    #
+                    # text[i] = (unicode(text[i][:maxcol-3])
+                    # + unicode(u'…')) + unicode(text[i][maxcol-2:])
+        else:
+            for i in xrange(len(text)):
+                if len(text[i]) > maxcol:
+                    text[i] = text[i][:maxcol-3] + "..."
 
         return make_canvas(text, attr, maxcol, apfx+"value")
 
