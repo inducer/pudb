@@ -125,6 +125,9 @@ def edit_config(ui, conf_dict):
         pudb.var_view.custom_stringifier_dict = {}
         ui.update_var_view()
 
+    def _update_wrap_variables():
+        ui.update_var_view()
+
     def _update_config(check_box, new_state, option_newvalue):
         option, newvalue = option_newvalue
         new_conf_dict = {option: newvalue}
@@ -159,6 +162,10 @@ def edit_config(ui, conf_dict):
 
                 conf_dict.update(stringifier=newvalue)
                 _update_stringifier()
+        elif option == "wrap_variables":
+            new_conf_dict["wrap_variables"] = not check_box.get_state()
+            conf_dict.update(new_conf_dict)
+            _update_wrap_variables()
 
     heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
@@ -243,9 +250,13 @@ def edit_config(ui, conf_dict):
                 "The file should contain a function called pudb_stringifier() "
                 "at the module level, which should take a single argument and "
                 "return the desired string form of the object passed to it. "
-                "Note that the variables view will not be updated until you "
-                "close this dialog."),
+                "Note that if you choose a custom stringifier, the variables "
+                "view will not be updated until you close this dialog."),
             ]
+
+    cb_wrap_variables = urwid.CheckBox("Wrap variables",
+            bool(conf_dict["wrap_variables"]), on_state_change=_update_config,
+                user_data=("wrap_variables", None))
 
     lb_contents =(
             [heading]
@@ -261,7 +272,10 @@ def edit_config(ui, conf_dict):
             + stack_rbs
             + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
             + [stringifier_info]
-            + stringifier_rbs)
+            + stringifier_rbs
+            + [urwid.AttrMap(urwid.Text("\nWrap Variables:\n"), "group head")]
+            + [cb_wrap_variables]
+            )
 
     lb = urwid.ListBox(lb_contents)
 
