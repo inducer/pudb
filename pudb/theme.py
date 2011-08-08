@@ -239,7 +239,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         palette_dict.update({
             "variables": ("white", "default"),
 
-            "var label": ("dark blue", "default"),
+            "var label": ("light blue", "default"),
             "var value": ("white", "default"),
 
             "stack": ("white", "default"),
