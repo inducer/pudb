@@ -1,6 +1,6 @@
 import urwid
 
-
+TABSTOP=8
 
 
 class SourceLine(urwid.FlowWidget):
@@ -83,10 +83,31 @@ class SourceLine(urwid.FlowWidget):
             attr = rle_subseg(attr, 0, maxcol)
 
         # shipout -------------------------------------------------------------
-        from urwid.util import apply_target_encoding
-        txt, cs = apply_target_encoding(text)
 
-        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol)
+        ## Figure out terminal encoding:
+        import locale
+        from urwid.util import _target_encoding
+        _, locale_encoding = locale.getdefaultlocale()
+        encoding = _target_encoding or locale_encoding
+
+        ## Encode the text for the benefit of TextCanvas while adjusting
+        ## attribute length for multibyte characters:
+        bytestr = ''
+        pos = 0
+
+        for i, (token, length) in enumerate(attr):
+
+            fragment = text[pos:pos+length]
+            fragment_bytes = fragment.encode(encoding, 'replace')
+
+            attr[i] = (token, len(fragment_bytes))
+
+            bytestr += fragment_bytes
+            pos += length
+
+        cs = [(None, len(bytestr))]
+
+        return urwid.TextCanvas([bytestr], [attr], [cs], maxcol=maxcol)
 
     def keypress(self, size, key):
         return key
@@ -96,12 +117,12 @@ class SourceLine(urwid.FlowWidget):
 
 
 def format_source(debugger_ui, lines, breakpoints):
-    lineno_format = "%%%dd "%(len(str(len(lines))))
+    lineno_format = u"%%%dd "%(len(str(len(lines))))
     try:
         import pygments
     except ImportError:
         return [SourceLine(debugger_ui,
-            line.rstrip("\n\r").replace("\t", 8*" "),
+            line.rstrip(u"\n\r").expandtabs(TABSTOP),
             lineno_format % (i+1), None,
             has_breakpoint=i+1 in breakpoints)
             for i, line in enumerate(lines)]
@@ -133,7 +154,7 @@ def format_source(debugger_ui, lines, breakpoints):
         class UrwidFormatter(Formatter):
             def __init__(subself, **options):
                 Formatter.__init__(subself, **options)
-                subself.current_line = ""
+                subself.current_line = u""
                 subself.current_attr = []
                 subself.lineno = 1
 
@@ -161,13 +182,13 @@ def format_source(debugger_ui, lines, breakpoints):
                                 lineno_format % subself.lineno,
                                 subself.current_attr,
                                 has_breakpoint=subself.lineno in breakpoints))
-                    subself.current_line = ""
+                    subself.current_line = u""
                     subself.current_attr = []
                     subself.lineno += 1
 
                 for ttype, value in tokensource:
                     while True:
-                        newline_pos = value.find("\n")
+                        newline_pos = value.find(u"\n")
                         if newline_pos == -1:
                             add_snippet(ttype, value)
                             break
@@ -179,7 +200,7 @@ def format_source(debugger_ui, lines, breakpoints):
                 if subself.current_line:
                     shipout_line()
 
-        highlight("".join(l.replace("\t", 8*" ") for l in lines),
+        highlight(u"".join(l.expandtabs(TABSTOP) for l in lines),
                 PythonLexer(stripnl=False), UrwidFormatter())
 
         return result
