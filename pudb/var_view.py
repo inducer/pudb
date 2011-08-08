@@ -178,8 +178,8 @@ class VariableWidget(urwid.FlowWidget):
             # Unicode is supported, use single character ellipsis
             for i in xrange(len(text)):
                 if len(text[i]) > maxcol:
-                    text[i] = (unicode(text[i][:maxcol-3])
-                    + unicode(u'…')) + unicode(text[i][maxcol-2:])
+                    text[i] = (unicode(text[i][:maxcol-1])
+                    + unicode(u'…') + unicode(text[i][maxcol:]))
                     # XXX: This doesn't work.  It just gives a ?
                     # Strangely, the following does work (it gives the …
                     # three characters from the right):
@@ -237,6 +237,9 @@ def get_stringifier(iinfo):
 
 # tree walking ----------------------------------------------------------------
 class ValueWalker:
+
+    PREFIX = "| "
+
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
@@ -266,13 +269,13 @@ class ValueWalker:
                         cont_id_path = "%s.cont-%d" % (id_path, i)
                         if not self.frame_var_info.get_inspect_info(
                                 cont_id_path, read_only=True).show_detail:
-                            self.add_item(prefix+"  ", "...", None, cont_id_path)
+                            self.add_item(prefix+self.PREFIX, "...", None, cont_id_path)
                             break
 
-                    self.walk_value(prefix+"  ", None, entry,
+                    self.walk_value(prefix+self.PREFIX, None, entry,
                         "%s[%d]" % (id_path, i))
                 if not value:
-                    self.add_item(prefix+"  ", "<empty>", None)
+                    self.add_item(prefix+self.PREFIX, "<empty>", None)
                 return
 
             # containers --------------------------------------------------
@@ -304,14 +307,14 @@ class ValueWalker:
                         if not self.frame_var_info.get_inspect_info(
                                 cont_id_path, read_only=True).show_detail:
                             self.add_item(
-                                prefix+"  ", "...", None, cont_id_path)
+                                prefix+self.PREFIX, "...", None, cont_id_path)
                             break
 
-                    self.walk_value(prefix+"  ", repr(key), value[key],
+                    self.walk_value(prefix+self.PREFIX, repr(key), value[key],
                         "%s[%r]" % (id_path, key))
                     cnt += 1
                 if not cnt:
-                    self.add_item(prefix+"  ", "<empty>", None)
+                    self.add_item(prefix+self.PREFIX, "<empty>", None)
                 return
 
             # class types -------------------------------------------------
@@ -347,18 +350,18 @@ class ValueWalker:
                 except:
                     attr_value = WatchEvalError()
 
-                self.walk_value(prefix+"  ",
+                self.walk_value(prefix+self.PREFIX,
                         ".%s" % key, attr_value,
                         "%s.%s" % (id_path, key))
 
             if not keys:
                 if cnt_omitted:
-                    self.add_item(prefix+"  ", "<omitted private attributes>", None)
+                    self.add_item(prefix+self.PREFIX, "<omitted private attributes>", None)
                 else:
-                    self.add_item(prefix+"  ", "<empty>", None)
+                    self.add_item(prefix+self.PREFIX, "<empty>", None)
 
             if not key_its:
-                self.add_item(prefix+"  ", "<?>", None)
+                self.add_item(prefix+self.PREFIX, "<?>", None)
 
 
 
