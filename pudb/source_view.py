@@ -1,6 +1,6 @@
 import urwid
 
-
+TABSTOP=8
 
 
 class SourceLine(urwid.FlowWidget):
@@ -101,7 +101,7 @@ def format_source(debugger_ui, lines, breakpoints):
         import pygments
     except ImportError:
         return [SourceLine(debugger_ui,
-            line.rstrip("\n\r").replace("\t", 8*" "),
+            line.rstrip("\n\r").expandtabs(TABSTOP),
             lineno_format % (i+1), None,
             has_breakpoint=i+1 in breakpoints)
             for i, line in enumerate(lines)]
@@ -179,7 +179,7 @@ def format_source(debugger_ui, lines, breakpoints):
                 if subself.current_line:
                     shipout_line()
 
-        highlight("".join(l.replace("\t", 8*" ") for l in lines),
+        highlight("".join(l.expandtabs(TABSTOP) for l in lines),
                 PythonLexer(stripnl=False), UrwidFormatter())
 
         return result
