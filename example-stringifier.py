@@ -53,7 +53,8 @@ def run_with_timeout(code, time, globals=None):
     """
     Evaluate ``code``, timing out after ``time`` seconds.
 
-    ``time`` must be an integer. The return value is whatever ``code`` returns.
+    In Python 2.5 and lower, ``time`` is rounded up to the nearest integer.
+    The return value is whatever ``code`` returns.
     """
     # Set the signal handler and a ``time``-second alarm
     signal.signal(signal.SIGALRM, lambda s, f: timeout(s, f, time))
