@@ -102,7 +102,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 
-# debugger interface ----------------------------------------------------------
+# {{{ debugger interface
+
 class Debugger(bdb.Bdb):
     def __init__(self, steal_output=False):
         bdb.Bdb.__init__(self)
@@ -152,6 +153,8 @@ class Debugger(bdb.Bdb):
         self.ui.set_current_line(lineno, self.curframe.f_code.co_filename)
         self.ui.update_var_view()
         self.ui.update_stack()
+
+        self.ui.stack_list._w.set_focus(self.ui.translate_ui_stack_index(index))
 
     def move_up_frame(self):
         if self.curindex > 0:
@@ -271,6 +274,8 @@ class Debugger(bdb.Bdb):
         statement = 'execfile( "%s")' % filename
         self.run(statement, globals=globals_, locals=locals_)
 
+# }}}
+
 
 
 
@@ -285,6 +290,8 @@ from pudb.var_view import FrameVarInfoKeeper
 
 
 class DebuggerUI(FrameVarInfoKeeper):
+    # {{{ constructor
+
     def __init__(self, dbg):
         FrameVarInfoKeeper.__init__(self)
 
@@ -293,6 +300,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.search_box = None
         self.last_module_filter = ""
+
+        # {{{ build ui
 
         self.source = urwid.SimpleListWalker([])
         self.source_list = urwid.ListBox(self.source)
@@ -343,6 +352,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             urwid.AttrMap(self.columns, "background"),
             header))
 
+        # }}}
+
         from functools import partial
 
         def change_rhs_box(name, index, direction, w, size, key):
@@ -363,7 +374,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.rhs_col._invalidate()
 
 
-        # variable listeners --------------------------------------------------
+        # {{{ variables listeners
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
@@ -499,22 +510,19 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
         self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
 
-        # stack listeners -----------------------------------------------------
+        # }}}
+
+        # {{{ stack listeners
         def examine_frame(w, size, key):
             from pudb import CONFIG
-
             _, pos = self.stack_list._w.get_focus()
-            if CONFIG["current_stack_frame"] == "top":
-                self.debugger.set_frame_index(len(self.debugger.stack)-1-pos)
-            elif CONFIG["current_stack_frame"] == "bottom":
-                self.debugger.set_frame_index(pos)
-            else:
-                raise ValueError("invalid value for 'current_stack_frame' pref")
+            self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.stack_list.listen("enter", examine_frame)
 
         def move_stack_up(w, size, key):
             self.debugger.move_up_frame()
+
         def move_stack_down(w, size, key):
             self.debugger.move_down_frame()
 
@@ -524,7 +532,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
         self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
 
-        # breakpoint listeners -----------------------------------------------------
+        # }}}
+
+        # {{{ breakpoint listeners
         def save_breakpoints(w, size, key):
             self.debugger.save_breakpoints()
 
@@ -608,7 +618,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
 
-        # top-level listeners -------------------------------------------------
+        # }}}
+
+        # {{{ source listeners
+
         def end():
             self.debugger.save_breakpoints()
             self.quit_event_loop = True
@@ -933,7 +946,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
 
-        # top-level listeners -------------------------------------------------
+        # }}}
+
+        # {{{ top-level listeners
+
         def show_output(w, size, key):
             self.screen.stop()
             raw_input("Hit Enter to return:")
@@ -1066,7 +1082,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("f1", help)
         self.top.listen("?", help)
 
-        # setup ---------------------------------------------------------------
+        # }}}
+
+        # {{{ setup
+
         import urwid.raw_display as display
 
         self.screen = display.Screen()
@@ -1078,6 +1097,22 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.current_line = None
 
         self.quit_event_loop = False
+
+        # }}}
+
+    # }}}
+
+    # {{{ UI helpers
+
+    def translate_ui_stack_index(self, index):
+        # note: self-inverse
+
+        if CONFIG["current_stack_frame"] == "top":
+            return len(self.debugger.stack)-1-index
+        elif CONFIG["current_stack_frame"] == "bottom":
+            return index
+        else:
+            raise ValueError("invalid value for 'current_stack_frame' pref")
 
     def message(self, msg, title="Message", **kwargs):
         self.call_with_ui(self.dialog,
@@ -1160,7 +1195,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         screen.register_palette(
                 get_palette(may_use_fancy_formats, CONFIG["theme"]))
 
-    # UI enter/exit -----------------------------------------------------------
+    # }}}
+
+    # {{{ UI enter/exit
+
     def show(self):
         if self.show_count == 0:
             self.screen.start()
@@ -1178,7 +1216,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         finally:
             self.hide()
 
-    # interaction -------------------------------------------------------------
+    # }}}
+
+    # {{{ interaction
     def event_loop(self, toplevel=None):
         prev_quit_loop = self.quit_event_loop
 
@@ -1251,7 +1291,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         finally:
             self.quit_event_loop = prev_quit_loop
 
-    # debugger-facing interface -----------------------------------------------
+    # }}}
+
+    # {{{ debugger-facing interface
+
     def interaction(self, exc_tuple):
         self.current_exc_tuple = exc_tuple
 
@@ -1397,15 +1440,15 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         from pudb import CONFIG
 
+        frame_uis = [make_frame_ui(fl) for fl in self.debugger.stack]
         if CONFIG["current_stack_frame"] == "top":
-            self.stack_walker[:] = [make_frame_ui(fl)
-                    for fl in self.debugger.stack[::-1]]
+            frame_uis = frame_uis[::-1]
         elif CONFIG["current_stack_frame"] == "bottom":
-            self.stack_walker[:] = [make_frame_ui(fl)
-                    for fl in self.debugger.stack]
+            pass
         else:
             raise ValueError("invalid value for 'current_stack_frame' pref")
 
+        self.stack_walker[:] = frame_uis
 
     def show_exception(self, exc_type, exc_value, traceback):
         from traceback import format_exception
@@ -1414,3 +1457,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 "".join(format_exception(
                     exc_type, exc_value, traceback)),
                 title="Exception Occurred")
+
+    # }}}
+
+# vim: foldmethod=marker
