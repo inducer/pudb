@@ -1238,7 +1238,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Syntax highlighting disabled.")
 
         from pudb import CONFIG
-        WELCOME_LEVEL = "e001"
+        WELCOME_LEVEL = "e002"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1259,6 +1259,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "- New theme 'midnight' (submitted by Aaron Meurer)\n"
                     "- Support for IPython 0.11 (submitted by Chris Farrow)\n"
                     "- Suport for custom stringifiers (submitted by Aaron Meurer)\n"
+                    "- Line wrapping in variables view (submitted by Aaron Meurer)\n"
                     "\nNew features in version 2011.2:\n\n"
                     "- Fix for post-mortem debugging (submitted by 'Sundance')\n"
                     "\nNew features in version 2011.1:\n\n"
