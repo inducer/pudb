@@ -35,7 +35,7 @@ Keys:
     ctrl-u/d - page up/down
     h/l - scroll left/right
     g/G - start/end
-    L - go to line
+    L - show (file/line) location / go to line
     / - search
     ,/. - search next/previous
 
