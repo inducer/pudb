@@ -12,6 +12,8 @@ HELP_TEXT = """\
 Welcome to PuDB, the Python Urwid debugger.
 -------------------------------------------
 
+(This help screen is scrollable. Hit Page Down to see more.)
+
 Keys:
     Ctrl-p - edit preferences
 
