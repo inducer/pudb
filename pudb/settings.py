@@ -193,9 +193,7 @@ def edit_config(ui, conf_dict):
 
     theme_rb_group = []
     theme_edit = urwid.Edit(edit_text=conf_dict["custom_theme"])
-    theme_edit_list_item = urwid.Padding(
-                urwid.AttrMap(theme_edit, "value"),
-                left=4)
+    theme_edit_list_item = urwid.AttrMap(theme_edit, "value")
     theme_rbs = [
             urwid.RadioButton(theme_rb_group, name,
                 conf_dict["theme"] == name, on_state_change=_update_config,
@@ -232,9 +230,7 @@ def edit_config(ui, conf_dict):
         "this on a per-variable basis by selecting a variable and hitting Enter "
         "or by typing t/s/r.  Note that str and repr will be slower than type "
         "and have the potential to crash PuDB.\n")
-    stringifier_edit_list_item = urwid.Padding(
-            urwid.AttrMap(stringifier_edit, "value"),
-            left=4)
+    stringifier_edit_list_item = urwid.AttrMap(stringifier_edit, "value")
     stringifier_rbs = [
             urwid.RadioButton(stringifier_rb_group, name,
                 conf_dict["stringifier"] == name,
