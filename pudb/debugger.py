@@ -1257,7 +1257,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen (invoked by hitting "
                     "'?' after this message) should get you on your way.\n"
                     "\nNew features in version 2011.3.1:\n\n"
-                    "- Work-aroudn for bug in urwid >= 1.0.\n"
+                    "- Work-around for bug in urwid >= 1.0.\n"
                     "\nNew features in version 2011.3:\n\n"
                     "- Finer-grained string highlighting (submitted by Aaron Meurer)\n"
                     "- Prefs tweaks, instant-apply, top-down stack (submitted by Aaron Meurer)\n"
