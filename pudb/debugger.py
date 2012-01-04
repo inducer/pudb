@@ -290,6 +290,24 @@ from pudb.ui_tools import make_hotkey_markup, labelled_value, \
 from pudb.var_view import FrameVarInfoKeeper
 
 
+from urwid.raw_display import Screen
+
+class ThreadsafeScreen(Screen):
+    "A Screen subclass that doesn't crash when running from a non-main thread."
+
+    def signal_init(self):
+        "Initialize signal handler, ignoring errors silently."
+        try:
+            super(ThreadsafeScreen, self).signal_init()
+        except ValueError:
+            pass
+
+    def signal_restore(self):
+        "Restore default signal handler, ignoring errors silently."
+        try:
+            super(ThreadsafeScreen, self).signal_restore()
+        except ValueError:
+            pass
 
 
 class DebuggerUI(FrameVarInfoKeeper):
@@ -1097,9 +1115,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ setup
 
-        import urwid.raw_display as display
-
-        self.screen = display.Screen()
+        self.screen = ThreadsafeScreen()
         self.setup_palette(self.screen)
 
         self.show_count = 0
