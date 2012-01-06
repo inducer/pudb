@@ -112,11 +112,16 @@ def run_ipython_shell_v11(locals, globals, first_time):
 
 def _update_ns(shell, locals, globals):
     '''Update the IPython 0.11 namespace at every visit'''
+
     shell.user_ns = locals.copy()
-    shell.user_global_ns = globals
+
+    try:
+        shell.user_global_ns = globals
+    except AttributeError:
+        pass
+
     shell.init_user_ns()
     shell.init_completer()
-    return
 
 # Set the proper ipython shell
 if HAVE_IPYTHON and hasattr(IPython, 'Shell'):
