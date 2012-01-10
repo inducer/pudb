@@ -118,7 +118,13 @@ def _update_ns(shell, locals, globals):
     try:
         shell.user_global_ns = globals
     except AttributeError:
-        pass
+        class DummyMod(object):
+            "A dummy module used for IPython's interactive namespace."
+            pass
+
+        user_module = DummyMod()
+        user_module.__dict__ = globals
+        shell.user_module = user_module
 
     shell.init_user_ns()
     shell.init_completer()
