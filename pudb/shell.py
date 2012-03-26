@@ -36,7 +36,7 @@ else:
 class SetPropagatingDict(dict):
     def __init__(self, source_dicts, target_dict):
         dict.__init__(self)
-        for s in source_dicts:
+        for s in source_dicts[::-1]:
             self.update(s)
 
         self.target_dict = target_dict
