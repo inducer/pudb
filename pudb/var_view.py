@@ -198,16 +198,17 @@ class VariableWidget(urwid.FlowWidget):
 
 custom_stringifier_dict = {}
 
+def type_stringifier(value):
+    if HAVE_NUMPY and isinstance(value, numpy.ndarray):
+        return "ndarray %s %s" % (value.dtype, value.shape)
+    elif isinstance(value, STR_SAFE_TYPES):
+        return str(value)
+    else:
+        return type(value).__name__
+
 def get_stringifier(iinfo):
     if iinfo.display_type == "type":
-        def _stringifier(value):
-            if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-                return "ndarray %s %s" % (value.dtype, value.shape)
-            elif isinstance(value, STR_SAFE_TYPES):
-                return str(value)
-            else:
-                return type(value).__name__
-        return _stringifier
+        return type_stringifier
     elif iinfo.display_type == "repr":
         return repr
     elif iinfo.display_type == "str":
@@ -254,7 +255,13 @@ class ValueWalker:
         elif isinstance(value, (str, unicode)):
             self.add_item(prefix, label, repr(value), id_path, attr_prefix)
         else:
-            displayed_value = get_stringifier(iinfo)(value)
+            try:
+                displayed_value = get_stringifier(iinfo)(value)
+            except Exception:
+                ## Unfortunately, anything can happen when calling str() or
+                ## repr() on a random object.
+                displayed_value = type_stringifier(value) \
+                                + " (!! %s error !!)" % iinfo.display_type
 
             self.add_item(prefix, label,
                 displayed_value, id_path, attr_prefix)
