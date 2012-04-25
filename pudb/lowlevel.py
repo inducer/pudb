@@ -78,7 +78,7 @@ def lookup_module(filename):
 # stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 
 import re
-cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile("^\s*#.*coding[:=]\s*([-\w.]+)")
 from codecs import lookup, BOM_UTF8
 
 def detect_encoding(readline):
