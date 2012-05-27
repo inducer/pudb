@@ -1260,7 +1260,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Syntax highlighting disabled.")
 
         from pudb import CONFIG
-        WELCOME_LEVEL = "e003"
+        WELCOME_LEVEL = "e004"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1274,6 +1274,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "look familiar.\n\n"
                     "If you're new here, welcome! The help screen (invoked by hitting "
                     "'?' after this message) should get you on your way.\n"
+                    "\nChanges in version 2012.2:\n\n"
+                    "- Add support for BPython as a shell.\n"
+                    "- You can now run 'python -m pudb script.py' on Py 2.6+.\n"
+                    "  '-m pudb.run' still works--but it's four keystrokes longer! :)\n"
                     "\nChanges in version 2012.1:\n\n"
                     "- Work around an API change in IPython 0.12.\n"
                     "\nChanges in version 2011.3.1:\n\n"
