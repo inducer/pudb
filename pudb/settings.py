@@ -179,7 +179,7 @@ def edit_config(ui, conf_dict):
                 user_data=("line_numbers", None))
 
     shell_info = urwid.Text("This is the shell that will be used when you hit '!'.\n")
-    shells = ["classic", "ipython"]
+    shells = ["classic", "ipython", "bpython"]
 
     shell_rb_group = []
     shell_rbs = [

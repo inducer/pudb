@@ -5,6 +5,14 @@ except ImportError:
 else:
     HAVE_IPYTHON = True
 
+try:
+    import bpython
+except ImportError:
+    HAVE_BPYTHON = False
+else:
+    HAVE_BPYTHON = True
+
+
 
 # readline wrangling ----------------------------------------------------------
 def setup_readline():
@@ -67,6 +75,11 @@ def run_classic_shell(locals, globals, first_time):
 
     cons.interact(banner)
 
+def run_bpython_shell(locals, globals, first_time):
+    ns = SetPropagatingDict([locals, globals], locals)
+
+    import bpython.cli
+    bpython.cli.main(locals_=ns)
 
 def run_ipython_shell_v10(locals, globals, first_time):
     '''IPython shell from IPython version 0.10'''
