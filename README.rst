@@ -57,6 +57,10 @@ into the piece of code you want to debug, or run the entire script with::
 
     python -m pudb.run my-script.py
 
+In Python 2.6 and higher, you can save four keystrokes and type::
+
+    python -m pudb my-script.py
+
 Documentation and Support
 -------------------------
 
