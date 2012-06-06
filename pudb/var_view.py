@@ -9,7 +9,7 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
-from pudb import CONFIG
+from pudb.debugger import CONFIG
 
 # data ------------------------------------------------------------------------
 class FrameVarInfo(object):

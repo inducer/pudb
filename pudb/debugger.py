@@ -5,7 +5,13 @@ from __future__ import division
 import urwid
 import bdb
 
-from pudb import CONFIG
+from pudb.settings import load_config, save_config
+CONFIG = load_config()
+save_config(CONFIG)
+
+
+
+
 
 
 HELP_TEXT = """\
@@ -541,7 +547,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ stack listeners
         def examine_frame(w, size, key):
-            from pudb import CONFIG
             _, pos = self.stack_list._w.get_focus()
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
@@ -1259,8 +1264,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        from pudb import CONFIG
-        WELCOME_LEVEL = "e004"
+        WELCOME_LEVEL = "e005"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1274,6 +1278,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "look familiar.\n\n"
                     "If you're new here, welcome! The help screen (invoked by hitting "
                     "'?' after this message) should get you on your way.\n"
+                    "\nChanges in version 2012.2.1:\n\n"
+                    "- Don't touch config files during install.\n"
                     "\nChanges in version 2012.2:\n\n"
                     "- Add support for BPython as a shell.\n"
                     "- You can now run 'python -m pudb script.py' on Py 2.6+.\n"
@@ -1475,8 +1481,6 @@ class DebuggerUI(FrameVarInfoKeeper):
             return StackFrame(frame is self.debugger.curframe,
                     code.co_name, class_name,
                     self._format_fname(code.co_filename), lineno)
-
-        from pudb import CONFIG
 
         frame_uis = [make_frame_ui(fl) for fl in self.debugger.stack]
         if CONFIG["current_stack_frame"] == "top":

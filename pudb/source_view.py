@@ -32,7 +32,7 @@ class SourceLine(urwid.FlowWidget):
         return 1
 
     def render(self, (maxcol,), focus=False):
-        from pudb import CONFIG
+        from pudb.debugger import CONFIG
         render_line_nr = CONFIG["line_numbers"]
 
         hscroll = self.dbg_ui.source_hscroll_start

@@ -4,13 +4,6 @@ VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 
 
 
-from pudb.settings import load_config, save_config
-CONFIG = load_config()
-save_config(CONFIG)
-
-
-
-
 CURRENT_DEBUGGER = []
 def _get_debugger():
     if not CURRENT_DEBUGGER:
