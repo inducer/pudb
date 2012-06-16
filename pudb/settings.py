@@ -400,8 +400,9 @@ def save_breakpoints(bp_list):
     from os.path import join
     bp_histfile = join(get_save_config_path(), "saved-breakpoints")
     histfile = open(bp_histfile, 'w')
+    bp_list = set([(bp.file, bp.line) for bp in bp_list])
     for bp in bp_list:
-        histfile.write("b %s:%d\n"%(bp.file, bp.line))
+        histfile.write("b %s:%d\n" % (bp[0], bp[1]))
     histfile.close()
 
 # }}}
