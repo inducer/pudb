@@ -2,12 +2,20 @@
 
 # constants and imports -------------------------------------------------------
 import urwid
+import sys
 
 try:
     import numpy
     HAVE_NUMPY = 1
 except ImportError:
     HAVE_NUMPY = 0
+
+from pudb.py3compat import PY3, execfile, raw_input, xrange, \
+     integer_types, string_types
+if PY3:
+    ELLIPSIS = '…'
+else:
+    ELLIPSIS = unicode('…', 'utf-8')
 
 from pudb.debugger import CONFIG
 
@@ -179,7 +187,7 @@ class VariableWidget(urwid.FlowWidget):
             for i in xrange(len(text)):
                 if len(text[i]) > maxcol:
                     text[i] = (unicode(text[i][:maxcol-1])
-                    + unicode(u'…') + unicode(text[i][maxcol:]))
+                    + ELLIPSIS + unicode(text[i][maxcol:]))
                     # XXX: This doesn't work.  It just gives a ?
                     # Strangely, the following does work (it gives the …
                     # three characters from the right):
@@ -219,15 +227,15 @@ def get_stringifier(iinfo):
                 from os.path import expanduser
                 execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
         except:
-            print "Error when importing custom stringifier:"
+            print("Error when importing custom stringifier:")
             from traceback import print_exc
             print_exc()
             raw_input("Hit enter:")
             return lambda value: "ERROR: Invalid custom stringifier file."
         else:
             if "pudb_stringifier" not in custom_stringifier_dict:
-                print "%s does not contain  " % iinfo.display_type
-                "a function named pudb_stringifier at the module level."
+                print("%s does not contain a function named pudb_stringifier at"
+                      "the module level." % iinfo.display_type)
                 raw_input("Hit enter:")
                 return lambda value: ("ERROR: Invalid custom stringifier file: "
                 "pudb_stringifer not defined.")
@@ -250,9 +258,9 @@ class ValueWalker:
 
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
 
-        if isinstance(value, (int, float, long, complex)):
+        if isinstance(value, integer_types + (float, complex)):
             self.add_item(prefix, label, repr(value), id_path, attr_prefix)
-        elif isinstance(value, (str, unicode)):
+        elif isinstance(value, string_types):
             self.add_item(prefix, label, repr(value), id_path, attr_prefix)
         else:
             try:
@@ -444,7 +452,7 @@ class TopAndMainVariableWalker(ValueWalker):
 SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 def make_var_view(frame_var_info, locals, globals):
-    vars = locals.keys()
+    vars = list(locals.keys())
     vars.sort(key=lambda n: n.lower())
 
     tmv_walker = TopAndMainVariableWalker(frame_var_info)

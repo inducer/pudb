@@ -4,14 +4,17 @@
 from __future__ import division
 import urwid
 import bdb
+import sys
 
 from pudb.settings import load_config, save_config
 CONFIG = load_config()
 save_config(CONFIG)
 
-
-
-
+from pudb.py3compat import PY3
+if PY3:
+    _next = "__next__"
+else:
+    _next = "next"
 
 
 HELP_TEXT = """\
@@ -124,7 +127,10 @@ class Debugger(bdb.Bdb):
         if steal_output:
             raise NotImplementedError("output stealing")
             import sys
-            from cStringIO import StringIO
+            if PY3:
+                from io import StringIO
+            else:
+                from cStringIO import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("") # avoid spurious hangs
 
@@ -132,7 +138,7 @@ class Debugger(bdb.Bdb):
         from pudb.settings import save_breakpoints
         save_breakpoints([
             bp
-            for fn, bp_lst in self.get_all_breaks().iteritems()
+            for fn, bp_lst in self.get_all_breaks().items()
             for lineno in bp_lst
             for bp in self.get_breaks(fn, lineno)
             if not bp.temporary])
@@ -280,7 +286,10 @@ class Debugger(bdb.Bdb):
         # user_call for details).
         self._wait_for_mainpyfile = 1
         self.mainpyfile = self.canonic(filename)
-        statement = 'execfile( "%s")' % filename
+        if PY3:
+            statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (filename, filename)
+        else:
+            statement = 'execfile( "%s")' % filename
         self.run(statement, globals=globals_, locals=locals_)
 
 # }}}
@@ -834,7 +843,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
                 self.update_breakpoints()
             else:
-                raise RuntimeError, "no valid current file"
+                raise RuntimeError("no valid current file")
 
         def pick_module(w, size, key):
             from os.path import splitext
@@ -1344,7 +1353,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         from pudb import VERSION
         caption = [(None,
-            u"PuDB %s - ?:help  n:next  s:step into  b:breakpoint  o:output  "
+            "PuDB %s - ?:help  n:next  s:step into  b:breakpoint  o:output  "
             "t:run to cursor  !:python shell"
             % VERSION)]
 
@@ -1386,7 +1395,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     lines = getlines(fname)
 
                     from pudb.lowlevel import detect_encoding
-                    source_enc, _ = detect_encoding(iter(lines).next)
+                    source_enc, _ = detect_encoding(getattr(iter(lines), _next))
 
                     decoded_lines = []
                     for l in lines:
@@ -1446,7 +1455,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     def _get_bp_list(self):
         return [bp
-                for fn, bp_lst in self.debugger.get_all_breaks().iteritems()
+                for fn, bp_lst in self.debugger.get_all_breaks().items()
                 for lineno in bp_lst
                 for bp in self.debugger.get_breaks(fn, lineno)
                 if not bp.temporary]
