@@ -4,9 +4,14 @@ from pudb.py3compat import PY3
 def generate_executable_lines_for_code(code):
     l = code.co_firstlineno
     yield l
-    for c in code.co_lnotab[1::2]:
-        l += ord(c)
-        yield l
+    if PY3:
+        for c in code.co_lnotab[1::2]:
+            l += c
+            yield l
+    else:
+        for c in code.co_lnotab[1::2]:
+            l += ord(c)
+            yield l
 
 
 
