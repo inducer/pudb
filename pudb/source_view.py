@@ -28,13 +28,14 @@ class SourceLine(urwid.FlowWidget):
         self.has_breakpoint = has_breakpoint
         self._invalidate()
 
-    def rows(self, (maxcol,), focus=False):
+    def rows(self, size, focus=False):
         return 1
 
-    def render(self, (maxcol,), focus=False):
+    def render(self, size, focus=False):
         from pudb.debugger import CONFIG
         render_line_nr = CONFIG["line_numbers"]
 
+        maxcol = size[0]
         hscroll = self.dbg_ui.source_hscroll_start
         attrs = []
         if self.is_current:

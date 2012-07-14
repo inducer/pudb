@@ -1,5 +1,11 @@
 import os
-from ConfigParser import ConfigParser
+import sys
+
+from pudb.py3compat import PY3
+if PY3:
+    from configparser import ConfigParser
+else:
+    from ConfigParser import ConfigParser
 
 # minor LGPL violation: stolen from python-xdg
 
@@ -20,7 +26,7 @@ def get_save_config_path(*resource):
     assert not resource.startswith('/')
     path = os.path.join(xdg_config_home, resource)
     if not os.path.isdir(path):
-        os.makedirs(path, 0700)
+        os.makedirs(path, 448) # 0o700
     return path
 
 # end LGPL violation
@@ -90,8 +96,8 @@ def save_config(conf_dict):
     cparser = ConfigParser()
     cparser.add_section(CONF_SECTION)
 
-    for key, val in conf_dict.iteritems():
-        cparser.set(CONF_SECTION, key, val)
+    for key, val in conf_dict.items():
+        cparser.set(CONF_SECTION, key, str(val))
 
     try:
         outf = open(join(get_save_config_path(),
@@ -353,7 +359,7 @@ def parse_breakpoints(lines):
             arg = arg[colon+1:].lstrip()
             try:
                 lineno = int(arg)
-            except ValueError, msg:
+            except ValueError:
                 continue
         else:
             continue

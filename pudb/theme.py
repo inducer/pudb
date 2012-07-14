@@ -1,7 +1,6 @@
 THEMES = ["classic", "vim", "dark vim", "midnight"]
 
-
-
+from pudb.py3compat import execfile, raw_input
 
 def get_palette(may_use_fancy_formats, theme="classic"):
     if may_use_fancy_formats:
@@ -288,10 +287,10 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             from os.path import expanduser
             execfile(expanduser(theme), symbols)
         except:
-            print "Error when importing theme:"
+            print("Error when importing theme:")
             from traceback import print_exc
             print_exc()
             raw_input("Hit enter:")
 
-    return [(key,)+value for key, value in palette_dict.iteritems()]
+    return [(key,)+value for key, value in palette_dict.items()]
 

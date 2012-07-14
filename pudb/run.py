@@ -19,7 +19,7 @@ def main():
     mainpyfile =  args[0]
     from os.path import exists, dirname
     if not exists(mainpyfile):
-        print 'Error:', mainpyfile, 'does not exist'
+        print('Error: %s does not exist' % mainpyfile)
         sys.exit(1)
 
     sys.argv = args

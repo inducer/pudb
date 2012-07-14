@@ -1,3 +1,5 @@
+from pudb.py3compat import PY3
+
 # breakpoint validity ---------------------------------------------------------
 def generate_executable_lines_for_code(code):
     l = code.co_firstlineno
@@ -80,6 +82,8 @@ def lookup_module(filename):
 import re
 cookie_re = re.compile("^\s*#.*coding[:=]\s*([-\w.]+)")
 from codecs import lookup, BOM_UTF8
+if PY3:
+    BOM_UTF8 = BOM_UTF8.decode()
 
 def detect_encoding(readline):
     """
@@ -108,7 +112,10 @@ def detect_encoding(readline):
 
     def find_cookie(line):
         try:
-            line_string = line.decode('ascii')
+            if PY3:
+                line_string = line
+            else:
+                line_string = line.decode('ascii')
         except UnicodeDecodeError:
             return None
 

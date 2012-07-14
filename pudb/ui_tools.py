@@ -103,10 +103,11 @@ class StackFrame(urwid.FlowWidget):
     def selectable(self):
         return True
 
-    def rows(self, (maxcol,), focus=False):
+    def rows(self, size, focus=False):
         return 1
 
-    def render(self, (maxcol,), focus=False):
+    def render(self, size, focus=False):
+        maxcol = size[0]
         if focus:
             apfx = "focused "
         else:
@@ -143,10 +144,11 @@ class BreakpointFrame(urwid.FlowWidget):
     def selectable(self):
         return True
 
-    def rows(self, (maxcol,), focus=False):
+    def rows(self, size, focus=False):
         return 1
 
-    def render(self, (maxcol,), focus=False):
+    def render(self, size, focus=False):
+        maxcol = size[0]
         if focus:
             apfx = "focused "
         else:

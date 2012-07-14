@@ -1,7 +1,7 @@
 NUM_VERSION = (2012, 2, 1)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 
-
+from pudb.py3compat import raw_input
 
 
 CURRENT_DEBUGGER = []
@@ -46,14 +46,15 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
             from subprocess import call
             retcode = call(pre_run, close_fds=True, shell=True)
             if retcode:
-                print "*** WARNING: pre-run process exited with code %d." % retcode
+                print("*** WARNING: pre-run process exited with code %d." % retcode)
                 raw_input("[Hit Enter]")
 
         status_msg = ""
 
         try:
             dbg._runscript(mainpyfile)
-        except SystemExit, se:
+        except SystemExit:
+            se = sys.exc_info()[1]
             status_msg = "The debuggee exited normally with status code %s.\n\n" % se.code
         except:
             dbg.post_mortem = True
@@ -149,4 +150,4 @@ def pm():
 
 
 if __name__ == "__main__":
-    print "You now need to type 'python -m pudb.run'. Sorry."
+    print("You now need to type 'python -m pudb.run'. Sorry.")
