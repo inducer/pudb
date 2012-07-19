@@ -10,7 +10,7 @@ from pudb.settings import load_config, save_config
 CONFIG = load_config()
 save_config(CONFIG)
 
-from pudb.py3compat import PY3
+from pudb.py3compat import PY3, raw_input
 if PY3:
     _next = "__next__"
 else:
