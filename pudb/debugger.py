@@ -1278,7 +1278,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e005"
+        WELCOME_LEVEL = "e006"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1292,6 +1292,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "look familiar.\n\n"
                     "If you're new here, welcome! The help screen (invoked by hitting "
                     "'?' after this message) should get you on your way.\n"
+                    "\nChanges in version 2012.3:\n\n"
+                    "- Python 3 support (contributed by Brad Froehle).\n"
                     "\nChanges in version 2012.2.1:\n\n"
                     "- Don't touch config files during install.\n"
                     "\nChanges in version 2012.2:\n\n"
@@ -1303,15 +1305,15 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "\nChanges in version 2011.3.1:\n\n"
                     "- Work-around for bug in urwid >= 1.0.\n"
                     "\nChanges in version 2011.3:\n\n"
-                    "- Finer-grained string highlighting (submitted by Aaron Meurer)\n"
-                    "- Prefs tweaks, instant-apply, top-down stack (submitted by Aaron Meurer)\n"
-                    "- Size changes in sidebar boxes (submitted by Aaron Meurer)\n"
-                    "- New theme 'midnight' (submitted by Aaron Meurer)\n"
-                    "- Support for IPython 0.11 (submitted by Chris Farrow)\n"
-                    "- Suport for custom stringifiers (submitted by Aaron Meurer)\n"
-                    "- Line wrapping in variables view (submitted by Aaron Meurer)\n"
+                    "- Finer-grained string highlighting (contributed by Aaron Meurer)\n"
+                    "- Prefs tweaks, instant-apply, top-down stack (contributed by Aaron Meurer)\n"
+                    "- Size changes in sidebar boxes (contributed by Aaron Meurer)\n"
+                    "- New theme 'midnight' (contributed by Aaron Meurer)\n"
+                    "- Support for IPython 0.11 (contributed by Chris Farrow)\n"
+                    "- Suport for custom stringifiers (contributed by Aaron Meurer)\n"
+                    "- Line wrapping in variables view (contributed by Aaron Meurer)\n"
                     "\nChanges in version 2011.2:\n\n"
-                    "- Fix for post-mortem debugging (submitted by 'Sundance')\n"
+                    "- Fix for post-mortem debugging (contributed by 'Sundance')\n"
                     "\nChanges in version 2011.1:\n\n"
                     "- Breakpoints saved between sessions\n"
                     "- A new 'dark vim' theme\n"
