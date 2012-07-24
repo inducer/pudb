@@ -301,8 +301,8 @@ class Debugger(bdb.Bdb):
 
 # UI stuff --------------------------------------------------------------------
 from pudb.ui_tools import make_hotkey_markup, labelled_value, \
-        SelectableText, SignalWrap, StackFrame, BreakpointFrame, \
-        SearchBox
+        SelectableText, SignalWrap, StackFrame, BreakpointFrame
+
 from pudb.var_view import FrameVarInfoKeeper
 
 
@@ -335,7 +335,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.debugger = dbg
         Attr = urwid.AttrMap
 
-        self.search_box = None
+        from pudb.ui_tools import SearchController
+        self.search_controller = SearchController(self)
+
         self.last_module_filter = ""
 
         # {{{ build ui
@@ -764,8 +766,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         def page_up(w, size, key):
             w.keypress(size, "page up")
 
-        def move_up(w, size, key):
-            w.keypress(size, "up")
         def scroll_left(w, size, key):
             self.source_hscroll_start = max(
                     0,
@@ -779,35 +779,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                 sl._invalidate()
 
         def search(w, size, key):
-            if self.search_box is None:
-                _, search_start = self.source.get_focus()
-
-                self.search_box = SearchBox(self)
-                self.search_AttrMap = urwid.AttrMap(
-                        self.search_box, "search box")
-
-                self.lhs_col.item_types.insert(
-                        0, ("flow", None))
-                self.lhs_col.widget_list.insert( 0, self.search_AttrMap)
-
-                self.columns.set_focus(self.lhs_col)
-                self.lhs_col.set_focus(self.search_AttrMap)
-            else:
-                self.columns.set_focus(self.lhs_col)
-                self.lhs_col.set_focus(self.search_AttrMap)
-                self.search_box.restart_search()
+            self.search_controller.open_search_ui()
 
         def search_next(w, size, key):
-            if self.search_box is not None:
-                self.search_box.do_search(1)
-            else:
-                self.message("No previous search term.")
+            self.search_controller.perform_search(dir=1, update_search_start=True)
 
         def search_previous(w, size, key):
-            if self.search_box is not None:
-                self.search_box.do_search(-1)
-            else:
-                self.message("No previous search term.")
+            self.search_controller.perform_search(dir=-1, update_search_start=True)
 
         def toggle_breakpoint(w, size, key):
             if self.shown_file:
@@ -1293,7 +1271,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen (invoked by hitting "
                     "'?' after this message) should get you on your way.\n"
                     "\nChanges in version 2012.3:\n\n"
-                    "- Python 3 support (contributed by Brad Froehle).\n"
+                    "- Python 3 support (contributed by Brad Froehle)\n"
+                    "- Better search box behavior (suggested by Ram Rachum)\n"
                     "\nChanges in version 2012.2.1:\n\n"
                     "- Don't touch config files during install.\n"
                     "\nChanges in version 2012.2:\n\n"

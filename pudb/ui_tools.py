@@ -172,58 +172,67 @@ class BreakpointFrame(urwid.FlowWidget):
 
 
 
-class SearchBox(urwid.Edit):
+class SearchController(object):
     def __init__(self, ui):
         self.ui = ui
-        urwid.Edit.__init__(self, [("label", "Search: ") ], "")
         self.highlight_line = None
 
-        _, self.search_start = self.ui.source.get_focus()
-
-        from time import time
-        self.search_start_time = time()
-
-    def restart_search(self):
-        from time import time
-        now = time()
-
-        if self.search_start_time > 5:
-            self.set_edit_text("")
-
-        self.search_time = now
-
-    def keypress(self, size, key):
-        result = urwid.Edit.keypress(self, size, key)
-
-        if result is not None:
-            if key == "esc":
-                self.cancel_search()
-                return None
-            elif key == "enter":
-                if self.get_edit_text():
-                    self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[1])
-                else:
-                    self.cancel_search()
-                return None
-        else:
-            if self.do_search(1, self.search_start):
-                self.ui.search_AttrMap.set_attr_map({None: "search box"})
-            else:
-                self.ui.search_AttrMap.set_attr_map({None: "search not found"})
-
-        return result
+        self.search_box = None
+        self.last_search_string = None
 
     def cancel_highlight(self):
         if self.highlight_line is not None:
             self.highlight_line.set_highlight(False)
             self.highlight_line = None
 
-    def do_search(self, dir, start=None):
+
+    def cancel_search(self):
+        self.cancel_highlight()
+        self.hide_search_ui()
+
+    def hide_search_ui(self):
+        self.search_box = None
+        del self.ui.lhs_col.item_types[0]
+        del self.ui.lhs_col.widget_list[0]
+        self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
+
+    def open_search_ui(self):
+        lhs_col = self.ui.lhs_col
+
+        if self.search_box is None:
+            _, self.search_start = self.ui.source.get_focus()
+
+            self.search_box = SearchBox(self)
+            self.search_AttrMap = urwid.AttrMap(
+                    self.search_box, "search box")
+
+            lhs_col.item_types.insert(
+                    0, ("flow", None))
+            lhs_col.widget_list.insert( 0, self.search_AttrMap)
+
+            self.ui.columns.set_focus(lhs_col)
+            lhs_col.set_focus(self.search_AttrMap)
+        else:
+            self.ui.columns.set_focus(lhs_col)
+            lhs_col.set_focus(self.search_AttrMap)
+            #self.search_box.restart_search()
+
+    def perform_search(self, dir, s=None, start=None, update_search_start=False):
         self.cancel_highlight()
 
+        # self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[1])
+
+        if s is None:
+            s = self.last_search_string
+
+            if s is None:
+                self.ui.message("No previous search term.")
+        else:
+            self.last_search_string = s
+
+
         if start is None:
-            _, start = self.ui.source.get_focus()
-        s = self.ui.search_box.get_edit_text()
+            start = self.search_start
 
         case_insensitive = s.lower() == s
 
@@ -245,17 +254,54 @@ class SearchBox(urwid.Edit):
                 sl.set_highlight(True)
                 self.highlight_line = sl
                 self.ui.source.set_focus(i)
+
+                if update_search_start:
+                    self.search_start = i
+
                 return True
 
-            last_i = i
             i = (i+dir) % len(self.ui.source)
 
         return False
 
-    def cancel_search(self):
-        self.cancel_highlight()
 
-        self.ui.search_box = None
-        del self.ui.lhs_col.item_types[0]
-        del self.ui.lhs_col.widget_list[0]
-        self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
+
+
+class SearchBox(urwid.Edit):
+    def __init__(self, controller):
+        urwid.Edit.__init__(self, [("label", "Search: ") ], "")
+        self.controller = controller
+
+    def restart_search(self):
+        from time import time
+        now = time()
+
+        if self.search_start_time > 5:
+            self.set_edit_text("")
+
+        self.search_time = now
+
+    def keypress(self, size, key):
+        result = urwid.Edit.keypress(self, size, key)
+        txt = self.get_edit_text()
+
+        if result is not None:
+            if key == "esc":
+                self.controller.cancel_search()
+                return None
+            elif key == "enter":
+                if txt:
+                    self.controller.hide_search_ui()
+                    self.controller.perform_search(dir=1, s=txt,
+                            update_search_start=True)
+                else:
+                    self.controller.cancel_search()
+                return None
+        else:
+            if self.controller.perform_search(dir=1, s=txt):
+                self.controller.search_AttrMap.set_attr_map({None: "search box"})
+            else:
+                self.controller.search_AttrMap.set_attr_map({None: "search not found"})
+
+        return result
+
