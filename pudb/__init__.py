@@ -60,33 +60,39 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
             dbg.post_mortem = True
             dbg.interaction(None, sys.exc_info())
 
-        def quit_debugger(w, size, key):
-            dbg.ui.quit_event_loop = ["quit"]
+        while True:
+            import urwid
+            pre_run_edit = urwid.Edit("", pre_run)
 
-        import urwid
-        pre_run_edit = urwid.Edit("", pre_run)
+            result = dbg.ui.call_with_ui(dbg.ui.dialog,
+                urwid.ListBox([urwid.Text(
+                    "Your PuDB session has ended.\n\n%s"
+                    "Would you like to quit PuDB or restart your program?\n"
+                    "You may hit 'q' to quit."
+                    % status_msg),
+                    urwid.Text("\n\nIf you decide to restart, this command will be run prior to "
+                    "actually restarting:"),
+                    urwid.AttrMap(pre_run_edit, "value")
+                    ]),
+                [
+                    ("Restart", "restart"),
+                    ("Examine", "examine"),
+                    ("Quit", "quit"),
+                    ],
+                focus_buttons=True,
+                bind_enter_esc=False,
+                title="Finished",
+                extra_bindings=[
+                    ("q", "quit"),
+                    ("esc", "examine"),
+                    ])
 
-        result = dbg.ui.call_with_ui(dbg.ui.dialog,
-            urwid.ListBox([urwid.Text(
-                "Your PuDB session has ended.\n\n%s"
-                "Would you like to quit PuDB or restart your program?\n"
-                "You may hit 'q' to quit."
-                % status_msg),
-                urwid.Text("\n\nIf you decide to restart, this command will be run prior to "
-                "actually restarting:"),
-                urwid.AttrMap(pre_run_edit, "value")
-                ]),
-            [
-                ("Restart", "restart"),
-                ("Quit", "quit"),
-                ],
-            focus_buttons=True,
-            bind_enter_esc=False,
-            title="Finished",
-            extra_bindings=[("q", quit_debugger)])
+            if result == "quit":
+                return
 
-        if result == "quit":
-            return
+            if result == "examine":
+                dbg.post_mortem = True
+                dbg.interaction(None, sys.exc_info(), show_exc_dialog=False)
 
         pre_run = pre_run_edit.get_edit_text()
 

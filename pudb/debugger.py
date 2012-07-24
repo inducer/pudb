@@ -165,6 +165,9 @@ class Debugger(bdb.Bdb):
 
     def set_frame_index(self, index):
         self.curindex = index
+        if index < 0 or index >= len(self.stack):
+            return
+
         self.curframe, lineno = self.stack[index]
         self.ui.set_current_line(lineno, self.curframe.f_code.co_filename)
         self.ui.update_var_view()
@@ -190,13 +193,13 @@ class Debugger(bdb.Bdb):
 
         return stack, index
 
-    def interaction(self, frame, exc_tuple=None):
+    def interaction(self, frame, exc_tuple=None, show_exc_dialog=True):
         if exc_tuple is None:
             tb = None
         else:
             tb = exc_tuple[2]
 
-        if frame is None:
+        if frame is None and tb is not None:
             frame = tb.tb_frame
 
         found_bottom_frame = False
@@ -213,12 +216,14 @@ class Debugger(bdb.Bdb):
             return
 
         self.stack, index = self.get_shortened_stack(frame, tb)
+
         if self.post_mortem:
             index = len(self.stack)-1
 
         self.set_frame_index(index)
 
-        self.ui.call_with_ui(self.ui.interaction, exc_tuple)
+        self.ui.call_with_ui(self.ui.interaction, exc_tuple,
+                show_exc_dialog=show_exc_dialog)
 
     def get_stack_situation_id(self):
         return str(id(self.stack[self.curindex][0].f_code))
@@ -1195,9 +1200,19 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ("fixed", 1, urwid.SolidFill()),
                 w])
 
+        class ResultSetter:
+            def __init__(subself, res):
+                subself.res = res
+
+            def __call__(subself, w, size, key):
+                self.quit_event_loop = [subself.res]
+
         w = SignalWrap(w)
         for key, binding in extra_bindings:
-            w.listen(key, binding)
+            if isinstance(binding, str):
+                w.listen(key, ResultSetter(binding))
+            else:
+                w.listen(key, binding)
 
         w = urwid.LineBox(w)
 
@@ -1256,7 +1271,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e006"
+        WELCOME_LEVEL = "e007"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1273,6 +1288,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "\nChanges in version 2012.3:\n\n"
                     "- Python 3 support (contributed by Brad Froehle)\n"
                     "- Better search box behavior (suggested by Ram Rachum)\n"
+                    "- Made it possible to go back and examine state from 'finished' window."
+                    " (suggested by Aaron Meurer)\n"
                     "\nChanges in version 2012.2.1:\n\n"
                     "- Don't touch config files during install.\n"
                     "\nChanges in version 2012.2:\n\n"
@@ -1306,7 +1323,6 @@ class DebuggerUI(FrameVarInfoKeeper):
             save_config(CONFIG)
             self.run_edit_config()
 
-
         try:
             if toplevel is None:
                 toplevel = self.top
@@ -1334,7 +1350,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     # {{{ debugger-facing interface
 
-    def interaction(self, exc_tuple):
+    def interaction(self, exc_tuple, show_exc_dialog=True):
         self.current_exc_tuple = exc_tuple
 
         from pudb import VERSION
@@ -1346,14 +1362,16 @@ class DebuggerUI(FrameVarInfoKeeper):
         if self.debugger.post_mortem:
             from traceback import format_exception
 
-            self.message(
-                    "The program has terminated abnormally because of an exception.\n\n"
-                    "A full traceback is below. You may recall this traceback at any "
-                    "time using the 'e' key. "
-                    "The debugger has entered post-mortem mode and will prevent further "
-                    "state changes.\n\n"
-                    + "".join(format_exception(*exc_tuple)),
-                    title="Program Terminated for Uncaught Exception")
+            if show_exc_dialog:
+                self.message(
+                        "The program has terminated abnormally because of an exception.\n\n"
+                        "A full traceback is below. You may recall this traceback at any "
+                        "time using the 'e' key. "
+                        "The debugger has entered post-mortem mode and will prevent further "
+                        "state changes.\n\n"
+                        + "".join(format_exception(*exc_tuple)),
+                        title="Program Terminated for Uncaught Exception")
+
             caption.extend([
                 (None, " "),
                 ("warning", "[POST-MORTEM MODE]")
@@ -1394,7 +1412,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                             decoded_lines, set(breakpoints))
                 except:
                     from traceback import format_exception
-                    import sys
 
                     self.message("Could not load source file '%s':\n\n%s" % (
                         fname, "".join(format_exception(*sys.exc_info()))),
