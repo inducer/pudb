@@ -33,6 +33,7 @@ Keys:
     t - run to cursor
     e - show traceback [post-mortem or in exception state]
 
+    H - move to current line (bottom of stack)
     u - move up one stack frame
     d - move down one stack frame
 
@@ -561,12 +562,16 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.stack_list.listen("enter", examine_frame)
 
+        def move_stack_top(w, size, key):
+            self.debugger.set_frame_index(len(self.debugger.stack)-1)
+
         def move_stack_up(w, size, key):
             self.debugger.move_up_frame()
 
         def move_stack_down(w, size, key):
             self.debugger.move_down_frame()
 
+        self.stack_list.listen("H", move_stack_top)
         self.stack_list.listen("u", move_stack_up)
         self.stack_list.listen("d", move_stack_down)
 
@@ -986,6 +991,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("b", toggle_breakpoint)
         self.source_sigwrap.listen("m", pick_module)
 
+        self.source_sigwrap.listen("H", move_stack_top)
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
 
@@ -1123,7 +1129,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
-        self.top.listen("H", help)
         self.top.listen("f1", help)
         self.top.listen("?", help)
 

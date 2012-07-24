@@ -46,6 +46,8 @@ Install PuDB using the command::
 
     easy_install pudb
 
+
+
 Getting Started
 ---------------
 
@@ -96,6 +98,8 @@ version control tool.::
     git clone http://git.tiker.net/trees/pudb.git
 
 You may also `browse the code <http://git.tiker.net/pudb.git>`_ online.
+
+The repository is also mirrored at `github <https://github.com/inducer/pudb>`_.
 
 FAQ
 ---
