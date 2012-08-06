@@ -94,6 +94,9 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
                 dbg.post_mortem = True
                 dbg.interaction(None, sys.exc_info(), show_exc_dialog=False)
 
+            if result == "restart":
+                break
+
         pre_run = pre_run_edit.get_edit_text()
 
         dbg.restart()
