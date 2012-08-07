@@ -96,8 +96,8 @@ def save_config(conf_dict):
     cparser = ConfigParser()
     cparser.add_section(CONF_SECTION)
 
-    for key, val in conf_dict.items():
-        cparser.set(CONF_SECTION, key, str(val))
+    for key in sorted(conf_dict):
+        cparser.set(CONF_SECTION, key, str(conf_dict[key]))
 
     try:
         outf = open(join(get_save_config_path(),
