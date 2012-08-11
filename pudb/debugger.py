@@ -16,6 +16,18 @@ if PY3:
 else:
     _next = "next"
 
+try:
+    from functools import partial
+except ImportError:
+    def partial(func, *args, **keywords):
+        def newfunc(*fargs, **fkeywords):
+            newkeywords = keywords.copy()
+            newkeywords.update(fkeywords)
+            return func(*(args + fargs), **newkeywords)
+        newfunc.func = func
+        newfunc.args = args
+        newfunc.keywords = keywords
+        return newfunc
 
 HELP_TEXT = """\
 Welcome to PuDB, the Python Urwid debugger.
@@ -398,7 +410,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # }}}
 
-        from functools import partial
 
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
