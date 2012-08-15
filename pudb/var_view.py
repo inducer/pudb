@@ -334,21 +334,11 @@ class ValueWalker:
 
             # class types -------------------------------------------------
             key_its = []
-            try:
-                key_its.append(value.__slots__)
-            except:
-                pass
 
             try:
-                key_its.append(value.__dict__.iterkeys())
+                key_its.append(dir(value))
             except:
                 pass
-
-            if not key_its:
-                try:
-                    key_its.append(dir(value))
-                except:
-                    pass
 
             keys = [key for key_it in key_its for key in key_it]
             keys.sort()
