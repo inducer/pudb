@@ -373,6 +373,13 @@ def parse_breakpoints(lines):
 
 
 
+def get_breakpoints_file_name():
+    from os.path import join
+    return join(get_save_config_path(), "saved-breakpoints")
+
+
+
+
 def load_breakpoints(dbg):
     from os.path import join, isdir
 
@@ -403,9 +410,7 @@ def save_breakpoints(bp_list):
     :arg bp_list: a list of tuples `(file_name, line)`
     """
 
-    from os.path import join
-    bp_histfile = join(get_save_config_path(), "saved-breakpoints")
-    histfile = open(bp_histfile, 'w')
+    histfile = open(get_breakpoints_file_name(), 'w')
     bp_list = set([(bp.file, bp.line) for bp in bp_list])
     for bp in bp_list:
         histfile.write("b %s:%d\n" % (bp[0], bp[1]))

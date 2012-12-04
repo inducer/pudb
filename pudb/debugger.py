@@ -998,6 +998,13 @@ class DebuggerUI(FrameVarInfoKeeper):
             raw_input("Hit Enter to return:")
             self.screen.start()
 
+        def reload_breakpoints(w, size, key):
+            self.debugger.clear_all_breaks()
+            from pudb.settings import load_breakpoints
+            for bpoint_descr in load_breakpoints(dbg):
+                dbg.set_break(*bpoint_descr)
+            self.update_breakpoints()
+
         def show_traceback(w, size, key):
             if self.current_exc_tuple is not None:
                 from traceback import format_exception
@@ -1110,6 +1117,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
 
         self.top.listen("o", show_output)
+        self.top.listen("ctrl r", reload_breakpoints)
         self.top.listen("!", run_shell)
         self.top.listen("e", show_traceback)
 
