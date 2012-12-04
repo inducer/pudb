@@ -950,11 +950,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                         mod = sys.modules[mod_name]
                         reload(mod)
                         self.message("'%s' was successfully reloaded." % mod_name)
-                elif result == "import":
-                    mod = import_new_module(filt_edit.get_edit_text())
-                    if mod is not None:
-                        show_mod(mod)
-                    break
+
+                        from linecache import clearcache
+                        clearcache()
+
+                        self.set_current_file(self.shown_file, force_update=True)
+
+                        _, pos = self.stack_list._w.get_focus()
+                        self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.source_sigwrap.listen("n", next)
         self.source_sigwrap.listen("s", step)
@@ -1404,11 +1407,11 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.caption.set_text(caption)
         self.event_loop()
 
-    def set_current_file(self, fname):
+    def set_current_file(self, fname, force_update=False):
         from pudb.source_view import SourceLine, format_source
         fname = self.debugger.canonic(fname)
 
-        if self.shown_file != fname:
+        if self.shown_file != fname or force_update:
             if fname == "<string>":
                 self.source[:] = [SourceLine(self, fname)]
             else:
@@ -1442,7 +1445,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.current_line = None
 
     def show_line(self, line, fname=None):
-        chaged_file = False
+        changed_file = False
         if fname is not None:
             changed_file =  self.shown_file != fname
             self.set_current_file(fname)
