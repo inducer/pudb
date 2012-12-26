@@ -81,6 +81,12 @@ def run_bpython_shell(locals, globals, first_time):
     import bpython.cli
     bpython.cli.main(locals_=ns)
 
+def run_bpython_urwid_shell(locals, globals, first_time):
+    ns = SetPropagatingDict([locals, globals], locals)
+
+    import bpython.urwid
+    bpython.urwid.main(locals_=ns)
+
 def run_ipython_shell_v10(locals, globals, first_time):
     '''IPython shell from IPython version 0.10'''
     if first_time:
