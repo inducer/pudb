@@ -77,7 +77,6 @@ class VariableWidget(urwid.FlowWidget):
         self.var_label = var_label
         self.value_str = value_str
         self.id_path = id_path
-        self.display_expr = id_path
         self.attr_prefix = attr_prefix or "var"
         self.watch_expr = watch_expr
         if iinfo is None:
@@ -215,6 +214,12 @@ def type_stringifier(value):
     else:
         return type(value).__name__
 
+def expr_stringifier(iinfo, globals, locals, value):
+    expr = getattr(iinfo, "display_expr", None)
+    if expr is None:
+        return "<no expression specified>"
+    return str(eval(expr, globals, locals))
+
 def get_stringifier(iinfo, locals=None, globals=None):
     if iinfo.display_type == "type":
         return type_stringifier
@@ -223,7 +228,7 @@ def get_stringifier(iinfo, locals=None, globals=None):
     elif iinfo.display_type == "str":
         return str
     elif iinfo.display_type == "expr":
-        return lambda value : str(eval(iinfo.display_expr, globals, locals))
+        return lambda value : expr_stringifier(iinfo, locals, globals, value)
     else:
         try:
             if not custom_stringifier_dict: # Only execfile once

@@ -79,7 +79,7 @@ Side-bar related:
 Keys in variables list:
 
     \ - expand/collapse
-    t/r/s/c - show type/repr/str/custom for this variable
+    t/r/s/c/x - show type/repr/str/custom/expr for this variable
     h - toggle highlighting
     @ - toggle repetition at top
     * - toggle private members
@@ -441,6 +441,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "r": iinfo.display_type = "repr"
             elif key == "s": iinfo.display_type = "str"
             elif key == "c": iinfo.display_type = CONFIG["custom_stringifier"]
+            elif key == "x": iinfo.display_type = "expr"
             elif key == "h": iinfo.highlighted = not iinfo.highlighted
             elif key == "@": iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
@@ -570,6 +571,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
         self.var_list.listen("c", change_var_state)
+        self.var_list.listen("x", change_var_state)
         self.var_list.listen("h", change_var_state)
         self.var_list.listen("@", change_var_state)
         self.var_list.listen("*", change_var_state)
