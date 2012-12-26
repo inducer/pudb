@@ -77,6 +77,7 @@ class VariableWidget(urwid.FlowWidget):
         self.var_label = var_label
         self.value_str = value_str
         self.id_path = id_path
+        self.display_expr = id_path
         self.attr_prefix = attr_prefix or "var"
         self.watch_expr = watch_expr
         if iinfo is None:
@@ -214,13 +215,15 @@ def type_stringifier(value):
     else:
         return type(value).__name__
 
-def get_stringifier(iinfo):
+def get_stringifier(iinfo, locals=None, globals=None):
     if iinfo.display_type == "type":
         return type_stringifier
     elif iinfo.display_type == "repr":
         return repr
     elif iinfo.display_type == "str":
         return str
+    elif iinfo.display_type == "expr":
+        return lambda value : str(eval(iinfo.display_expr, globals, locals))
     else:
         try:
             if not custom_stringifier_dict: # Only execfile once
@@ -252,7 +255,8 @@ class ValueWalker:
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
-    def walk_value(self, prefix, label, value, id_path=None, attr_prefix=None):
+    def walk_value(self, prefix, label, value, id_path=None, attr_prefix=None,
+                   locals=None, globals=None):
         if id_path is None:
             id_path = label
 
@@ -264,7 +268,8 @@ class ValueWalker:
             self.add_item(prefix, label, repr(value), id_path, attr_prefix)
         else:
             try:
-                displayed_value = get_stringifier(iinfo)(value)
+                displayed_value = get_stringifier(
+                    iinfo, locals=locals, globals=globals)(value)
             except Exception:
                 ## Unfortunately, anything can happen when calling str() or
                 ## repr() on a random object.
@@ -463,7 +468,8 @@ def make_var_view(frame_var_info, locals, globals):
 
     for var in vars:
         if not var[0] in "_.":
-            tmv_walker.walk_value("", var, locals[var])
+            tmv_walker.walk_value("", var, locals[var],
+                                  locals=locals, globals=globals)
 
     result = tmv_walker.main_widget_list
 
