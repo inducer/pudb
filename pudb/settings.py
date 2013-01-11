@@ -380,7 +380,7 @@ def get_breakpoints_file_name():
 
 
 
-def load_breakpoints(dbg):
+def load_breakpoints():
     from os.path import join, isdir
 
     file_names = [

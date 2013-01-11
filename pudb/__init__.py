@@ -5,10 +5,11 @@ from pudb.py3compat import raw_input
 
 
 CURRENT_DEBUGGER = []
-def _get_debugger():
+def _get_debugger(**kwargs):
     if not CURRENT_DEBUGGER:
         from pudb.debugger import Debugger
-        dbg = Debugger()
+        dbg = Debugger(**kwargs)
+
         CURRENT_DEBUGGER.append(dbg)
         return dbg
     else:
@@ -18,8 +19,7 @@ def _get_debugger():
 
 
 def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
-    from pudb.debugger import Debugger
-    dbg = Debugger(steal_output=steal_output)
+    dbg = _get_debugger(steal_output=steal_output)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
@@ -36,10 +36,6 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
     from os.path import dirname
     prev_sys_path = sys.path[:]
     sys.path[0] = dirname(mainpyfile)
-
-    from pudb.settings import load_breakpoints
-    for bpoint_descr in load_breakpoints(dbg):
-        dbg.set_break(*bpoint_descr)
 
     while True:
         if pre_run:
@@ -118,10 +114,6 @@ def runcall(*args, **kwds):
 def set_trace():
     import sys
     dbg = _get_debugger()
-
-    from pudb.settings import load_breakpoints
-    for bpoint_descr in load_breakpoints(dbg):
-        dbg.set_break(*bpoint_descr)
 
     dbg.set_trace(sys._getframe().f_back)
 

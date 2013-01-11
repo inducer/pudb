@@ -147,6 +147,10 @@ class Debugger(bdb.Bdb):
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("") # avoid spurious hangs
 
+        from pudb.settings import load_breakpoints
+        for bpoint_descr in load_breakpoints():
+            self.set_break(*bpoint_descr)
+
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
         save_breakpoints([
