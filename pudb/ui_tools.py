@@ -192,8 +192,7 @@ class SearchController(object):
 
     def hide_search_ui(self):
         self.search_box = None
-        del self.ui.lhs_col.item_types[0]
-        del self.ui.lhs_col.widget_list[0]
+        del self.ui.lhs_col.contents[0]
         self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
 
     def open_search_ui(self):

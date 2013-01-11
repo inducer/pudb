@@ -410,7 +410,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # }}}
 
-
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
 
