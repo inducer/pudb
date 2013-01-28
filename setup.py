@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import with_statement
 
 from distribute_setup import use_setuptools
 
@@ -7,11 +8,11 @@ use_setuptools()
 from setuptools import setup
 from pudb import VERSION
 
-try:
-    readme = open("README.rst")
+import sys
+PY_VERSION = str(sys.version_info[0]) if sys.version_info[0] == 3 else ''
+
+with open("README.rst") as readme:
     long_description = str(readme.read())
-finally:
-    readme.close()
 
 setup(name='pudb',
       version=VERSION,
@@ -44,5 +45,6 @@ setup(name='pudb',
           "Topic :: Terminals",
           "Topic :: Utilities",
           ],
-      packages=["pudb"])
-
+      packages=["pudb"],
+      entry_points={'console_scripts': ['pudb' + PY_VERSION + ' = pudb.run:main'], 'gui_script': []},
+)
