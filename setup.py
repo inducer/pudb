@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import with_statement
 
 from distribute_setup import use_setuptools
 
@@ -9,10 +8,17 @@ from setuptools import setup
 from pudb import VERSION
 
 import sys
-PY_VERSION = str(sys.version_info[0]) if sys.version_info[0] == 3 else ''
+py_version_major = str(sys.version_info[0])
+if py_version_major == 3:
+    PY_VERSION = str(py_version_major)
+else:
+    PY_VERSION = ''
 
-with open("README.rst") as readme:
+try:
+    readme = open("README.rst")
     long_description = str(readme.read())
+finally:
+    readme.close()
 
 setup(name='pudb',
       version=VERSION,
