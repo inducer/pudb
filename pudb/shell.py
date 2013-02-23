@@ -24,9 +24,13 @@ def setup_readline():
             get_save_config_path(),
             "shell-history")
 
-    if os.access(histfile, os.R_OK):
+    try:
         readline.read_history_file(histfile)
-    atexit.register(readline.write_history_file, histfile)
+        atexit.register(readline.write_history_file, histfile)
+    except Exception, e:
+        from warnings import warn
+        warn("Error opening readline history file: %s" % e)
+
     readline.parse_and_bind("tab: complete")
 
 
