@@ -1,6 +1,7 @@
 THEMES = ["classic", "vim", "dark vim", "midnight"]
 
 from pudb.py3compat import execfile, raw_input
+import urwid
 
 def get_palette(may_use_fancy_formats, theme="classic"):
     if may_use_fancy_formats:
@@ -291,6 +292,20 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             from traceback import print_exc
             print_exc()
             raw_input("Hit enter:")
+    
+    palette_list = []
+    for setting_name, color_values in palette_dict.items():
+        fg_color = color_values[0].lower().strip()
+        bg_color = color_values[1].lower().strip()
 
-    return [(key,)+value for key, value in palette_dict.items()]
+        # Convert hNNN syntax to equivalent #RGB value (workaround for urwid issue)
+        if fg_color.startswith('h') or bg_color.startswith('h'):
+            attr = urwid.AttrSpec(fg_color, bg_color, colors=256)
+            palette_list.append((setting_name, 'default', 'default', 'default', 
+                attr.foreground, 
+                attr.background))
+        else: 
+            palette_list.append((setting_name,) + color_values)
+
+    return palette_list
 
