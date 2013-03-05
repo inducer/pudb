@@ -20,6 +20,12 @@ try:
 finally:
     readme.close()
 
+try:
+    from distutils.command.build_py import build_py_2to3 as build_py
+except ImportError:
+    # 2.x
+    from distutils.command.build_py import build_py
+
 setup(name='pudb',
       version=VERSION,
       description='A full-screen, console-based Python debugger',
@@ -53,4 +59,6 @@ setup(name='pudb',
           ],
       packages=["pudb"],
       entry_points={'console_scripts': ['pudb' + PY_VERSION + ' = pudb.run:main'], 'gui_script': []},
-)
+
+      # 2to3 invocation
+      cmdclass={'build_py': build_py})
