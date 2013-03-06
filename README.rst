@@ -79,14 +79,15 @@ PuDB has a `wiki <http://wiki.tiker.net/PuDB>`_, where documentation and
 debugging wisdom are collected.
 
 PuDB also has a `mailing list <http://lists.tiker.net/listinfo/pudb>`_ that
-you may use to submit patches and requests for help.
+you may use to submit patches and requests for help.  You can also send a pull
+request to the `GitHub repository <https://github.com/inducer/pudb>`_
 
 Programming PuDB
 ----------------
 
 At the programming language level, PuDB displays the same interface
 as Python's built-in `pdb module <http://docs.python.org/library/pdb.html>`_.
-Just replace `pdb` with `pudb`. 
+Just replace `pdb` with `pudb`.
 (One exception: `run` is called `runstatement`.)
 
 License and Dependencies
@@ -108,7 +109,7 @@ version control tool.::
 
 You may also `browse the code <http://git.tiker.net/pudb.git>`_ online.
 
-The repository is also mirrored at `github <https://github.com/inducer/pudb>`_.
+The repository is also mirrored at `GitHub <https://github.com/inducer/pudb>`_.
 
 FAQ
 ---
