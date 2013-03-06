@@ -27,7 +27,11 @@ def setup_readline():
     try:
         readline.read_history_file(histfile)
         atexit.register(readline.write_history_file, histfile)
-    except Exception, e:
+    except Exception:
+        # http://docs.python.org/3/howto/pyporting.html#capturing-the-currently-raised-exception
+        import sys
+        e = sys.exc_info()[1]
+
         from warnings import warn
         warn("Error opening readline history file: %s" % e)
 
