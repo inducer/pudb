@@ -1,9 +1,9 @@
-PuDB is a full-screen, console-based visual debugger for Python. 
+PuDB is a full-screen, console-based visual debugger for Python.
 
-Its goal is to provide all the niceties of modern GUI-based debuggers in a 
-more lightweight and keyboard-friendly package. PuDB allows you to debug code 
-right where you write and test it--in a terminal. If you've worked with the 
-excellent (but nowadays ancient) DOS-based Turbo Pascal or C tools, PuDB's UI 
+Its goal is to provide all the niceties of modern GUI-based debuggers in a
+more lightweight and keyboard-friendly package. PuDB allows you to debug code
+right where you write and test it--in a terminal. If you've worked with the
+excellent (but nowadays ancient) DOS-based Turbo Pascal or C tools, PuDB's UI
 might look familiar.
 
 Here's a screenshot:
@@ -15,26 +15,26 @@ You may watch a `screencast <http://vimeo.com/5255125>`_, too.
 Features
 --------
 
-* Syntax-highlighted source, the stack, breakpoints and variables are all 
-  visible at once and continuously updated. This helps you be more aware of 
-  what's going on in your program. Variable displays can be expanded, collapsed 
+* Syntax-highlighted source, the stack, breakpoints and variables are all
+  visible at once and continuously updated. This helps you be more aware of
+  what's going on in your program. Variable displays can be expanded, collapsed
   and have various customization options.
 
-* Simple, keyboard-based navigation using single keystrokes makes debugging 
-  quick and easy. PuDB understands cursor-keys and Vi shortcuts for navigation. 
+* Simple, keyboard-based navigation using single keystrokes makes debugging
+  quick and easy. PuDB understands cursor-keys and Vi shortcuts for navigation.
   Other keys are inspired by the corresponding pdb coomands.
 
-* Use search to find relevant source code, or use "m" to invoke the module 
-  browser that shows loaded modules, lets you load new ones and reload existing 
+* Use search to find relevant source code, or use "m" to invoke the module
+  browser that shows loaded modules, lets you load new ones and reload existing
   ones.
 
-* Breakpoints can be set just by pointing at a source line and hitting "b" and 
-  then edited visually in the breakpoints window.  Or hit "t" to run to the line 
+* Breakpoints can be set just by pointing at a source line and hitting "b" and
+  then edited visually in the breakpoints window.  Or hit "t" to run to the line
   under the cursor.
 
 * Drop to a Python shell in the current environment by pressing "!".
 
-* PuDB places special emphasis on exception handling. A post-mortem mode makes 
+* PuDB places special emphasis on exception handling. A post-mortem mode makes
   it easy to retrace a crashing program's last steps.
 
 * IPython integration (see `wiki <http://wiki.tiker.net/PuDB>`_)
@@ -59,11 +59,18 @@ To start debugging, simply insert::
 
 into the piece of code you want to debug, or run the entire script with::
 
+    pudb my-script.py
+
+or, in Python 3::
+
+    pudb3 my-script.py
+
+This is equivalent to::
+
     python -m pudb.run my-script.py
 
-In Python 2.6 and higher, you can save four keystrokes and type::
-
-    python -m pudb my-script.py
+which is useful if you want to run PuDB in a version of Python other than the
+one you most recently installed PuDB with.
 
 Documentation and Support
 -------------------------
@@ -72,14 +79,15 @@ PuDB has a `wiki <http://wiki.tiker.net/PuDB>`_, where documentation and
 debugging wisdom are collected.
 
 PuDB also has a `mailing list <http://lists.tiker.net/listinfo/pudb>`_ that
-you may use to submit patches and requests for help.
+you may use to submit patches and requests for help.  You can also send a pull
+request to the `GitHub repository <https://github.com/inducer/pudb>`_
 
 Programming PuDB
 ----------------
 
 At the programming language level, PuDB displays the same interface
 as Python's built-in `pdb module <http://docs.python.org/library/pdb.html>`_.
-Just replace `pdb` with `pudb`. 
+Just replace `pdb` with `pudb`.
 (One exception: `run` is called `runstatement`.)
 
 License and Dependencies
@@ -101,7 +109,7 @@ version control tool.::
 
 You may also `browse the code <http://git.tiker.net/pudb.git>`_ online.
 
-The repository is also mirrored at `github <https://github.com/inducer/pudb>`_.
+The repository is also mirrored at `GitHub <https://github.com/inducer/pudb>`_.
 
 FAQ
 ---
