@@ -1,5 +1,6 @@
 NUM_VERSION = (2012, 3)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
+__version__ = VERSION
 
 from pudb.py3compat import raw_input
 
