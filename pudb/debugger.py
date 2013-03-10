@@ -1261,6 +1261,58 @@ class DebuggerUI(FrameVarInfoKeeper):
         screen.register_palette(
                 get_palette(may_use_fancy_formats, CONFIG["theme"]))
 
+    def show_exception_dialog(self, exc_tuple):
+        from traceback import format_exception
+
+        tb_txt = "".join(format_exception(*exc_tuple))
+        while True:
+            res = self.dialog(
+                    urwid.ListBox([urwid.Text(
+                        "The program has terminated abnormally because of an exception.\n\n"
+                        "A full traceback is below. You may recall this traceback at any "
+                        "time using the 'e' key. "
+                        "The debugger has entered post-mortem mode and will prevent further "
+                        "state changes.\n\n"
+                        + tb_txt)]),
+                    title="Program Terminated for Uncaught Exception",
+                    buttons_and_results=[
+                        ("OK", True),
+                        ("Save traceback", "save"),
+                        ])
+
+            if res in [True, False]:
+                break
+
+            if res == "save":
+                try:
+                    n = 0
+                    from os.path import exists
+                    while True:
+                        if n:
+                            fn = "traceback-%d.txt" % n
+                        else:
+                            fn = "traceback.txt"
+
+                        if not exists(fn):
+                            outf = open(fn, "w")
+                            try:
+                                outf.write(tb_txt)
+                            finally:
+                                outf.close()
+
+                            self.message("Traceback saved as %s." % fn, title="Success")
+
+                            break
+
+                        n += 1
+
+                except Exception:
+                    io_tb_txt = "".join(format_exception(*sys.exc_info()))
+                    self.message(
+                            "An error occurred while trying to write the traceback:\n\n"
+                            + io_tb_txt,
+                            title="I/O error")
+
     # }}}
 
     # {{{ UI enter/exit
@@ -1285,6 +1337,7 @@ class DebuggerUI(FrameVarInfoKeeper):
     # }}}
 
     # {{{ interaction
+
     def event_loop(self, toplevel=None):
         prev_quit_loop = self.quit_event_loop
 
@@ -1385,17 +1438,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             % VERSION)]
 
         if self.debugger.post_mortem:
-            from traceback import format_exception
-
             if show_exc_dialog:
-                self.message(
-                        "The program has terminated abnormally because of an exception.\n\n"
-                        "A full traceback is below. You may recall this traceback at any "
-                        "time using the 'e' key. "
-                        "The debugger has entered post-mortem mode and will prevent further "
-                        "state changes.\n\n"
-                        + "".join(format_exception(*exc_tuple)),
-                        title="Program Terminated for Uncaught Exception")
+                self.show_exception_dialog(exc_tuple)
 
             caption.extend([
                 (None, " "),
