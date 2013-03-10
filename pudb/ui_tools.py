@@ -226,9 +226,9 @@ class SearchController(object):
 
             if s is None:
                 self.ui.message("No previous search term.")
+                return False
         else:
             self.last_search_string = s
-
 
         if start is None:
             start = self.search_start
