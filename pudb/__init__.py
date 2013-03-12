@@ -16,8 +16,9 @@ def _get_debugger(**kwargs):
     else:
         return CURRENT_DEBUGGER[0]
 
-
-
+import signal
+DEFAULT_SIGNAL = signal.SIGINT
+del signal
 
 def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
     dbg = _get_debugger(steal_output=steal_output)
@@ -116,10 +117,33 @@ def set_trace():
     import sys
     dbg = _get_debugger()
 
+    set_interrupt_handler()
     dbg.set_trace(sys._getframe().f_back)
 
 
+def _interrupt_handler(signum, frame):
+    from pudb import _get_debugger
+    _get_debugger().set_trace(frame)
 
+def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
+    """
+    Set up an interrupt handler, to activate PuDB when Python receives the
+    signal `interrupt_signal`.  By default it is SIGINT (i.e., Ctrl-c).
+
+    To use a different signal, pass it as the argument to this function, like
+    `set_interrupt_handler(signal.SIGALRM)`.  You can then break your code
+    with `kill -ALRM pid`, where `pid` is the process ID of the Python
+    process.  Note that PuDB will still use SIGINT once it is running to allow
+    breaking running code.  If that is an issue, you can change the default
+    signal by hooking `pudb.DEFAULT_SIGNAL`, like
+
+    >>> import pudb
+    >>> import signal
+    >>> pudb.DEFAULT_SIGNAL = signal.SIGALRM
+
+    """
+    import signal
+    signal.signal(interrupt_signal, _interrupt_handler)
 
 def post_mortem(exc_info=None):
     if exc_info is None:
