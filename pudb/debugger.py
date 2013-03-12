@@ -56,7 +56,7 @@ Keys:
     m - open module
 
     j/k - up/down
-    ctrl-u/d - page up/down
+    Ctrl-u/d - page up/down
     h/l - scroll left/right
     g/G - start/end
     L - show (file/line) location / go to line
@@ -69,6 +69,8 @@ Keys:
 
     f1/?/H - show this help screen
     q - quit
+
+    Ctrl-c - when in continue mode, break back to PuDB
 
 Side-bar related:
 

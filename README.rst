@@ -48,8 +48,6 @@ Install PuDB using the command::
 
     easy_install pudb
 
-
-
 Getting Started
 ---------------
 
@@ -82,13 +80,25 @@ PuDB also has a `mailing list <http://lists.tiker.net/listinfo/pudb>`_ that
 you may use to submit patches and requests for help.  You can also send a pull
 request to the `GitHub repository <https://github.com/inducer/pudb>`_
 
+Attaching to Running Code
+-------------------------
+
+An alternative to using ``set_trace`` is to use::
+
+    from pudb import set_interrupt_handler; set_interrupt_handler()
+
+at the top of your code.  This will set ``SIGINT`` (i.e., ``Ctrl-c``) to
+run ``set_trace``, so that typing ``Ctrl-c`` while your code is running
+will break the code and start debugging.  See the docstring of
+``set_interrupt_handler`` for more information.
+
 Programming PuDB
 ----------------
 
 At the programming language level, PuDB displays the same interface
 as Python's built-in `pdb module <http://docs.python.org/library/pdb.html>`_.
-Just replace `pdb` with `pudb`.
-(One exception: `run` is called `runstatement`.)
+Just replace ``pdb`` with ``pudb``.
+(One exception: ``run`` is called ``runstatement``.)
 
 License and Dependencies
 ------------------------
