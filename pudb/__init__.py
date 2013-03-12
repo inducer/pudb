@@ -16,8 +16,9 @@ def _get_debugger(**kwargs):
     else:
         return CURRENT_DEBUGGER[0]
 
-
-
+import signal
+DEFAULT_SIGNAL = signal.SIGINT
+del signal
 
 def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
     dbg = _get_debugger(steal_output=steal_output)
@@ -124,13 +125,12 @@ def _interrupt_handler(signum, frame):
     from pudb import _get_debugger
     _get_debugger().set_trace(frame)
 
-def set_interrupt_handler(interrupt_signal=None):
+def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
     """
     Set up an interrupt handler, to activate PuDB when Python receives the
     signal `interrupt_signal`.  By default it is SIGINT (i.e., Control-C).
     """
     import signal
-    interrupt_signal = interrupt_signal or signal.SIGINT
     signal.signal(interrupt_signal, _interrupt_handler)
 
 def post_mortem(exc_info=None):
