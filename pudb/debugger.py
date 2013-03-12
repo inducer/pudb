@@ -56,7 +56,7 @@ Keys:
     m - open module
 
     j/k - up/down
-    ctrl-u/d - page up/down
+    Ctrl-u/d - page up/down
     h/l - scroll left/right
     g/G - start/end
     L - show (file/line) location / go to line
@@ -69,6 +69,8 @@ Keys:
 
     f1/?/H - show this help screen
     q - quit
+
+    Ctrl-c - when in continue mode, break back to PuDB
 
 Side-bar related:
 
@@ -124,8 +126,6 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
-
-
 
 # {{{ debugger interface
 
@@ -312,6 +312,11 @@ class Debugger(bdb.Bdb):
             statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (filename, filename)
         else:
             statement = 'execfile( "%s")' % filename
+
+        # Set up an interrupt handler
+        from pudb import set_interrupt_handler
+        set_interrupt_handler()
+
         self.run(statement, globals=globals_, locals=locals_)
 
 # }}}
