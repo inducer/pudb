@@ -5,6 +5,7 @@ from __future__ import division
 import urwid
 import bdb
 import sys
+import signal
 
 from pudb.settings import load_config, save_config
 CONFIG = load_config()
@@ -28,6 +29,10 @@ except ImportError:
         newfunc.args = args
         newfunc.keywords = keywords
         return newfunc
+
+def _interrupt_handler(signum, frame):
+    from pudb import set_trace
+    set_trace()
 
 HELP_TEXT = """\
 Welcome to PuDB, the Python Urwid debugger.
@@ -124,8 +129,6 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
-
-
 
 # {{{ debugger interface
 
@@ -312,6 +315,10 @@ class Debugger(bdb.Bdb):
             statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (filename, filename)
         else:
             statement = 'execfile( "%s")' % filename
+
+        # Set up an interrupt handler
+        signal.signal(signal.SIGINT, _interrupt_handler)
+
         self.run(statement, globals=globals_, locals=locals_)
 
 # }}}
