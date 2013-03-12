@@ -116,10 +116,22 @@ def set_trace():
     import sys
     dbg = _get_debugger()
 
+    set_interrupt_handler()
     dbg.set_trace(sys._getframe().f_back)
 
 
+def _interrupt_handler(signum, frame):
+    from pudb import _get_debugger
+    _get_debugger().set_trace(frame)
 
+def set_interrupt_handler(interrupt_signal=None):
+    """
+    Set up an interrupt handler, to activate PuDB when Python receives the
+    signal `interrupt_signal`.  By default it is SIGINT (i.e., Control-C).
+    """
+    import signal
+    interrupt_signal = interrupt_signal or signal.SIGINT
+    signal.signal(interrupt_signal, _interrupt_handler)
 
 def post_mortem(exc_info=None):
     if exc_info is None:
