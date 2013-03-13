@@ -141,6 +141,7 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
     >>> import signal
     >>> pudb.DEFAULT_SIGNAL = signal.SIGALRM
 
+    Note, this may not work if you use threads or subprocesses.
     """
     import signal
     signal.signal(interrupt_signal, _interrupt_handler)
