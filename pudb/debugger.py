@@ -937,11 +937,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                         try:
                             __import__(str(new_mod_name))
                         except:
-                            from traceback import format_exception
-                            import sys
+                            from pudb.lowlevel import format_exception
 
                             self.message("Could not import module '%s':\n\n%s" % (
-                                new_mod_name, "".join(format_exception(*sys.exc_info()))),
+                                new_mod_name, "".join(format_exception(sys.exc_info()))),
                                 title="Import Error")
                         else:
                             show_mod(sys.modules[str(new_mod_name)])
@@ -1018,11 +1017,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def show_traceback(w, size, key):
             if self.current_exc_tuple is not None:
-                from traceback import format_exception
+                from pudb.lowlevel import format_exception
 
                 result = self.dialog(
                         urwid.ListBox([urwid.Text(
-                            "".join(format_exception(*self.current_exc_tuple)))]),
+                            "".join(format_exception(self.current_exc_tuple)))]),
                         [
                             ("Close", "close"),
                             ("Location", "location")
@@ -1267,9 +1266,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 get_palette(may_use_fancy_formats, CONFIG["theme"]))
 
     def show_exception_dialog(self, exc_tuple):
-        from traceback import format_exception
+        from pudb.lowlevel import format_exception
 
-        tb_txt = "".join(format_exception(*exc_tuple))
+        tb_txt = "".join(format_exception(exc_tuple))
         while True:
             res = self.dialog(
                     urwid.ListBox([urwid.Text(
@@ -1312,7 +1311,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         n += 1
 
                 except Exception:
-                    io_tb_txt = "".join(format_exception(*sys.exc_info()))
+                    io_tb_txt = "".join(format_exception(sys.exc_info()))
                     self.message(
                             "An error occurred while trying to write the traceback:\n\n"
                             + io_tb_txt,
@@ -1485,10 +1484,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.source[:] = format_source(self,
                             decoded_lines, set(breakpoints))
                 except:
-                    from traceback import format_exception
-
+                    from pudb.lowlevel import format_exception
                     self.message("Could not load source file '%s':\n\n%s" % (
-                        fname, "".join(format_exception(*sys.exc_info()))),
+                        fname, "".join(format_exception(sys.exc_info()))),
                         title="Source Code Load Error")
                     self.source[:] = [SourceLine(self,
                         "Error while loading '%s'." % fname)]
@@ -1579,11 +1577,11 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_walker[:] = frame_uis
 
     def show_exception(self, exc_type, exc_value, traceback):
-        from traceback import format_exception
+        from pudb.lowlevel import format_exception
 
         self.message(
                 "".join(format_exception(
-                    exc_type, exc_value, traceback)),
+                    (exc_type, exc_value, traceback))),
                 title="Exception Occurred")
 
     # }}}
