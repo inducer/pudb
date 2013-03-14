@@ -103,7 +103,7 @@ License:
 
 PuDB is licensed to you under the MIT/X Consortium license:
 
-Copyright (c) 2009,10,11 Andreas Kloeckner and contributors
+Copyright (c) 2009-13 Andreas Kloeckner and contributors
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -1353,7 +1353,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e007"
+        WELCOME_LEVEL = "e008"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1367,6 +1367,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "look familiar.\n\n"
                     "If you're new here, welcome! The help screen (invoked by hitting "
                     "'?' after this message) should get you on your way.\n"
+                    "\nChanges in version 2013.1:\n\n"
+                    "- Ctrl-C will now break to the debugger in a way that does\n"
+                    "  not terminate the program\n"
+                    "- Lots of bugs fixed\n"
                     "\nChanges in version 2012.3:\n\n"
                     "- Python 3 support (contributed by Brad Froehle)\n"
                     "- Better search box behavior (suggested by Ram Rachum)\n"
