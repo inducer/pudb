@@ -56,23 +56,25 @@ class SourceLine(urwid.FlowWidget):
             if not self.has_breakpoint:
                 attrs.append("highlighted")
 
+        if render_line_nr:
+            line_nr_len = len(self.line_nr)
+        else:
+            line_nr_len = 0
+
+        text = self.text
         if not attrs and self.attr is not None:
             attr = self.attr
-            if render_line_nr:
-                attr = [("line number", len(self.line_nr))] + attr
         else:
-            attr = [(" ".join(attrs+["source"]), hscroll+maxcol-2)]
+            attr = [(" ".join(attrs+["source"]), hscroll+maxcol-2-line_nr_len)]
 
         from urwid.util import rle_subseg, rle_len
 
-        text = self.text
-        if self.dbg_ui.source_hscroll_start:
+        if hscroll:
             text = text[hscroll:]
-            attr = rle_subseg(attr,
-                    self.dbg_ui.source_hscroll_start,
-                    rle_len(attr))
+            attr = rle_subseg(attr, hscroll, rle_len(attr))
 
         if render_line_nr:
+            attr = [("line number", len(self.line_nr))] + attr
             text = self.line_nr + text
 
         text = crnt+bp+text
