@@ -298,7 +298,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         fg_color = color_values[0].lower().strip()
         bg_color = color_values[1].lower().strip()
 
-        # Convert hNNN syntax to equivalent #RGB value (workaround for urwid issue)
+        # Convert hNNN syntax to equivalent #RGB value (https://github.com/wardi/urwid/issues/24)
         if fg_color.startswith('h') or bg_color.startswith('h'):
             attr = urwid.AttrSpec(fg_color, bg_color, colors=256)
             palette_list.append((setting_name, 'default', 'default', 'default', 
