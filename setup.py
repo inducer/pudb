@@ -8,7 +8,7 @@ from setuptools import setup
 from pudb import VERSION
 
 import sys
-py_version_major = str(sys.version_info[0])
+py_version_major = sys.version_info[0]
 if py_version_major == 3:
     PY_VERSION = str(py_version_major)
 else:
