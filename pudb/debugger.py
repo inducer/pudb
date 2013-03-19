@@ -151,6 +151,24 @@ class Debugger(bdb.Bdb):
         for bpoint_descr in load_breakpoints():
             self.set_break(*bpoint_descr)
 
+    def set_trace(self, frame=None):
+        """Start debugging from `frame`.
+
+        If frame is not specified, debugging starts from caller's frame.
+        
+        This is exactly the same as Bdb.set_trace(), sans the self.reset() call.
+        """
+        if frame is None:
+            frame = sys._getframe().f_back
+        # See pudb issue #52. If this works well enough we should upstream to stdlib bdb.py.
+        #self.reset()
+        while frame:
+            frame.f_trace = self.trace_dispatch
+            self.botframe = frame
+            frame = frame.f_back
+        self.set_step()
+        sys.settrace(self.trace_dispatch)
+
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
         save_breakpoints([
