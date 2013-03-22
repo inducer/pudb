@@ -348,7 +348,10 @@ from pudb.ui_tools import make_hotkey_markup, labelled_value, \
         SelectableText, SignalWrap, StackFrame, BreakpointFrame
 
 from pudb.var_view import FrameVarInfoKeeper
-
+try:
+    import curses
+except ImportError:
+    curses = None
 
 from urwid.raw_display import Screen
 
@@ -1167,6 +1170,14 @@ class DebuggerUI(FrameVarInfoKeeper):
         # {{{ setup
 
         self.screen = ThreadsafeScreen()
+
+        if curses:
+            curses.setupterm()
+            color_support = curses.tigetnum('colors')
+
+            if color_support == 256:
+                self.screen.set_terminal_properties(256)
+
         self.setup_palette(self.screen)
 
         self.show_count = 0
