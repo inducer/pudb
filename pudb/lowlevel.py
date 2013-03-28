@@ -1,6 +1,6 @@
 from pudb.py3compat import PY3
 
-# breakpoint validity ---------------------------------------------------------
+# {{{ breakpoint validity
 def generate_executable_lines_for_code(code):
     l = code.co_firstlineno
     yield l
@@ -78,10 +78,9 @@ def lookup_module(filename):
             return fullname
     return None
 
+# }}}
 
-
-
-# file encoding detection -----------------------------------------------------
+# {{{ file encoding detection
 # stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 
 import re
@@ -159,3 +158,37 @@ def detect_encoding(readline):
         return encoding, [first, second]
 
     return 'utf-8', [first, second]
+
+# }}}
+
+# {{{ traceback formatting
+
+class StringExceptionValueWrapper:
+    def __init__(self, string_val):
+        self.string_val = string_val
+
+    def __str__(self):
+        return self.string_val
+
+    __context__ = None
+    __cause__ = None
+
+def format_exception(exc_tuple):
+    # Work around http://bugs.python.org/issue17413
+    # See also https://github.com/inducer/pudb/issues/61
+
+    from traceback import format_exception
+    if PY3:
+        exc_type, exc_value, exc_tb = exc_tuple
+
+        if isinstance(exc_value, str):
+            exc_value = StringExceptionValueWrapper(exc_value)
+            exc_tuple = exc_type, exc_value, exc_tb
+
+        return format_exception(*exc_tuple, chain=hasattr(exc_value, "__context__"))
+    else:
+        return format_exception(*exc_tuple)
+
+# }}}
+
+# vim: foldmethod=marker

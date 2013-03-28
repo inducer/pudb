@@ -124,7 +124,6 @@ class VariableWidget(urwid.FlowWidget):
             apfx = self.attr_prefix+" "
 
         var_label = self.var_label or ''
-        value_str = self.value_str or ''
 
         if self.wrap:
             text = self._get_text(size)

@@ -5,3 +5,5 @@
 dist
 build
 distribute-*
+traceback*txt
+.DS_Store

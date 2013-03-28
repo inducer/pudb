@@ -56,7 +56,7 @@ Keys:
     m - open module
 
     j/k - up/down
-    ctrl-u/d - page up/down
+    Ctrl-u/d - page up/down
     h/l - scroll left/right
     g/G - start/end
     L - show (file/line) location / go to line
@@ -69,6 +69,8 @@ Keys:
 
     f1/?/H - show this help screen
     q - quit
+
+    Ctrl-c - when in continue mode, break back to PuDB
 
 Side-bar related:
 
@@ -101,7 +103,7 @@ License:
 
 PuDB is licensed to you under the MIT/X Consortium license:
 
-Copyright (c) 2009,10,11 Andreas Kloeckner and contributors
+Copyright (c) 2009-13 Andreas Kloeckner and contributors
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -125,8 +127,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-
-
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
@@ -146,6 +146,28 @@ class Debugger(bdb.Bdb):
                 from cStringIO import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("") # avoid spurious hangs
+
+        from pudb.settings import load_breakpoints
+        for bpoint_descr in load_breakpoints():
+            self.set_break(*bpoint_descr)
+
+    def set_trace(self, frame=None):
+        """Start debugging from `frame`.
+
+        If frame is not specified, debugging starts from caller's frame.
+        
+        This is exactly the same as Bdb.set_trace(), sans the self.reset() call.
+        """
+        if frame is None:
+            frame = sys._getframe().f_back
+        # See pudb issue #52. If this works well enough we should upstream to stdlib bdb.py.
+        #self.reset()
+        while frame:
+            frame.f_trace = self.trace_dispatch
+            self.botframe = frame
+            frame = frame.f_back
+        self.set_step()
+        sys.settrace(self.trace_dispatch)
 
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
@@ -308,6 +330,11 @@ class Debugger(bdb.Bdb):
             statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (filename, filename)
         else:
             statement = 'execfile( "%s")' % filename
+
+        # Set up an interrupt handler
+        from pudb import set_interrupt_handler
+        set_interrupt_handler()
+
         self.run(statement, globals=globals_, locals=locals_)
 
 # }}}
@@ -321,7 +348,10 @@ from pudb.ui_tools import make_hotkey_markup, labelled_value, \
         SelectableText, SignalWrap, StackFrame, BreakpointFrame
 
 from pudb.var_view import FrameVarInfoKeeper
-
+try:
+    import curses
+except ImportError:
+    curses = None
 
 from urwid.raw_display import Screen
 
@@ -409,7 +439,6 @@ class DebuggerUI(FrameVarInfoKeeper):
             header))
 
         # }}}
-
 
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
@@ -941,11 +970,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                         try:
                             __import__(str(new_mod_name))
                         except:
-                            from traceback import format_exception
-                            import sys
+                            from pudb.lowlevel import format_exception
 
                             self.message("Could not import module '%s':\n\n%s" % (
-                                new_mod_name, "".join(format_exception(*sys.exc_info()))),
+                                new_mod_name, "".join(format_exception(sys.exc_info()))),
                                 title="Import Error")
                         else:
                             show_mod(sys.modules[str(new_mod_name)])
@@ -1022,11 +1050,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def show_traceback(w, size, key):
             if self.current_exc_tuple is not None:
-                from traceback import format_exception
+                from pudb.lowlevel import format_exception
 
                 result = self.dialog(
                         urwid.ListBox([urwid.Text(
-                            "".join(format_exception(*self.current_exc_tuple)))]),
+                            "".join(format_exception(self.current_exc_tuple)))]),
                         [
                             ("Close", "close"),
                             ("Location", "location")
@@ -1156,6 +1184,14 @@ class DebuggerUI(FrameVarInfoKeeper):
         # {{{ setup
 
         self.screen = ThreadsafeScreen()
+
+        if curses:
+            curses.setupterm()
+            color_support = curses.tigetnum('colors')
+
+            if color_support == 256:
+                self.screen.set_terminal_properties(256)
+
         self.setup_palette(self.screen)
 
         self.show_count = 0
@@ -1272,6 +1308,58 @@ class DebuggerUI(FrameVarInfoKeeper):
         screen.register_palette(
                 get_palette(may_use_fancy_formats, CONFIG["theme"]))
 
+    def show_exception_dialog(self, exc_tuple):
+        from pudb.lowlevel import format_exception
+
+        tb_txt = "".join(format_exception(exc_tuple))
+        while True:
+            res = self.dialog(
+                    urwid.ListBox([urwid.Text(
+                        "The program has terminated abnormally because of an exception.\n\n"
+                        "A full traceback is below. You may recall this traceback at any "
+                        "time using the 'e' key. "
+                        "The debugger has entered post-mortem mode and will prevent further "
+                        "state changes.\n\n"
+                        + tb_txt)]),
+                    title="Program Terminated for Uncaught Exception",
+                    buttons_and_results=[
+                        ("OK", True),
+                        ("Save traceback", "save"),
+                        ])
+
+            if res in [True, False]:
+                break
+
+            if res == "save":
+                try:
+                    n = 0
+                    from os.path import exists
+                    while True:
+                        if n:
+                            fn = "traceback-%d.txt" % n
+                        else:
+                            fn = "traceback.txt"
+
+                        if not exists(fn):
+                            outf = open(fn, "w")
+                            try:
+                                outf.write(tb_txt)
+                            finally:
+                                outf.close()
+
+                            self.message("Traceback saved as %s." % fn, title="Success")
+
+                            break
+
+                        n += 1
+
+                except Exception:
+                    io_tb_txt = "".join(format_exception(sys.exc_info()))
+                    self.message(
+                            "An error occurred while trying to write the traceback:\n\n"
+                            + io_tb_txt,
+                            title="I/O error")
+
     # }}}
 
     # {{{ UI enter/exit
@@ -1296,6 +1384,7 @@ class DebuggerUI(FrameVarInfoKeeper):
     # }}}
 
     # {{{ interaction
+
     def event_loop(self, toplevel=None):
         prev_quit_loop = self.quit_event_loop
 
@@ -1307,7 +1396,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e007"
+        WELCOME_LEVEL = "e008"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1321,6 +1410,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "look familiar.\n\n"
                     "If you're new here, welcome! The help screen (invoked by hitting "
                     "'?' after this message) should get you on your way.\n"
+                    "\nChanges in version 2013.1:\n\n"
+                    "- Ctrl-C will now break to the debugger in a way that does\n"
+                    "  not terminate the program\n"
+                    "- Lots of bugs fixed\n"
                     "\nChanges in version 2012.3:\n\n"
                     "- Python 3 support (contributed by Brad Froehle)\n"
                     "- Better search box behavior (suggested by Ram Rachum)\n"
@@ -1396,17 +1489,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             % VERSION)]
 
         if self.debugger.post_mortem:
-            from traceback import format_exception
-
             if show_exc_dialog:
-                self.message(
-                        "The program has terminated abnormally because of an exception.\n\n"
-                        "A full traceback is below. You may recall this traceback at any "
-                        "time using the 'e' key. "
-                        "The debugger has entered post-mortem mode and will prevent further "
-                        "state changes.\n\n"
-                        + "".join(format_exception(*exc_tuple)),
-                        title="Program Terminated for Uncaught Exception")
+                self.show_exception_dialog(exc_tuple)
 
             caption.extend([
                 (None, " "),
@@ -1447,10 +1531,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.source[:] = format_source(self,
                             decoded_lines, set(breakpoints))
                 except:
-                    from traceback import format_exception
-
+                    from pudb.lowlevel import format_exception
                     self.message("Could not load source file '%s':\n\n%s" % (
-                        fname, "".join(format_exception(*sys.exc_info()))),
+                        fname, "".join(format_exception(sys.exc_info()))),
                         title="Source Code Load Error")
                     self.source[:] = [SourceLine(self,
                         "Error while loading '%s'." % fname)]
@@ -1541,11 +1624,11 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_walker[:] = frame_uis
 
     def show_exception(self, exc_type, exc_value, traceback):
-        from traceback import format_exception
+        from pudb.lowlevel import format_exception
 
         self.message(
                 "".join(format_exception(
-                    exc_type, exc_value, traceback)),
+                    (exc_type, exc_value, traceback))),
                 title="Exception Occurred")
 
     # }}}
