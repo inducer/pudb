@@ -778,7 +778,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.source.set_focus(0)
 
         def move_end(w, size, key):
-            self.source.set_focus(len(self.source))
+            self.source.set_focus(len(self.source)-1)
 
         def go_to_line(w, size, key):
             _, line = self.source.get_focus()
