@@ -151,7 +151,7 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
         import sys
         from warnings import warn
         warn("setting interrupt handler on signal %d failed: %s"
-                % (interrupt_signal, format_exception(sys.exc_info())))
+                % (interrupt_signal, "".join(format_exception(sys.exc_info()))))
 
 def post_mortem(exc_info=None):
     if exc_info is None:
