@@ -146,10 +146,12 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
     import signal
     signal.signal(interrupt_signal, _interrupt_handler)
 
-def post_mortem(exc_info=None):
-    if exc_info is None:
+def post_mortem(tb=None, e_type=None, e_value=None):
+    if tb is None:
         import sys
         exc_info = sys.exc_info()
+    else:
+        exc_info = (e_type, e_value, tb)
 
     tb = exc_info[2]
     while tb.tb_next is not None:
@@ -171,7 +173,7 @@ def pm():
     except AttributeError:
         ## No exception on record. Do nothing.
         return
-    post_mortem((e_type, e_value, tb))
+    post_mortem(tb, e_type, e_value)
 
 
 
