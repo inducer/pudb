@@ -81,7 +81,7 @@ Side-bar related:
 Keys in variables list:
 
     \ - expand/collapse
-    t/r/s/c - show type/repr/str/custom for this variable
+    t/r/s/c/x - show type/repr/str/custom/expr for this variable
     h - toggle highlighting
     @ - toggle repetition at top
     * - toggle private members
@@ -470,6 +470,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "r": iinfo.display_type = "repr"
             elif key == "s": iinfo.display_type = "str"
             elif key == "c": iinfo.display_type = CONFIG["custom_stringifier"]
+            elif key == "x": iinfo.display_type = "expr"
             elif key == "h": iinfo.highlighted = not iinfo.highlighted
             elif key == "@": iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*": iinfo.show_private_members = not iinfo.show_private_members
@@ -517,7 +518,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type == "str")
             rb_show_custom = urwid.RadioButton(rb_grp, "Show custom (set in prefs)",
                     iinfo.display_type == CONFIG["custom_stringifier"])
+            rb_show_expr = urwid.RadioButton(rb_grp, "Show expression",
+                    iinfo.display_type == "expr")
 
+            expr_edit = urwid.Edit([
+                ("label", "         Expression: ")
+                ], getattr(iinfo, "display_expr", var.id_path))
+            expr_widget = urwid.AttrMap(expr_edit, "value")
 
             wrap_checkbox = urwid.CheckBox("Line Wrap", iinfo.wrap)
             expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
@@ -528,6 +535,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             lb = urwid.ListBox(
                 id_segment+rb_grp+[
+                expr_widget,
                 urwid.Text(""),
                 wrap_checkbox,
                 expanded_checkbox,
@@ -544,6 +552,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.highlighted = highlighted_checkbox.get_state()
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_private_members = show_private_checkbox.get_state()
+                iinfo.display_expr = expr_edit.edit_text
 
                 if rb_show_type.get_state():
                     iinfo.display_type = "type"
@@ -553,6 +562,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type = "str"
                 elif rb_show_custom.get_state():
                     iinfo.display_type = CONFIG["custom_stringifier"]
+                elif rb_show_expr.get_state():
+                    iinfo.display_type = "expr"
 
                 if var.watch_expr is not None:
                     var.watch_expr.expression = watch_edit.get_edit_text()
@@ -589,6 +600,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
         self.var_list.listen("c", change_var_state)
+        self.var_list.listen("x", change_var_state)
         self.var_list.listen("h", change_var_state)
         self.var_list.listen("@", change_var_state)
         self.var_list.listen("*", change_var_state)
@@ -1074,6 +1086,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 runner = shell.run_ipython_shell
             elif shell.HAVE_BPYTHON and CONFIG["shell"] == "bpython":
                 runner = shell.run_bpython_shell
+            elif shell.HAVE_BPYTHON and CONFIG["shell"] == "bpython-urwid":
+                runner = shell.run_bpython_urwid_shell
             else:
                 runner = shell.run_classic_shell
 
