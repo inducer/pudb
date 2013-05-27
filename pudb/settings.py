@@ -31,11 +31,18 @@ def get_save_config_path(*resource):
 
 # end LGPL violation
 
-CONF_SECTION = "pudb"
-XDG_CONF_RESOURCE = "pudb"
-CONF_FILE_NAME = "pudb.cfg"
-SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints"
-BREAKPOINTS_FILE_NAME = "breakpoints"
+if PY3:
+    CONF_SECTION = "pudb3"
+    XDG_CONF_RESOURCE = "pudb3"
+    CONF_FILE_NAME = "pudb3.cfg"
+    SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints3"
+    BREAKPOINTS_FILE_NAME = "breakpoints3"
+else:
+    CONF_SECTION = "pudb"
+    XDG_CONF_RESOURCE = "pudb"
+    CONF_FILE_NAME = "pudb.cfg"
+    SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints"
+    BREAKPOINTS_FILE_NAME = "breakpoints"
 
 
 def load_config():
@@ -375,7 +382,7 @@ def parse_breakpoints(lines):
 
 def get_breakpoints_file_name():
     from os.path import join
-    return join(get_save_config_path(), "saved-breakpoints")
+    return join(get_save_config_path(), SAVED_BREAKPOINTS_FILE_NAME)
 
 
 
