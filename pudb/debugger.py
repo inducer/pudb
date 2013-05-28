@@ -1382,7 +1382,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e008"
+        WELCOME_LEVEL = "e009"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1396,6 +1396,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "look familiar.\n\n"
                     "If you're new here, welcome! The help screen (invoked by hitting "
                     "'?' after this message) should get you on your way.\n"
+                    "\nChanges in version 2013.2:\n\n"
+                    "- Even more bug fixes.\n"
                     "\nChanges in version 2013.1:\n\n"
                     "- Ctrl-C will now break to the debugger in a way that does\n"
                     "  not terminate the program\n"
