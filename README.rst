@@ -128,3 +128,12 @@ FAQ
 back to the source view?**
 
 A: Press your left arrow key.
+
+**Q: Where are breakpoints stored?**
+
+A: All PuDB information is stored in a location specified by the `XDG Base
+Directory Specification
+<http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_.
+Usually, it is ``~/.config/pudb``.  Breakpoints are stored in a file called
+``saved-breakpoints``.  Also in this location are the shell history from the
+``!`` shell (``shell-history``) and the PuDB settings (``pudb.cfg``).
