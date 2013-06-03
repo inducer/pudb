@@ -1,6 +1,8 @@
 from pudb.py3compat import PY3
 
+
 # {{{ breakpoint validity
+
 def generate_executable_lines_for_code(code):
     l = code.co_firstlineno
     yield l
@@ -12,8 +14,6 @@ def generate_executable_lines_for_code(code):
         for c in code.co_lnotab[1::2]:
             l += ord(c)
             yield l
-
-
 
 
 def get_executable_lines_for_file(filename):
@@ -36,8 +36,6 @@ def get_executable_lines_for_file(filename):
     return execable_lines
 
 
-
-
 def get_breakpoint_invalid_reason(filename, lineno):
     # simple logic stolen from pdb
     import linecache
@@ -49,7 +47,6 @@ def get_breakpoint_invalid_reason(filename, lineno):
         return "No executable statement found in line."
 
 
-
 def lookup_module(filename):
     """Helper function for break/clear parsing -- may be overridden.
 
@@ -58,12 +55,13 @@ def lookup_module(filename):
     """
 
     # stolen from pdb
-    import os, sys
+    import os
+    import sys
 
-    if os.path.isabs(filename) and  os.path.exists(filename):
+    if os.path.isabs(filename) and os.path.exists(filename):
         return filename
     f = os.path.join(sys.path[0], filename)
-    if  os.path.exists(f): # and self.canonic(f) == self.mainpyfile:
+    if os.path.exists(f):  # and self.canonic(f) == self.mainpyfile:
         return f
     root, ext = os.path.splitext(filename)
     if ext == '':
@@ -89,6 +87,7 @@ from codecs import lookup, BOM_UTF8
 if PY3:
     BOM_UTF8 = BOM_UTF8.decode()
 
+
 def detect_encoding(readline):
     """
     The detect_encoding() function is used to detect the encoding that should
@@ -108,6 +107,7 @@ def detect_encoding(readline):
     """
     bom_found = False
     encoding = None
+
     def read_or_stop():
         try:
             return readline()
@@ -161,6 +161,7 @@ def detect_encoding(readline):
 
 # }}}
 
+
 # {{{ traceback formatting
 
 class StringExceptionValueWrapper:
@@ -172,6 +173,7 @@ class StringExceptionValueWrapper:
 
     __context__ = None
     __cause__ = None
+
 
 def format_exception(exc_tuple):
     # Work around http://bugs.python.org/issue17413
