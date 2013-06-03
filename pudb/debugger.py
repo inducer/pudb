@@ -1514,7 +1514,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             % VERSION)]
 
         if self.debugger.post_mortem:
-            if show_exc_dialog:
+            if show_exc_dialog and exc_tuple is not None:
                 self.show_exception_dialog(exc_tuple)
 
             caption.extend([
