@@ -1401,7 +1401,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e010"
+        WELCOME_LEVEL = "e011"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1417,6 +1417,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2013.3.1:\n\n"
+                    "- Don't ship {ez,distribute}_setup at all.\n"
+                    "  It breaks more than it helps.\n"
 
                     "\nChanges in version 2013.3:\n\n"
                     "- Switch to setuptools as a setup helper.\n"
