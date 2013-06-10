@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-from ez_setup import use_setuptools
-
-use_setuptools()
-
 from setuptools import setup
 from pudb import VERSION
 
@@ -52,5 +48,7 @@ setup(name='pudb',
           "Topic :: Utilities",
           ],
       packages=["pudb"],
-      entry_points={'console_scripts': ['pudb' + PY_VERSION + ' = pudb.run:main'], 'gui_script': []},
-)
+      entry_points={
+          'console_scripts': ['pudb' + PY_VERSION + ' = pudb.run:main'],
+          'gui_script': []},
+      )
