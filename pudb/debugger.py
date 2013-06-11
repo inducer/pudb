@@ -1665,4 +1665,4 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     # }}}
 
-# vim: foldmethod=marker
+# vim: foldmethod=marker:expandtab:softtabstop=4
