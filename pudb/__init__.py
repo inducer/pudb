@@ -153,6 +153,18 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
     Note, this may not work if you use threads or subprocesses.
     """
     import signal
+    old_handler = signal.getsignal(interrupt_signal)
+
+    if old_handler is not signal.default_int_handler and old_handler != signal.SIG_DFL:
+        # Since we don't currently have support for a non-default signal handlers,
+        # let's avoid undefined-behavior territory and just show a warning.
+        from warnings import warn
+        if old_handler is None:
+            # This is the documented meaning of getsignal()->None.
+            old_handler = 'not installed from python'
+        return warn("A non-default handler for signal %d is already installed (%s). Skipping pudb interrupt support." 
+                % (interrupt_signal, old_handler))
+
     try:
         signal.signal(interrupt_signal, _interrupt_handler)
     except ValueError:
@@ -193,3 +205,5 @@ def pm():
 
 if __name__ == "__main__":
     print("You now need to type 'python -m pudb.run'. Sorry.")
+
+# vim: foldmethod=marker:expandtab:softtabstop=4
