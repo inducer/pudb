@@ -1401,7 +1401,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e011"
+        WELCOME_LEVEL = "e012"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1417,6 +1417,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2013.3.2:\n\n"
+                    "- Don't attempt to do signal handling if a signal handler\n"
+                    "  is already set (Fix by Buck Golemon).\n"
 
                     "\nChanges in version 2013.3.1:\n\n"
                     "- Don't ship {ez,distribute}_setup at all.\n"
