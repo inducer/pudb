@@ -5,6 +5,18 @@ __version__ = VERSION
 from pudb.py3compat import raw_input
 
 
+class PudbShortcuts(object):
+    @property
+    def db(self):
+        import sys
+        dbg = _get_debugger()
+
+        set_interrupt_handler()
+        dbg.set_trace(sys._getframe().f_back)
+
+__builtins__["pu"] = PudbShortcuts()
+
+
 CURRENT_DEBUGGER = []
 
 
@@ -155,14 +167,16 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
     import signal
     old_handler = signal.getsignal(interrupt_signal)
 
-    if old_handler is not signal.default_int_handler and old_handler != signal.SIG_DFL:
+    if old_handler is not signal.default_int_handler \
+            and old_handler != signal.SIG_DFL:
         # Since we don't currently have support for a non-default signal handlers,
         # let's avoid undefined-behavior territory and just show a warning.
         from warnings import warn
         if old_handler is None:
             # This is the documented meaning of getsignal()->None.
             old_handler = 'not installed from python'
-        return warn("A non-default handler for signal %d is already installed (%s). Skipping pudb interrupt support." 
+        return warn("A non-default handler for signal %d is already installed (%s). "
+                "Skipping pudb interrupt support."
                 % (interrupt_signal, old_handler))
 
     try:

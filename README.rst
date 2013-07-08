@@ -55,7 +55,16 @@ To start debugging, simply insert::
 
     from pudb import set_trace; set_trace()
 
-into the piece of code you want to debug, or run the entire script with::
+A shorter alternative to this is::
+
+    import pudb; pu.db
+
+Or, if pudb is already imported, just this will suffice::
+
+    pu.db
+
+Insert either of these snippets into the piece of code you want to debug, or
+run the entire script with::
 
     pudb my-script.py
 

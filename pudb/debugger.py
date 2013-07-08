@@ -1401,7 +1401,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e012"
+        WELCOME_LEVEL = "e013"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1417,6 +1417,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2013.3.3:\n\n"
+                    "- As soon as pudb is loaded, you can break to the debugger by\n"
+                    "  evaluating the expression 'pu.db', where 'pu' is a new 'builtin'\n"
+                    "  that pudb has rudely shoved into the interpreter.\n"
 
                     "\nChanges in version 2013.3.2:\n\n"
                     "- Don't attempt to do signal handling if a signal handler\n"
