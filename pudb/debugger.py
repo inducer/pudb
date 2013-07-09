@@ -1184,11 +1184,18 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.screen = ThreadsafeScreen()
 
         if curses:
-            curses.setupterm()
-            color_support = curses.tigetnum('colors')
+            try:
+                curses.setupterm()
+            except:
+                # Something went wrong--oh well. Nobody will die if their
+                # 256 color support breaks. Just carry on without it.
+                # https://github.com/inducer/pudb/issues/78
+                pass
+            else:
+                color_support = curses.tigetnum('colors')
 
-            if color_support == 256:
-                self.screen.set_terminal_properties(256)
+                if color_support == 256:
+                    self.screen.set_terminal_properties(256)
 
         self.setup_palette(self.screen)
 
