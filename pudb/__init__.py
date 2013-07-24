@@ -14,7 +14,8 @@ class PudbShortcuts(object):
         set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
-__builtins__["pu"] = PudbShortcuts()
+import __builtin__
+__builtin__["pu"] = PudbShortcuts()
 
 
 CURRENT_DEBUGGER = []
