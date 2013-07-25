@@ -15,8 +15,8 @@ class PudbShortcuts(object):
         dbg.set_trace(sys._getframe().f_back)
 
 if PY3:
-    import builtin
-    builtin.__dict__["pu"] = PudbShortcuts()
+    import builtins
+    builtins.__dict__["pu"] = PudbShortcuts()
 else:
     import __builtin__
     __builtin__.__dict__["pu"] = PudbShortcuts()
