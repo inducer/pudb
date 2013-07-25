@@ -15,7 +15,7 @@ class PudbShortcuts(object):
         dbg.set_trace(sys._getframe().f_back)
 
 import __builtin__
-__builtin__["pu"] = PudbShortcuts()
+__builtin__.__dict__["pu"] = PudbShortcuts()
 
 
 CURRENT_DEBUGGER = []
