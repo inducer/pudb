@@ -2,7 +2,7 @@ NUM_VERSION = (2013, 3, 4)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
-from pudb.py3compat import raw_input
+from pudb.py3compat import raw_input, PY3
 
 
 class PudbShortcuts(object):
@@ -14,8 +14,12 @@ class PudbShortcuts(object):
         set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
-import __builtin__
-__builtin__.__dict__["pu"] = PudbShortcuts()
+if PY3:
+    import builtin
+    builtin.__dict__["pu"] = PudbShortcuts()
+else:
+    import __builtin__
+    __builtin__.__dict__["pu"] = PudbShortcuts()
 
 
 CURRENT_DEBUGGER = []
