@@ -11,11 +11,9 @@ else:
     ip = ipapi.get()
     _ipython_version = (0, 10)
 
-
+# This conforms to IPython version 0.10
 def pudb_f_v10(self, arg):
-    """ Debug a script (like %run -d) in IPython process, using PuDB.
-
-    This conforms to IPython version 0.10
+    """ Debug a script (like %run -d) in the IPython process, using PuDB.
 
     Usage:
 
@@ -38,10 +36,9 @@ def pudb_f_v10(self, arg):
     from pudb import runscript
     ip.IP.history_saving_wrapper(lambda: runscript(path, args))()
 
+# This conforms to IPython version 0.11
 def pudb_f_v11(self, arg):
-    """ Debug a script (like %run -d) in IPython process, using PuDB.
-
-    This conforms to IPython version 0.11
+    """ Debug a script (like %run -d) in the IPython process, using PuDB.
 
     Usage:
 
