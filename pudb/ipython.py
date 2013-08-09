@@ -1,3 +1,4 @@
+import sys
 import os
 
 try:
@@ -7,6 +8,7 @@ try:
 except ImportError:
     try:
         from IPython.core.magic import register_line_magic
+        from IPython import get_ipython
         _ipython_version = (1, 0)
     except ImportError:
         # Note, keep this run last, or else it will raise a deprecation
@@ -101,6 +103,26 @@ if _ipython_version == (1, 0):
         from pudb import runscript
         runscript(path, args)
     register_line_magic(pudb)
+
+    def debugger(self, force=False):
+        """
+        Call the PuDB debugger
+        """
+        from IPython.utils.warn import error
+        if not (force or self.call_pdb):
+            return
+
+        if not hasattr(sys,'last_traceback'):
+            error('No traceback has been produced, nothing to debug.')
+            return
+
+        from pudb import pm
+
+        with self.readline_no_record:
+            pm()
+
+    ip = get_ipython()
+    ip.__class__.debugger = debugger
 
 elif _ipython_version == (0, 10):
     ip.expose_magic('pudb', pudb_f_v10)
