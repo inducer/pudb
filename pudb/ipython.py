@@ -52,7 +52,7 @@ def pudb_f_v11(self, arg):
     # Get the running instance
 
     if not arg.strip():
-        print(__doc__)
+        print(pudb_f_v11.__doc__)
         return
 
     from IPython.utils.process import arg_split
