@@ -33,7 +33,7 @@ def pudb_f_v10(self, arg):
     path = os.path.abspath(args[0])
     args = args[1:]
     if not os.path.isfile(path):
-        raise IPython.ipapi.UsageError("%%pudb: file %s does not exist" % path)
+        raise ipapi.UsageError("%%pudb: file %s does not exist" % path)
 
     from pudb import runscript
     ip.IP.history_saving_wrapper(lambda: runscript(path, args))()

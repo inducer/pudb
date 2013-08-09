@@ -1,5 +1,4 @@
 import os
-import sys
 
 from pudb.py3compat import PY3
 if PY3:
