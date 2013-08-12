@@ -1,5 +1,5 @@
 import os
-import sys
+
 
 from pudb.py3compat import PY3
 if PY3:
@@ -19,6 +19,7 @@ xdg_config_home = os.environ.get('XDG_CONFIG_HOME',
 xdg_config_dirs = [xdg_config_home] + \
     os.environ.get('XDG_CONFIG_DIRS', '/etc/xdg').split(':')
 
+
 def get_save_config_path(*resource):
     if not resource:
         resource = [XDG_CONF_RESOURCE]
@@ -26,7 +27,7 @@ def get_save_config_path(*resource):
     assert not resource.startswith('/')
     path = os.path.join(xdg_config_home, resource)
     if not os.path.isdir(path):
-        os.makedirs(path, 448) # 0o700
+        os.makedirs(path, 448)  # 0o700
     return path
 
 # end LGPL violation
@@ -95,8 +96,6 @@ def load_config():
     return conf_dict
 
 
-
-
 def save_config(conf_dict):
     from os.path import join
 
@@ -113,8 +112,6 @@ def save_config(conf_dict):
         outf.close()
     except:
         pass
-
-
 
 
 def edit_config(ui, conf_dict):
@@ -191,7 +188,8 @@ def edit_config(ui, conf_dict):
             bool(conf_dict["line_numbers"]), on_state_change=_update_config,
                 user_data=("line_numbers", None))
 
-    shell_info = urwid.Text("This is the shell that will be used when you hit '!'.\n")
+    shell_info = urwid.Text("This is the shell that will be "
+            "used when you hit '!'.\n")
     shells = ["classic", "ipython", "bpython"]
 
     shell_rb_group = []
@@ -212,15 +210,15 @@ def edit_config(ui, conf_dict):
                 conf_dict["theme"] == name, on_state_change=_update_config,
                 user_data=("theme", name))
             for name in THEMES]+[
-            urwid.RadioButton(theme_rb_group, "Custom:",
-                not known_theme, on_state_change=_update_config,
-                user_data=("theme", None)),
-            theme_edit_list_item,
-            urwid.Text("\nTo use a custom theme, see example-theme.py in the "
-                "pudb distribution. Enter the full path to a file like it in the "
-                "box above. '~' will be expanded to your home directory. "
-                "Note that a custom theme will not be applied until you close "
-                "this dialog."),
+                urwid.RadioButton(theme_rb_group, "Custom:",
+                    not known_theme, on_state_change=_update_config,
+                    user_data=("theme", None)),
+                theme_edit_list_item,
+                urwid.Text("\nTo use a custom theme, see example-theme.py in the "
+                    "pudb distribution. Enter the full path to a file like it in "
+                    "the box above. '~' will be expanded to your home directory. "
+                    "Note that a custom theme will not be applied until you close "
+                    "this dialog."),
             ]
 
     stack_rb_group = []
@@ -251,18 +249,19 @@ def edit_config(ui, conf_dict):
                 user_data=("stringifier", name))
             for name in stringifier_opts
             ]+[
-            urwid.RadioButton(stringifier_rb_group, "Custom:",
-                not known_stringifier, on_state_change=_update_config,
-                user_data=("stringifier", None)),
-            stringifier_edit_list_item,
-            urwid.Text("\nTo use a custom stringifier, see example-stringifier.py "
-                "in the pudb distribution. Enter the full path to a file like "
-                "it in the box above. '~' will be expanded to your home directory. "
-                "The file should contain a function called pudb_stringifier() "
-                "at the module level, which should take a single argument and "
-                "return the desired string form of the object passed to it. "
-                "Note that if you choose a custom stringifier, the variables "
-                "view will not be updated until you close this dialog."),
+                urwid.RadioButton(stringifier_rb_group, "Custom:",
+                    not known_stringifier, on_state_change=_update_config,
+                    user_data=("stringifier", None)),
+                stringifier_edit_list_item,
+                urwid.Text("\nTo use a custom stringifier, see "
+                    "example-stringifier.py in the pudb distribution. Enter the "
+                    "full path to a file like it in the box above. "
+                    "'~' will be expanded to your home directory. "
+                    "The file should contain a function called pudb_stringifier() "
+                    "at the module level, which should take a single argument and "
+                    "return the desired string form of the object passed to it. "
+                    "Note that if you choose a custom stringifier, the variables "
+                    "view will not be updated until you close this dialog."),
             ]
 
     cb_wrap_variables = urwid.CheckBox("Wrap variables",
@@ -273,7 +272,7 @@ def edit_config(ui, conf_dict):
                                      "a per-variable basis by selecting the "
                                      "variable and pressing 'w'.")
 
-    lb_contents =(
+    lb_contents = (
             [heading]
             + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
             + [cb_line_numbers]
@@ -319,13 +318,12 @@ def edit_config(ui, conf_dict):
             if shell_rb.get_state():
                 conf_dict["shell"] = shell
 
-    else: # The user chose cancel, revert changes
+    else:  # The user chose cancel, revert changes
         conf_dict.update(old_conf_dict)
         _update_theme()
         # _update_line_numbers() is equivalent to _update_theme()
         _update_current_stack_frame()
         _update_stringifier()
-
 
 
 # {{{ breakpoint saving
@@ -378,13 +376,9 @@ def parse_breakpoints(lines):
     return breakpoints
 
 
-
-
 def get_breakpoints_file_name():
     from os.path import join
     return join(get_save_config_path(), SAVED_BREAKPOINTS_FILE_NAME)
-
-
 
 
 def load_breakpoints():
@@ -407,9 +401,6 @@ def load_breakpoints():
             rcFile.close()
 
     return parse_breakpoints(lines)
-
-
-
 
 
 def save_breakpoints(bp_list):
