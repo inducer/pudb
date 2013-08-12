@@ -2,7 +2,6 @@
 
 # constants and imports -------------------------------------------------------
 import urwid
-import sys
 
 try:
     import numpy
