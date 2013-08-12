@@ -1,6 +1,5 @@
 import os
 
-
 from pudb.py3compat import PY3
 if PY3:
     from configparser import ConfigParser
