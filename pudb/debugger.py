@@ -66,6 +66,7 @@ Keys:
     V - focus variables
     S - focus stack
     B - focus breakpoint list
+    C - focus code
 
     f1/?/H - show this help screen
     q - quit
@@ -1097,6 +1098,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.update_var_view()
 
+        def focus_code(w, size, key):
+            self.columns.set_focus(self.lhs_col)
+
         class RHColumnFocuser:
             def __init__(self, idx):
                 self.idx = idx
@@ -1168,6 +1172,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("+", grow_sidebar)
         self.top.listen("_", min_sidebar)
         self.top.listen("-", shrink_sidebar)
+        self.top.listen("C", focus_code)
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
