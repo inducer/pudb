@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# constants and imports -------------------------------------------------------
+# {{{ constants and imports
+
 import urwid
 
 try:
@@ -10,7 +11,7 @@ except ImportError:
     HAVE_NUMPY = 0
 
 from pudb.py3compat import PY3, execfile, raw_input, xrange, \
-     integer_types, string_types
+        integer_types, string_types
 if PY3:
     ELLIPSIS = '…'
 else:
@@ -18,7 +19,11 @@ else:
 
 from pudb.debugger import CONFIG
 
-# data ------------------------------------------------------------------------
+# }}}
+
+
+# {{{ data
+
 class FrameVarInfo(object):
     def __init__(self):
         self.id_path_to_iinfo = {}
@@ -32,6 +37,7 @@ class FrameVarInfo(object):
             return self.id_path_to_iinfo.setdefault(
                     id_path, InspectInfo())
 
+
 class InspectInfo(object):
     def __init__(self):
         self.show_detail = False
@@ -41,18 +47,21 @@ class InspectInfo(object):
         self.show_private_members = False
         self.wrap = CONFIG["wrap_variables"]
 
+
 class WatchExpression(object):
     def __init__(self, expression):
         self.expression = expression
+
 
 class WatchEvalError(object):
     def __str__(self):
         return "<error>"
 
+# }}}
 
 
+# {{{ safe types
 
-# safe types ------------------------------------------------------------------
 def get_str_safe_types():
     import types
 
@@ -65,10 +74,11 @@ def get_str_safe_types():
 
 STR_SAFE_TYPES = get_str_safe_types()
 
+# }}}
 
 
+# {{{ widget
 
-# widget ----------------------------------------------------------------------
 class VariableWidget(urwid.FlowWidget):
     def __init__(self, prefix, var_label, value_str, id_path=None, attr_prefix=None,
             watch_expr=None, iinfo=None):
@@ -89,7 +99,7 @@ class VariableWidget(urwid.FlowWidget):
     SIZE_LIMIT = 20
 
     def _get_text(self, size):
-        maxcol = size[0] - len(self.prefix) # self.prefix is a padding
+        maxcol = size[0] - len(self.prefix)  # self.prefix is a padding
         var_label = self.var_label or ''
         value_str = self.value_str or ''
         alltext = var_label + ": " + value_str
@@ -129,15 +139,16 @@ class VariableWidget(urwid.FlowWidget):
 
             extralabel_full, extralabel_rem = divmod(len(var_label[maxcol:]), maxcol)
             totallen = sum([len(i) for i in text])
-            labellen = (len(self.prefix) # Padding of first line
+            labellen = (
+                    len(self.prefix)  # Padding of first line
 
-                      + (len(self.prefix) + 2) # Padding of subsequent lines
-                      * (extralabel_full + bool(extralabel_rem))
+                    + (len(self.prefix) + 2)  # Padding of subsequent lines
+                    * (extralabel_full + bool(extralabel_rem))
 
-                      + len(var_label)
+                    + len(var_label)
 
-                      + 2 # for ": "
-                      )
+                    + 2  # for ": "
+                    )
 
             _attr = [(apfx+"label", labellen), (apfx+"value", totallen - labellen)]
             from urwid.util import rle_subseg
@@ -159,7 +170,7 @@ class VariableWidget(urwid.FlowWidget):
                     attr = [[(apfx+"label", len(self.prefix)+len(self.var_label))],
                             [(apfx+"value", len(self.prefix)+2+len(self.value_str))]]
                 else:
-                    text = [self.prefix + self.var_label +": " + self.value_str]
+                    text = [self.prefix + self.var_label + ": " + self.value_str]
 
                     attr = [[
                             (apfx+"label", len(self.prefix)+len(self.var_label)+2),
@@ -175,12 +186,12 @@ class VariableWidget(urwid.FlowWidget):
         else:
             text = [self.prefix + self.var_label]
 
-            attr = [[ (apfx+"label", len(self.prefix) + len(self.var_label)), ]]
+            attr = [[(apfx+"label", len(self.prefix) + len(self.var_label)), ]]
 
         # Ellipses to show text was cut off
-        encoding = urwid.util.detected_encoding
+        #encoding = urwid.util.detected_encoding
 
-        if False: # encoding[:3] == "UTF":
+        if False:  # encoding[:3] == "UTF":
             # Unicode is supported, use single character ellipsis
             for i in xrange(len(text)):
                 if len(text[i]) > maxcol:
@@ -202,7 +213,9 @@ class VariableWidget(urwid.FlowWidget):
     def keypress(self, size, key):
         return key
 
+
 custom_stringifier_dict = {}
+
 
 def type_stringifier(value):
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
@@ -211,6 +224,7 @@ def type_stringifier(value):
         return str(value)
     else:
         return type(value).__name__
+
 
 def get_stringifier(iinfo):
     if iinfo.display_type == "type":
@@ -221,7 +235,7 @@ def get_stringifier(iinfo):
         return str
     else:
         try:
-            if not custom_stringifier_dict: # Only execfile once
+            if not custom_stringifier_dict:  # Only execfile once
                 from os.path import expanduser
                 execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
         except:
@@ -282,7 +296,8 @@ class ValueWalker:
                         cont_id_path = "%s.cont-%d" % (id_path, i)
                         if not self.frame_var_info.get_inspect_info(
                                 cont_id_path, read_only=True).show_detail:
-                            self.add_item(prefix+self.PREFIX, "...", None, cont_id_path)
+                            self.add_item(prefix+self.PREFIX, "...",
+                                    None, cont_id_path)
                             break
 
                     self.walk_value(prefix+self.PREFIX, None, entry,
@@ -338,7 +353,9 @@ class ValueWalker:
             except:
                 pass
 
-            keys = [key for key_it in key_its for key in key_it]
+            keys = [key
+                    for ki in key_its
+                    for key in ki]
             keys.sort()
 
             cnt_omitted = 0
@@ -359,14 +376,13 @@ class ValueWalker:
 
             if not keys:
                 if cnt_omitted:
-                    self.add_item(prefix+self.PREFIX, "<omitted private attributes>", None)
+                    self.add_item(prefix+self.PREFIX,
+                            "<omitted private attributes>", None)
                 else:
                     self.add_item(prefix+self.PREFIX, "<empty>", None)
 
             if not key_its:
                 self.add_item(prefix+self.PREFIX, "<?>", None)
-
-
 
 
 class BasicValueWalker(ValueWalker):
@@ -384,8 +400,6 @@ class BasicValueWalker(ValueWalker):
             id_path, attr_prefix, iinfo=iinfo))
 
 
-
-
 class WatchValueWalker(ValueWalker):
     def __init__(self, frame_var_info, widget_list, watch_expr):
         ValueWalker.__init__(self, frame_var_info)
@@ -400,8 +414,6 @@ class WatchValueWalker(ValueWalker):
         self.widget_list.append(
                 VariableWidget(prefix, var_label, value_str, id_path, attr_prefix,
                     watch_expr=self.watch_expr, iinfo=iinfo))
-
-
 
 
 class TopAndMainVariableWalker(ValueWalker):
@@ -433,11 +445,13 @@ class TopAndMainVariableWalker(ValueWalker):
         self.main_widget_list.append(VariableWidget(prefix, var_label,
             value_str, id_path, attr_prefix, iinfo=iinfo))
 
+# }}}
 
 
+# {{{ top level
 
-# top level -------------------------------------------------------------------
 SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
+
 
 def make_var_view(frame_var_info, locals, globals):
     vars = list(locals.keys())
@@ -457,7 +471,8 @@ def make_var_view(frame_var_info, locals, globals):
                 .walk_value("", watch_expr.expression, value)
 
     if "__return__" in vars:
-        ret_walker.walk_value("", "Return", locals["__return__"], attr_prefix="return")
+        ret_walker.walk_value("", "Return", locals["__return__"],
+                attr_prefix="return")
 
     for var in vars:
         if not var[0] in "_.":
@@ -477,8 +492,6 @@ def make_var_view(frame_var_info, locals, globals):
     return result
 
 
-
-
 class FrameVarInfoKeeper(object):
     def __init__(self):
         self.frame_var_info = {}
@@ -491,3 +504,6 @@ class FrameVarInfoKeeper(object):
         else:
             return self.frame_var_info.setdefault(ssid, FrameVarInfo())
 
+# }}}
+
+# vim: foldmethod=marker
