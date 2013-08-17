@@ -4,6 +4,9 @@
 *.egg-info
 dist
 build
-distribute-*
+distribute-*gz
+distribute-*egg
+setuptools-*gz
+setuptools-*egg
 traceback*txt
 .DS_Store
