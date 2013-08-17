@@ -1,4 +1,5 @@
 import os
+import sys
 
 from pudb.py3compat import PY3
 if PY3:
@@ -31,19 +32,12 @@ def get_save_config_path(*resource):
 
 # end LGPL violation
 
-if PY3:
-    CONF_SECTION = "pudb3"
-    XDG_CONF_RESOURCE = "pudb3"
-    CONF_FILE_NAME = "pudb3.cfg"
-    SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints3"
-    BREAKPOINTS_FILE_NAME = "breakpoints3"
-else:
-    CONF_SECTION = "pudb"
-    XDG_CONF_RESOURCE = "pudb"
-    CONF_FILE_NAME = "pudb.cfg"
-    SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints"
-    BREAKPOINTS_FILE_NAME = "breakpoints"
+CONF_SECTION = "pudb"
+XDG_CONF_RESOURCE = "pudb"
+CONF_FILE_NAME = "pudb.cfg"
 
+SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
+BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
 
 def load_config():
     from os.path import join, isdir
