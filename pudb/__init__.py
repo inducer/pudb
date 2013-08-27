@@ -173,7 +173,7 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
     old_handler = signal.getsignal(interrupt_signal)
 
     if old_handler is not signal.default_int_handler \
-            and old_handler != signal.SIG_DFL:
+            and old_handler != signal.SIG_DFL and old_handler != _interrupt_handler:
         # Since we don't currently have support for a non-default signal handlers,
         # let's avoid undefined-behavior territory and just show a warning.
         from warnings import warn
