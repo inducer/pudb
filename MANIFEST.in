@@ -3,3 +3,4 @@ include try-the-debugger.sh
 include example-theme.py
 include example-stringifier.py
 include README.rst
+include LICENSE
