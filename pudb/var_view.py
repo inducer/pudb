@@ -221,9 +221,12 @@ def type_stringifier(value):
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
         return "ndarray %s %s" % (value.dtype, value.shape)
     elif isinstance(value, STR_SAFE_TYPES):
-        return str(value)
-    else:
-        return type(value).__name__
+        try:
+            return str(value)
+        except Exception:
+            pass
+
+    return type(value).__name__
 
 
 def get_stringifier(iinfo):
