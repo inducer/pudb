@@ -22,7 +22,7 @@ Features
 
 * Simple, keyboard-based navigation using single keystrokes makes debugging
   quick and easy. PuDB understands cursor-keys and Vi shortcuts for navigation.
-  Other keys are inspired by the corresponding pdb coomands.
+  Other keys are inspired by the corresponding pdb commands.
 
 * Use search to find relevant source code, or use "m" to invoke the module
   browser that shows loaded modules, lets you load new ones and reload existing
