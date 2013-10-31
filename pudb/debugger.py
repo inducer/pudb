@@ -193,7 +193,7 @@ class Debugger(bdb.Bdb):
     def restart(self):
         from linecache import checkcache
         checkcache()
-        self.ui.set_current_file('<string>')
+        self.ui.set_source_code_provider(NullSourceCodeProvider())
         self.setup_state()
 
     def do_clear(self, arg):
@@ -205,7 +205,24 @@ class Debugger(bdb.Bdb):
             return
 
         self.curframe, lineno = self.stack[index]
-        self.ui.set_current_line(lineno, self.curframe.f_code.co_filename)
+
+        filename = self.curframe.f_code.co_filename
+
+        import linecache
+        if not linecache.getlines(filename):
+            code = self.curframe.f_globals.get("_MODULE_SOURCE_CODE")
+            if code is not None:
+                self.ui.set_current_line(lineno,
+                        DirectSourceCodeProvider(
+                            self.curframe.f_code.co_name, code))
+            else:
+                self.ui.set_current_line(lineno,
+                        NullSourceCodeProvider())
+
+        else:
+            self.ui.set_current_line(lineno,
+                FileSourceCodeProvider(self, filename))
+
         self.ui.update_var_view()
         self.ui.update_stack()
 
@@ -374,6 +391,138 @@ class ThreadsafeScreen(Screen):
             super(ThreadsafeScreen, self).signal_restore()
         except ValueError:
             pass
+
+
+# {{{ source code providers
+
+class SourceCodeProvider(object):
+    def __ne__(self, other):
+        return not (self == other)
+
+
+class NullSourceCodeProvider(SourceCodeProvider):
+    def __eq__(self, other):
+        return type(self) == type(other)
+
+    def identifier(self):
+        return "<no source code>"
+
+    def get_breakpoint_source_identifier(self):
+        return None
+
+    def clear_cache(self):
+        pass
+
+    def get_lines(self, debugger_ui):
+        from pudb.source_view import SourceLine
+        return [
+                SourceLine(debugger_ui, "<no source code available>"),
+                SourceLine(debugger_ui, ""),
+                SourceLine(debugger_ui, "If this is generated code and you would "
+                    "like the source code to show up here,"),
+                SourceLine(debugger_ui, "simply set the attribute "
+                    "_MODULE_SOURCE_CODE in the module in which this function"),
+                SourceLine(debugger_ui, "was compiled to a string containing "
+                    "the code."),
+                ]
+
+
+class FileSourceCodeProvider(SourceCodeProvider):
+    def __init__(self, debugger, file_name):
+        self.file_name = debugger.canonic(file_name)
+
+    def __eq__(self, other):
+        return (
+                type(self) == type(other)
+                and
+                self.file_name == other.file_name)
+
+    def identifier(self):
+        return self.file_name
+
+    def get_breakpoint_source_identifier(self):
+        return self.file_name
+
+    def clear_cache(self):
+        from linecache import clearcache
+        clearcache()
+
+    def get_lines(self, debugger_ui):
+        from pudb.source_view import SourceLine, format_source
+
+        if self.file_name == "<string>":
+            return [SourceLine(self, self.file_name)]
+
+        breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)
+        try:
+            from linecache import getlines
+            lines = getlines(self.file_name)
+
+            from pudb.lowlevel import detect_encoding
+            source_enc, _ = detect_encoding(getattr(iter(lines), _next))
+
+            decoded_lines = []
+            for l in lines:
+                if hasattr(l, "decode"):
+                    decoded_lines.append(l.decode(source_enc))
+                else:
+                    decoded_lines.append(l)
+
+            return format_source(debugger_ui, decoded_lines, set(breakpoints))
+        except:
+            from pudb.lowlevel import format_exception
+            self.message("Could not load source file '%s':\n\n%s" % (
+                self.file_name, "".join(format_exception(sys.exc_info()))),
+                title="Source Code Load Error")
+            return [SourceLine(self,
+                "Error while loading '%s'." % self.file_name)]
+
+
+class DirectSourceCodeProvider(SourceCodeProvider):
+    def __init__(self, func_name, code):
+        self.function_name = func_name
+        self.code = code
+
+    def __eq__(self, other):
+        return (
+                type(self) == type(other)
+                and
+                self.function_name == other.function_name
+                and
+                self.code is other.code)
+
+    def identifier(self):
+        return "<source code of function %s>" % self.function_name
+
+    def get_breakpoint_source_identifier(self):
+        return None
+
+    def clear_cache(self):
+        pass
+
+    def get_lines(self, debugger_ui):
+        from pudb.source_view import format_source
+
+        lines = self.code.split("\n")
+
+        from pudb.lowlevel import detect_encoding
+        source_enc, _ = detect_encoding(getattr(iter(lines), _next))
+
+        decoded_lines = []
+        for i, l in enumerate(lines):
+            if hasattr(l, "decode"):
+                l = l.decode(source_enc)
+            else:
+                l = l.decode(source_enc)
+
+            if i+1 < len(lines):
+                l += "\n"
+
+            decoded_lines.append(l)
+
+        return format_source(debugger_ui, decoded_lines, set())
+
+# }}}
 
 
 class DebuggerUI(FrameVarInfoKeeper):
@@ -644,11 +793,20 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.save_breakpoints()
 
         def delete_breakpoint(w, size, key):
+            bp_source_identifier = \
+                    self.source_code_provider.get_breakpoint_source_identifier()
+
+            if bp_source_identifier is None:
+                self.message(
+                    "Cannot currently delete a breakpoint here--"
+                    "source code does not correspond to a file location. "
+                    "(perhaps this is generated code)")
+
             bp_list = self._get_bp_list()
             if bp_list:
                 _, pos = self.bp_list._w.get_focus()
                 bp = bp_list[pos]
-                if self.shown_file == bp.file:
+                if bp_source_identifier == bp.file:
                     self.source[bp.line-1].set_breakpoint(False)
 
                 err = self.debugger.clear_break(bp.file, bp.line)
@@ -706,10 +864,19 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     bp.cond = None
             elif result == "loc":
-                self.show_line(bp.line, bp.file)
+                self.show_line(bp.line, FileSourceCodeProvider(self.debugger, bp.file))
                 self.columns.set_focus(0)
             elif result == "del":
-                if self.shown_file == bp.file:
+                bp_source_identifier = \
+                        self.source_code_provider.get_breakpoint_source_identifier()
+
+                if bp_source_identifier is None:
+                    self.message(
+                        "Cannot currently delete a breakpoint here--"
+                        "source code does not correspond to a file location. "
+                        "(perhaps this is generated code)")
+
+                if bp_source_identifier == bp.file:
                     self.source[bp.line-1].set_breakpoint(False)
 
                 err = self.debugger.clear_break(bp.file, bp.line)
@@ -768,9 +935,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                 sline, pos = self.source.get_focus()
                 lineno = pos+1
 
+                bp_source_identifier = \
+                        self.source_code_provider.get_breakpoint_source_identifier()
+
+                if bp_source_identifier is None:
+                    self.message(
+                        "Cannot currently set a breakpoint here--"
+                        "source code does not correspond to a file location. "
+                        "(perhaps this is generated code)")
+
                 from pudb.lowlevel import get_breakpoint_invalid_reason
                 invalid_reason = get_breakpoint_invalid_reason(
-                        self.shown_file, lineno)
+                        bp_source_identifier, lineno)
 
                 if invalid_reason is not None:
                     self.message(
@@ -779,7 +955,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         + invalid_reason)
                 else:
                     err = self.debugger.set_break(
-                            self.shown_file, pos+1, temporary=True)
+                            bp_source_identifier, pos+1, temporary=True)
                     if err:
                         self.message("Error dealing with breakpoint:\n" + err)
 
@@ -801,7 +977,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             if self.dialog(
                     urwid.ListBox([
-                        labelled_value("File :", self.shown_file),
+                        labelled_value("File :",
+                            self.source_code_provider.identifier()),
                         urwid.AttrMap(lineno_edit, "value")
                         ]),
                     [
@@ -845,19 +1022,22 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.search_controller.perform_search(dir=-1, update_search_start=True)
 
         def toggle_breakpoint(w, size, key):
-            if self.shown_file:
+            bp_source_identifier = \
+                    self.source_code_provider.get_breakpoint_source_identifier()
+
+            if bp_source_identifier:
                 sline, pos = self.source.get_focus()
                 lineno = pos+1
 
                 existing_breaks = self.debugger.get_breaks(
-                        self.shown_file, lineno)
+                        bp_source_identifier, lineno)
                 if existing_breaks:
-                    err = self.debugger.clear_break(self.shown_file, lineno)
+                    err = self.debugger.clear_break(bp_source_identifier, lineno)
                     sline.set_breakpoint(False)
                 else:
                     from pudb.lowlevel import get_breakpoint_invalid_reason
                     invalid_reason = get_breakpoint_invalid_reason(
-                            self.shown_file, pos+1)
+                            bp_source_identifier, pos+1)
 
                     if invalid_reason is not None:
                         do_set = not self.dialog(urwid.ListBox([
@@ -873,7 +1053,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         do_set = True
 
                     if do_set:
-                        err = self.debugger.set_break(self.shown_file, pos+1)
+                        err = self.debugger.set_break(bp_source_identifier, pos+1)
                         sline.set_breakpoint(True)
                     else:
                         err = None
@@ -883,7 +1063,10 @@ class DebuggerUI(FrameVarInfoKeeper):
 
                 self.update_breakpoints()
             else:
-                raise RuntimeError("no valid current file")
+                self.message(
+                    "Cannot currently set a breakpoint here--"
+                    "source code does not correspond to a file location. "
+                    "(perhaps this is generated code)")
 
         def pick_module(w, size, key):
             from os.path import splitext
@@ -929,7 +1112,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     ext = ".py"
                     filename = base+".py"
 
-                self.set_current_file(filename)
+                self.set_source_code_provider(self.debugger, FileSourceCodeProvider(filename))
                 self.source_list.set_focus(0)
 
             class FilterEdit(urwid.Edit):
@@ -992,10 +1175,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                         reload(mod)
                         self.message("'%s' was successfully reloaded." % mod_name)
 
-                        from linecache import clearcache
-                        clearcache()
+                        if self.source_code_provider is not None:
+                            self.source_code_provider.clear_cache()
 
-                        self.set_current_file(self.shown_file, force_update=True)
+                        self.set_source_code_provider(self.source_code_provider,
+                                force_update=True)
 
                         _, pos = self.stack_list._w.get_focus()
                         self.debugger.set_frame_index(
@@ -1205,7 +1389,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.setup_palette(self.screen)
 
         self.show_count = 0
-        self.shown_file = None
+        self.source_code_provider = None
 
         self.current_line = None
 
@@ -1413,7 +1597,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e015"
+        WELCOME_LEVEL = "e016"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1429,6 +1613,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2013.4:\n\n"
+                    "- Support for debugging generated code\n"
 
                     "\nChanges in version 2013.3.5:\n\n"
                     "- IPython fixes (Aaron Meurer)\n"
@@ -1567,47 +1754,19 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.caption.set_text(caption)
         self.event_loop()
 
-    def set_current_file(self, fname, force_update=False):
-        from pudb.source_view import SourceLine, format_source
-        fname = self.debugger.canonic(fname)
-
-        if self.shown_file != fname or force_update:
-            if fname == "<string>":
-                self.source[:] = [SourceLine(self, fname)]
-            else:
-                breakpoints = self.debugger.get_file_breaks(fname)
-                try:
-                    from linecache import getlines
-                    lines = getlines(fname)
-
-                    from pudb.lowlevel import detect_encoding
-                    source_enc, _ = detect_encoding(getattr(iter(lines), _next))
-
-                    decoded_lines = []
-                    for l in lines:
-                        if hasattr(l, "decode"):
-                            decoded_lines.append(l.decode(source_enc))
-                        else:
-                            decoded_lines.append(l)
-
-                    self.source[:] = format_source(self,
-                            decoded_lines, set(breakpoints))
-                except:
-                    from pudb.lowlevel import format_exception
-                    self.message("Could not load source file '%s':\n\n%s" % (
-                        fname, "".join(format_exception(sys.exc_info()))),
-                        title="Source Code Load Error")
-                    self.source[:] = [SourceLine(self,
-                        "Error while loading '%s'." % fname)]
-
-            self.shown_file = fname
+    def set_source_code_provider(self, source_code_provider, force_update=False):
+        if self.source_code_provider != source_code_provider or force_update:
+            self.source[:] = source_code_provider.get_lines(self)
+            self.source_code_provider = source_code_provider
             self.current_line = None
 
-    def show_line(self, line, fname=None):
+    def show_line(self, line, source_code_provider=None):
+        """Updates the UI so that a certain line is currently in view."""
+
         changed_file = False
-        if fname is not None:
-            changed_file = self.shown_file != fname
-            self.set_current_file(fname)
+        if source_code_provider is not None:
+            changed_file = self.source_code_provider != source_code_provider
+            self.set_source_code_provider(source_code_provider)
 
         line -= 1
         if line >= 0 and line < len(self.source):
@@ -1615,11 +1774,13 @@ class DebuggerUI(FrameVarInfoKeeper):
             if changed_file:
                 self.source_list.set_focus_valign("middle")
 
-    def set_current_line(self, line, fname):
+    def set_current_line(self, line, source_code_provider):
+        """Updates the UI to show the line currently being executed."""
+
         if self.current_line is not None:
             self.current_line.set_current(False)
 
-        self.show_line(line, fname)
+        self.show_line(line, source_code_provider)
 
         line -= 1
         if line >= 0 and line < len(self.source):
