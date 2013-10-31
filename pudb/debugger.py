@@ -157,7 +157,9 @@ class Debugger(bdb.Bdb):
 
         If frame is not specified, debugging starts from caller's frame.
 
-        This is exactly the same as Bdb.set_trace(), sans the self.reset() call.
+        Unlike Bdb.set_trace(), this does not call self.reset(), which causes
+        the debugger to enter bdb source code. This also implements treating
+        set_trace() calls as breakpoints in the PuDB UI.
         """
         if frame is None:
             frame = thisframe = sys._getframe().f_back
@@ -466,6 +468,8 @@ class FileSourceCodeProvider(SourceCodeProvider):
             return [SourceLine(self, self.file_name)]
 
         breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)
+        breakpoints += [i for f, i in debugger_ui.debugger.set_traces if f
+            == self.file_name and debugger_ui.debugger.set_traces[f, i]]
         try:
             from linecache import getlines
             lines = getlines(self.file_name)
