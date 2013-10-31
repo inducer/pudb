@@ -160,16 +160,24 @@ class Debugger(bdb.Bdb):
         This is exactly the same as Bdb.set_trace(), sans the self.reset() call.
         """
         if frame is None:
-            frame = sys._getframe().f_back
+            frame = thisframe = sys._getframe().f_back
+        else:
+            thisframe = frame
         # See pudb issue #52. If this works well enough we should upstream to
         # stdlib bdb.py.
         #self.reset()
+
         while frame:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
             frame = frame.f_back
-        self.set_step()
-        sys.settrace(self.trace_dispatch)
+
+        if (thisframe, thisframe.f_lineno) not in self.set_traces:
+            self.set_step()
+            sys.settrace(self.trace_dispatch)
+            self.set_traces[(thisframe, thisframe.f_lineno)] = False
+        else:
+            self.set_continue()
 
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
@@ -189,6 +197,7 @@ class Debugger(bdb.Bdb):
         self._wait_for_mainpyfile = False
         self.current_bp = None
         self.post_mortem = False
+        self.set_traces = {}
 
     def restart(self):
         from linecache import checkcache
