@@ -1685,14 +1685,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.stack_walker[:] = frame_uis
 
-    def show_exception(self, exc_type, exc_value, traceback):
-        from pudb.lowlevel import format_exception
-
-        self.message(
-                "".join(format_exception(
-                    (exc_type, exc_value, traceback))),
-                title="Exception Occurred")
-
     # }}}
 
 # vim: foldmethod=marker:expandtab:softtabstop=4
