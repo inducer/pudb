@@ -1050,6 +1050,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     file_lineno = (bp_source_identifier, lineno)
                     if file_lineno in self.debugger.set_traces:
                         self.debugger.set_traces[file_lineno] = not self.debugger.set_traces[file_lineno]
+                        sline.set_breakpoint(self.debugger.set_traces[file_lineno])
                         return
 
                     from pudb.lowlevel import get_breakpoint_invalid_reason
