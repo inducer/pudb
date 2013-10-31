@@ -172,10 +172,11 @@ class Debugger(bdb.Bdb):
             self.botframe = frame
             frame = frame.f_back
 
-        if (thisframe, thisframe.f_lineno) not in self.set_traces:
+        thisframe_info = (self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
+        if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
             self.set_step()
             sys.settrace(self.trace_dispatch)
-            self.set_traces[(thisframe, thisframe.f_lineno)] = False
+            self.set_traces[thisframe_info] = True
         else:
             self.set_continue()
 
@@ -197,6 +198,8 @@ class Debugger(bdb.Bdb):
         self._wait_for_mainpyfile = False
         self.current_bp = None
         self.post_mortem = False
+        # Mapping of (filename, lineno) to bool. If True, will stop on the
+        # set_trace() call at that location.
         self.set_traces = {}
 
     def restart(self):
@@ -1044,6 +1047,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     err = self.debugger.clear_break(bp_source_identifier, lineno)
                     sline.set_breakpoint(False)
                 else:
+                    file_lineno = (bp_source_identifier, lineno)
+                    if file_lineno in self.debugger.set_traces:
+                        self.debugger.set_traces[file_lineno] = not self.debugger.set_traces[file_lineno]
+                        return
+
                     from pudb.lowlevel import get_breakpoint_invalid_reason
                     invalid_reason = get_breakpoint_invalid_reason(
                             bp_source_identifier, pos+1)
