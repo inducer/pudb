@@ -146,3 +146,8 @@ Directory Specification
 Usually, it is ``~/.config/pudb``.  Breakpoints are stored in a file called
 ``saved-breakpoints``.  Also in this location are the shell history from the
 ``!`` shell (``shell-history``) and the PuDB settings (``pudb.cfg``).
+
+**Q: I killed PuDB and now my terminal is broken.  How do I fix it?**
+
+A: Type the ``reset`` command (even if you cannot see what you are typing, it
+should work).  If this happens on a regular basis, please report it as a bug.
