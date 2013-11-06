@@ -806,7 +806,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             if bp_list:
                 _, pos = self.bp_list._w.get_focus()
                 bp = bp_list[pos]
-                if bp_source_identifier == bp.file:
+                if bp_source_identifier == bp.file and bp.line-1 < len(self.source):
                     self.source[bp.line-1].set_breakpoint(False)
 
                 err = self.debugger.clear_break(bp.file, bp.line)
