@@ -864,7 +864,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     bp.cond = None
             elif result == "loc":
-                self.show_line(bp.line, FileSourceCodeProvider(self.debugger, bp.file))
+                self.show_line(bp.line,
+                        FileSourceCodeProvider(self.debugger, bp.file))
                 self.columns.set_focus(0)
             elif result == "del":
                 bp_source_identifier = \
@@ -1112,7 +1113,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     ext = ".py"
                     filename = base+".py"
 
-                self.set_source_code_provider(self.debugger, FileSourceCodeProvider(filename))
+                self.set_source_code_provider(self.debugger,
+                        FileSourceCodeProvider(filename))
                 self.source_list.set_focus(0)
 
             class FilterEdit(urwid.Edit):
