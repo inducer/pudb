@@ -339,7 +339,7 @@ def edit_config(ui, conf_dict):
             + display_rbs
             )
 
-    lb = urwid.ListBox(lb_contents)
+    lb = urwid.ListBox(urwid.SimpleListWalker(lb_contents))
 
     if ui.dialog(lb,         [
             ("OK", True),
