@@ -90,7 +90,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("dialog title", add_setting("white", "bold"), "dark cyan"),
 
         # highlighting
-        ("source", "yellow", "dark blue"),
+        ("source", "yellow,bold", "dark blue"),
         ("focused source", "black", "dark green"),
         ("highlighted source", "black", "dark magenta"),
         ("current source", "black", "dark cyan"),
@@ -100,12 +100,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("line number", "light gray", "dark blue"),
         ("keyword", add_setting("white", "bold"), "dark blue"),
         ("name", "light cyan", "dark blue"),
-        ("literal", "light magenta", "dark blue"),
+        ("literal", "light magenta, bold", "dark blue"),
 
-        ("string", "light magenta", "dark blue"),
-        ("doublestring", "light magenta", "dark blue"),
-        ("singlestring", "light magenta", "dark blue"),
-        ("docstring", "light magenta", "dark blue"),
+        ("string", "light magenta,bold", "dark blue"),
+        ("doublestring", "light magenta,bold", "dark blue"),
+        ("singlestring", "light magenta,bold", "dark blue"),
+        ("docstring", "light magenta,bold", "dark blue"),
 
         ("punctuation", "light gray", "dark blue"),
         ("comment", "light gray", "dark blue"),

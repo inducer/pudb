@@ -1531,8 +1531,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     @staticmethod
     def setup_palette(screen):
-        may_use_fancy_formats = isinstance(screen, RawScreen) and \
-                not hasattr(urwid.escape, "_fg_attr_xterm")
+        may_use_fancy_formats = not hasattr(urwid.escape, "_fg_attr_xterm")
 
         from pudb.theme import get_palette
         screen.register_palette(
