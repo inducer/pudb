@@ -1731,10 +1731,6 @@ class DebuggerUI(FrameVarInfoKeeper):
             save_config(CONFIG)
             self.run_edit_config()
 
-        import warnings
-        prev_warning_filters = warnings.filters[:]
-        warnings.simplefilter("ignore")
-
         try:
             if toplevel is None:
                 toplevel = self.top
@@ -1757,7 +1753,6 @@ class DebuggerUI(FrameVarInfoKeeper):
             return self.quit_event_loop
         finally:
             self.quit_event_loop = prev_quit_loop
-            warnings.filters[:] = prev_warning_filters
 
     # }}}
 
