@@ -291,10 +291,10 @@ def edit_config(ui, conf_dict):
     # {{{ display
 
     display_info = urwid.Text("What driver is used to talk to your terminal. "
-            "'raw' is fast and has the most features (colors and highlighting), "
+            "'raw' has the most features (colors and highlighting), "
             "but is only correct for "
-            "XTerm and terminals like it. 'curses' is slower, buggier, "
-            "and it has fewer "
+            "XTerm and terminals like it. 'curses' "
+            "has fewer "
             "features, but it will work with just about any terminal. 'auto' "
             "will attempt to pick between the two based on availability and "
             "the $TERM environment variable.\n\n"
