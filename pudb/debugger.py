@@ -713,7 +713,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             show_private_checkbox = urwid.CheckBox(
                     "Show private members", iinfo.show_private_members)
 
-            lb = urwid.ListBox(
+            lb = urwid.ListBox(urwid.SimpleListWalker(
                 id_segment+rb_grp+[
                     urwid.Text(""),
                     wrap_checkbox,
@@ -721,7 +721,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     highlighted_checkbox,
                     repeated_at_top_checkbox,
                     show_private_checkbox,
-                ])
+                ]))
 
             result = self.dialog(lb, buttons, title=title)
 
@@ -757,9 +757,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ])
 
             if self.dialog(
-                    urwid.ListBox([
+                    urwid.ListBox(urwid.SimpleListWalker([
                         urwid.AttrMap(watch_edit, "value")
-                        ]),
+                        ])),
                     [
                         ("OK", True),
                         ("Cancel", False),
@@ -863,7 +863,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ("label", "Ignore the next N times: ")
                 ], bp.ignore)
 
-            lb = urwid.ListBox([
+            lb = urwid.ListBox(urwid.SimpleListWalker([
                 labelled_value("File: ", bp.file),
                 labelled_value("Line: ", bp.line),
                 labelled_value("Hits: ", bp.hits),
@@ -871,7 +871,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 enabled_checkbox,
                 urwid.AttrMap(cond_edit, "value", "value"),
                 urwid.AttrMap(ign_count_edit, "value", "value"),
-                ])
+                ]))
 
             result = self.dialog(lb, [
                 ("OK", True),
@@ -1003,11 +1003,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ], line+1)
 
             if self.dialog(
-                    urwid.ListBox([
+                    urwid.ListBox(urwid.SimpleListWalker([
                         labelled_value("File :",
                             self.source_code_provider.identifier()),
                         urwid.AttrMap(lineno_edit, "value")
-                        ]),
+                        ])),
                     [
                         ("OK", True),
                         ("Cancel", False),
@@ -1067,11 +1067,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                             bp_source_identifier, pos+1)
 
                     if invalid_reason is not None:
-                        do_set = not self.dialog(urwid.ListBox([
+                        do_set = not self.dialog(urwid.ListBox(urwid.SimpleListWalker([
                             urwid.Text("The breakpoint you just set may be "
                                 "invalid, for the following reason:\n\n"
                                 + invalid_reason),
-                            ]), [
+                            ])), [
                                 ("Cancel", True),
                                 ("Set Anyway", False),
                             ], title="Possibly Invalid Breakpoint",
@@ -1267,8 +1267,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 from pudb.lowlevel import format_exception
 
                 result = self.dialog(
-                        urwid.ListBox([urwid.Text(
-                            "".join(format_exception(self.current_exc_tuple)))]),
+                        urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
+                            "".join(format_exception(self.current_exc_tuple)))])),
                         [
                             ("Close", "close"),
                             ("Location", "location")
@@ -1445,7 +1445,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     def message(self, msg, title="Message", **kwargs):
         self.call_with_ui(self.dialog,
-                urwid.ListBox([urwid.Text(msg)]),
+                urwid.ListBox(urwid.SimpleListWalker([urwid.Text(msg)])),
                 [("OK", True)], title=title, **kwargs)
 
     def run_edit_config(self):
@@ -1489,7 +1489,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         w = urwid.Columns([
             content,
-            ("fixed", 15, urwid.ListBox(button_widgets)),
+            ("fixed", 15, urwid.ListBox(urwid.SimpleListWalker(button_widgets))),
             ], dividechars=1)
 
         if focus_buttons:
@@ -1543,14 +1543,14 @@ class DebuggerUI(FrameVarInfoKeeper):
         tb_txt = "".join(format_exception(exc_tuple))
         while True:
             res = self.dialog(
-                    urwid.ListBox([urwid.Text(
+                    urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
                         "The program has terminated abnormally because of "
                         "an exception.\n\n"
                         "A full traceback is below. You may recall this "
                         "traceback at any time using the 'e' key. "
                         "The debugger has entered post-mortem mode and will "
                         "prevent further state changes.\n\n"
-                        + tb_txt)]),
+                        + tb_txt)])),
                     title="Program Terminated for Uncaught Exception",
                     buttons_and_results=[
                         ("OK", True),
