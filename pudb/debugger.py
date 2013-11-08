@@ -73,6 +73,8 @@ Keys:
 
     Ctrl-c - when in continue mode, break back to PuDB
 
+    Ctrl-l - redraw screen
+
 Side-bar related:
 
     +/- - grow/shrink sidebar
@@ -1346,6 +1348,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         def do_edit_config(w, size, key):
             self.run_edit_config()
 
+        def redraw_screen(w, size, key):
+            self.screen.clear()
+
         def help(w, size, key):
             self.message(HELP_TEXT, title="PuDB Help")
 
@@ -1365,6 +1370,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
+        self.top.listen("ctrl l", redraw_screen)
         self.top.listen("f1", help)
         self.top.listen("?", help)
 
