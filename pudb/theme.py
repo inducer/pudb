@@ -13,12 +13,78 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             return color
 
     palette = [
+        # {{{ ui
+
         ("header", "black", "light gray", "standout"),
+
+        ("selectable", "black", "dark cyan"),
+        ("focused selectable", "black", "dark green"),
+
+        ("button", add_setting("white", "bold"), "dark blue"),
+        ("focused button", "light cyan", "black"),
+
+        ("dialog title", add_setting("white", "bold"), "dark cyan"),
+
+        ("background", "black", "light gray"),
+        ("hotkey", add_setting("black", "underline"), "light gray", "underline"),
+        ("focused sidebar", "yellow", "light gray", "standout"),
+
+        ("warning", add_setting("white", "bold"), "dark red", "standout"),
+
+        ("label", "black", "light gray"),
+        ("value", add_setting("yellow", "bold"), "dark blue"),
+        ("fixed value", "light gray", "dark blue"),
+        ("group head", add_setting("dark blue", "bold"), "light gray"),
+
+        ("search box", "black", "dark cyan"),
+        ("search not found", "white", "dark red"),
+
+        # }}}
+
+        # {{{ source
+
+        ("breakpoint", "black", "dark cyan"),
+        ("focused breakpoint", "black", "dark green"),
+        ("current breakpoint", add_setting("white", "bold"), "dark cyan"),
+        ("focused current breakpoint",
+                add_setting("white", "bold"), "dark green", "bold"),
+
+        ("source", add_setting("yellow", "bold"), "dark blue"),
+        ("focused source", "black", "dark green"),
+        ("highlighted source", "black", "dark magenta"),
+        ("current source", "black", "dark cyan"),
+        ("current focused source", add_setting("white", "bold"), "dark cyan"),
+        ("current highlighted source", "white", "dark cyan"),
+
+        # {{{ highlighting
+
+        ("line number", "light gray", "dark blue"),
+        ("keyword", add_setting("white", "bold"), "dark blue"),
+        ("name", "light cyan", "dark blue"),
+        ("literal", "light magenta, bold", "dark blue"),
+
+        ("string", add_setting("light magenta", "bold"), "dark blue"),
+        ("doublestring", add_setting("light magenta", "bold"), "dark blue"),
+        ("singlestring", add_setting("light magenta", "bold"), "dark blue"),
+        ("docstring", add_setting("light magenta", "bold"), "dark blue"),
+
+        ("punctuation", "light gray", "dark blue"),
+        ("comment", "light gray", "dark blue"),
+
+        # }}}
+
+        # }}}
+
+        # {{{ breakpoints
 
         ("breakpoint source", add_setting("yellow", "bold"), "dark red"),
         ("breakpoint focused source", "black", "dark red"),
         ("current breakpoint source", "black", "dark red"),
         ("current breakpoint focused source", "white", "dark red"),
+
+        # }}}
+
+        # {{{ variables view
 
         ("variables", "black", "dark cyan"),
         ("variable separator", "dark cyan", "light gray"),
@@ -38,10 +104,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("focused return label", "light gray", "dark blue"),
         ("focused return value", "black", "dark green"),
 
-        ("return label", "white", "dark blue"),
-        ("return value", "black", "dark cyan"),
-        ("focused return label", "light gray", "dark blue"),
-        ("focused return value", "black", "dark green"),
+        # }}}
+
+        # {{{ stack
 
         ("stack", "black", "dark cyan"),
 
@@ -61,56 +126,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("current frame location", "light cyan", "dark cyan"),
         ("focused current frame location", "light cyan", "dark green"),
 
-        ("breakpoint", "black", "dark cyan"),
-        ("focused breakpoint", "black", "dark green"),
-        ("current breakpoint", add_setting("white", "bold"), "dark cyan"),
-        ("focused current breakpoint",
-                add_setting("white", "bold"), "dark green", "bold"),
+        # }}}
 
-        ("selectable", "black", "dark cyan"),
-        ("focused selectable", "black", "dark green"),
-
-        ("button", add_setting("white", "bold"), "dark blue"),
-        ("focused button", "light cyan", "black"),
-
-        ("background", "black", "light gray"),
-        ("hotkey", add_setting("black", "underline"), "light gray", "underline"),
-        ("focused sidebar", "yellow", "light gray", "standout"),
-
-        ("warning", add_setting("white", "bold"), "dark red", "standout"),
-
-        ("label", "black", "light gray"),
-        ("value", add_setting("yellow", "bold"), "dark blue"),
-        ("fixed value", "light gray", "dark blue"),
-        ("group head", add_setting("dark blue", "bold"), "light gray"),
-
-        ("search box", "black", "dark cyan"),
-        ("search not found", "white", "dark red"),
-
-        ("dialog title", add_setting("white", "bold"), "dark cyan"),
-
-        # highlighting
-        ("source", add_setting("yellow", "bold"), "dark blue"),
-        ("focused source", "black", "dark green"),
-        ("highlighted source", "black", "dark magenta"),
-        ("current source", "black", "dark cyan"),
-        ("current focused source", add_setting("white", "bold"), "dark cyan"),
-        ("current highlighted source", "white", "dark cyan"),
-
-        ("line number", "light gray", "dark blue"),
-        ("keyword", add_setting("white", "bold"), "dark blue"),
-        ("name", "light cyan", "dark blue"),
-        ("literal", "light magenta, bold", "dark blue"),
-
-        ("string", add_setting("light magenta", "bold"), "dark blue"),
-        ("doublestring", add_setting("light magenta", "bold"), "dark blue"),
-        ("singlestring", add_setting("light magenta", "bold"), "dark blue"),
-        ("docstring", add_setting("light magenta", "bold"), "dark blue"),
-
-        ("punctuation", "light gray", "dark blue"),
-        ("comment", "light gray", "dark blue"),
         ("bp_star", "dark red", "dark blue"),
-
         ]
 
     palette_dict = dict(
