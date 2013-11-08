@@ -5,6 +5,7 @@ from __future__ import division
 import urwid
 import bdb
 import sys
+import os
 
 from pudb.settings import load_config, save_config
 CONFIG = load_config()
@@ -369,12 +370,33 @@ from pudb.ui_tools import make_hotkey_markup, labelled_value, \
         SelectableText, SignalWrap, StackFrame, BreakpointFrame
 
 from pudb.var_view import FrameVarInfoKeeper
+
+
+# {{{ display setup
+
 try:
     import curses
 except ImportError:
     curses = None
 
-from urwid.raw_display import Screen
+
+want_curses_display = (
+        CONFIG["display"] == "curses"
+        or (
+            CONFIG["display"] == "auto"
+            and
+            not os.environ.get("TERM", "").startswith("xterm")))
+
+from urwid.raw_display import Screen as RawScreen
+if want_curses_display:
+    try:
+        from urwid.curses_display import Screen
+    except ImportError:
+        Screen = RawScreen
+else:
+    Screen = RawScreen
+
+del want_curses_display
 
 
 class ThreadsafeScreen(Screen):
@@ -393,6 +415,8 @@ class ThreadsafeScreen(Screen):
             super(ThreadsafeScreen, self).signal_restore()
         except ValueError:
             pass
+
+# }}}
 
 
 # {{{ source code providers
@@ -1391,7 +1415,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             else:
                 color_support = curses.tigetnum('colors')
 
-                if color_support == 256:
+                if color_support == 256 and isinstance(self.screen, RawScreen):
                     self.screen.set_terminal_properties(256)
 
         self.setup_palette(self.screen)
@@ -1507,7 +1531,6 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     @staticmethod
     def setup_palette(screen):
-        from urwid.raw_display import Screen as RawScreen
         may_use_fancy_formats = isinstance(screen, RawScreen) and \
                 not hasattr(urwid.escape, "_fg_attr_xterm")
 
