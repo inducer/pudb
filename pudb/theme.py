@@ -137,6 +137,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
     if theme == "classic":
         pass
     elif theme == "vim":
+        # {{{ vim theme
+
         palette_dict.update({
             "source": ("black", "default"),
             "keyword": ("brown", "default"),
@@ -155,11 +157,14 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "line number": ("dark gray", "default"),
             "bp_star": ("dark red", "default"),
             })
+        # }}}
     elif theme == "dark vim":
+        # {{{ dark vim
+
         palette_dict.update({
             "header": ("black", "light gray", "standout"),
 
-            # variables view
+            # {{{ variables view
             "variables": ("black", "dark gray"),
             "variable separator": ("dark cyan", "light gray"),
 
@@ -178,7 +183,10 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "focused return label": ("yellow", "light blue"),
             "focused return value": ("white", "light blue"),
 
-            # stack view
+            # }}}
+
+            # {{{ stack view
+
             "stack": ("black", "dark gray"),
 
             "frame name": ("light gray", "dark gray"),
@@ -197,14 +205,20 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current frame location": ("light cyan", "dark gray"),
             "focused current frame location": ("light cyan", "light blue"),
 
-            # breakpoint view
+            # }}}
+
+            # {{{ breakpoint view
+
             "breakpoint": ("light gray", "dark gray"),
             "focused breakpoint": ("light gray", "light blue"),
             "current breakpoint": (add_setting("white", "bold"), "dark gray"),
             "focused current breakpoint":
                 (add_setting("white", "bold"), "light blue"),
 
-            # UI widgets
+            # }}}
+
+            # {{{ ui widgets
+
             "selectable": ("light gray", "dark gray"),
             "focused selectable": ("white", "light blue"),
 
@@ -226,11 +240,16 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             "dialog title": (add_setting("white", "bold"), "dark gray"),
 
-            # source view
+            # }}}
+
+            # {{{ source view
+
             "breakpoint source": ("light gray", "dark red"),
             "breakpoint focused source": ("black", "dark red"),
             "current breakpoint source": ("black", "dark red"),
             "current breakpoint focused source": ("white", "dark red"),
+
+            # }}}
 
             # highlighting
             "source": ("white", "black"),
@@ -254,7 +273,11 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "comment": ("light blue", "black"),
             "bp_star": ("dark red", "black"),
             })
+
+        # }}}
     elif theme == "midnight":
+        # {{{ midnight
+
         # Based on XCode's midnight theme
         # Looks best in a console with green text against black background
         palette_dict.update({
@@ -299,6 +322,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         })
 
+        # }}}
+
     else:
         try:
             symbols = {
@@ -330,3 +355,5 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             palette_list.append((setting_name,) + color_values)
 
     return palette_list
+
+# vim: foldmethod=marker
