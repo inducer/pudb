@@ -3,6 +3,7 @@ THEMES = ["classic", "vim", "dark vim", "midnight"]
 from pudb.py3compat import execfile, raw_input
 import urwid
 
+
 def get_palette(may_use_fancy_formats, theme="classic"):
     if may_use_fancy_formats:
         def add_setting(color, setting):
@@ -63,7 +64,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("breakpoint", "black", "dark cyan"),
         ("focused breakpoint", "black", "dark green"),
         ("current breakpoint", add_setting("white", "bold"), "dark cyan"),
-        ("focused current breakpoint", add_setting("white", "bold"), "dark green", "bold"),
+        ("focused current breakpoint",
+                add_setting("white", "bold"), "dark green", "bold"),
 
         ("selectable", "black", "dark cyan"),
         ("focused selectable", "black", "dark green"),
@@ -137,101 +139,102 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             })
     elif theme == "dark vim":
         palette_dict.update({
-        "header": ("black", "light gray", "standout"),
+            "header": ("black", "light gray", "standout"),
 
-        # variables view
-        "variables": ("black", "dark gray"),
-        "variable separator": ("dark cyan", "light gray"),
+            # variables view
+            "variables": ("black", "dark gray"),
+            "variable separator": ("dark cyan", "light gray"),
 
-        "var label": ("light gray", "dark gray"),
-        "var value": ("white", "dark gray"),
-        "focused var label": ("light gray", "light blue"),
-        "focused var value": ("white", "light blue"),
+            "var label": ("light gray", "dark gray"),
+            "var value": ("white", "dark gray"),
+            "focused var label": ("light gray", "light blue"),
+            "focused var value": ("white", "light blue"),
 
-        "highlighted var label": ("light gray", "dark green"),
-        "highlighted var value": ("white", "dark green"),
-        "focused highlighted var label": ("light gray", "light blue"),
-        "focused highlighted var value": ("white", "light blue"),
+            "highlighted var label": ("light gray", "dark green"),
+            "highlighted var value": ("white", "dark green"),
+            "focused highlighted var label": ("light gray", "light blue"),
+            "focused highlighted var value": ("white", "light blue"),
 
-        "return label": ("light gray", "dark gray"),
-        "return value": ("light cyan", "dark gray"),
-        "focused return label": ("yellow", "light blue"),
-        "focused return value": ("white", "light blue"),
+            "return label": ("light gray", "dark gray"),
+            "return value": ("light cyan", "dark gray"),
+            "focused return label": ("yellow", "light blue"),
+            "focused return value": ("white", "light blue"),
 
-        # stack view
-        "stack": ("black", "dark gray"),
+            # stack view
+            "stack": ("black", "dark gray"),
 
-        "frame name": ("light gray", "dark gray"),
-        "focused frame name": ("light gray", "light blue"),
-        "frame class": ("dark blue", "dark gray"),
-        "focused frame class": ("dark blue", "light blue"),
-        "frame location": ("white", "dark gray"),
-        "focused frame location": ("white", "light blue"),
+            "frame name": ("light gray", "dark gray"),
+            "focused frame name": ("light gray", "light blue"),
+            "frame class": ("dark blue", "dark gray"),
+            "focused frame class": ("dark blue", "light blue"),
+            "frame location": ("white", "dark gray"),
+            "focused frame location": ("white", "light blue"),
 
-        "current frame name": (add_setting("white", "bold"),
-            "dark gray"),
-        "focused current frame name": (add_setting("white", "bold"),
-            "light blue", "bold"),
-        "current frame class": ("dark blue", "dark gray"),
-        "focused current frame class": ("dark blue", "dark green"),
-        "current frame location": ("light cyan", "dark gray"),
-        "focused current frame location": ("light cyan", "light blue"),
+            "current frame name": (add_setting("white", "bold"),
+                "dark gray"),
+            "focused current frame name": (add_setting("white", "bold"),
+                "light blue", "bold"),
+            "current frame class": ("dark blue", "dark gray"),
+            "focused current frame class": ("dark blue", "dark green"),
+            "current frame location": ("light cyan", "dark gray"),
+            "focused current frame location": ("light cyan", "light blue"),
 
-        # breakpoint view
-        "breakpoint": ("light gray", "dark gray"),
-        "focused breakpoint": ("light gray", "light blue"),
-        "current breakpoint": (add_setting("white", "bold"), "dark gray"),
-        "focused current breakpoint": (add_setting("white", "bold"), "light blue"),
+            # breakpoint view
+            "breakpoint": ("light gray", "dark gray"),
+            "focused breakpoint": ("light gray", "light blue"),
+            "current breakpoint": (add_setting("white", "bold"), "dark gray"),
+            "focused current breakpoint":
+                (add_setting("white", "bold"), "light blue"),
 
-        # UI widgets
-        "selectable": ("light gray", "dark gray"),
-        "focused selectable": ("white", "light blue"),
+            # UI widgets
+            "selectable": ("light gray", "dark gray"),
+            "focused selectable": ("white", "light blue"),
 
-        "button": ("light gray", "dark gray"),
-        "focused button": ("white", "light blue"),
+            "button": ("light gray", "dark gray"),
+            "focused button": ("white", "light blue"),
 
-        "background": ("black", "light gray"),
-        "hotkey": (add_setting("black", "underline"), "light gray", "underline"),
-        "focused sidebar": ("light blue", "light gray", "standout"),
+            "background": ("black", "light gray"),
+            "hotkey": (add_setting("black", "underline"), "light gray", "underline"),
+            "focused sidebar": ("light blue", "light gray", "standout"),
 
-        "warning": (add_setting("white", "bold"), "dark red", "standout"),
+            "warning": (add_setting("white", "bold"), "dark red", "standout"),
 
-        "label": ("black", "light gray"),
-        "value": ("white", "dark gray"),
-        "fixed value": ("light gray", "dark gray"),
+            "label": ("black", "light gray"),
+            "value": ("white", "dark gray"),
+            "fixed value": ("light gray", "dark gray"),
 
-        "search box": ("white", "dark gray"),
-        "search not found": ("white", "dark red"),
+            "search box": ("white", "dark gray"),
+            "search not found": ("white", "dark red"),
 
-        "dialog title": (add_setting("white", "bold"), "dark gray"),
+            "dialog title": (add_setting("white", "bold"), "dark gray"),
 
-        # source view
-        "breakpoint source": ("light gray", "dark red"),
-        "breakpoint focused source": ("black", "dark red"),
-        "current breakpoint source": ("black", "dark red"),
-        "current breakpoint focused source": ("white", "dark red"),
+            # source view
+            "breakpoint source": ("light gray", "dark red"),
+            "breakpoint focused source": ("black", "dark red"),
+            "current breakpoint source": ("black", "dark red"),
+            "current breakpoint focused source": ("white", "dark red"),
 
-        # highlighting
-        "source": ("white", "black"),
-        "focused source": ("white", "light blue"),
-        "highlighted source": ("black", "dark magenta"),
-        "current source": ("black", "light gray"),
-        "current focused source": ("white", "dark cyan"),
-        "current highlighted source": ("white", "dark cyan"),
+            # highlighting
+            "source": ("white", "black"),
+            "focused source": ("white", "light blue"),
+            "highlighted source": ("black", "dark magenta"),
+            "current source": ("black", "light gray"),
+            "current focused source": ("white", "dark cyan"),
+            "current highlighted source": ("white", "dark cyan"),
 
-        "line number": ("dark gray", "black"),
-        "keyword": ("yellow", "black"),
+            "line number": ("dark gray", "black"),
+            "keyword": ("yellow", "black"),
 
-        "literal": ("dark magenta", "black"),
-        "string": ("dark magenta", "black"),
-        "doublestring": ("dark magenta", "black"),
-        "singlestring": ("dark magenta", "black"),
-        "docstring": ("dark magenta", "black"),
+            "literal": ("dark magenta", "black"),
+            "string": ("dark magenta", "black"),
+            "doublestring": ("dark magenta", "black"),
+            "singlestring": ("dark magenta", "black"),
+            "docstring": ("dark magenta", "black"),
 
-        "name": ("light cyan", "black"),
-        "punctuation": ("yellow", "black"),
-        "comment": ("light blue", "black"),
-        "bp_star": ("dark red", "black"),
+            "name": ("light cyan", "black"),
+            "punctuation": ("yellow", "black"),
+            "comment": ("light blue", "black"),
+            "bp_star": ("dark red", "black"),
             })
     elif theme == "midnight":
         # Based on XCode's midnight theme
@@ -292,20 +295,20 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             from traceback import print_exc
             print_exc()
             raw_input("Hit enter:")
-    
+
     palette_list = []
     for setting_name, color_values in palette_dict.items():
         fg_color = color_values[0].lower().strip()
         bg_color = color_values[1].lower().strip()
 
-        # Convert hNNN syntax to equivalent #RGB value (https://github.com/wardi/urwid/issues/24)
+        # Convert hNNN syntax to equivalent #RGB value
+        # (https://github.com/wardi/urwid/issues/24)
         if fg_color.startswith('h') or bg_color.startswith('h'):
             attr = urwid.AttrSpec(fg_color, bg_color, colors=256)
-            palette_list.append((setting_name, 'default', 'default', 'default', 
-                attr.foreground, 
+            palette_list.append((setting_name, 'default', 'default', 'default',
+                attr.foreground,
                 attr.background))
-        else: 
+        else:
             palette_list.append((setting_name,) + color_values)
 
     return palette_list
-
