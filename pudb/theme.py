@@ -15,7 +15,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
     palette = [
         ("header", "black", "light gray", "standout"),
 
-        ("breakpoint source", "yellow", "dark red"),
+        ("breakpoint source", add_setting("yellow", "bold"), "dark red"),
         ("breakpoint focused source", "black", "dark red"),
         ("current breakpoint source", "black", "dark red"),
         ("current breakpoint focused source", "white", "dark red"),
@@ -70,7 +70,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("selectable", "black", "dark cyan"),
         ("focused selectable", "black", "dark green"),
 
-        ("button", "white", "dark blue"),
+        ("button", add_setting("white", "bold"), "dark blue"),
         ("focused button", "light cyan", "black"),
 
         ("background", "black", "light gray"),
@@ -90,7 +90,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("dialog title", add_setting("white", "bold"), "dark cyan"),
 
         # highlighting
-        ("source", "yellow,bold", "dark blue"),
+        ("source", add_setting("yellow", "bold"), "dark blue"),
         ("focused source", "black", "dark green"),
         ("highlighted source", "black", "dark magenta"),
         ("current source", "black", "dark cyan"),
@@ -102,10 +102,10 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("name", "light cyan", "dark blue"),
         ("literal", "light magenta, bold", "dark blue"),
 
-        ("string", "light magenta,bold", "dark blue"),
-        ("doublestring", "light magenta,bold", "dark blue"),
-        ("singlestring", "light magenta,bold", "dark blue"),
-        ("docstring", "light magenta,bold", "dark blue"),
+        ("string", add_setting("light magenta", "bold"), "dark blue"),
+        ("doublestring", add_setting("light magenta", "bold"), "dark blue"),
+        ("singlestring", add_setting("light magenta", "bold"), "dark blue"),
+        ("docstring", add_setting("light magenta", "bold"), "dark blue"),
 
         ("punctuation", "light gray", "dark blue"),
         ("comment", "light gray", "dark blue"),
