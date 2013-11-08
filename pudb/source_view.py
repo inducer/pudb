@@ -79,7 +79,7 @@ class SourceLine(urwid.FlowWidget):
             text = self.line_nr + text
 
         text = crnt+bp+text
-        attr = [("source", 1), ("bp_star", 1)] + attr
+        attr = [("source", 1), ("breakpoint marker", 1)] + attr
 
         # clipping ------------------------------------------------------------
         if len(text) > maxcol:

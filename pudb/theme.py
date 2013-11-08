@@ -77,6 +77,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         # {{{ breakpoints
 
+        ("breakpoint marker", "dark red", "dark blue"),
+
         ("breakpoint source", add_setting("yellow", "bold"), "dark red"),
         ("breakpoint focused source", "black", "dark red"),
         ("current breakpoint source", "black", "dark red"),
@@ -128,7 +130,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         # }}}
 
-        ("bp_star", "dark red", "dark blue"),
         ]
 
     palette_dict = dict(
@@ -155,7 +156,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "classname": ("dark cyan", "default"),
             "name": ("dark cyan", "default"),
             "line number": ("dark gray", "default"),
-            "bp_star": ("dark red", "default"),
+            "breakpoint marker": ("dark red", "default"),
             })
         # }}}
     elif theme == "dark vim":
@@ -244,6 +245,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             # {{{ source view
 
+            "breakpoint marker": ("dark red", "black"),
+
             "breakpoint source": ("light gray", "dark red"),
             "breakpoint focused source": ("black", "dark red"),
             "current breakpoint source": ("black", "dark red"),
@@ -251,7 +254,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             # }}}
 
-            # highlighting
+            # {{{ highlighting
+
             "source": ("white", "black"),
             "focused source": ("white", "light blue"),
             "highlighted source": ("black", "dark magenta"),
@@ -271,7 +275,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "name": ("light cyan", "black"),
             "punctuation": ("yellow", "black"),
             "comment": ("light blue", "black"),
-            "bp_star": ("dark red", "black"),
+
+            # }}}
+
             })
 
         # }}}
@@ -318,7 +324,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "comment": ("dark green", "default"),
             "classname": ("dark cyan", "default"),
             "funcname": ("white", "default"),
-            "bp_star": ("dark red", "default"),
 
         })
 
