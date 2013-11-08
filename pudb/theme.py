@@ -80,7 +80,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("warning", add_setting("white", "bold"), "dark red", "standout"),
 
         ("label", "black", "light gray"),
-        ("value", "yellow", "dark blue"),
+        ("value", add_setting("yellow", "bold"), "dark blue"),
         ("fixed value", "light gray", "dark blue"),
         ("group head", add_setting("dark blue", "bold"), "light gray"),
 
@@ -94,7 +94,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("focused source", "black", "dark green"),
         ("highlighted source", "black", "dark magenta"),
         ("current source", "black", "dark cyan"),
-        ("current focused source", "white", "dark cyan"),
+        ("current focused source", add_setting("white", "bold"), "dark cyan"),
         ("current highlighted source", "white", "dark cyan"),
 
         ("line number", "light gray", "dark blue"),
