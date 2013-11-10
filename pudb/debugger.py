@@ -68,6 +68,7 @@ Keys:
     S - focus stack
     B - focus breakpoint list
     C - focus code
+    Ctrl-x - toggle shell focus
 
     f1/?/H - show this help screen
     q - quit
@@ -567,14 +568,36 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ build ui
 
+        # {{{ left/source column
+
         self.source = urwid.SimpleListWalker([])
         self.source_list = urwid.ListBox(self.source)
         self.source_sigwrap = SignalWrap(self.source_list)
+        self.source_attr = urwid.AttrMap(self.source_sigwrap, "source")
         self.source_hscroll_start = 0
 
-        self.lhs_col = urwid.Pile([
-            ("weight", 1, urwid.AttrMap(self.source_sigwrap, "source"))
+        self.shell_contents = urwid.SimpleFocusListWalker([])
+        self.shell_list = urwid.ListBox(self.shell_contents)
+        self.shell_edit = urwid.Edit([
+            ("shell prompt", ">>> ")
             ])
+        shell_edit_attr = urwid.AttrMap(self.shell_edit, "shell edit")
+        self.shell_sigwrap = SignalWrap(shell_edit_attr, is_preemptive=True)
+
+        self.shell_pile = urwid.Pile([
+            ("flow", urwid.Divider()),
+            ("weight", 1, urwid.AttrMap(self.shell_list, "shell output")),
+            ("flow", self.shell_sigwrap),
+            ])
+
+        self.lhs_col = urwid.Pile([
+            ("weight", 8, self.source_attr),
+            ("weight", 1, self.shell_pile),
+            ])
+
+        # }}}
+
+        # {{{ right column
 
         self.locals = urwid.SimpleListWalker([])
         self.var_list = SignalWrap(
@@ -602,6 +625,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 Attr(self.bp_list, "breakpoint"),
                 ]), None, "focused sidebar"),),
             ])
+
+        # }}}
 
         self.columns = urwid.Columns(
                     [
@@ -1067,15 +1092,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                             bp_source_identifier, pos+1)
 
                     if invalid_reason is not None:
-                        do_set = not self.dialog(urwid.ListBox(urwid.SimpleListWalker([
-                            urwid.Text("The breakpoint you just set may be "
-                                "invalid, for the following reason:\n\n"
-                                + invalid_reason),
-                            ])), [
-                                ("Cancel", True),
-                                ("Set Anyway", False),
-                            ], title="Possibly Invalid Breakpoint",
-                            focus_buttons=True)
+                        do_set = not self.dialog(
+                                urwid.ListBox(urwid.SimpleListWalker([
+                                    urwid.Text("The breakpoint you just set may be "
+                                        "invalid, for the following reason:\n\n"
+                                        + invalid_reason),
+                                    ])), [
+                                        ("Cancel", True),
+                                        ("Set Anyway", False),
+                                        ], title="Possibly Invalid Breakpoint",
+                                    focus_buttons=True)
                     else:
                         do_set = True
 
@@ -1248,6 +1274,97 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # }}}
 
+        # {{{ shell listeners
+
+        def shell_get_namespace():
+            curframe = self.debugger.curframe
+
+            from pudb.shell import SetPropagatingDict
+            return SetPropagatingDict(
+                    [curframe.f_locals, curframe.f_globals],
+                    curframe.f_locals)
+
+        def add_shell_content(s, attr):
+            s = s.rstrip("\n")
+
+            from ui_tools import SelectableText
+            self.shell_contents.append(
+                    urwid.AttrMap(SelectableText(s),
+                        attr, "focused "+attr))
+
+            # scroll to end of last entry
+            self.shell_list.set_focus_valign("bottom")
+            self.shell_list.set_focus(len(self.shell_contents) - 1,
+                    coming_from="above")
+
+        def shell_tab_complete(w, size, key):
+            from rlcompleter import Completer
+
+            text = self.shell_edit.edit_text
+            pos = self.shell_edit.edit_pos
+            chopped_text = text[:pos]
+            remainder_text = text[pos:]
+
+            completed_chopped_text = \
+                    Completer(shell_get_namespace()).complete(chopped_text, 0)
+
+            self.shell_edit.edit_text = \
+                    completed_chopped_text+remainder_text
+            self.shell_edit.edit_pos = len(completed_chopped_text)
+
+        def shell_append_newline(w, size, key):
+            self.shell_edit.insert_text("\n")
+
+        def shell_exec(w, size, key):
+            cmd = self.shell_edit.get_edit_text()
+            if not cmd:
+                # blank command -> refuse service
+                return
+
+            add_shell_content(">>> " + cmd, "shell input")
+
+            prev_sys_stdout = sys.stdout
+            from cStringIO import StringIO
+            sys.stdout = StringIO()
+            try:
+                eval(compile(cmd, "<pudb shell>", 'single'),
+                        shell_get_namespace())
+            except:
+                tp, val, tb = sys.exc_info()
+
+                import traceback
+
+                tblist = traceback.extract_tb(tb)
+                del tblist[:1]
+                tb_lines = traceback.format_list(tblist)
+                if tb_lines:
+                    tb_lines.insert(0, "Traceback (most recent call last):\n")
+                tb_lines[len(tb_lines):] = traceback.format_exception_only(tp, val)
+
+                add_shell_content("".join(tb_lines), "shell error")
+            else:
+                self.shell_edit.set_edit_text("")
+            finally:
+                if sys.stdout.getvalue():
+                    add_shell_content(sys.stdout.getvalue(), "shell output")
+
+                sys.stdout = prev_sys_stdout
+
+        def toggle_shell_focus(w, size, key):
+            if self.lhs_col.get_focus() is self.shell_pile:
+                self.lhs_col.set_focus(self.source_attr)
+            else:
+                self.shell_pile.set_focus(self.shell_sigwrap)
+                self.lhs_col.set_focus(self.shell_pile)
+
+        self.shell_sigwrap.listen("tab", shell_tab_complete)
+        self.shell_sigwrap.listen("ctrl n", shell_append_newline)
+        self.shell_sigwrap.listen("enter", shell_exec)
+        self.shell_sigwrap.listen("esc", toggle_shell_focus)
+        self.top.listen("ctrl x", toggle_shell_focus)
+
+        # }}}
+
         # {{{ top-level listeners
 
         def show_output(w, size, key):
@@ -1284,7 +1401,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("No exception available.")
 
         def run_shell(w, size, key):
-
             self.screen.stop()
 
             if not hasattr(self, "have_been_to_shell"):
@@ -1627,7 +1743,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e016"
+        WELCOME_LEVEL = "e017"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1643,6 +1759,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2013.5:\n\n"
+                    "- Add shell window\n"
+                    "- Uses curses display driver when appropriate\n"
 
                     "\nChanges in version 2013.4:\n\n"
                     "- Support for debugging generated code\n"

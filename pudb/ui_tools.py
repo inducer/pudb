@@ -62,17 +62,27 @@ class SelectableText(urwid.Text):
 
 
 class SignalWrap(urwid.WidgetWrap):
-    def __init__(self, w):
+    def __init__(self, w, is_preemptive=False):
         urwid.WidgetWrap.__init__(self, w)
         self.event_listeners = []
+        self.is_preemptive = is_preemptive
 
     def listen(self, mask, handler):
         self.event_listeners.append((mask, handler))
 
     def keypress(self, size, key):
-        result = self._w.keypress(size, key)
+        result = key
+
+        if self.is_preemptive:
+            for mask, handler in self.event_listeners:
+                if mask is None or mask == key:
+                    result = handler(self, size, key)
+                    break
 
         if result is not None:
+            result = self._w.keypress(size, key)
+
+        if result is not None and not self.is_preemptive:
             for mask, handler in self.event_listeners:
                 if mask is None or mask == key:
                     return handler(self, size, key)

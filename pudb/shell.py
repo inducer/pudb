@@ -6,15 +6,15 @@ else:
     HAVE_IPYTHON = True
 
 try:
-    import bpython
+    import bpython  # noqa
 except ImportError:
     HAVE_BPYTHON = False
 else:
     HAVE_BPYTHON = True
 
 
+# {{{ readline wrangling
 
-# readline wrangling ----------------------------------------------------------
 def setup_readline():
     import os
     import atexit
@@ -28,7 +28,7 @@ def setup_readline():
         readline.read_history_file(histfile)
         atexit.register(readline.write_history_file, histfile)
     except Exception:
-        # http://docs.python.org/3/howto/pyporting.html#capturing-the-currently-raised-exception
+        # noqa http://docs.python.org/3/howto/pyporting.html#capturing-the-currently-raised-exception
         import sys
         e = sys.exc_info()[1]
 
@@ -47,8 +47,11 @@ except ImportError:
 else:
     setup_readline()
 
+# }}}
 
-# combined locals/globals dict ------------------------------------------------
+
+# {{{ combined locals/globals dict
+
 class SetPropagatingDict(dict):
     def __init__(self, source_dicts, target_dict):
         dict.__init__(self)
@@ -64,6 +67,8 @@ class SetPropagatingDict(dict):
     def __delitem__(self, key):
         dict.__delitem__(self, key)
         del self.target_dict[key]
+
+# }}}
 
 
 def run_classic_shell(locals, globals, first_time):
@@ -83,11 +88,13 @@ def run_classic_shell(locals, globals, first_time):
 
     cons.interact(banner)
 
+
 def run_bpython_shell(locals, globals, first_time):
     ns = SetPropagatingDict([locals, globals], locals)
 
     import bpython.cli
     bpython.cli.main(locals_=ns)
+
 
 def run_ipython_shell_v10(locals, globals, first_time):
     '''IPython shell from IPython version 0.10'''
@@ -102,6 +109,7 @@ def run_ipython_shell_v10(locals, globals, first_time):
     from IPython.Shell import IPShell
     IPShell(argv=[], user_ns=ns, user_global_ns=globals) \
             .mainloop(banner=banner)
+
 
 def run_ipython_shell_v11(locals, globals, first_time):
     '''IPython shell from IPython version 0.11'''
@@ -131,6 +139,7 @@ def run_ipython_shell_v11(locals, globals, first_time):
     # Restore originating namespace
     _update_ns(shell, old_locals, old_globals)
 
+
 def _update_ns(shell, locals, globals):
     '''Update the IPython 0.11 namespace at every visit'''
 
@@ -150,9 +159,9 @@ def _update_ns(shell, locals, globals):
     shell.init_user_ns()
     shell.init_completer()
 
+
 # Set the proper ipython shell
 if HAVE_IPYTHON and hasattr(IPython, 'Shell'):
     run_ipython_shell = run_ipython_shell_v10
 else:
     run_ipython_shell = run_ipython_shell_v11
-

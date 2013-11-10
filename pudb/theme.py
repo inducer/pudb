@@ -41,6 +41,21 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         # }}}
 
+        # {{{ shell
+
+        ("shell edit", add_setting("yellow", "bold"), "dark blue"),
+        ("shell prompt", add_setting("white", "bold"), "dark blue"),
+
+        ("shell output", "light cyan", "dark blue"),
+        ("shell input", add_setting("light cyan", "bold"), "dark blue"),
+        ("shell error", add_setting("light red", "bold"), "dark blue"),
+
+        ("focused shell output", "black", "dark green"),
+        ("focused shell input", add_setting("light cyan", "bold"), "dark green"),
+        ("focused shell error", "black", "dark green"),
+
+        # }}}
+
         # {{{ source
 
         ("breakpoint", "black", "dark cyan"),
