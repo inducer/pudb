@@ -56,7 +56,7 @@ def load_config():
     except:
         pass
 
-    conf_dict.setdefault("shell", "classic")
+    conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
     conf_dict.setdefault("line_numbers", False)
     conf_dict.setdefault("seen_welcome", "a")
@@ -188,7 +188,7 @@ def edit_config(ui, conf_dict):
 
     shell_info = urwid.Text("This is the shell that will be "
             "used when you hit '!'.\n")
-    shells = ["classic", "ipython", "bpython"]
+    shells = ["internal", "classic", "ipython", "bpython"]
 
     shell_rb_group = []
     shell_rbs = [

@@ -27,7 +27,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         ("background", "black", "light gray"),
         ("hotkey", add_setting("black", "underline"), "light gray", "underline"),
-        ("focused sidebar", "yellow", "light gray", "standout"),
+        ("focused sidebar", add_setting("yellow", "bold"), "light gray", "standout"),
 
         ("warning", add_setting("white", "bold"), "dark red", "standout"),
 

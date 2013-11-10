@@ -50,7 +50,6 @@ Keys:
     u - move up one stack frame
     d - move down one stack frame
 
-    ! - invoke python shell in current environment
     o - show console/output screen
 
     b - toggle breakpoint
@@ -68,7 +67,6 @@ Keys:
     S - focus stack
     B - focus breakpoint list
     C - focus code
-    Ctrl-x - toggle shell focus
 
     f1/?/H - show this help screen
     q - quit
@@ -77,14 +75,19 @@ Keys:
 
     Ctrl-l - redraw screen
 
-Side-bar related:
+Shell-related:
+    ! - invoke python shell in current environment
+    Ctrl-x - toggle inline shell focus
 
+    +/- - grow/shrink inline shell (active in shell history)
+    _/= - minimize/maximize inline shell (active in shell history)
+
+Sidebar-related (active in sidebar):
     +/- - grow/shrink sidebar
     _/= - minimize/maximize sidebar
     [/] - grow/shrink relative size of active sidebar box
 
 Keys in variables list:
-
     \ - expand/collapse
     t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
@@ -559,7 +562,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         FrameVarInfoKeeper.__init__(self)
 
         self.debugger = dbg
-        Attr = urwid.AttrMap
+
+        from urwid import AttrMap
 
         from pudb.ui_tools import SearchController
         self.search_controller = SearchController(self)
@@ -582,17 +586,21 @@ class DebuggerUI(FrameVarInfoKeeper):
             ("shell prompt", ">>> ")
             ])
         shell_edit_attr = urwid.AttrMap(self.shell_edit, "shell edit")
-        self.shell_sigwrap = SignalWrap(shell_edit_attr, is_preemptive=True)
+        self.shell_edit_sigwrap = SignalWrap(
+                shell_edit_attr, is_preemptive=True)
 
         self.shell_pile = urwid.Pile([
-            ("flow", urwid.Divider()),
+            ("flow", urwid.Text("Shell: [Ctrl-X]")),
             ("weight", 1, urwid.AttrMap(self.shell_list, "shell output")),
-            ("flow", self.shell_sigwrap),
+            ("flow", self.shell_edit_sigwrap),
             ])
+        self.shell_sigwrap = SignalWrap(
+                urwid.AttrMap(self.shell_pile, None, "focused sidebar")
+                )
 
         self.lhs_col = urwid.Pile([
             ("weight", 8, self.source_attr),
-            ("weight", 1, self.shell_pile),
+            ("weight", 1, self.shell_sigwrap),
             ])
 
         # }}}
@@ -612,26 +620,28 @@ class DebuggerUI(FrameVarInfoKeeper):
                 urwid.ListBox(self.bp_walker))
 
         self.rhs_col = urwid.Pile([
-            ("weight", float(CONFIG["variables_weight"]), Attr(urwid.Pile([
+            ("weight", float(CONFIG["variables_weight"]), AttrMap(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Variables:"))),
-                Attr(self.var_list, "variables"),
+                AttrMap(self.var_list, "variables"),
                 ]), None, "focused sidebar"),),
-            ("weight", float(CONFIG["stack_weight"]), Attr(urwid.Pile([
+            ("weight", float(CONFIG["stack_weight"]), AttrMap(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Stack:"))),
-                Attr(self.stack_list, "stack"),
+                AttrMap(self.stack_list, "stack"),
                 ]), None, "focused sidebar"),),
-            ("weight", float(CONFIG["breakpoints_weight"]), Attr(urwid.Pile([
+            ("weight", float(CONFIG["breakpoints_weight"]), AttrMap(urwid.Pile([
                 ("flow", urwid.Text(make_hotkey_markup("_Breakpoints:"))),
-                Attr(self.bp_list, "breakpoint"),
+                AttrMap(self.bp_list, "breakpoint"),
                 ]), None, "focused sidebar"),),
             ])
+        self.rhs_col_sigwrap = SignalWrap(self.rhs_col)
 
         # }}}
 
         self.columns = urwid.Columns(
                     [
                         ("weight", 1, self.lhs_col),
-                        ("weight", float(CONFIG["sidebar_width"]), self.rhs_col),
+                        ("weight", float(CONFIG["sidebar_width"]),
+                            self.rhs_col_sigwrap),
                         ],
                     dividechars=1)
 
@@ -1324,8 +1334,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             add_shell_content(">>> " + cmd, "shell input")
 
             prev_sys_stdout = sys.stdout
+            prev_sys_stderr = sys.stderr
             from cStringIO import StringIO
-            sys.stdout = StringIO()
+            sys.stderr = sys.stdout = StringIO()
             try:
                 eval(compile(cmd, "<pudb shell>", 'single'),
                         shell_get_namespace())
@@ -1349,19 +1360,104 @@ class DebuggerUI(FrameVarInfoKeeper):
                     add_shell_content(sys.stdout.getvalue(), "shell output")
 
                 sys.stdout = prev_sys_stdout
+                sys.stderr = prev_sys_stderr
 
         def toggle_shell_focus(w, size, key):
-            if self.lhs_col.get_focus() is self.shell_pile:
+            if self.lhs_col.get_focus() is self.shell_sigwrap:
                 self.lhs_col.set_focus(self.source_attr)
             else:
-                self.shell_pile.set_focus(self.shell_sigwrap)
-                self.lhs_col.set_focus(self.shell_pile)
+                self.shell_pile.set_focus(self.shell_edit_sigwrap)
+                self.lhs_col.set_focus(self.shell_sigwrap)
 
-        self.shell_sigwrap.listen("tab", shell_tab_complete)
-        self.shell_sigwrap.listen("ctrl n", shell_append_newline)
-        self.shell_sigwrap.listen("enter", shell_exec)
-        self.shell_sigwrap.listen("esc", toggle_shell_focus)
+        def max_shell(w, size, key):
+            self.lhs_col.item_types[-1] = "weight", 5
+            self.lhs_col._invalidate()
+
+        def min_shell(w, size, key):
+            self.lhs_col.item_types[-1] = "weight", 1/2
+            self.lhs_col._invalidate()
+
+        def grow_shell(w, size, key):
+            _, weight = self.lhs_col.item_types[-1]
+
+            if weight < 5:
+                weight *= 1.25
+                self.lhs_col.item_types[-1] = "weight", weight
+                self.lhs_col._invalidate()
+
+        def shrink_shell(w, size, key):
+            _, weight = self.lhs_col.item_types[-1]
+
+            if weight > 1/2:
+                weight /= 1.25
+                self.lhs_col.item_types[-1] = "weight", weight
+                self.lhs_col._invalidate()
+
+        self.shell_edit_sigwrap.listen("tab", shell_tab_complete)
+        self.shell_edit_sigwrap.listen("ctrl n", shell_append_newline)
+        self.shell_edit_sigwrap.listen("enter", shell_exec)
+        self.shell_edit_sigwrap.listen("esc", toggle_shell_focus)
+        self.shell_edit_sigwrap.listen("ctrl d", toggle_shell_focus)
+
         self.top.listen("ctrl x", toggle_shell_focus)
+
+        self.shell_sigwrap.listen("=", max_shell)
+        self.shell_sigwrap.listen("+", grow_shell)
+        self.shell_sigwrap.listen("_", min_shell)
+        self.shell_sigwrap.listen("-", shrink_shell)
+
+        # }}}
+
+        # {{{ sidebar sizing
+
+        def max_sidebar(w, size, key):
+            from pudb.settings import save_config
+
+            weight = 5
+            CONFIG["sidebar_width"] = weight
+            save_config(CONFIG)
+
+            self.columns.column_types[1] = "weight", weight
+            self.columns._invalidate()
+
+        def min_sidebar(w, size, key):
+            from pudb.settings import save_config
+
+            weight = 1/5
+            CONFIG["sidebar_width"] = weight
+            save_config(CONFIG)
+
+            self.columns.column_types[1] = "weight", weight
+            self.columns._invalidate()
+
+        def grow_sidebar(w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.columns.column_types[1]
+
+            if weight < 5:
+                weight *= 1.25
+                CONFIG["sidebar_width"] = weight
+                save_config(CONFIG)
+                self.columns.column_types[1] = "weight", weight
+                self.columns._invalidate()
+
+        def shrink_sidebar(w, size, key):
+            from pudb.settings import save_config
+
+            _, weight = self.columns.column_types[1]
+
+            if weight > 1/5:
+                weight /= 1.25
+                CONFIG["sidebar_width"] = weight
+                save_config(CONFIG)
+                self.columns.column_types[1] = "weight", weight
+                self.columns._invalidate()
+
+        self.rhs_col_sigwrap.listen("=", max_sidebar)
+        self.rhs_col_sigwrap.listen("+", grow_sidebar)
+        self.rhs_col_sigwrap.listen("_", min_sidebar)
+        self.rhs_col_sigwrap.listen("-", shrink_sidebar)
 
         # }}}
 
@@ -1434,52 +1530,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.idx = idx
 
             def __call__(subself, w, size, key):
-                self.columns.set_focus(self.rhs_col)
+                self.columns.set_focus(self.rhs_col_sigwrap)
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
-
-        def max_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            weight = 5
-            CONFIG["sidebar_width"] = weight
-            save_config(CONFIG)
-
-            self.columns.column_types[1] = "weight", weight
-            self.columns._invalidate()
-
-        def min_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            weight = 1/5
-            CONFIG["sidebar_width"] = weight
-            save_config(CONFIG)
-
-            self.columns.column_types[1] = "weight", weight
-            self.columns._invalidate()
-
-        def grow_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            _, weight = self.columns.column_types[1]
-
-            if weight < 5:
-                weight *= 1.25
-                CONFIG["sidebar_width"] = weight
-                save_config(CONFIG)
-                self.columns.column_types[1] = "weight", weight
-                self.columns._invalidate()
-
-        def shrink_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            _, weight = self.columns.column_types[1]
-
-            if weight > 1/5:
-                weight /= 1.25
-                CONFIG["sidebar_width"] = weight
-                save_config(CONFIG)
-                self.columns.column_types[1] = "weight", weight
-                self.columns._invalidate()
 
         def quit(w, size, key):
             self.debugger.set_quit()
@@ -1499,10 +1551,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("!", run_shell)
         self.top.listen("e", show_traceback)
 
-        self.top.listen("=", max_sidebar)
-        self.top.listen("+", grow_sidebar)
-        self.top.listen("_", min_sidebar)
-        self.top.listen("-", shrink_sidebar)
         self.top.listen("C", focus_code)
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
