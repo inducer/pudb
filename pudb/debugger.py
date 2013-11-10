@@ -76,11 +76,15 @@ Keys:
     Ctrl-l - redraw screen
 
 Shell-related:
-    ! - invoke python shell in current environment
+    ! - invoke configured python shell in current environment
     Ctrl-x - toggle inline shell focus
 
     +/- - grow/shrink inline shell (active in shell history)
     _/= - minimize/maximize inline shell (active in shell history)
+
+    Ctrl-v - insert newline
+    Ctrl-n/p - browse shell history
+    Tab - yes, there is (simple) tab completion
 
 Sidebar-related (active in sidebar):
     +/- - grow/shrink sidebar
@@ -580,6 +584,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_attr = urwid.AttrMap(self.source_sigwrap, "source")
         self.source_hscroll_start = 0
 
+        self.shell_history = []
+        self.shell_history_position = -1
+
         self.shell_contents = urwid.SimpleFocusListWalker([])
         self.shell_list = urwid.ListBox(self.shell_contents)
         self.shell_edit = urwid.Edit([
@@ -589,17 +596,27 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.shell_edit_sigwrap = SignalWrap(
                 shell_edit_attr, is_preemptive=True)
 
+        def clear_shell_history(btn):
+            del self.shell_contents[:]
+
+        self.shell_edit_bar = urwid.Columns([
+                self.shell_edit_sigwrap,
+                ("fixed", 10, AttrMap(
+                    urwid.Button("Clear", clear_shell_history),
+                    "button", "focused button"))
+                ])
+
         self.shell_pile = urwid.Pile([
             ("flow", urwid.Text("Shell: [Ctrl-X]")),
             ("weight", 1, urwid.AttrMap(self.shell_list, "shell output")),
-            ("flow", self.shell_edit_sigwrap),
+            ("flow", self.shell_edit_bar),
             ])
         self.shell_sigwrap = SignalWrap(
                 urwid.AttrMap(self.shell_pile, None, "focused sidebar")
                 )
 
         self.lhs_col = urwid.Pile([
-            ("weight", 8, self.source_attr),
+            ("weight", 5, self.source_attr),
             ("weight", 1, self.shell_sigwrap),
             ])
 
@@ -1333,6 +1350,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             add_shell_content(">>> " + cmd, "shell input")
 
+            if not self.shell_history or cmd != self.shell_history[-1]:
+                self.shell_history.append(cmd)
+
+            self.shell_history_position = -1
+
             prev_sys_stdout = sys.stdout
             prev_sys_stderr = sys.stderr
             from cStringIO import StringIO
@@ -1362,12 +1384,44 @@ class DebuggerUI(FrameVarInfoKeeper):
                 sys.stdout = prev_sys_stdout
                 sys.stderr = prev_sys_stderr
 
+        def shell_history_browse(direction):
+            if self.shell_history_position == -1:
+                self.shell_history_position = len(self.shell_history)
+
+            self.shell_history_position += direction
+
+            if 0 <= self.shell_history_position < len(self.shell_history):
+                self.shell_edit.edit_text = \
+                        self.shell_history[self.shell_history_position]
+            else:
+                self.shell_history_position = -1
+                self.shell_edit.edit_text = ""
+            self.shell_edit.edit_pos = len(self.shell_edit.edit_text)
+
+        def shell_history_prev(w, size, key):
+            shell_history_browse(-1)
+
+        def shell_history_next(w, size, key):
+            shell_history_browse(1)
+
         def toggle_shell_focus(w, size, key):
             if self.lhs_col.get_focus() is self.shell_sigwrap:
                 self.lhs_col.set_focus(self.source_attr)
             else:
-                self.shell_pile.set_focus(self.shell_edit_sigwrap)
+                self.shell_pile.set_focus(self.shell_edit_bar)
                 self.lhs_col.set_focus(self.shell_sigwrap)
+
+        self.shell_edit_sigwrap.listen("tab", shell_tab_complete)
+        self.shell_edit_sigwrap.listen("ctrl v", shell_append_newline)
+        self.shell_edit_sigwrap.listen("enter", shell_exec)
+        self.shell_edit_sigwrap.listen("ctrl n", shell_history_next)
+        self.shell_edit_sigwrap.listen("ctrl p", shell_history_prev)
+        self.shell_edit_sigwrap.listen("esc", toggle_shell_focus)
+        self.shell_edit_sigwrap.listen("ctrl d", toggle_shell_focus)
+
+        self.top.listen("ctrl x", toggle_shell_focus)
+
+        # {{{ shell sizing
 
         def max_shell(w, size, key):
             self.lhs_col.item_types[-1] = "weight", 5
@@ -1393,18 +1447,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.lhs_col.item_types[-1] = "weight", weight
                 self.lhs_col._invalidate()
 
-        self.shell_edit_sigwrap.listen("tab", shell_tab_complete)
-        self.shell_edit_sigwrap.listen("ctrl n", shell_append_newline)
-        self.shell_edit_sigwrap.listen("enter", shell_exec)
-        self.shell_edit_sigwrap.listen("esc", toggle_shell_focus)
-        self.shell_edit_sigwrap.listen("ctrl d", toggle_shell_focus)
-
-        self.top.listen("ctrl x", toggle_shell_focus)
-
         self.shell_sigwrap.listen("=", max_shell)
         self.shell_sigwrap.listen("+", grow_shell)
         self.shell_sigwrap.listen("_", min_shell)
         self.shell_sigwrap.listen("-", shrink_shell)
+
+        # }}}
 
         # }}}
 
@@ -1496,7 +1544,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             else:
                 self.message("No exception available.")
 
-        def run_shell(w, size, key):
+        def run_external_shell(w, size, key):
             self.screen.stop()
 
             if not hasattr(self, "have_been_to_shell"):
@@ -1521,6 +1569,12 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.screen.start()
 
             self.update_var_view()
+
+        def run_shell(w, size, key):
+            if CONFIG["shell"] == "internal":
+                return toggle_shell_focus(w, size, key)
+            else:
+                return run_external_shell(w, size, key)
 
         def focus_code(w, size, key):
             self.columns.set_focus(self.lhs_col)
