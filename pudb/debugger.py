@@ -1314,7 +1314,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def add_shell_content(s, attr):
             s = s.rstrip("\n")
 
-            from ui_tools import SelectableText
+            from pudb.ui_tools import SelectableText
             self.shell_contents.append(
                     urwid.AttrMap(SelectableText(s),
                         attr, "focused "+attr))
@@ -1357,7 +1357,12 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             prev_sys_stdout = sys.stdout
             prev_sys_stderr = sys.stderr
-            from cStringIO import StringIO
+
+            if PY3:
+                from io import StringIO
+            else:
+                from cStringIO import StringIO
+
             sys.stderr = sys.stdout = StringIO()
             try:
                 eval(compile(cmd, "<pudb shell>", 'single'),

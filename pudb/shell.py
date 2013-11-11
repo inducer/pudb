@@ -28,12 +28,7 @@ def setup_readline():
         readline.read_history_file(histfile)
         atexit.register(readline.write_history_file, histfile)
     except Exception:
-        # noqa http://docs.python.org/3/howto/pyporting.html#capturing-the-currently-raised-exception
-        import sys
-        e = sys.exc_info()[1]
-
-        from warnings import warn
-        warn("Error opening readline history file: %s" % e)
+        pass
 
     readline.parse_and_bind("tab: complete")
 
