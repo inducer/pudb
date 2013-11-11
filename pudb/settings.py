@@ -39,6 +39,7 @@ CONF_FILE_NAME = "pudb.cfg"
 SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
 BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
 
+
 def load_config():
     from os.path import join, isdir
 
@@ -55,7 +56,7 @@ def load_config():
     except:
         pass
 
-    conf_dict.setdefault("shell", "classic")
+    conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
     conf_dict.setdefault("line_numbers", False)
     conf_dict.setdefault("seen_welcome", "a")
@@ -73,6 +74,8 @@ def load_config():
     conf_dict.setdefault("custom_stringifier", "")
 
     conf_dict.setdefault("wrap_variables", True)
+
+    conf_dict.setdefault("display", "auto")
 
     def normalize_bool_inplace(name):
         try:
@@ -181,15 +184,21 @@ def edit_config(ui, conf_dict):
             bool(conf_dict["line_numbers"]), on_state_change=_update_config,
                 user_data=("line_numbers", None))
 
+    # {{{ shells
+
     shell_info = urwid.Text("This is the shell that will be "
             "used when you hit '!'.\n")
-    shells = ["classic", "ipython", "bpython"]
+    shells = ["internal", "classic", "ipython", "bpython"]
 
     shell_rb_group = []
     shell_rbs = [
             urwid.RadioButton(shell_rb_group, name,
                 conf_dict["shell"] == name)
             for name in shells]
+
+    # }}}
+
+    # {{{ themes
 
     from pudb.theme import THEMES
 
@@ -214,6 +223,10 @@ def edit_config(ui, conf_dict):
                     "this dialog."),
             ]
 
+    # }}}
+
+    # {{{ stack
+
     stack_rb_group = []
     stack_opts = ["top", "bottom"]
     stack_info = urwid.Text("Show the current stack frame at the\n")
@@ -224,6 +237,10 @@ def edit_config(ui, conf_dict):
                 user_data=("current_stack_frame", name))
             for name in stack_opts
             ]
+
+    # }}}
+
+    # {{{ stringifier
 
     stringifier_opts = ["type", "str", "repr"]
     known_stringifier = conf_dict["stringifier"] in stringifier_opts
@@ -257,6 +274,10 @@ def edit_config(ui, conf_dict):
                     "view will not be updated until you close this dialog."),
             ]
 
+    # }}}
+
+    # {{{ wrap variables
+
     cb_wrap_variables = urwid.CheckBox("Wrap variables",
             bool(conf_dict["wrap_variables"]), on_state_change=_update_config,
                 user_data=("wrap_variables", None))
@@ -265,27 +286,60 @@ def edit_config(ui, conf_dict):
                                      "a per-variable basis by selecting the "
                                      "variable and pressing 'w'.")
 
+    # }}}
+
+    # {{{ display
+
+    display_info = urwid.Text("What driver is used to talk to your terminal. "
+            "'raw' has the most features (colors and highlighting), "
+            "but is only correct for "
+            "XTerm and terminals like it. 'curses' "
+            "has fewer "
+            "features, but it will work with just about any terminal. 'auto' "
+            "will attempt to pick between the two based on availability and "
+            "the $TERM environment variable.\n\n"
+            "Changing this setting requires a restart of PuDB.")
+
+    displays = ["auto", "raw", "curses"]
+
+    display_rb_group = []
+    display_rbs = [
+            urwid.RadioButton(display_rb_group, name,
+                conf_dict["display"] == name)
+            for name in displays]
+
+    # }}}
+
     lb_contents = (
             [heading]
             + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
             + [cb_line_numbers]
+
             + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
             + [shell_info]
             + shell_rbs
+
             + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
             + theme_rbs
+
             + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
             + [stack_info]
             + stack_rbs
+
             + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
             + [stringifier_info]
             + stringifier_rbs
+
             + [urwid.AttrMap(urwid.Text("\nWrap Variables:\n"), "group head")]
             + [cb_wrap_variables]
             + [wrap_variables_info]
+
+            + [urwid.AttrMap(urwid.Text("\nDisplay driver:\n"), "group head")]
+            + [display_info]
+            + display_rbs
             )
 
-    lb = urwid.ListBox(lb_contents)
+    lb = urwid.ListBox(urwid.SimpleListWalker(lb_contents))
 
     if ui.dialog(lb,         [
             ("OK", True),
@@ -310,6 +364,10 @@ def edit_config(ui, conf_dict):
         for shell, shell_rb in zip(shells, shell_rbs):
             if shell_rb.get_state():
                 conf_dict["shell"] = shell
+
+        for display, display_rb in zip(displays, display_rbs):
+            if display_rb.get_state():
+                conf_dict["display"] = display
 
     else:  # The user chose cancel, revert changes
         conf_dict.update(old_conf_dict)

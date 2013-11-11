@@ -1,9 +1,8 @@
 import urwid
 
 
-
-
 # generic urwid helpers -------------------------------------------------------
+
 def make_canvas(txt, attr, maxcol, fill_attr=None):
     processed_txt = []
     processed_attr = []
@@ -36,8 +35,6 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
             maxcol=maxcol)
 
 
-
-
 def make_hotkey_markup(s):
     import re
     match = re.match(r"^([^_]*)_(.)(.*)$", s)
@@ -50,15 +47,10 @@ def make_hotkey_markup(s):
             ]
 
 
-
-
-
 def labelled_value(label, value):
     return urwid.AttrMap(urwid.Text([
         ("label", label), str(value)]),
         "fixed value", "fixed value")
-
-
 
 
 class SelectableText(urwid.Text):
@@ -69,19 +61,28 @@ class SelectableText(urwid.Text):
         return key
 
 
-
 class SignalWrap(urwid.WidgetWrap):
-    def __init__(self, w):
+    def __init__(self, w, is_preemptive=False):
         urwid.WidgetWrap.__init__(self, w)
         self.event_listeners = []
+        self.is_preemptive = is_preemptive
 
     def listen(self, mask, handler):
         self.event_listeners.append((mask, handler))
 
     def keypress(self, size, key):
-        result = self._w.keypress(size, key)
+        result = key
+
+        if self.is_preemptive:
+            for mask, handler in self.event_listeners:
+                if mask is None or mask == key:
+                    result = handler(self, size, key)
+                    break
 
         if result is not None:
+            result = self._w.keypress(size, key)
+
+        if result is not None and not self.is_preemptive:
             for mask, handler in self.event_listeners:
                 if mask is None or mask == key:
                     return handler(self, size, key)
@@ -89,9 +90,8 @@ class SignalWrap(urwid.WidgetWrap):
         return result
 
 
+# {{{ debugger-specific stuff
 
-
-# debugger-specific stuff -----------------------------------------------------
 class StackFrame(urwid.FlowWidget):
     def __init__(self, is_current, name, class_name, filename, line):
         self.is_current = is_current
@@ -135,6 +135,7 @@ class StackFrame(urwid.FlowWidget):
     def keypress(self, size, key):
         return key
 
+
 class BreakpointFrame(urwid.FlowWidget):
     def __init__(self, is_current, filename, line):
         self.is_current = is_current
@@ -170,8 +171,6 @@ class BreakpointFrame(urwid.FlowWidget):
         return key
 
 
-
-
 class SearchController(object):
     def __init__(self, ui):
         self.ui = ui
@@ -184,7 +183,6 @@ class SearchController(object):
         if self.highlight_line is not None:
             self.highlight_line.set_highlight(False)
             self.highlight_line = None
-
 
     def cancel_search(self):
         self.cancel_highlight()
@@ -207,7 +205,7 @@ class SearchController(object):
 
             lhs_col.item_types.insert(
                     0, ("flow", None))
-            lhs_col.widget_list.insert( 0, self.search_AttrMap)
+            lhs_col.widget_list.insert(0, self.search_AttrMap)
 
             self.ui.columns.set_focus(lhs_col)
             lhs_col.set_focus(self.search_AttrMap)
@@ -264,11 +262,9 @@ class SearchController(object):
         return False
 
 
-
-
 class SearchBox(urwid.Edit):
     def __init__(self, controller):
-        urwid.Edit.__init__(self, [("label", "Search: ") ], "")
+        urwid.Edit.__init__(self, [("label", "Search: ")], "")
         self.controller = controller
 
     def restart_search(self):
@@ -300,7 +296,9 @@ class SearchBox(urwid.Edit):
             if self.controller.perform_search(dir=1, s=txt):
                 self.controller.search_AttrMap.set_attr_map({None: "search box"})
             else:
-                self.controller.search_AttrMap.set_attr_map({None: "search not found"})
+                self.controller.search_AttrMap.set_attr_map(
+                        {None: "search not found"})
 
         return result
 
+# }}}
