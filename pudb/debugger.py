@@ -1525,7 +1525,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def reload_breakpoints(w, size, key):
             self.debugger.clear_all_breaks()
             from pudb.settings import load_breakpoints
-            for bpoint_descr in load_breakpoints(dbg):
+            for bpoint_descr in load_breakpoints():
                 dbg.set_break(*bpoint_descr)
             self.update_breakpoints()
 
