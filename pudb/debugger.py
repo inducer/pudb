@@ -1410,6 +1410,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             shell_history_browse(1)
 
         def toggle_shell_focus(w, size, key):
+            self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.shell_sigwrap:
                 self.lhs_col.set_focus(self.source_attr)
             else:
@@ -1583,6 +1584,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def focus_code(w, size, key):
             self.columns.set_focus(self.lhs_col)
+            self.lhs_col.set_focus(self.source_attr)
 
         class RHColumnFocuser:
             def __init__(self, idx):
