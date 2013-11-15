@@ -1355,6 +1355,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.cmdline_history_position = -1
 
+            prev_sys_stdin = sys.stdin
             prev_sys_stdout = sys.stdout
             prev_sys_stderr = sys.stderr
 
@@ -1363,6 +1364,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             else:
                 from cStringIO import StringIO
 
+            sys.stdin = None
             sys.stderr = sys.stdout = StringIO()
             try:
                 eval(compile(cmd, "<pudb command line>", 'single'),
@@ -1386,6 +1388,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 if sys.stdout.getvalue():
                     add_cmdline_content(sys.stdout.getvalue(), "command line output")
 
+                sys.stdin = prev_sys_stdin
                 sys.stdout = prev_sys_stdout
                 sys.stderr = prev_sys_stderr
 
