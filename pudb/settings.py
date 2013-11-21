@@ -460,9 +460,13 @@ def save_breakpoints(bp_list):
     """
 
     histfile = open(get_breakpoints_file_name(), 'w')
-    bp_list = set([(bp.file, bp.line) for bp in bp_list])
+    bp_list = set([(bp.file, bp.line, bp.cond) for bp in bp_list])
     for bp in bp_list:
-        histfile.write("b %s:%d\n" % (bp[0], bp[1]))
+        line = "b %s:%d" % (bp[0], bp[1])
+        if bp[2]:
+            line += ", %s" % bp[2]
+        line += "\n"
+        histfile.write(line)
     histfile.close()
 
 # }}}
