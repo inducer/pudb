@@ -172,6 +172,29 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "name": ("dark cyan", "default"),
             "line number": ("dark gray", "default"),
             "breakpoint marker": ("dark red", "default"),
+
+            # {{{ shell
+
+            "command line edit":
+            ("black", "default"),
+            "command line prompt":
+            (add_setting("black", "bold"), "default"),
+
+            "command line output":
+            (add_setting("black", "bold"), "default"),
+            "command line input":
+            ("black", "default"),
+            "command line error":
+            (add_setting("light red", "bold"), "default"),
+
+            "focused command line output":
+            ("black", "dark green"),
+            "focused command line input":
+            (add_setting("light cyan", "bold"), "dark green"),
+            "focused command line error":
+            ("black", "dark green"),
+
+            # }}}
             })
         # }}}
     elif theme == "dark vim":
@@ -293,6 +316,28 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             # }}}
 
+            # {{{ shell
+
+            "command line edit":
+            ("white", "black"),
+            "command line prompt":
+            (add_setting("yellow", "bold"), "black"),
+
+            "command line output":
+            (add_setting("yellow", "bold"), "black"),
+            "command line input":
+            ("white", "black"),
+            "command line error":
+            (add_setting("light red", "bold"), "black"),
+
+            "focused command line output":
+            ("black", "light blue"),
+            "focused command line input":
+            (add_setting("light cyan", "bold"), "light blue"),
+            "focused command line error":
+            ("black", "light blue"),
+
+            # }}}
             })
 
         # }}}
@@ -339,6 +384,31 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "comment": ("dark green", "default"),
             "classname": ("dark cyan", "default"),
             "funcname": ("white", "default"),
+
+            "breakpoint marker": ("dark red", "default"),
+
+            # {{{ shell
+
+            "command line edit":
+            ("black", "default"),
+            "command line prompt":
+            (add_setting("black", "bold"), "default"),
+
+            "command line output":
+            (add_setting("black", "bold"), "default"),
+            "command line input":
+            ("black", "default"),
+            "command line error":
+            (add_setting("light red", "bold"), "default"),
+
+            "focused command line output":
+            ("black", "dark green"),
+            "focused command line input":
+            (add_setting("light cyan", "bold"), "dark green"),
+            "focused command line error":
+            ("black", "dark green"),
+
+            # }}}
 
         })
 
