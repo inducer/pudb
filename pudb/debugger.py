@@ -1872,6 +1872,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
 
+                    "\nChanges in version 2013.6:\n\n"
+                    "- Fix loading of saved breakpoint conditions (Antoine Dechaume)\n"
+
                     "\nChanges in version 2013.5:\n\n"
                     "- Add command line window\n"
                     "- Uses curses display driver when appropriate\n"
