@@ -389,24 +389,16 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             # {{{ shell
 
-            "command line edit":
-            ("black", "default"),
-            "command line prompt":
-            (add_setting("black", "bold"), "default"),
+            "command line edit": ("white", "default"),
+            "command line prompt": (add_setting("white", "bold"), "default"),
 
-            "command line output":
-            (add_setting("black", "bold"), "default"),
-            "command line input":
-            ("black", "default"),
-            "command line error":
-            (add_setting("light red", "bold"), "default"),
+            "command line output": (add_setting("white", "bold"), "default"),
+            "command line input": (add_setting("white", "bold"), "default"),
+            "command line error": (add_setting("light red", "bold"), "default"),
 
-            "focused command line output":
-            ("black", "dark green"),
-            "focused command line input":
-            (add_setting("light cyan", "bold"), "dark green"),
-            "focused command line error":
-            ("black", "dark green"),
+            "focused command line output": ("black", "dark green"),
+            "focused command line input": (add_setting("white", "bold"), "dark green"),
+            "focused command line error": ("black", "dark green"),
 
             # }}}
 
