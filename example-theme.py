@@ -14,6 +14,9 @@
 #
 # "setting_name": (foreground_color, background_color),
 
+# See this URL to see what keys there are:
+# https://github.com/inducer/pudb/blob/master/pudb/theme.py
+
 palette.update({
     "source": (add_setting("black", "underline"), "dark green"),
     "comment": ("h250", "default")
