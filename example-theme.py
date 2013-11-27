@@ -4,7 +4,7 @@
 #   'default' (use the terminal's default foreground),
 #   'black', 'dark red', 'dark green', 'brown', 'dark blue',
 #   'dark magenta', 'dark cyan', 'light gray', 'dark gray',
-#   'light red', 'light green', 'yellow', 'light blue', 
+#   'light red', 'light green', 'yellow', 'light blue',
 #   'light magenta', 'light cyan', 'white'
 #
 # Supported 256 color values:
