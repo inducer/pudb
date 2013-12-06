@@ -53,6 +53,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         "focused command line input": (add_setting("light cyan", "bold"), "dark green"),
         "focused command line error": ("black", "dark green"),
 
+        "command line clear button": (add_setting("white", "bold"), "dark blue"),
+        "command line focused button": ("light cyan", "black"),
+
         # }}}
 
         # {{{ source
@@ -394,6 +397,10 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "focused command line output": ("black", "dark green"),
             "focused command line input": (add_setting("white", "bold"), "dark green"),
             "focused command line error": ("black", "dark green"),
+
+            "command line clear button": (add_setting("white", "bold"), "default"),
+            "command line focused button": ("black", "light gray"), # White
+            # doesn't work in curses mode
 
             # }}}
 
