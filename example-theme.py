@@ -14,8 +14,12 @@
 #
 # "setting_name": (foreground_color, background_color),
 
-# See this URL to see what keys there are:
-# https://github.com/inducer/pudb/blob/master/pudb/theme.py
+# See pudb/theme.py
+# (https://github.com/inducer/pudb/blob/master/pudb/theme.py) to see what keys
+# there are.
+
+# Note, be sure to test your theme in both curses and raw mode (see the bottom
+# of the preferences window). Curses mode will be used with screen or tmux.
 
 palette.update({
     "source": (add_setting("black", "underline"), "dark green"),
