@@ -1192,8 +1192,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     ext = ".py"
                     filename = base+".py"
 
-                self.set_source_code_provider(self.debugger,
-                        FileSourceCodeProvider(filename))
+                self.set_source_code_provider(
+                        FileSourceCodeProvider(self.debugger, filename))
                 self.source_list.set_focus(0)
 
             class FilterEdit(urwid.Edit):
@@ -1334,6 +1334,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             completed_chopped_text = \
                     Completer(cmdline_get_namespace()).complete(chopped_text, 0)
+            if completed_chopped_text is None:
+                completed_chopped_text = chopped_text
 
             self.cmdline_edit.edit_text = \
                     completed_chopped_text+remainder_text
