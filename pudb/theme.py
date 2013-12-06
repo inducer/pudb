@@ -360,6 +360,14 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current frame class": ("dark blue", "default"),
             "current frame location": ("light cyan", "default"),
 
+            "focused frame name": ("black", "dark green"),
+            "focused frame class": (add_setting("white", "bold"), "dark green"),
+            "focused frame location": ("dark blue", "dark green"),
+
+            "focused current frame name": ("black", "dark green"),
+            "focused current frame class": (add_setting("white", "bold"), "dark green"),
+            "focused current frame location": ("dark blue", "dark green"),
+
             "breakpoint": ("default", "default"),
 
             "search box": ("default", "default"),
