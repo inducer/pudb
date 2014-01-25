@@ -113,9 +113,15 @@ def run_ipython_shell_v11(locals, globals, first_time):
     else:
         banner = ""
 
-    from IPython.frontend.terminal.interactiveshell import \
-            TerminalInteractiveShell
-    from IPython.frontend.terminal.ipapp import load_default_config
+    try:
+        # IPython 1.0 got rid of the frontend intermediary, and complains with
+        # a deprecated warning when you use it.
+        from IPython.terminal.interactiveshell import TerminalInteractiveShell
+        from IPython.terminal.ipapp import load_default_config
+    except ImportError:
+        from IPython.frontend.terminal.interactiveshell import \
+                TerminalInteractiveShell
+        from IPython.frontend.terminal.ipapp import load_default_config
     # XXX: in the future it could be useful to load a 'pudb' config for the
     # user (if it exists) that could contain the user's macros and other
     # niceities.
