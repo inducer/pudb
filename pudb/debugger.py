@@ -1332,10 +1332,43 @@ class DebuggerUI(FrameVarInfoKeeper):
             chopped_text = text[:pos]
             remainder_text = text[pos:]
 
-            completed_chopped_text = \
-                    Completer(cmdline_get_namespace()).complete(chopped_text, 0)
+            state = 0
+            chopped_completions = []
+            completer = Completer(cmdline_get_namespace())
+            while True:
+                completion = completer.complete(chopped_text, state)
+
+                if not isinstance(completion, str):
+                    break
+
+                chopped_completions.append(completion)
+                state += 1
+
+            def common_prefix(a, b):
+                for i, (a_i, b_i) in enumerate(zip(a, b)):
+                    if a_i != b_i:
+                        return a[:i]
+
+                return a[:max(len(a), len(b))]
+
+            common_compl_prefix = None
+            for completion in chopped_completions:
+                if common_compl_prefix is None:
+                    common_compl_prefix = completion
+                else:
+                    common_compl_prefix = common_prefix(
+                            common_compl_prefix, completion)
+
+            completed_chopped_text = common_compl_prefix
+
             if completed_chopped_text is None:
-                completed_chopped_text = chopped_text
+                return
+
+            if len(completed_chopped_text) == pos and len(chopped_completions) > 1:
+                add_cmdline_content(
+                        "   ".join(chopped_completions),
+                        "command line output")
+                return
 
             self.cmdline_edit.edit_text = \
                     completed_chopped_text+remainder_text
@@ -1857,7 +1890,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e019"
+        WELCOME_LEVEL = "e020"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1874,8 +1907,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
 
-                    "\nChanges in version 2013.5.2:\n\n"
+                    "\nChanges in version 2014.1:\n\n"
                     "- Make prompt-on-quit optional (Mike Burr)\n"
+                    "- Make tab completion in the built-in shell saner\n"
 
                     "\nChanges in version 2013.5.1:\n\n"
                     "- Fix loading of saved breakpoint conditions "
