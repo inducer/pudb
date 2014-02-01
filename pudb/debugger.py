@@ -1329,8 +1329,22 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             text = self.cmdline_edit.edit_text
             pos = self.cmdline_edit.edit_pos
+
             chopped_text = text[:pos]
-            remainder_text = text[pos:]
+            suffix = text[pos:]
+
+            # stolen from readline in the Python interactive shell
+            delimiters = " \t\n`~!@#$%^&*()-=+[{]}\\|;:\'\",<>/?"
+
+            complete_start_index = max(
+                    chopped_text.rfind(delim_i)
+                    for delim_i in delimiters)
+
+            if complete_start_index == -1:
+                prefix = ""
+            else:
+                prefix = chopped_text[:complete_start_index+1]
+                chopped_text = chopped_text[complete_start_index+1:]
 
             state = 0
             chopped_completions = []
@@ -1364,15 +1378,17 @@ class DebuggerUI(FrameVarInfoKeeper):
             if completed_chopped_text is None:
                 return
 
-            if len(completed_chopped_text) == pos and len(chopped_completions) > 1:
+            if (
+                    len(completed_chopped_text) == len(chopped_text)
+                    and len(chopped_completions) > 1):
                 add_cmdline_content(
                         "   ".join(chopped_completions),
                         "command line output")
                 return
 
             self.cmdline_edit.edit_text = \
-                    completed_chopped_text+remainder_text
-            self.cmdline_edit.edit_pos = len(completed_chopped_text)
+                    prefix+completed_chopped_text+suffix
+            self.cmdline_edit.edit_pos = len(prefix) + len(completed_chopped_text)
 
         def cmdline_append_newline(w, size, key):
             self.cmdline_edit.insert_text("\n")
