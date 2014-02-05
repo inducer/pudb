@@ -803,6 +803,12 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.update_var_view()
 
+        def move_down(w, size, key):
+            w.keypress(size, "down")
+
+        def move_up(w, size, key):
+            w.keypress(size, "up")
+
         def insert_watch(w, size, key):
             watch_edit = urwid.Edit([
                 ("label", "Watch expression: ")
@@ -823,6 +829,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 fvi.watches.append(we)
                 self.update_var_view()
 
+        self.var_list.listen("j", move_down)
+        self.var_list.listen("k", move_up)
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
@@ -857,6 +865,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         def move_stack_down(w, size, key):
             self.debugger.move_down_frame()
 
+        self.stack_list.listen("j", move_down)
+        self.stack_list.listen("k", move_up)
         self.stack_list.listen("H", move_stack_top)
         self.stack_list.listen("u", move_stack_up)
         self.stack_list.listen("d", move_stack_down)
@@ -964,6 +974,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     self.update_breakpoints()
 
+        self.bp_list.listen("j", move_down)
+        self.bp_list.listen("k", move_up)
         self.bp_list.listen("enter", examine_breakpoint)
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
@@ -1067,11 +1079,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                 lineno = min(max(0, int(lineno_edit.value())-1), len(self.source)-1)
                 self.source.set_focus(lineno)
 
-        def move_down(w, size, key):
-            w.keypress(size, "down")
-
-        def move_up(w, size, key):
-            w.keypress(size, "up")
 
         def page_down(w, size, key):
             w.keypress(size, "page down")
