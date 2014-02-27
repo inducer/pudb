@@ -1939,6 +1939,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "\nChanges in version 2014.1:\n\n"
                     "- Make prompt-on-quit optional (Mike Burr)\n"
                     "- Make tab completion in the built-in shell saner\n"
+                    "- Fix handling of unicode source (reported by Morten Nielsen)\n"
 
                     "\nChanges in version 2013.5.1:\n\n"
                     "- Fix loading of saved breakpoint conditions "

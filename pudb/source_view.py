@@ -38,7 +38,10 @@ class SourceLine(urwid.FlowWidget):
 
         maxcol = size[0]
         hscroll = self.dbg_ui.source_hscroll_start
+
+        # attrs is a list of words like 'focused' and 'breakpoint'
         attrs = []
+
         if self.is_current:
             crnt = ">"
             attrs.append("current")
@@ -86,11 +89,28 @@ class SourceLine(urwid.FlowWidget):
             text = text[:maxcol]
             attr = rle_subseg(attr, 0, maxcol)
 
-        # shipout -------------------------------------------------------------
-        from urwid.util import apply_target_encoding
-        txt, cs = apply_target_encoding(text)
+        # shipout, encoding ---------------------------------------------------
+        cs = []
+        encoded_text_segs = []
+        encoded_attr = []
 
-        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol)
+        from urwid.util import apply_target_encoding
+
+        i = 0
+        for seg_attr, seg_len in attr:
+            unencoded_seg_text = text[i:i+seg_len]
+            encoded_seg_text, seg_cs = apply_target_encoding(unencoded_seg_text)
+
+            adjustment = len(encoded_seg_text) - len(unencoded_seg_text)
+
+            encoded_attr.append((seg_attr, seg_len + adjustment))
+            encoded_text_segs.append(encoded_seg_text)
+            cs.extend(seg_cs)
+
+            i += seg_len
+
+        return urwid.TextCanvas([
+            b"".join(encoded_text_segs)], [encoded_attr], [cs], maxcol=maxcol)
 
     def keypress(self, size, key):
         return key
