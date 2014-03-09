@@ -1919,7 +1919,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e020"
+        WELCOME_LEVEL = "e022"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1939,7 +1939,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "\nChanges in version 2014.1:\n\n"
                     "- Make prompt-on-quit optional (Mike Burr)\n"
                     "- Make tab completion in the built-in shell saner\n"
-                    "- Fix handling of unicode source (reported by Morten Nielsen)\n"
+                    "- Fix handling of unicode source\n  (reported by Morten Nielsen and Buck Golemon)\n"
 
                     "\nChanges in version 2013.5.1:\n\n"
                     "- Fix loading of saved breakpoint conditions "

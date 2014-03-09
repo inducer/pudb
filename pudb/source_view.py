@@ -60,57 +60,73 @@ class SourceLine(urwid.FlowWidget):
             if not self.has_breakpoint:
                 attrs.append("highlighted")
 
-        if render_line_nr:
-            line_nr_len = len(self.line_nr)
-        else:
-            line_nr_len = 0
-
         text = self.text
         if not attrs and self.attr is not None:
-            attr = self.attr
+            attr = self.attr + [("source", None)]
         else:
-            attr = [(" ".join(attrs+["source"]), hscroll+maxcol-2-line_nr_len)]
+            attr = [(" ".join(attrs+["source"]), None)]
 
-        from urwid.util import rle_subseg, rle_len
+        from urwid.util import apply_target_encoding, trim_text_attr_cs
 
-        if hscroll:
-            text = text[hscroll:]
-            attr = rle_subseg(attr, hscroll, rle_len(attr))
+        # build line prefix ---------------------------------------------------
+        line_prefix = ""
+        line_prefix_attr = []
 
         if render_line_nr:
-            attr = [("line number", len(self.line_nr))] + attr
-            text = self.line_nr + text
+            line_prefix_attr = [("line number", len(self.line_nr))]
+            line_prefix = self.line_nr
 
-        text = crnt+bp+text
-        attr = [("source", 1), ("breakpoint marker", 1)] + attr
+        line_prefix = crnt+bp+line_prefix
+        line_prefix_attr = [("source", 1), ("breakpoint marker", 1)] \
+                + line_prefix_attr
 
-        # clipping ------------------------------------------------------------
-        if len(text) > maxcol:
-            text = text[:maxcol]
-            attr = rle_subseg(attr, 0, maxcol)
+        # assume rendered width is same as len
+        line_prefix_len = len(line_prefix)
+
+        encoded_line_prefix, line_prefix_cs = apply_target_encoding(line_prefix)
+
+        assert len(encoded_line_prefix) == len(line_prefix)
+        # otherwise we'd have to adjust line_prefix_attr... :/
 
         # shipout, encoding ---------------------------------------------------
         cs = []
         encoded_text_segs = []
         encoded_attr = []
 
-        from urwid.util import apply_target_encoding
-
         i = 0
         for seg_attr, seg_len in attr:
-            unencoded_seg_text = text[i:i+seg_len]
-            encoded_seg_text, seg_cs = apply_target_encoding(unencoded_seg_text)
+            if seg_len is None:
+                # means: gobble up remainder of text and rest of line
+                # and fill with attribute
 
-            adjustment = len(encoded_seg_text) - len(unencoded_seg_text)
+                l = hscroll+maxcol
+                remaining_text = text[i:]
+                encoded_seg_text, seg_cs = apply_target_encoding(
+                        remaining_text + l*" ")
+                encoded_attr.append((seg_attr, len(remaining_text)+l))
+            else:
+                unencoded_seg_text = text[i:i+seg_len]
+                encoded_seg_text, seg_cs = apply_target_encoding(unencoded_seg_text)
 
-            encoded_attr.append((seg_attr, seg_len + adjustment))
+                adjustment = len(encoded_seg_text) - len(unencoded_seg_text)
+
+                encoded_attr.append((seg_attr, seg_len + adjustment))
+
+                i += seg_len
+
             encoded_text_segs.append(encoded_seg_text)
             cs.extend(seg_cs)
 
-            i += seg_len
+        encoded_text = b"".join(encoded_text_segs)
+        encoded_text, encoded_attr, cs = trim_text_attr_cs(
+                encoded_text, encoded_attr, cs,
+                hscroll, hscroll+maxcol-line_prefix_len)
 
-        return urwid.TextCanvas([
-            b"".join(encoded_text_segs)], [encoded_attr], [cs], maxcol=maxcol)
+        encoded_text = encoded_line_prefix + encoded_text
+        encoded_attr = line_prefix_attr + encoded_attr
+        cs = line_prefix_cs + cs
+
+        return urwid.TextCanvas([encoded_text], [encoded_attr], [cs], maxcol=maxcol)
 
     def keypress(self, size, key):
         return key
