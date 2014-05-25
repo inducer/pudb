@@ -506,7 +506,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
             return format_source(debugger_ui, decoded_lines, set(breakpoints))
         except:
             from pudb.lowlevel import format_exception
-            self.message("Could not load source file '%s':\n\n%s" % (
+            debugger_ui.message("Could not load source file '%s':\n\n%s" % (
                 self.file_name, "".join(format_exception(sys.exc_info()))),
                 title="Source Code Load Error")
             return [SourceLine(self,
