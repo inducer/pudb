@@ -94,6 +94,7 @@ Sidebar-related (active in sidebar):
 Keys in variables list:
     \ - expand/collapse
     t/r/s/c - show type/repr/str/custom for this variable
+    / - filter vars by name (comma as regex delimiter)
     h - toggle highlighting
     @ - toggle repetition at top
     * - toggle private members
@@ -567,6 +568,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         FrameVarInfoKeeper.__init__(self)
 
         self.debugger = dbg
+        self.filter = ""
+        self.filterUseRegex = False
 
         from urwid import AttrMap
 
@@ -824,6 +827,28 @@ class DebuggerUI(FrameVarInfoKeeper):
                 fvi.watches.append(we)
                 self.update_var_view()
 
+        def filter_vars(w, size, key):
+            filter_edit = urwid.Edit([("label", "Filter: ")], edit_text=self.filter)
+            useRegex_checkbox = urwid.CheckBox("use Regex", self.filterUseRegex)
+
+            if self.dialog(
+                    urwid.ListBox(
+                        urwid.SimpleListWalker([
+                            urwid.AttrMap(filter_edit, "value"),
+                            urwid.Text(""),
+                            useRegex_checkbox
+                        ])
+                    ),
+                    [
+                        ("OK", True),
+                        ("Cancel", False),
+                    ],
+                    title="Filter vars"):
+
+                self.filter = filter_edit.get_edit_text()
+                self.filterUseRegex = useRegex_checkbox.get_state()
+                self.update_var_view()
+
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
@@ -836,6 +861,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
+        self.var_list.listen("/", filter_vars)
 
         self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
         self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
@@ -2133,7 +2159,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         from pudb.var_view import make_var_view
         self.locals[:] = make_var_view(
                 self.get_frame_var_info(read_only=True),
-                locals, globals)
+                locals, globals, self.filter, self.filterUseRegex)
 
     def _get_bp_list(self):
         return [bp

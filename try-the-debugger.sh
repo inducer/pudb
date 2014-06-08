@@ -6,4 +6,4 @@ else
   PYINTERP="$1"
 fi
 
-$PYINTERP -m pudb.run debug_me.py
+$PYINTERP -m pudb debug_me.py
