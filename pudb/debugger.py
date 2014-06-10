@@ -144,7 +144,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
-    def __init__(self, steal_output=False):
+    def __init__(self, steal_output=False, input="/dev/stdin", output="/dev/stdout", error="/dev/stderr"):
         bdb.Bdb.__init__(self)
         self.ui = DebuggerUI(self)
         self.steal_output = steal_output
@@ -159,6 +159,10 @@ class Debugger(bdb.Bdb):
                 from cStringIO import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("")  # avoid spurious hangs
+
+        sys.stdin = open(input, "r")
+        sys.stdout = open(output, 'w')
+        sys.stderr = open(error, 'w')
 
         from pudb.settings import load_breakpoints
         for bpoint_descr in load_breakpoints():

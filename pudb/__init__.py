@@ -44,8 +44,8 @@ DEFAULT_SIGNAL = signal.SIGINT
 del signal
 
 
-def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
-    dbg = _get_debugger(steal_output=steal_output)
+def runscript(mainpyfile, args=None, pre_run="", steal_output=False, input="/dev/stdin", output="/dev/stdout", error="/dev/stderr"):
+    dbg = _get_debugger(steal_output=steal_output, input=input, output=output, error=error)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
