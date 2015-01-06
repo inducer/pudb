@@ -163,7 +163,7 @@ class Debugger(bdb.Bdb):
         for bpoint_descr in load_breakpoints():
             self.set_break(*bpoint_descr)
 
-    def set_trace(self, frame=None):
+    def set_trace(self, frame=None, as_breakpoint=True):
         """Start debugging from `frame`.
 
         If frame is not specified, debugging starts from caller's frame.
@@ -187,9 +187,10 @@ class Debugger(bdb.Bdb):
 
         thisframe_info = (self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
         if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
-            self.set_traces[thisframe_info] = True
-            if self.ui.source_code_provider is not None:
-                self.ui.set_source_code_provider(self.ui.source_code_provider, force_update=True)
+            if as_breakpoint:
+                self.set_traces[thisframe_info] = True
+                if self.ui.source_code_provider is not None:
+                    self.ui.set_source_code_provider(self.ui.source_code_provider, force_update=True)
 
             self.set_step()
             sys.settrace(self.trace_dispatch)
