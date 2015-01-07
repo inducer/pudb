@@ -505,7 +505,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         if self.file_name == "<string>":
             return [SourceLine(self, self.file_name)]
 
-        breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)
+        breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)[:]
         breakpoints += [i for f, i in debugger_ui.debugger.set_traces if f
             == self.file_name and debugger_ui.debugger.set_traces[f, i]]
         try:
