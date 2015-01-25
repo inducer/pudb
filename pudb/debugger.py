@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
+import re
 import urwid
 import bdb
 import sys
@@ -1482,6 +1483,17 @@ class DebuggerUI(FrameVarInfoKeeper):
         def cmdline_end_of_line(w, size, key):
             self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
 
+        def cmdline_del_word(w, size, key):
+            text = self.cmdline_edit.edit_text
+            matches = list(re.finditer(r'(\.|\s+)', text))
+            if not matches:
+              self.cmdline_edit.edit_text = ''
+              self.cmdline_edit.edit_pos = 0
+              return
+            pos = matches[-1].start()
+            self.cmdline_edit.edit_text = text[:pos]
+            self.cmdline_edit.edit_pos = pos
+
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
@@ -1499,6 +1511,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_edit_sigwrap.listen("ctrl d", toggle_cmdline_focus)
         self.cmdline_edit_sigwrap.listen("ctrl a", cmdline_start_of_line)
         self.cmdline_edit_sigwrap.listen("ctrl e", cmdline_end_of_line)
+        self.cmdline_edit_sigwrap.listen("ctrl w", cmdline_del_word)
 
         self.top.listen("ctrl x", toggle_cmdline_focus)
 
