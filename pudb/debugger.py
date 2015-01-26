@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
-import re
 import urwid
 import bdb
 import sys
@@ -1134,15 +1133,18 @@ class DebuggerUI(FrameVarInfoKeeper):
 
                     if invalid_reason is not None:
                         do_set = not self.dialog(
-                                urwid.ListBox(urwid.SimpleListWalker([
-                                    urwid.Text("The breakpoint you just set may be "
-                                        "invalid, for the following reason:\n\n"
-                                        + invalid_reason),
-                                    ])), [
-                                        ("Cancel", True),
-                                        ("Set Anyway", False),
-                                        ], title="Possibly Invalid Breakpoint",
-                                    focus_buttons=True)
+                                urwid.ListBox(
+                                    urwid.SimpleListWalker([
+                                        urwid.Text(
+                                            "The breakpoint you just set may be "
+                                            "invalid, for the following reason:\n\n"
+                                            + invalid_reason),
+                                        ])), [
+                                            ("Cancel", True),
+                                            ("Set Anyway", False),
+                                            ],
+                                title="Possibly Invalid Breakpoint",
+                                focus_buttons=True)
                     else:
                         do_set = True
 
@@ -1485,18 +1487,20 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def cmdline_del_word(w, size, key):
             pos = self.cmdline_edit.edit_pos
-            before, after = self.cmdline_edit.edit_text[:pos], self.cmdline_edit.edit_text[pos:]
+            before, after = (
+                    self.cmdline_edit.edit_text[:pos],
+                    self.cmdline_edit.edit_text[pos:])
             before = before[::-1]
             before = before.lstrip()
             i = 0
             while i < len(before):
-              if not before[i].isspace():
-                i += 1
-              else:
-                break
+                if not before[i].isspace():
+                    i += 1
+                else:
+                    break
+
             self.cmdline_edit.edit_text = before[i:][::-1] + after
             self.cmdline_edit.edit_post = len(before[i:])
-                
 
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
@@ -1944,7 +1948,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e022"
+        WELCOME_LEVEL = "e023"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1961,10 +1965,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
 
+                    "\nChanges in version 2015.1:\n\n"
+                    "- Add solarized theme (Rinat Shigapov)\n"
+                    "- More keyboard shortcuts in the command line"
+                    "(Alexander Corwin)\n"
+
                     "\nChanges in version 2014.1:\n\n"
                     "- Make prompt-on-quit optional (Mike Burr)\n"
                     "- Make tab completion in the built-in shell saner\n"
-                    "- Fix handling of unicode source\n  (reported by Morten Nielsen and Buck Golemon)\n"
+                    "- Fix handling of unicode source\n"
+                    "  (reported by Morten Nielsen and Buck Golemon)\n"
 
                     "\nChanges in version 2013.5.1:\n\n"
                     "- Fix loading of saved breakpoint conditions "
