@@ -394,7 +394,11 @@ want_curses_display = (
         or (
             CONFIG["display"] == "auto"
             and
-            not os.environ.get("TERM", "").startswith("xterm")))
+            not (
+                os.environ.get("TERM", "").startswith("xterm")
+                or
+                os.environ.get("TERM", "").startswith("rxvt")
+            )))
 
 from urwid.raw_display import Screen as RawScreen
 if want_curses_display:
