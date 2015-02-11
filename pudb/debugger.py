@@ -1506,6 +1506,11 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.cmdline_edit.edit_text = before[i:][::-1] + after
             self.cmdline_edit.edit_post = len(before[i:])
 
+        def cmdline_del_to_start_of_line(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            self.cmdline_edit.edit_text = self.cmdline_edit.edit_text[pos:]
+            self.cmdline_edit.edit_pos = 0
+
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
@@ -1524,6 +1529,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_edit_sigwrap.listen("ctrl a", cmdline_start_of_line)
         self.cmdline_edit_sigwrap.listen("ctrl e", cmdline_end_of_line)
         self.cmdline_edit_sigwrap.listen("ctrl w", cmdline_del_word)
+        self.cmdline_edit_sigwrap.listen("ctrl u", cmdline_del_to_start_of_line)
 
         self.top.listen("ctrl x", toggle_cmdline_focus)
 
