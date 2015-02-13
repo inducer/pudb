@@ -673,6 +673,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             urwid.AttrMap(self.columns, "background"),
             header))
 
+        self._toggle_sidebar(CONFIG["sidebar_visible"])
+
         # }}}
 
         def change_rhs_box(name, index, direction, w, size, key):
@@ -1614,6 +1616,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.columns.column_types[1] = "weight", weight
                 self.columns._invalidate()
 
+        def toggle_sidebar(w, size, key):
+            from pudb.settings import save_config
+
+            CONFIG["sidebar_visible"] = not CONFIG["sidebar_visible"]
+            save_config(CONFIG)
+
+            self._toggle_sidebar(CONFIG["sidebar_visible"])
+
         self.rhs_col_sigwrap.listen("=", max_sidebar)
         self.rhs_col_sigwrap.listen("+", grow_sidebar)
         self.rhs_col_sigwrap.listen("_", min_sidebar)
@@ -1722,6 +1732,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
+        self.top.listen("ctrl ^", toggle_sidebar)
 
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
@@ -1859,6 +1870,13 @@ class DebuggerUI(FrameVarInfoKeeper):
         w = Attr(w, "background")
 
         return self.event_loop(w)[0]
+
+    def _toggle_sidebar(self, visible):
+        if visible:
+            self.columns.column_types[1] = "weight", float(CONFIG["sidebar_width"])
+        else:
+            self.columns.column_types[1] = "given", 0
+        self.columns._invalidate()
 
     @staticmethod
     def setup_palette(screen):
