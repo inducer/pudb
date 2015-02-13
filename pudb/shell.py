@@ -12,6 +12,13 @@ except ImportError:
 else:
     HAVE_BPYTHON = True
 
+try:
+    from prompt_toolkit.contrib.repl import embed as ptpython_embed
+except ImportError:
+    HAVE_PTPYTHON = False
+else:
+    HAVE_PTPYTHON = True
+
 
 # {{{ readline wrangling
 
@@ -139,6 +146,14 @@ def run_ipython_shell_v11(locals, globals, first_time):
     shell.mainloop(banner)
     # Restore originating namespace
     _update_ns(shell, old_locals, old_globals)
+
+
+def run_ptpython_shell(locals, globals, first_time):
+    ## Use the default ptpython history:
+    import os
+    history_filename = os.path.expanduser('~/.ptpython_history')
+    ptpython_embed(globals.copy(), locals.copy(),
+                   history_filename=history_filename)
 
 
 def _update_ns(shell, locals, globals):
