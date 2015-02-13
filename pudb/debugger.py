@@ -1960,7 +1960,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e023"
+        WELCOME_LEVEL = "e024"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1976,6 +1976,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2015.2:\n\n"
+                    "- ptpython support (P. Varet)\n"
+                    "- Improved rxvt support (Louper Rouch)\n"
+                    "- More keyboard shortcuts in the command line"
+                    "(Alex Sheluchin)\n"
 
                     "\nChanges in version 2015.1:\n\n"
                     "- Add solarized theme (Rinat Shigapov)\n"
