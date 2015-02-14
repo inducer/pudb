@@ -90,6 +90,7 @@ Sidebar-related (active in sidebar):
     +/- - grow/shrink sidebar
     _/= - minimize/maximize sidebar
     [/] - grow/shrink relative size of active sidebar box
+    Ctrl-^ - toggle sidebar display
 
 Keys in variables list:
     \ - expand/collapse
