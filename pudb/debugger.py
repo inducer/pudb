@@ -1623,6 +1623,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             CONFIG["sidebar_visible"] = not CONFIG["sidebar_visible"]
             save_config(CONFIG)
 
+            if not CONFIG["sidebar_visible"]:
+                self.columns.set_focus(self.lhs_col)
+
             self._toggle_sidebar(CONFIG["sidebar_visible"])
 
         self.rhs_col_sigwrap.listen("=", max_sidebar)
@@ -1708,8 +1711,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.idx = idx
 
             def __call__(subself, w, size, key):
-                self.columns.set_focus(self.rhs_col_sigwrap)
-                self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
+                if CONFIG["sidebar_visible"]:
+                    self.columns.set_focus(self.rhs_col_sigwrap)
+                    self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
         def quit(w, size, key):
             self.debugger.set_quit()
@@ -1874,8 +1878,10 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     def _toggle_sidebar(self, visible):
         if visible:
+            self.columns.dividechars = 1
             self.columns.column_types[1] = "weight", float(CONFIG["sidebar_width"])
         else:
+            self.columns.dividechars = 0
             self.columns.column_types[1] = "given", 0
         self.columns._invalidate()
 
