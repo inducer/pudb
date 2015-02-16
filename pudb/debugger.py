@@ -1711,9 +1711,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.idx = idx
 
             def __call__(subself, w, size, key):
-                if CONFIG["sidebar_visible"]:
-                    self.columns.set_focus(self.rhs_col_sigwrap)
-                    self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
+                from pudb.settings import save_config
+
+                # ensure sidebar is visible when focussing rh columns
+                if not CONFIG["sidebar_visible"]:
+                    CONFIG["sidebar_visible"] = True
+                    save_config(CONFIG)
+                    self._toggle_sidebar(CONFIG["sidebar_visible"])
+
+                self.columns.set_focus(self.rhs_col_sigwrap)
+                self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
         def quit(w, size, key):
             self.debugger.set_quit()
