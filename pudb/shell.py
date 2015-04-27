@@ -1,6 +1,6 @@
 try:
     import IPython
-except ImportError:
+except (ImportError, ValueError):
     HAVE_IPYTHON = False
 else:
     HAVE_IPYTHON = True
