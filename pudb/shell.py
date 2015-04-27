@@ -1,6 +1,9 @@
 try:
     import IPython
 except (ImportError, ValueError):
+    # Old IPythons versions (0.12?) may fail to import with
+    # ValueError: fallback required, but not specified
+    # https://github.com/inducer/pudb/pull/135
     HAVE_IPYTHON = False
 else:
     HAVE_IPYTHON = True
