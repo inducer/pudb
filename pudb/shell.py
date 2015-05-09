@@ -1,6 +1,9 @@
 try:
     import IPython
-except ImportError:
+except (ImportError, ValueError):
+    # Old IPythons versions (0.12?) may fail to import with
+    # ValueError: fallback required, but not specified
+    # https://github.com/inducer/pudb/pull/135
     HAVE_IPYTHON = False
 else:
     HAVE_IPYTHON = True
@@ -11,6 +14,13 @@ except ImportError:
     HAVE_BPYTHON = False
 else:
     HAVE_BPYTHON = True
+
+try:
+    from prompt_toolkit.contrib.repl import embed as ptpython_embed
+except ImportError:
+    HAVE_PTPYTHON = False
+else:
+    HAVE_PTPYTHON = True
 
 
 # {{{ readline wrangling
@@ -28,12 +38,7 @@ def setup_readline():
         readline.read_history_file(histfile)
         atexit.register(readline.write_history_file, histfile)
     except Exception:
-        # noqa http://docs.python.org/3/howto/pyporting.html#capturing-the-currently-raised-exception
-        import sys
-        e = sys.exc_info()[1]
-
-        from warnings import warn
-        warn("Error opening readline history file: %s" % e)
+        pass
 
     readline.parse_and_bind("tab: complete")
 
@@ -118,9 +123,15 @@ def run_ipython_shell_v11(locals, globals, first_time):
     else:
         banner = ""
 
-    from IPython.frontend.terminal.interactiveshell import \
-            TerminalInteractiveShell
-    from IPython.frontend.terminal.ipapp import load_default_config
+    try:
+        # IPython 1.0 got rid of the frontend intermediary, and complains with
+        # a deprecated warning when you use it.
+        from IPython.terminal.interactiveshell import TerminalInteractiveShell
+        from IPython.terminal.ipapp import load_default_config
+    except ImportError:
+        from IPython.frontend.terminal.interactiveshell import \
+                TerminalInteractiveShell
+        from IPython.frontend.terminal.ipapp import load_default_config
     # XXX: in the future it could be useful to load a 'pudb' config for the
     # user (if it exists) that could contain the user's macros and other
     # niceities.
@@ -138,6 +149,14 @@ def run_ipython_shell_v11(locals, globals, first_time):
     shell.mainloop(banner)
     # Restore originating namespace
     _update_ns(shell, old_locals, old_globals)
+
+
+def run_ptpython_shell(locals, globals, first_time):
+    ## Use the default ptpython history:
+    import os
+    history_filename = os.path.expanduser('~/.ptpython_history')
+    ptpython_embed(globals.copy(), locals.copy(),
+                   history_filename=history_filename)
 
 
 def _update_ns(shell, locals, globals):

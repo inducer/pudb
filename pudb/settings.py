@@ -77,6 +77,8 @@ def load_config():
 
     conf_dict.setdefault("display", "auto")
 
+    conf_dict.setdefault("prompt_on_quit", True)
+
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
@@ -88,6 +90,7 @@ def load_config():
 
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
+    normalize_bool_inplace("prompt_on_quit")
 
     return conf_dict
 
@@ -125,6 +128,9 @@ def edit_config(ui, conf_dict):
         for sl in ui.source:
                 sl._invalidate()
 
+    def _update_prompt_on_quit():
+        pass
+
     def _update_current_stack_frame():
         ui.update_stack()
 
@@ -155,6 +161,11 @@ def edit_config(ui, conf_dict):
             conf_dict.update(new_conf_dict)
             _update_line_numbers()
 
+        elif option == "prompt_on_quit":
+            new_conf_dict["prompt_on_quit"] = not check_box.get_state()
+            conf_dict.update(new_conf_dict)
+            _update_prompt_on_quit()
+
         elif option == "current_stack_frame":
             # only activate if the new state of the radio button is 'on'
             if new_state:
@@ -184,11 +195,15 @@ def edit_config(ui, conf_dict):
             bool(conf_dict["line_numbers"]), on_state_change=_update_config,
                 user_data=("line_numbers", None))
 
+    cb_prompt_on_quit = urwid.CheckBox("Prompt before quitting",
+            bool(conf_dict["prompt_on_quit"]), on_state_change=_update_config,
+                user_data=("prompt_on_quit", None))
+
     # {{{ shells
 
     shell_info = urwid.Text("This is the shell that will be "
             "used when you hit '!'.\n")
-    shells = ["internal", "classic", "ipython", "bpython"]
+    shells = ["internal", "classic", "ipython", "bpython", "ptpython"]
 
     shell_rb_group = []
     shell_rbs = [
@@ -314,6 +329,9 @@ def edit_config(ui, conf_dict):
             [heading]
             + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
             + [cb_line_numbers]
+
+            + [urwid.AttrMap(urwid.Text("\nPrompt on quit:\n"), "group head")]
+            + [cb_prompt_on_quit]
 
             + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
             + [shell_info]
@@ -460,9 +478,13 @@ def save_breakpoints(bp_list):
     """
 
     histfile = open(get_breakpoints_file_name(), 'w')
-    bp_list = set([(bp.file, bp.line) for bp in bp_list])
+    bp_list = set([(bp.file, bp.line, bp.cond) for bp in bp_list])
     for bp in bp_list:
-        histfile.write("b %s:%d\n" % (bp[0], bp[1]))
+        line = "b %s:%d" % (bp[0], bp[1])
+        if bp[2]:
+            line += ", %s" % bp[2]
+        line += "\n"
+        histfile.write(line)
     histfile.close()
 
 # }}}

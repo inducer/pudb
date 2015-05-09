@@ -75,15 +75,15 @@ Keys:
 
     Ctrl-l - redraw screen
 
-Shell-related:
-    ! - invoke configured python shell in current environment
-    Ctrl-x - toggle inline shell focus
+Command line-related:
+    ! - invoke configured python command line in current environment
+    Ctrl-x - toggle inline command line focus
 
-    +/- - grow/shrink inline shell (active in shell history)
-    _/= - minimize/maximize inline shell (active in shell history)
+    +/- - grow/shrink inline command line (active in command line history)
+    _/= - minimize/maximize inline command line (active in command line history)
 
     Ctrl-v - insert newline
-    Ctrl-n/p - browse shell history
+    Ctrl-n/p - browse command line history
     Tab - yes, there is (simple) tab completion
 
 Sidebar-related (active in sidebar):
@@ -109,6 +109,7 @@ Keys in breakpoints view:
 
     enter - edit breakpoint
     d - delete breakpoint
+    e - enable/disable breakpoint
 
 License:
 --------
@@ -439,7 +440,11 @@ want_curses_display = (
         or (
             CONFIG["display"] == "auto"
             and
-            not os.environ.get("TERM", "").startswith("xterm")))
+            not (
+                os.environ.get("TERM", "").startswith("xterm")
+                or
+                os.environ.get("TERM", "").startswith("rxvt")
+            )))
 
 from urwid.raw_display import Screen as RawScreen
 if want_curses_display:
@@ -553,7 +558,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
             return format_source(debugger_ui, decoded_lines, set(breakpoints))
         except:
             from pudb.lowlevel import format_exception
-            self.message("Could not load source file '%s':\n\n%s" % (
+            debugger_ui.message("Could not load source file '%s':\n\n%s" % (
                 self.file_name, "".join(format_exception(sys.exc_info()))),
                 title="Source Code Load Error")
             return [SourceLine(self,
@@ -632,40 +637,40 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_attr = urwid.AttrMap(self.source_sigwrap, "source")
         self.source_hscroll_start = 0
 
-        self.shell_history = []
-        self.shell_history_position = -1
+        self.cmdline_history = []
+        self.cmdline_history_position = -1
 
-        self.shell_contents = urwid.SimpleFocusListWalker([])
-        self.shell_list = urwid.ListBox(self.shell_contents)
-        self.shell_edit = urwid.Edit([
-            ("shell prompt", ">>> ")
+        self.cmdline_contents = urwid.SimpleFocusListWalker([])
+        self.cmdline_list = urwid.ListBox(self.cmdline_contents)
+        self.cmdline_edit = urwid.Edit([
+            ("command line prompt", ">>> ")
             ])
-        shell_edit_attr = urwid.AttrMap(self.shell_edit, "shell edit")
-        self.shell_edit_sigwrap = SignalWrap(
-                shell_edit_attr, is_preemptive=True)
+        cmdline_edit_attr = urwid.AttrMap(self.cmdline_edit, "command line edit")
+        self.cmdline_edit_sigwrap = SignalWrap(
+                cmdline_edit_attr, is_preemptive=True)
 
-        def clear_shell_history(btn):
-            del self.shell_contents[:]
+        def clear_cmdline_history(btn):
+            del self.cmdline_contents[:]
 
-        self.shell_edit_bar = urwid.Columns([
-                self.shell_edit_sigwrap,
+        self.cmdline_edit_bar = urwid.Columns([
+                self.cmdline_edit_sigwrap,
                 ("fixed", 10, AttrMap(
-                    urwid.Button("Clear", clear_shell_history),
-                    "button", "focused button"))
+                    urwid.Button("Clear", clear_cmdline_history),
+                    "command line clear button", "command line focused button"))
                 ])
 
-        self.shell_pile = urwid.Pile([
-            ("flow", urwid.Text("Shell: [Ctrl-X]")),
-            ("weight", 1, urwid.AttrMap(self.shell_list, "shell output")),
-            ("flow", self.shell_edit_bar),
+        self.cmdline_pile = urwid.Pile([
+            ("flow", urwid.Text("Command line: [Ctrl-X]")),
+            ("weight", 1, urwid.AttrMap(self.cmdline_list, "command line output")),
+            ("flow", self.cmdline_edit_bar),
             ])
-        self.shell_sigwrap = SignalWrap(
-                urwid.AttrMap(self.shell_pile, None, "focused sidebar")
+        self.cmdline_sigwrap = SignalWrap(
+                urwid.AttrMap(self.cmdline_pile, None, "focused sidebar")
                 )
 
         self.lhs_col = urwid.Pile([
             ("weight", 5, self.source_attr),
-            ("weight", 1, self.shell_sigwrap),
+            ("weight", 1, self.cmdline_sigwrap),
             ])
 
         # }}}
@@ -941,6 +946,17 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     self.update_breakpoints()
 
+        def enable_disable_breakpoint(w, size, key):
+            bp_entry, pos = self.bp_list._w.get_focus()
+
+            if bp_entry is None:
+                return
+
+            bp = self._get_bp_list()[pos]
+            bp.enabled = not bp.enabled
+
+            self.update_breakpoints()
+
         def examine_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
 
@@ -1015,6 +1031,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("enter", examine_breakpoint)
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
+        self.bp_list.listen("e", enable_disable_breakpoint)
 
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
@@ -1174,15 +1191,18 @@ class DebuggerUI(FrameVarInfoKeeper):
 
                     if invalid_reason is not None:
                         do_set = not self.dialog(
-                                urwid.ListBox(urwid.SimpleListWalker([
-                                    urwid.Text("The breakpoint you just set may be "
-                                        "invalid, for the following reason:\n\n"
-                                        + invalid_reason),
-                                    ])), [
-                                        ("Cancel", True),
-                                        ("Set Anyway", False),
-                                        ], title="Possibly Invalid Breakpoint",
-                                    focus_buttons=True)
+                                urwid.ListBox(
+                                    urwid.SimpleListWalker([
+                                        urwid.Text(
+                                            "The breakpoint you just set may be "
+                                            "invalid, for the following reason:\n\n"
+                                            + invalid_reason),
+                                        ])), [
+                                            ("Cancel", True),
+                                            ("Set Anyway", False),
+                                            ],
+                                title="Possibly Invalid Breakpoint",
+                                focus_buttons=True)
                     else:
                         do_set = True
 
@@ -1246,8 +1266,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     ext = ".py"
                     filename = base+".py"
 
-                self.set_source_code_provider(self.debugger,
-                        FileSourceCodeProvider(filename))
+                self.set_source_code_provider(
+                        FileSourceCodeProvider(self.debugger, filename))
                 self.source_list.set_focus(0)
 
             class FilterEdit(urwid.Edit):
@@ -1355,9 +1375,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # }}}
 
-        # {{{ shell listeners
+        # {{{ command line listeners
 
-        def shell_get_namespace():
+        def cmdline_get_namespace():
             curframe = self.debugger.curframe
 
             from pudb.shell import SetPropagatingDict
@@ -1365,57 +1385,115 @@ class DebuggerUI(FrameVarInfoKeeper):
                     [curframe.f_locals, curframe.f_globals],
                     curframe.f_locals)
 
-        def add_shell_content(s, attr):
+        def add_cmdline_content(s, attr):
             s = s.rstrip("\n")
 
-            from ui_tools import SelectableText
-            self.shell_contents.append(
+            from pudb.ui_tools import SelectableText
+            self.cmdline_contents.append(
                     urwid.AttrMap(SelectableText(s),
                         attr, "focused "+attr))
 
             # scroll to end of last entry
-            self.shell_list.set_focus_valign("bottom")
-            self.shell_list.set_focus(len(self.shell_contents) - 1,
+            self.cmdline_list.set_focus_valign("bottom")
+            self.cmdline_list.set_focus(len(self.cmdline_contents) - 1,
                     coming_from="above")
 
-        def shell_tab_complete(w, size, key):
+        def cmdline_tab_complete(w, size, key):
             from rlcompleter import Completer
 
-            text = self.shell_edit.edit_text
-            pos = self.shell_edit.edit_pos
+            text = self.cmdline_edit.edit_text
+            pos = self.cmdline_edit.edit_pos
+
             chopped_text = text[:pos]
-            remainder_text = text[pos:]
+            suffix = text[pos:]
 
-            completed_chopped_text = \
-                    Completer(shell_get_namespace()).complete(chopped_text, 0)
+            # stolen from readline in the Python interactive shell
+            delimiters = " \t\n`~!@#$%^&*()-=+[{]}\\|;:\'\",<>/?"
 
-            self.shell_edit.edit_text = \
-                    completed_chopped_text+remainder_text
-            self.shell_edit.edit_pos = len(completed_chopped_text)
+            complete_start_index = max(
+                    chopped_text.rfind(delim_i)
+                    for delim_i in delimiters)
 
-        def shell_append_newline(w, size, key):
-            self.shell_edit.insert_text("\n")
+            if complete_start_index == -1:
+                prefix = ""
+            else:
+                prefix = chopped_text[:complete_start_index+1]
+                chopped_text = chopped_text[complete_start_index+1:]
 
-        def shell_exec(w, size, key):
-            cmd = self.shell_edit.get_edit_text()
+            state = 0
+            chopped_completions = []
+            completer = Completer(cmdline_get_namespace())
+            while True:
+                completion = completer.complete(chopped_text, state)
+
+                if not isinstance(completion, str):
+                    break
+
+                chopped_completions.append(completion)
+                state += 1
+
+            def common_prefix(a, b):
+                for i, (a_i, b_i) in enumerate(zip(a, b)):
+                    if a_i != b_i:
+                        return a[:i]
+
+                return a[:max(len(a), len(b))]
+
+            common_compl_prefix = None
+            for completion in chopped_completions:
+                if common_compl_prefix is None:
+                    common_compl_prefix = completion
+                else:
+                    common_compl_prefix = common_prefix(
+                            common_compl_prefix, completion)
+
+            completed_chopped_text = common_compl_prefix
+
+            if completed_chopped_text is None:
+                return
+
+            if (
+                    len(completed_chopped_text) == len(chopped_text)
+                    and len(chopped_completions) > 1):
+                add_cmdline_content(
+                        "   ".join(chopped_completions),
+                        "command line output")
+                return
+
+            self.cmdline_edit.edit_text = \
+                    prefix+completed_chopped_text+suffix
+            self.cmdline_edit.edit_pos = len(prefix) + len(completed_chopped_text)
+
+        def cmdline_append_newline(w, size, key):
+            self.cmdline_edit.insert_text("\n")
+
+        def cmdline_exec(w, size, key):
+            cmd = self.cmdline_edit.get_edit_text()
             if not cmd:
                 # blank command -> refuse service
                 return
 
-            add_shell_content(">>> " + cmd, "shell input")
+            add_cmdline_content(">>> " + cmd, "command line input")
 
-            if not self.shell_history or cmd != self.shell_history[-1]:
-                self.shell_history.append(cmd)
+            if not self.cmdline_history or cmd != self.cmdline_history[-1]:
+                self.cmdline_history.append(cmd)
 
-            self.shell_history_position = -1
+            self.cmdline_history_position = -1
 
+            prev_sys_stdin = sys.stdin
             prev_sys_stdout = sys.stdout
             prev_sys_stderr = sys.stderr
-            from cStringIO import StringIO
+
+            if PY3:
+                from io import StringIO
+            else:
+                from cStringIO import StringIO
+
+            sys.stdin = None
             sys.stderr = sys.stdout = StringIO()
             try:
-                eval(compile(cmd, "<pudb shell>", 'single'),
-                        shell_get_namespace())
+                eval(compile(cmd, "<pudb command line>", 'single'),
+                        cmdline_get_namespace())
             except:
                 tp, val, tb = sys.exc_info()
 
@@ -1428,64 +1506,98 @@ class DebuggerUI(FrameVarInfoKeeper):
                     tb_lines.insert(0, "Traceback (most recent call last):\n")
                 tb_lines[len(tb_lines):] = traceback.format_exception_only(tp, val)
 
-                add_shell_content("".join(tb_lines), "shell error")
+                add_cmdline_content("".join(tb_lines), "command line error")
             else:
-                self.shell_edit.set_edit_text("")
+                self.cmdline_edit.set_edit_text("")
             finally:
                 if sys.stdout.getvalue():
-                    add_shell_content(sys.stdout.getvalue(), "shell output")
+                    add_cmdline_content(sys.stdout.getvalue(), "command line output")
 
+                sys.stdin = prev_sys_stdin
                 sys.stdout = prev_sys_stdout
                 sys.stderr = prev_sys_stderr
 
-        def shell_history_browse(direction):
-            if self.shell_history_position == -1:
-                self.shell_history_position = len(self.shell_history)
+        def cmdline_history_browse(direction):
+            if self.cmdline_history_position == -1:
+                self.cmdline_history_position = len(self.cmdline_history)
 
-            self.shell_history_position += direction
+            self.cmdline_history_position += direction
 
-            if 0 <= self.shell_history_position < len(self.shell_history):
-                self.shell_edit.edit_text = \
-                        self.shell_history[self.shell_history_position]
+            if 0 <= self.cmdline_history_position < len(self.cmdline_history):
+                self.cmdline_edit.edit_text = \
+                        self.cmdline_history[self.cmdline_history_position]
             else:
-                self.shell_history_position = -1
-                self.shell_edit.edit_text = ""
-            self.shell_edit.edit_pos = len(self.shell_edit.edit_text)
+                self.cmdline_history_position = -1
+                self.cmdline_edit.edit_text = ""
+            self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
 
-        def shell_history_prev(w, size, key):
-            shell_history_browse(-1)
+        def cmdline_history_prev(w, size, key):
+            cmdline_history_browse(-1)
 
-        def shell_history_next(w, size, key):
-            shell_history_browse(1)
+        def cmdline_history_next(w, size, key):
+            cmdline_history_browse(1)
 
-        def toggle_shell_focus(w, size, key):
-            if self.lhs_col.get_focus() is self.shell_sigwrap:
+        def cmdline_start_of_line(w, size, key):
+            self.cmdline_edit.edit_pos = 0
+
+        def cmdline_end_of_line(w, size, key):
+            self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
+
+        def cmdline_del_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            before, after = (
+                    self.cmdline_edit.edit_text[:pos],
+                    self.cmdline_edit.edit_text[pos:])
+            before = before[::-1]
+            before = before.lstrip()
+            i = 0
+            while i < len(before):
+                if not before[i].isspace():
+                    i += 1
+                else:
+                    break
+
+            self.cmdline_edit.edit_text = before[i:][::-1] + after
+            self.cmdline_edit.edit_post = len(before[i:])
+
+        def cmdline_del_to_start_of_line(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            self.cmdline_edit.edit_text = self.cmdline_edit.edit_text[pos:]
+            self.cmdline_edit.edit_pos = 0
+
+        def toggle_cmdline_focus(w, size, key):
+            self.columns.set_focus(self.lhs_col)
+            if self.lhs_col.get_focus() is self.cmdline_sigwrap:
                 self.lhs_col.set_focus(self.source_attr)
             else:
-                self.shell_pile.set_focus(self.shell_edit_bar)
-                self.lhs_col.set_focus(self.shell_sigwrap)
+                self.cmdline_pile.set_focus(self.cmdline_edit_bar)
+                self.lhs_col.set_focus(self.cmdline_sigwrap)
 
-        self.shell_edit_sigwrap.listen("tab", shell_tab_complete)
-        self.shell_edit_sigwrap.listen("ctrl v", shell_append_newline)
-        self.shell_edit_sigwrap.listen("enter", shell_exec)
-        self.shell_edit_sigwrap.listen("ctrl n", shell_history_next)
-        self.shell_edit_sigwrap.listen("ctrl p", shell_history_prev)
-        self.shell_edit_sigwrap.listen("esc", toggle_shell_focus)
-        self.shell_edit_sigwrap.listen("ctrl d", toggle_shell_focus)
+        self.cmdline_edit_sigwrap.listen("tab", cmdline_tab_complete)
+        self.cmdline_edit_sigwrap.listen("ctrl v", cmdline_append_newline)
+        self.cmdline_edit_sigwrap.listen("enter", cmdline_exec)
+        self.cmdline_edit_sigwrap.listen("ctrl n", cmdline_history_next)
+        self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
+        self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
+        self.cmdline_edit_sigwrap.listen("ctrl d", toggle_cmdline_focus)
+        self.cmdline_edit_sigwrap.listen("ctrl a", cmdline_start_of_line)
+        self.cmdline_edit_sigwrap.listen("ctrl e", cmdline_end_of_line)
+        self.cmdline_edit_sigwrap.listen("ctrl w", cmdline_del_word)
+        self.cmdline_edit_sigwrap.listen("ctrl u", cmdline_del_to_start_of_line)
 
-        self.top.listen("ctrl x", toggle_shell_focus)
+        self.top.listen("ctrl x", toggle_cmdline_focus)
 
-        # {{{ shell sizing
+        # {{{ command line sizing
 
-        def max_shell(w, size, key):
+        def max_cmdline(w, size, key):
             self.lhs_col.item_types[-1] = "weight", 5
             self.lhs_col._invalidate()
 
-        def min_shell(w, size, key):
+        def min_cmdline(w, size, key):
             self.lhs_col.item_types[-1] = "weight", 1/2
             self.lhs_col._invalidate()
 
-        def grow_shell(w, size, key):
+        def grow_cmdline(w, size, key):
             _, weight = self.lhs_col.item_types[-1]
 
             if weight < 5:
@@ -1493,7 +1605,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.lhs_col.item_types[-1] = "weight", weight
                 self.lhs_col._invalidate()
 
-        def shrink_shell(w, size, key):
+        def shrink_cmdline(w, size, key):
             _, weight = self.lhs_col.item_types[-1]
 
             if weight > 1/2:
@@ -1501,10 +1613,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.lhs_col.item_types[-1] = "weight", weight
                 self.lhs_col._invalidate()
 
-        self.shell_sigwrap.listen("=", max_shell)
-        self.shell_sigwrap.listen("+", grow_shell)
-        self.shell_sigwrap.listen("_", min_shell)
-        self.shell_sigwrap.listen("-", shrink_shell)
+        self.cmdline_sigwrap.listen("=", max_cmdline)
+        self.cmdline_sigwrap.listen("+", grow_cmdline)
+        self.cmdline_sigwrap.listen("_", min_cmdline)
+        self.cmdline_sigwrap.listen("-", shrink_cmdline)
 
         # }}}
 
@@ -1573,7 +1685,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def reload_breakpoints(w, size, key):
             self.debugger.clear_all_breaks()
             from pudb.settings import load_breakpoints
-            for bpoint_descr in load_breakpoints(dbg):
+            for bpoint_descr in load_breakpoints():
                 dbg.set_break(*bpoint_descr)
             self.update_breakpoints()
 
@@ -1598,14 +1710,14 @@ class DebuggerUI(FrameVarInfoKeeper):
             else:
                 self.message("No exception available.")
 
-        def run_external_shell(w, size, key):
+        def run_external_cmdline(w, size, key):
             self.screen.stop()
 
-            if not hasattr(self, "have_been_to_shell"):
-                self.have_been_to_shell = True
-                first_shell_run = True
+            if not hasattr(self, "have_been_to_cmdline"):
+                self.have_been_to_cmdline = True
+                first_cmdline_run = True
             else:
-                first_shell_run = False
+                first_cmdline_run = False
 
             curframe = self.debugger.curframe
 
@@ -1614,24 +1726,27 @@ class DebuggerUI(FrameVarInfoKeeper):
                 runner = shell.run_ipython_shell
             elif shell.HAVE_BPYTHON and CONFIG["shell"] == "bpython":
                 runner = shell.run_bpython_shell
+            elif shell.HAVE_PTPYTHON and CONFIG["shell"] == "ptpython":
+                runner = shell.run_ptpython_shell
             else:
                 runner = shell.run_classic_shell
 
             runner(curframe.f_locals, curframe.f_globals,
-                    first_shell_run)
+                    first_cmdline_run)
 
             self.screen.start()
 
             self.update_var_view()
 
-        def run_shell(w, size, key):
+        def run_cmdline(w, size, key):
             if CONFIG["shell"] == "internal":
-                return toggle_shell_focus(w, size, key)
+                return toggle_cmdline_focus(w, size, key)
             else:
-                return run_external_shell(w, size, key)
+                return run_external_cmdline(w, size, key)
 
         def focus_code(w, size, key):
             self.columns.set_focus(self.lhs_col)
+            self.lhs_col.set_focus(self.source_attr)
 
         class RHColumnFocuser:
             def __init__(self, idx):
@@ -1656,7 +1771,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.top.listen("o", show_output)
         self.top.listen("ctrl r", reload_breakpoints)
-        self.top.listen("!", run_shell)
+        self.top.listen("!", run_cmdline)
         self.top.listen("e", show_traceback)
 
         self.top.listen("C", focus_code)
@@ -1899,7 +2014,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e017"
+        WELCOME_LEVEL = "e024"
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -1916,8 +2031,31 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
 
+                    "\nChanges in version 2015.2:\n\n"
+                    "- ptpython support (P. Varet)\n"
+                    "- Improved rxvt support (Louper Rouch)\n"
+                    "- More keyboard shortcuts in the command line"
+                    "(Alex Sheluchin)\n"
+
+                    "\nChanges in version 2015.1:\n\n"
+                    "- Add solarized theme (Rinat Shigapov)\n"
+                    "- More keyboard shortcuts in the command line"
+                    "(Alexander Corwin)\n"
+
+                    "\nChanges in version 2014.1:\n\n"
+                    "- Make prompt-on-quit optional (Mike Burr)\n"
+                    "- Make tab completion in the built-in shell saner\n"
+                    "- Fix handling of unicode source\n"
+                    "  (reported by Morten Nielsen and Buck Golemon)\n"
+
+                    "\nChanges in version 2013.5.1:\n\n"
+                    "- Fix loading of saved breakpoint conditions "
+                    "(Antoine Dechaume)\n"
+                    "- Fixes for built-in command line\n"
+                    "- Theme updates\n"
+
                     "\nChanges in version 2013.5:\n\n"
-                    "- Add shell window\n"
+                    "- Add command line window\n"
                     "- Uses curses display driver when appropriate\n"
 
                     "\nChanges in version 2013.4:\n\n"
@@ -2039,8 +2177,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         from pudb import VERSION
         caption = [(None,
-            "PuDB %s - ?:help  n:next  s:step into  b:breakpoint  o:output  "
-            "t:run to cursor  !:python shell"
+            "PuDB %s - ?:help  n:next  s:step into  b:breakpoint  "
+            "!:python command line"
             % VERSION)]
 
         if self.debugger.post_mortem:

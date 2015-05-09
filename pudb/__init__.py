@@ -1,8 +1,12 @@
-NUM_VERSION = (2013, 4)
+NUM_VERSION = (2015, 2)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
 from pudb.py3compat import raw_input, PY3
+
+from pudb.settings import load_config, save_config
+CONFIG = load_config()
+save_config(CONFIG)
 
 
 class PudbShortcuts(object):
@@ -82,6 +86,9 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
         while True:
             import urwid
             pre_run_edit = urwid.Edit("", pre_run)
+
+            if not CONFIG["prompt_on_quit"]:
+                return
 
             result = dbg.ui.call_with_ui(dbg.ui.dialog,
                 urwid.ListBox(urwid.SimpleListWalker([urwid.Text(

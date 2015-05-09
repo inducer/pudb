@@ -187,7 +187,9 @@ def format_exception(exc_tuple):
             exc_value = StringExceptionValueWrapper(exc_value)
             exc_tuple = exc_type, exc_value, exc_tb
 
-        return format_exception(*exc_tuple, chain=hasattr(exc_value, "__context__"))
+        return format_exception(
+                *exc_tuple,
+                **dict(chain=hasattr(exc_value, "__context__")))
     else:
         return format_exception(*exc_tuple)
 

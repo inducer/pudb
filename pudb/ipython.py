@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import sys
 import os
 
@@ -17,6 +19,7 @@ except ImportError:
             TerminalInteractiveShell
         ip = TerminalInteractiveShell.instance()
         _ipython_version = (0, 11)
+
 
 # This conforms to IPython version 0.10
 def pudb_f_v10(self, arg):
@@ -42,6 +45,7 @@ def pudb_f_v10(self, arg):
 
     from pudb import runscript
     ip.IP.history_saving_wrapper(lambda: runscript(path, args))()
+
 
 # This conforms to IPython version 0.11
 def pudb_f_v11(self, arg):
@@ -71,8 +75,8 @@ def pudb_f_v11(self, arg):
     from pudb import runscript
     runscript(path, args)
 
-if _ipython_version == (1, 0):
 
+if _ipython_version == (1, 0):
     # For IPython 1.0.0
     def pudb(line):
         """
@@ -112,7 +116,7 @@ if _ipython_version == (1, 0):
         if not (force or self.call_pdb):
             return
 
-        if not hasattr(sys,'last_traceback'):
+        if not hasattr(sys, 'last_traceback'):
             error('No traceback has been produced, nothing to debug.')
             return
 
