@@ -164,24 +164,67 @@ class Debugger(bdb.Bdb):
         for bpoint_descr in load_breakpoints():
             self.set_break(*bpoint_descr)
 
-    def set_trace(self, frame=None):
+    # These (dispatch_line and set_continue) are copied from bdb with the
+    # patch from https://bugs.python.org/issue16482 applied. See
+    # https://github.com/inducer/pudb/pull/90.
+    def dispatch_line(self, frame):
+        if self.stop_here(frame) or self.break_here(frame):
+            self.user_line(frame)
+            if self.quitting: raise bdb.BdbQuit
+            # Do not re-install the local trace when we are finished debugging,
+            # see issues 16482 and 7238.
+            if not sys.gettrace():
+                return None
+        return self.trace_dispatch
+
+
+    def set_continue(self):
+        # Don't stop except at breakpoints or when finished
+        self._set_stopinfo(self.botframe, None, -1)
+        if not self.breaks:
+            # no breakpoints; run without debugger overhead
+            sys.settrace(None)
+            frame = sys._getframe().f_back
+            while frame:
+                del frame.f_trace
+                if frame is self.botframe:
+                    break
+                frame = frame.f_back
+
+
+    def set_trace(self, frame=None, as_breakpoint=True):
         """Start debugging from `frame`.
 
         If frame is not specified, debugging starts from caller's frame.
 
-        This is exactly the same as Bdb.set_trace(), sans the self.reset() call.
+        Unlike Bdb.set_trace(), this does not call self.reset(), which causes
+        the debugger to enter bdb source code. This also implements treating
+        set_trace() calls as breakpoints in the PuDB UI.
         """
         if frame is None:
-            frame = sys._getframe().f_back
+            frame = thisframe = sys._getframe().f_back
+        else:
+            thisframe = frame
         # See pudb issue #52. If this works well enough we should upstream to
         # stdlib bdb.py.
         #self.reset()
+
         while frame:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
             frame = frame.f_back
-        self.set_step()
-        sys.settrace(self.trace_dispatch)
+
+        thisframe_info = (self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
+        if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
+            if as_breakpoint:
+                self.set_traces[thisframe_info] = True
+                if self.ui.source_code_provider is not None:
+                    self.ui.set_source_code_provider(self.ui.source_code_provider, force_update=True)
+
+            self.set_step()
+            sys.settrace(self.trace_dispatch)
+        else:
+            self.set_continue()
 
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
@@ -201,6 +244,9 @@ class Debugger(bdb.Bdb):
         self._wait_for_mainpyfile = False
         self.current_bp = None
         self.post_mortem = False
+        # Mapping of (filename, lineno) to bool. If True, will stop on the
+        # set_trace() call at that location.
+        self.set_traces = {}
 
     def restart(self):
         from linecache import checkcache
@@ -492,7 +538,9 @@ class FileSourceCodeProvider(SourceCodeProvider):
         if self.file_name == "<string>":
             return [SourceLine(self, self.file_name)]
 
-        breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)
+        breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)[:]
+        breakpoints += [i for f, i in debugger_ui.debugger.set_traces if f
+            == self.file_name and debugger_ui.debugger.set_traces[f, i]]
         try:
             from linecache import getlines
             lines = getlines(self.file_name)
@@ -1131,6 +1179,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     err = self.debugger.clear_break(bp_source_identifier, lineno)
                     sline.set_breakpoint(False)
                 else:
+                    file_lineno = (bp_source_identifier, lineno)
+                    if file_lineno in self.debugger.set_traces:
+                        self.debugger.set_traces[file_lineno] = not self.debugger.set_traces[file_lineno]
+                        sline.set_breakpoint(self.debugger.set_traces[file_lineno])
+                        return
+
                     from pudb.lowlevel import get_breakpoint_invalid_reason
                     invalid_reason = get_breakpoint_invalid_reason(
                             bp_source_identifier, pos+1)

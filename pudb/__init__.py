@@ -155,7 +155,7 @@ def set_trace():
 
 def _interrupt_handler(signum, frame):
     from pudb import _get_debugger
-    _get_debugger().set_trace(frame)
+    _get_debugger().set_trace(frame, as_breakpoint=False)
 
 
 def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
