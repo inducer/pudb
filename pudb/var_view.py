@@ -45,6 +45,7 @@ class InspectInfo(object):
         self.highlighted = False
         self.repeated_at_top = False
         self.show_private_members = False
+        self.show_methods = False
         self.wrap = CONFIG["wrap_variables"]
 
 
@@ -361,15 +362,18 @@ class ValueWalker:
                     for key in ki]
             keys.sort()
 
-            cnt_omitted = 0
+            cnt_omitted_private = cnt_omitted_methods = 0
 
             for key in keys:
                 if key[0] == "_" and not iinfo.show_private_members:
-                    cnt_omitted += 1
+                    cnt_omitted_private += 1
                     continue
 
                 try:
                     attr_value = getattr(value, key)
+                    if callable(attr_value) and not iinfo.show_methods:
+                        cnt_omitted_methods += 1
+                        continue
                 except:
                     attr_value = WatchEvalError()
 
@@ -378,11 +382,13 @@ class ValueWalker:
                         "%s.%s" % (id_path, key))
 
             if not keys:
-                if cnt_omitted:
-                    self.add_item(prefix+self.PREFIX,
-                            "<omitted private attributes>", None)
+                if cnt_omitted_private:
+                    label = "<omitted private attributes>"
+                elif cnt_omitted_methods:
+                    label = "<omitted methods>"
                 else:
-                    self.add_item(prefix+self.PREFIX, "<empty>", None)
+                    label = "<empty>"
+                self.add_item(prefix+self.PREFIX, label, None)
 
             if not key_its:
                 self.add_item(prefix+self.PREFIX, "<?>", None)

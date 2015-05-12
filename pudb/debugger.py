@@ -97,6 +97,7 @@ Keys in variables list:
     h - toggle highlighting
     @ - toggle repetition at top
     * - toggle private members
+    m - toggle methods
     w - toggle line wrapping
     n/insert - add new watch expression
     enter - edit options (also to delete)
@@ -766,6 +767,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.show_private_members = not iinfo.show_private_members
             elif key == "w":
                 iinfo.wrap = not iinfo.wrap
+            elif key == "m":
+                iinfo.show_methods = not iinfo.show_methods
 
             self.update_var_view()
 
@@ -817,6 +820,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "Repeated at top", iinfo.repeated_at_top)
             show_private_checkbox = urwid.CheckBox(
                     "Show private members", iinfo.show_private_members)
+            show_methods_checkbox = urwid.CheckBox(
+                    "Show methods", iinfo.show_methods)
 
             lb = urwid.ListBox(urwid.SimpleListWalker(
                 id_segment+rb_grp+[
@@ -826,6 +831,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     highlighted_checkbox,
                     repeated_at_top_checkbox,
                     show_private_checkbox,
+                    show_methods_checkbox,
                 ]))
 
             result = self.dialog(lb, buttons, title=title)
@@ -836,6 +842,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.highlighted = highlighted_checkbox.get_state()
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_private_members = show_private_checkbox.get_state()
+                iinfo.show_methods = show_methods_checkbox.get_state()
 
                 if rb_show_type.get_state():
                     iinfo.display_type = "type"
@@ -885,6 +892,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("@", change_var_state)
         self.var_list.listen("*", change_var_state)
         self.var_list.listen("w", change_var_state)
+        self.var_list.listen("m", change_var_state)
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
