@@ -44,7 +44,7 @@ class InspectInfo(object):
         self.display_type = CONFIG["stringifier"]
         self.highlighted = False
         self.repeated_at_top = False
-        self.show_private_members = False
+        self.access_level = "public"
         self.show_methods = False
         self.wrap = CONFIG["wrap_variables"]
 
@@ -365,9 +365,14 @@ class ValueWalker:
             cnt_omitted_private = cnt_omitted_methods = 0
 
             for key in keys:
-                if key[0] == "_" and not iinfo.show_private_members:
-                    cnt_omitted_private += 1
-                    continue
+                if iinfo.access_level == "public":
+                    if key.startswith("_"):
+                        cnt_omitted_private += 1
+                        continue
+                elif iinfo.access_level == "private":
+                    if key.startswith("__") and key.endswith("__"):
+                        cnt_omitted_private += 1
+                        continue
 
                 try:
                     attr_value = getattr(value, key)

@@ -96,7 +96,7 @@ Keys in variables list:
     t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
     @ - toggle repetition at top
-    * - toggle private members
+    * - cycle public/private/dunder members
     m - toggle methods
     w - toggle line wrapping
     n/insert - add new watch expression
@@ -764,7 +764,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "@":
                 iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*":
-                iinfo.show_private_members = not iinfo.show_private_members
+                levels = ["public", "private", "all", "public"]
+                iinfo.access_level = levels[levels.index(iinfo.access_level)+1]
             elif key == "w":
                 iinfo.wrap = not iinfo.wrap
             elif key == "m":
@@ -803,34 +804,41 @@ class DebuggerUI(FrameVarInfoKeeper):
 
                 title = "Variable Inspection Options"
 
-            rb_grp = []
-            rb_show_type = urwid.RadioButton(rb_grp, "Show Type",
+            rb_grp_show = []
+            rb_show_type = urwid.RadioButton(rb_grp_show, "Show Type",
                     iinfo.display_type == "type")
-            rb_show_repr = urwid.RadioButton(rb_grp, "Show repr()",
+            rb_show_repr = urwid.RadioButton(rb_grp_show, "Show repr()",
                     iinfo.display_type == "repr")
-            rb_show_str = urwid.RadioButton(rb_grp, "Show str()",
+            rb_show_str = urwid.RadioButton(rb_grp_show, "Show str()",
                     iinfo.display_type == "str")
-            rb_show_custom = urwid.RadioButton(rb_grp, "Show custom (set in prefs)",
+            rb_show_custom = urwid.RadioButton(rb_grp_show, "Show custom (set in prefs)",
                     iinfo.display_type == CONFIG["custom_stringifier"])
+
+            rb_grp_access = []
+            rb_access_public = urwid.RadioButton(rb_grp_access, "Public members",
+                    iinfo.access_level == "public")
+            rb_access_private = urwid.RadioButton(rb_grp_access, "Public and private members",
+                    iinfo.access_level == "private")
+            rb_access_all = urwid.RadioButton(rb_grp_access, "All members (including __dunder__)",
+                    iinfo.access_level == "all")
 
             wrap_checkbox = urwid.CheckBox("Line Wrap", iinfo.wrap)
             expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
             highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
             repeated_at_top_checkbox = urwid.CheckBox(
                     "Repeated at top", iinfo.repeated_at_top)
-            show_private_checkbox = urwid.CheckBox(
-                    "Show private members", iinfo.show_private_members)
             show_methods_checkbox = urwid.CheckBox(
                     "Show methods", iinfo.show_methods)
 
             lb = urwid.ListBox(urwid.SimpleListWalker(
-                id_segment+rb_grp+[
-                    urwid.Text(""),
+                id_segment +
+                rb_grp_show + [urwid.Text("")] +
+                rb_grp_access + [urwid.Text("")] +
+                [
                     wrap_checkbox,
                     expanded_checkbox,
                     highlighted_checkbox,
                     repeated_at_top_checkbox,
-                    show_private_checkbox,
                     show_methods_checkbox,
                 ]))
 
@@ -841,7 +849,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.wrap = wrap_checkbox.get_state()
                 iinfo.highlighted = highlighted_checkbox.get_state()
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
-                iinfo.show_private_members = show_private_checkbox.get_state()
                 iinfo.show_methods = show_methods_checkbox.get_state()
 
                 if rb_show_type.get_state():
@@ -852,6 +859,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type = "str"
                 elif rb_show_custom.get_state():
                     iinfo.display_type = CONFIG["custom_stringifier"]
+
+                if rb_access_public.get_state():
+                    iinfo.access_level = "public"
+                elif rb_access_private.get_state():
+                    iinfo.access_level = "private"
+                elif rb_access_all.get_state():
+                    iinfo.access_level = "all"
 
                 if var.watch_expr is not None:
                     var.watch_expr.expression = watch_edit.get_edit_text()
