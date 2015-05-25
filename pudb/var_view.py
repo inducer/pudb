@@ -287,6 +287,17 @@ class ValueWalker:
                 displayed_value = type_stringifier(value) \
                                 + " (!! %s error !!)" % iinfo.display_type
 
+            if iinfo.show_detail:
+                if iinfo.access_level == "public":
+                    marker = "pub"
+                elif iinfo.access_level == "private":
+                    marker = "pri"
+                else:
+                    marker = "all"
+                if iinfo.show_methods:
+                    marker += "+()"
+                displayed_value += " [%s]" % marker
+
             self.add_item(prefix, label,
                 displayed_value, id_path, attr_prefix)
 
