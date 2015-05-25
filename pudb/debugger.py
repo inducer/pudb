@@ -96,8 +96,8 @@ Keys in variables list:
     t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
     @ - toggle repetition at top
-    * - cycle public/private/dunder members
-    m - toggle methods
+    * - cycle attribute visibility: public/_private/__dunder__
+    m - toggle method visibility
     w - toggle line wrapping
     n/insert - add new watch expression
     enter - edit options (also to delete)
