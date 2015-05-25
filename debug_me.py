@@ -1,3 +1,10 @@
+class MyClass(object):
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+        self._b = [b]
+
+mc = MyClass(15, MyClass(12, None))
 
 def simple_func(x):
     x += 1
