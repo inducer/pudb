@@ -66,6 +66,7 @@ class SignalWrap(urwid.WidgetWrap):
         urwid.WidgetWrap.__init__(self, w)
         self.event_listeners = []
         self.is_preemptive = is_preemptive
+        self.pending_handler = None  # stores current pending event handler
 
     def listen(self, mask, handler):
         self.event_listeners.append((mask, handler))
@@ -83,6 +84,11 @@ class SignalWrap(urwid.WidgetWrap):
             result = self._w.keypress(size, key)
 
         if result is not None and not self.is_preemptive:
+            # if event pending, send new event to pending handler
+            if self.pending_handler:
+                self.pending_handler, result = self.pending_handler(self, size, key)
+                # XXX I'm not sure if it should continue or not, just return
+                return result
             for mask, handler in self.event_listeners:
                 if mask is None or mask == key:
                     return handler(self, size, key)

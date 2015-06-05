@@ -1128,6 +1128,53 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.debugger.set_continue()
                     end()
 
+        def count(w, size, key, pending=0):
+            """vim style add count to key press, currently support:
+            movement keys: k/j/l/h/pg-up/pg-down/u/d
+            run to cursor: t"""
+            if key in list("1234567890"):
+                pending = pending * 10 + int(key)
+                pending_handler = partial(count, pending=pending)
+                # if first time pending
+                if not self.source_sigwrap.pending_handler:
+                    self.source_sigwrap.pending_handler = pending_handler
+                    return None, None
+                return pending_handler, None
+            elif key == "esc":
+                self.source_sigwrap.pending_handler = None
+                return None, None
+            else:
+                try:
+                    handler = [h for (k, h) in self.source_sigwrap.event_listeners if k == key][0]
+                except IndexError:
+                    # self.message("not a valid command: %s" % key)
+                    self.source_sigwrap.pending_handler = None
+                    return None, None
+                else:
+                    result = None
+                    # if is movement handler: repeat pending times
+                    if handler in [move_up, move_down, page_up, page_down,
+                                   scroll_right, scroll_left, move_stack_down,
+                                   move_stack_up]:
+                        for i in range(pending):
+                            result = handler(w, size, key)
+                    # if is debugger handler: modify breakpoint ignore count
+                    elif handler in [run_to_cursor]:
+                        result = handler(w, size, key)
+                        # get the breakpoint set by handler
+                        _, pos = self.source.get_focus()
+                        bp_source_identifier = self.source_code_provider.get_breakpoint_source_identifier()
+                        existing_breaks = self.debugger.get_breaks(bp_source_identifier, pos+1)
+                        if existing_breaks:
+                            assert len(existing_breaks) == 1,\
+                                "Expect one breakpoint at line %d, got %d" % (pos+1, len(existing_breaks))
+                            # setting ignore makes pudb UI not updating correctly when at program termination
+                            # FIXME update UI at program termination
+                            existing_breaks[0].ignore = int(pending) - 1
+                    else:
+                        self.message("count for current operation is not implemented.")
+                    return None, result
+
         def move_home(w, size, key):
             self.source.set_focus(0)
 
@@ -1394,6 +1441,17 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("H", move_stack_top)
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
+
+        self.source_sigwrap.listen("0", count)
+        self.source_sigwrap.listen("1", count)
+        self.source_sigwrap.listen("2", count)
+        self.source_sigwrap.listen("3", count)
+        self.source_sigwrap.listen("4", count)
+        self.source_sigwrap.listen("5", count)
+        self.source_sigwrap.listen("6", count)
+        self.source_sigwrap.listen("7", count)
+        self.source_sigwrap.listen("8", count)
+        self.source_sigwrap.listen("9", count)
 
         # }}}
 
