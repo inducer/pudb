@@ -1,0 +1,27 @@
+Python 2.7:
+  script:
+  - py_version=2.7
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python2.7
+  except:
+  - tags
+Python 3.4:
+  script:
+  - py_version=3.4
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python3.4
+  except:
+  - tags
+Python 2.6:
+  script:
+  - py_version=2.6
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python2.6
+  except:
+  - tags
