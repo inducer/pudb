@@ -225,7 +225,7 @@ class Debugger(bdb.Bdb):
             self.set_step()
             sys.settrace(self.trace_dispatch)
         else:
-            self.set_continue()
+            return
 
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
