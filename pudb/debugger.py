@@ -100,6 +100,8 @@ Keys in variables list:
     m - toggle method visibility
     w - toggle line wrapping
     n/insert - add new watch expression
+    z - save watch expressions
+    x - load saved watch expressions
     enter - edit options (also to delete)
 
 Keys in stack list:
@@ -235,6 +237,14 @@ class Debugger(bdb.Bdb):
             for lineno in bp_lst
             for bp in self.get_breaks(fn, lineno)
             if not bp.temporary])
+
+    def save_watches(self, w_list):
+        from pudb.settings import save_watches
+        save_watches(w_list)
+
+    def load_watches(self):
+        from pudb.settings import load_watches
+        return load_watches()
 
     def enter_post_mortem(self, exc_tuple):
         self.post_mortem = True
@@ -897,6 +907,22 @@ class DebuggerUI(FrameVarInfoKeeper):
                 fvi.watches.append(we)
                 self.update_var_view()
 
+        def save_watches(w, size, key):
+            fvi = self.get_frame_var_info(read_only=False)
+            watches_list = []
+            for watch in fvi.watches:
+                watches_list.append(watch.expression)
+            self.debugger.save_watches(watches_list)
+
+        def load_watches(w, size, key):
+            from pudb.var_view import WatchExpression
+            watch_lines = self.debugger.load_watches()
+
+            fvi = self.get_frame_var_info(read_only=False)
+            for line in watch_lines:
+                fvi.watches.append(WatchExpression(line.strip()))
+            self.update_var_view()
+
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
@@ -909,6 +935,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("m", change_var_state)
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
+        self.var_list.listen("z", save_watches)
+        self.var_list.listen("x", load_watches)
         self.var_list.listen("insert", insert_watch)
 
         self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
