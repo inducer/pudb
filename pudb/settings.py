@@ -9,7 +9,7 @@ else:
 
 # minor LGPL violation: stolen from python-xdg
 
-_home = os.environ.get('HOME', '/')
+_home = os.environ.get('HOME', os.environ.get('TEMP', '.'))
 xdg_data_home = os.environ.get('XDG_DATA_HOME',
             os.path.join(_home, '.local', 'share'))
 
