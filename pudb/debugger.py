@@ -600,8 +600,6 @@ class DirectSourceCodeProvider(SourceCodeProvider):
         for i, l in enumerate(lines):
             if hasattr(l, "decode"):
                 l = l.decode(source_enc)
-            else:
-                l = l.decode(source_enc)
 
             if i+1 < len(lines):
                 l += "\n"
