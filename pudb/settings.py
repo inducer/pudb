@@ -9,18 +9,20 @@ else:
 
 # minor LGPL violation: stolen from python-xdg
 
-_home = os.environ.get('HOME', '/')
+_home = os.environ.get('HOME', None)
 xdg_data_home = os.environ.get('XDG_DATA_HOME',
-            os.path.join(_home, '.local', 'share'))
+            os.path.join(_home, '.local', 'share') if _home else None)
 
 xdg_config_home = os.environ.get('XDG_CONFIG_HOME',
-            os.path.join(_home, '.config'))
+            os.path.join(_home, '.config') if _home else None)
 
-xdg_config_dirs = [xdg_config_home] + \
+xdg_config_dirs = [xdg_config_home] if xdg_config_home else [] + \
     os.environ.get('XDG_CONFIG_DIRS', '/etc/xdg').split(':')
 
 
 def get_save_config_path(*resource):
+    if xdg_config_home is None:
+        return None
     if not resource:
         resource = [XDG_CONF_RESOURCE]
     resource = os.path.join(*resource)
@@ -105,8 +107,10 @@ def save_config(conf_dict):
         cparser.set(CONF_SECTION, key, str(conf_dict[key]))
 
     try:
-        outf = open(join(get_save_config_path(),
-            CONF_FILE_NAME), "w")
+        save_path = get_save_config_path()
+        if not save_path:
+            return
+        outf = open(join(save_path, CONF_FILE_NAME), "w")
         cparser.write(outf)
         outf.close()
     except:
@@ -189,7 +193,9 @@ def edit_config(ui, conf_dict):
     heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
         "Configuration settings are saved in "
-        "%s.\n" % get_save_config_path())
+        "$HOME/.config/pudb or $XDG_CONFIG_HOME/pudb "
+        "environment variable. If both variables are not set "
+        " configurations settings will not be saved.\n")
 
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",
             bool(conf_dict["line_numbers"]), on_state_change=_update_config,
@@ -447,7 +453,11 @@ def parse_breakpoints(lines):
 
 def get_breakpoints_file_name():
     from os.path import join
-    return join(get_save_config_path(), SAVED_BREAKPOINTS_FILE_NAME)
+    save_path = get_save_config_path()
+    if not save_path:
+        return None
+    else:
+        return join(save_path, SAVED_BREAKPOINTS_FILE_NAME)
 
 
 def load_breakpoints():
@@ -477,6 +487,9 @@ def save_breakpoints(bp_list):
     :arg bp_list: a list of tuples `(file_name, line)`
     """
 
+    save_path = get_breakpoints_file_name()
+    if not save_path:
+        return
     histfile = open(get_breakpoints_file_name(), 'w')
     bp_list = set([(bp.file, bp.line, bp.cond) for bp in bp_list])
     for bp in bp_list:
