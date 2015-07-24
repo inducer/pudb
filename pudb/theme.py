@@ -522,8 +522,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
                     "add_setting": add_setting,
                     }
 
-            from os.path import expanduser
-            execfile(expanduser(theme), symbols)
+            from os.path import expanduser, expandvars
+            execfile(expanduser(expandvars(theme)), symbols)
         except:
             print("Error when importing theme:")
             from traceback import print_exc
