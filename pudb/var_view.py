@@ -323,24 +323,29 @@ class ValueWalker:
 
             # containers --------------------------------------------------
             key_it = None
+
             try:
-                l = len(value)
+                if PY3:
+                    key_it = value.keys()
+                else:
+                    key_it = value.iterkeys()
             except:
                 pass
-            else:
+
+            if key_it is None:
                 try:
-                    value[0]
-                except IndexError:
-                    key_it = []
+                    l = len(value)
                 except:
                     pass
                 else:
-                    key_it = xrange(l)
-
-            try:
-                key_it = value.iterkeys()
-            except:
-                pass
+                    try:
+                        value[0]
+                    except IndexError:
+                        key_it = []
+                    except:
+                        pass
+                    else:
+                        key_it = xrange(l)
 
             if key_it is not None:
                 cnt = 0
