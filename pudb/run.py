@@ -5,6 +5,9 @@ def main():
     parser = OptionParser(
             usage="usage: %prog [options] SCRIPT-TO-RUN [SCRIPT-ARGUMENTS]")
 
+    parser.add_option("-i", "--input", help="file to get input", default="/dev/stdin", metavar="STDIN"),
+    parser.add_option("-o", "--output", help="file to flush output", default="/dev/stdout", metavar="STDOUT"),
+    parser.add_option("-e", "--error", help="file to flush errors", default="/dev/stderr", metavar="STDERR"),
     parser.add_option("-s", "--steal-output", action="store_true"),
     parser.add_option("--pre-run", metavar="COMMAND",
             help="Run command before each program run",
@@ -27,7 +30,7 @@ def main():
     from pudb import runscript
     runscript(mainpyfile,
             pre_run=options.pre_run,
-            steal_output=options.steal_output)
+            steal_output=options.steal_output, input=options.input, output=options.output)
 
 
 
