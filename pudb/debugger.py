@@ -90,6 +90,7 @@ Sidebar-related (active in sidebar):
     +/- - grow/shrink sidebar
     _/= - minimize/maximize sidebar
     [/] - grow/shrink relative size of active sidebar box
+    Ctrl-^ - toggle sidebar display
 
 Keys in variables list:
     \ - expand/collapse
@@ -719,6 +720,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top = SignalWrap(urwid.Frame(
             urwid.AttrMap(self.columns, "background"),
             header))
+
+        self._toggle_sidebar(CONFIG["sidebar_visible"])
 
         # }}}
 
@@ -1688,6 +1691,17 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.columns.column_types[1] = "weight", weight
                 self.columns._invalidate()
 
+        def toggle_sidebar(w, size, key):
+            from pudb.settings import save_config
+
+            CONFIG["sidebar_visible"] = not CONFIG["sidebar_visible"]
+            save_config(CONFIG)
+
+            if not CONFIG["sidebar_visible"]:
+                self.columns.set_focus(self.lhs_col)
+
+            self._toggle_sidebar(CONFIG["sidebar_visible"])
+
         self.rhs_col_sigwrap.listen("=", max_sidebar)
         self.rhs_col_sigwrap.listen("+", grow_sidebar)
         self.rhs_col_sigwrap.listen("_", min_sidebar)
@@ -1773,6 +1787,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.idx = idx
 
             def __call__(subself, w, size, key):
+                from pudb.settings import save_config
+
+                # ensure sidebar is visible when focussing rh columns
+                if not CONFIG["sidebar_visible"]:
+                    CONFIG["sidebar_visible"] = True
+                    save_config(CONFIG)
+                    self._toggle_sidebar(CONFIG["sidebar_visible"])
+
                 self.columns.set_focus(self.rhs_col_sigwrap)
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
@@ -1798,6 +1820,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("V", RHColumnFocuser(0))
         self.top.listen("S", RHColumnFocuser(1))
         self.top.listen("B", RHColumnFocuser(2))
+        self.top.listen("ctrl ^", toggle_sidebar)
 
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
@@ -1935,6 +1958,15 @@ class DebuggerUI(FrameVarInfoKeeper):
         w = Attr(w, "background")
 
         return self.event_loop(w)[0]
+
+    def _toggle_sidebar(self, visible):
+        if visible:
+            self.columns.dividechars = 1
+            self.columns.column_types[1] = "weight", float(CONFIG["sidebar_width"])
+        else:
+            self.columns.dividechars = 0
+            self.columns.column_types[1] = "given", 0
+        self.columns._invalidate()
 
     @staticmethod
     def setup_palette(screen):
