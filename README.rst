@@ -83,6 +83,20 @@ This is equivalent to::
 which is useful if you want to run PuDB in a version of Python other than the
 one you most recently installed PuDB with.
 
+Remote debugging
+^^^^^^^^^^^^^^^^
+
+Rudimentary remote debugging is also supported::
+
+    from pudb.remote import set_trace
+    set_trace(term_size=(80, 24))
+
+At this point, the debugger will look for a free port and wait for a telnet
+connection::
+
+    pudb:6899: Please telnet into 127.0.0.1 6899.
+    pudb:6899: Waiting for client...
+
 Documentation and Support
 -------------------------
 

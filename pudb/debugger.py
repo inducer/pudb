@@ -145,9 +145,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
-    def __init__(self, steal_output=False):
+    def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False):
         bdb.Bdb.__init__(self)
-        self.ui = DebuggerUI(self)
+        self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
         self.steal_output = steal_output
 
         self.setup_state()
@@ -171,13 +171,13 @@ class Debugger(bdb.Bdb):
     def dispatch_line(self, frame):
         if self.stop_here(frame) or self.break_here(frame):
             self.user_line(frame)
-            if self.quitting: raise bdb.BdbQuit
+            if self.quitting:
+                raise bdb.BdbQuit
             # Do not re-install the local trace when we are finished debugging,
             # see issues 16482 and 7238.
             if not sys.gettrace():
                 return None
         return self.trace_dispatch
-
 
     def set_continue(self):
         # Don't stop except at breakpoints or when finished
@@ -191,7 +191,6 @@ class Debugger(bdb.Bdb):
                 if frame is self.botframe:
                     break
                 frame = frame.f_back
-
 
     def set_trace(self, frame=None, as_breakpoint=True):
         """Start debugging from `frame`.
@@ -215,12 +214,14 @@ class Debugger(bdb.Bdb):
             self.botframe = frame
             frame = frame.f_back
 
-        thisframe_info = (self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
+        thisframe_info = (
+                self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
         if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
             if as_breakpoint:
                 self.set_traces[thisframe_info] = True
                 if self.ui.source_code_provider is not None:
-                    self.ui.set_source_code_provider(self.ui.source_code_provider, force_update=True)
+                    self.ui.set_source_code_provider(
+                            self.ui.source_code_provider, force_update=True)
 
             self.set_step()
             sys.settrace(self.trace_dispatch)
@@ -436,45 +437,50 @@ except ImportError:
     curses = None
 
 
-want_curses_display = (
-        CONFIG["display"] == "curses"
-        or (
-            CONFIG["display"] == "auto"
-            and
-            not (
-                os.environ.get("TERM", "").startswith("xterm")
-                or
-                os.environ.get("TERM", "").startswith("rxvt")
-            )))
-
 from urwid.raw_display import Screen as RawScreen
-if want_curses_display:
-    try:
-        from urwid.curses_display import Screen
-    except ImportError:
-        Screen = RawScreen
-else:
-    Screen = RawScreen
-
-del want_curses_display
+try:
+    from urwid.curses_display import Screen as CursesScreen
+except ImportError:
+    CursesScreen = None
 
 
-class ThreadsafeScreen(Screen):
+class ThreadsafeScreenMixin(object):
     "A Screen subclass that doesn't crash when running from a non-main thread."
 
     def signal_init(self):
         "Initialize signal handler, ignoring errors silently."
         try:
-            super(ThreadsafeScreen, self).signal_init()
+            super(ThreadsafeScreenMixin, self).signal_init()
         except ValueError:
             pass
 
     def signal_restore(self):
         "Restore default signal handler, ignoring errors silently."
         try:
-            super(ThreadsafeScreen, self).signal_restore()
+            super(ThreadsafeScreenMixin, self).signal_restore()
         except ValueError:
             pass
+
+
+class ThreadsafeRawScreen(ThreadsafeScreenMixin, RawScreen):
+    pass
+
+
+class ThreadsafeFixedSizeRawScreen(ThreadsafeScreenMixin, RawScreen):
+    def __init__(self, **kwargs):
+        self._term_size = kwargs.pop("term_size", None)
+        super(ThreadsafeFixedSizeRawScreen, self).__init__(**kwargs)
+
+    def get_cols_rows(self):
+        if self._term_size is not None:
+            return self._term_size
+        else:
+            return 80, 24
+
+
+if curses is not None:
+    class ThreadsafeCursesScreen(ThreadsafeScreenMixin, RawScreen):
+        pass
 
 # }}}
 
@@ -614,7 +620,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 class DebuggerUI(FrameVarInfoKeeper):
     # {{{ constructor
 
-    def __init__(self, dbg):
+    def __init__(self, dbg, stdin, stdout, term_size):
         FrameVarInfoKeeper.__init__(self)
 
         self.debugger = dbg
@@ -809,15 +815,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type == "repr")
             rb_show_str = urwid.RadioButton(rb_grp_show, "Show str()",
                     iinfo.display_type == "str")
-            rb_show_custom = urwid.RadioButton(rb_grp_show, "Show custom (set in prefs)",
+            rb_show_custom = urwid.RadioButton(
+                    rb_grp_show, "Show custom (set in prefs)",
                     iinfo.display_type == CONFIG["custom_stringifier"])
 
             rb_grp_access = []
             rb_access_public = urwid.RadioButton(rb_grp_access, "Public members",
                     iinfo.access_level == "public")
-            rb_access_private = urwid.RadioButton(rb_grp_access, "Public and private members",
+            rb_access_private = urwid.RadioButton(
+                    rb_grp_access, "Public and private members",
                     iinfo.access_level == "private")
-            rb_access_all = urwid.RadioButton(rb_grp_access, "All members (including __dunder__)",
+            rb_access_all = urwid.RadioButton(
+                    rb_grp_access, "All members (including __dunder__)",
                     iinfo.access_level == "all")
 
             wrap_checkbox = urwid.CheckBox("Line Wrap", iinfo.wrap)
@@ -1201,7 +1210,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     file_lineno = (bp_source_identifier, lineno)
                     if file_lineno in self.debugger.set_traces:
-                        self.debugger.set_traces[file_lineno] = not self.debugger.set_traces[file_lineno]
+                        self.debugger.set_traces[file_lineno] = \
+                                not self.debugger.set_traces[file_lineno]
                         sline.set_breakpoint(self.debugger.set_traces[file_lineno])
                         return
 
@@ -1772,7 +1782,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             def __init__(self, idx):
                 self.idx = idx
 
-            def __call__(subself, w, size, key):
+            def __call__(subself, w, size, key):  # noqa
                 self.columns.set_focus(self.rhs_col_sigwrap)
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
@@ -1809,7 +1819,36 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ setup
 
-        self.screen = ThreadsafeScreen()
+        want_curses_display = (
+                CONFIG["display"] == "curses"
+                or (
+                    CONFIG["display"] == "auto"
+                    and
+                    not (
+                        os.environ.get("TERM", "").startswith("xterm")
+                        or
+                        os.environ.get("TERM", "").startswith("rxvt")
+                    )))
+
+        if (want_curses_display
+                and not (stdin is not None or stdout is not None)
+                and CursesScreen is not None):
+            self.screen = ThreadsafeCursesScreen()
+        else:
+            screen_kwargs = {}
+            if stdin is not None:
+                screen_kwargs["input"] = stdin
+            if stdout is not None:
+                screen_kwargs["output"] = stdout
+            if term_size is not None:
+                screen_kwargs["term_size"] = term_size
+
+            if screen_kwargs:
+                self.screen = ThreadsafeFixedSizeRawScreen(**screen_kwargs)
+            else:
+                self.screen = ThreadsafeRawScreen()
+
+        del want_curses_display
 
         if curses:
             try:
@@ -1864,13 +1903,13 @@ class DebuggerUI(FrameVarInfoKeeper):
             title=None, bind_enter_esc=True, focus_buttons=False,
             extra_bindings=[]):
         class ResultSetter:
-            def __init__(subself, res):
+            def __init__(subself, res):  # noqa
                 subself.res = res
 
-            def __call__(subself, btn):
+            def __call__(subself, btn):  # noqa
                 self.quit_event_loop = [subself.res]
 
-        Attr = urwid.AttrMap
+        Attr = urwid.AttrMap  # noqa
 
         if bind_enter_esc:
             content = SignalWrap(content)
@@ -1911,10 +1950,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                 w])
 
         class ResultSetter:
-            def __init__(subself, res):
+            def __init__(subself, res):  # noqa
                 subself.res = res
 
-            def __call__(subself, w, size, key):
+            def __call__(subself, w, size, key):  # noqa
                 self.quit_event_loop = [subself.res]
 
         w = SignalWrap(w)
@@ -2034,7 +2073,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e025"
+        WELCOME_LEVEL = "e026"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2050,6 +2089,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2015.4:\n\n"
+                    "- Support for (somewhat rudimentary) remote debugging\n"
+                    "  through a telnet connection.\n"
 
                     "\nChanges in version 2015.3:\n\n"
                     "- Disable set_trace lines from the UI (Aaron Meurer)\n"

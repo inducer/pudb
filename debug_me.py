@@ -6,6 +6,7 @@ class MyClass(object):
 
 mc = MyClass(15, MyClass(12, None))
 
+
 def simple_func(x):
     x += 1
 
@@ -26,6 +27,7 @@ def simple_func(x):
     #sys.exit(1)
 
     return 2*x
+
 
 def fermat(n):
     """Returns triplets of the form x^n + y^n = z^n.
