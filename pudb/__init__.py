@@ -1,4 +1,4 @@
-NUM_VERSION = (2015, 3)
+NUM_VERSION = (2015, 4)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
