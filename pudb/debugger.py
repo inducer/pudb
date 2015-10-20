@@ -11,7 +11,7 @@ from pudb.settings import load_config, save_config
 CONFIG = load_config()
 save_config(CONFIG)
 
-from pudb.py3compat import PY3, raw_input, text_type
+from pudb.py3compat import PY3, raw_input
 if PY3:
     _next = "__next__"
 else:
@@ -599,21 +599,18 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 
         lines = self.code.split("\n")
 
-        if isinstance(self.code, text_type):
-            decoded_lines = lines
-        else:
-            from pudb.lowlevel import detect_encoding
-            source_enc, _ = detect_encoding(getattr(iter(lines), _next))
+        from pudb.lowlevel import detect_encoding
+        source_enc, _ = detect_encoding(getattr(iter(lines), _next))
 
-            decoded_lines = []
-            for i, l in enumerate(lines):
-                if hasattr(l, "decode"):
-                    l = l.decode(source_enc)
+        decoded_lines = []
+        for i, l in enumerate(lines):
+            if hasattr(l, "decode"):
+                l = l.decode(source_enc)
 
-                if i+1 < len(lines):
-                    l += "\n"
+            if i+1 < len(lines):
+                l += "\n"
 
-                decoded_lines.append(l)
+            decoded_lines.append(l)
 
         return format_source(debugger_ui, decoded_lines, set())
 
