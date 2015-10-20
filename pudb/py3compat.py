@@ -6,6 +6,7 @@ if PY3:
     xrange = range
     integer_types = (int,)
     string_types = (str,)
+    text_type = str
     def execfile(fname, globs, locs=None):
         exec(compile(open(fname).read(), fname, 'exec'), globs, locs or globs)
 else:
@@ -13,4 +14,5 @@ else:
     xrange = xrange
     integer_types = (int, long)
     string_types = (basestring,)
+    text_type = unicode
     execfile = execfile

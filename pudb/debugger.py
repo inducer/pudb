@@ -11,7 +11,7 @@ from pudb.settings import load_config, save_config
 CONFIG = load_config()
 save_config(CONFIG)
 
-from pudb.py3compat import PY3, raw_input
+from pudb.py3compat import PY3, raw_input, text_type
 if PY3:
     _next = "__next__"
 else:
@@ -599,18 +599,21 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 
         lines = self.code.split("\n")
 
-        from pudb.lowlevel import detect_encoding
-        source_enc, _ = detect_encoding(getattr(iter(lines), _next))
+        if isinstance(self.code, text_type):
+            decoded_lines = lines
+        else:
+            from pudb.lowlevel import detect_encoding
+            source_enc, _ = detect_encoding(getattr(iter(lines), _next))
 
-        decoded_lines = []
-        for i, l in enumerate(lines):
-            if hasattr(l, "decode"):
-                l = l.decode(source_enc)
+            decoded_lines = []
+            for i, l in enumerate(lines):
+                if hasattr(l, "decode"):
+                    l = l.decode(source_enc)
 
-            if i+1 < len(lines):
-                l += "\n"
+                if i+1 < len(lines):
+                    l += "\n"
 
-            decoded_lines.append(l)
+                decoded_lines.append(l)
 
         return format_source(debugger_ui, decoded_lines, set())
 
@@ -2093,6 +2096,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "\nChanges in version 2015.4:\n\n"
                     "- Support for (somewhat rudimentary) remote debugging\n"
                     "  through a telnet connection.\n"
+                    "- Fix debugging of generated code in Python 3.\n"
 
                     "\nChanges in version 2015.3:\n\n"
                     "- Disable set_trace lines from the UI (Aaron Meurer)\n"
