@@ -232,7 +232,7 @@ class Debugger(bdb.Bdb):
 
         else:
             self.ui.set_current_line(lineno,
-                FileSourceCodeProvider(self, filename))
+                FileSourceCodeProvider(self.debugger, filename))
 
         self.ui.update_var_view()
         self.ui.update_stack()
@@ -1192,8 +1192,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     ext = ".py"
                     filename = base+".py"
 
-                self.set_source_code_provider(self.debugger,
-                        FileSourceCodeProvider(filename))
+                self.set_source_code_provider(
+                        FileSourceCodeProvider(self.debugger, filename))
                 self.source_list.set_focus(0)
 
             class FilterEdit(urwid.Edit):
