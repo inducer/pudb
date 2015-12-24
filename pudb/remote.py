@@ -17,8 +17,8 @@ __all__ = ['PUDB_RDB_HOST', 'PUDB_RDB_PORT', 'default_port',
 
 default_port = 6899
 
-PUDB_RDB_HOST = os.environ.get('CELERY_RDB_HOST') or '127.0.0.1'
-PUDB_RDB_PORT = int(os.environ.get('CELERY_RDB_PORT') or default_port)
+PUDB_RDB_HOST = os.environ.get('PUDB_RDB_HOST') or '127.0.0.1'
+PUDB_RDB_PORT = int(os.environ.get('PUDB_RDB_PORT') or default_port)
 
 #: Holds the currently active debugger.
 _current = [None]
@@ -28,7 +28,7 @@ _frame = getattr(sys, '_getframe')
 NO_AVAILABLE_PORT = """\
 {self.ident}: Couldn't find an available port.
 
-Please specify one using the CELERY_RDB_PORT environment variable.
+Please specify one using the PUDB_RDB_PORT environment variable.
 """
 
 BANNER = """\
@@ -65,16 +65,24 @@ class RemoteDebugger(Debugger):
         self._client.setblocking(1)
         self.remote_addr = ':'.join(str(v) for v in address)
         self.say(SESSION_STARTED.format(self=self))
-        self._handle = sys.stdin = sys.stdout = self._client.makefile('rwb', 0)
+
+        # makefile ignores encoding if there's no buffering.
+        raw_sock_file = self._client.makefile("rwb", 0)
+        import codecs
+        sock_file = codecs.StreamReaderWriter(raw_sock_file,
+                codecs.getreader("utf-8"),
+                codecs.getwriter("utf-8"))
+
+        self._handle = sys.stdin = sys.stdout = sock_file
 
         import telnetlib as tn
 
-        self._handle.write(tn.IAC + tn.WILL + tn.SGA)
-        resp = self._handle.read(3)
+        raw_sock_file.write(tn.IAC + tn.WILL + tn.SGA)
+        resp = raw_sock_file.read(3)
         assert resp == tn.IAC + tn.DO + tn.SGA
 
-        self._handle.write(tn.IAC + tn.WILL + tn.ECHO)
-        resp = self._handle.read(3)
+        raw_sock_file.write(tn.IAC + tn.WILL + tn.ECHO)
+        resp = raw_sock_file.read(3)
         assert resp == tn.IAC + tn.DO + tn.ECHO
 
         Debugger.__init__(self, stdin=self._handle, stdout=self._handle,
