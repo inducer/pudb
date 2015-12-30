@@ -195,7 +195,7 @@ def edit_config(ui, conf_dict):
         "Configuration settings are saved in "
         "$HOME/.config/pudb or $XDG_CONFIG_HOME/pudb "
         "environment variable. If both variables are not set "
-        " configurations settings will not be saved.\n")
+        "configurations settings will not be saved.\n")
 
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",
             bool(conf_dict["line_numbers"]), on_state_change=_update_config,
