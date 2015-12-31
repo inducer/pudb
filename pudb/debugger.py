@@ -1345,7 +1345,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                                     format_exception(sys.exc_info()))),
                                 title="Import Error")
                         else:
-                            show_mod(sys.modules[str(new_mod_name)])
+                            show_mod(__import__(str(new_mod_name)))
                             break
                     else:
                         show_mod(sys.modules[widget.base_widget.get_text()[0]])
