@@ -543,7 +543,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         from pudb.source_view import SourceLine, format_source
 
         if self.file_name == "<string>":
-            return [SourceLine(self, self.file_name)]
+            return [SourceLine(debugger_ui, self.file_name)]
 
         breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)[:]
         breakpoints += [i for f, i in debugger_ui.debugger.set_traces if f
@@ -568,7 +568,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
             debugger_ui.message("Could not load source file '%s':\n\n%s" % (
                 self.file_name, "".join(format_exception(sys.exc_info()))),
                 title="Source Code Load Error")
-            return [SourceLine(self,
+            return [SourceLine(debugger_ui,
                 "Error while loading '%s'." % self.file_name)]
 
 
