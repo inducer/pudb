@@ -250,7 +250,7 @@ def get_stringifier(iinfo):
             return lambda value: "ERROR: Invalid custom stringifier file."
         else:
             if "pudb_stringifier" not in custom_stringifier_dict:
-                print("%s does not contain a function named pudb_stringifier at"
+                print("%s does not contain a function named pudb_stringifier at "
                       "the module level." % iinfo.display_type)
                 raw_input("Hit enter:")
                 return lambda value: ("ERROR: Invalid custom stringifier file: "
