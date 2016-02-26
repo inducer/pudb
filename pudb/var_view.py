@@ -282,8 +282,8 @@ class ValueWalker:
             try:
                 displayed_value = get_stringifier(iinfo)(value)
             except Exception:
-                ## Unfortunately, anything can happen when calling str() or
-                ## repr() on a random object.
+                # Unfortunately, anything can happen when calling str() or
+                # repr() on a random object.
                 displayed_value = type_stringifier(value) \
                                 + " (!! %s error !!)" % iinfo.display_type
 
