@@ -1278,7 +1278,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             def build_filtered_mod_list(filt_string=""):
                 modules = sorted(name
-                        for name, mod in sys.modules.items()
+                        # mod_exists may change the size of sys.modules,
+                        # causing this to crash. Copy to a list.
+                        for name, mod in list(sys.modules.items())
                         if mod_exists(mod))
 
                 result = [urwid.AttrMap(SelectableText(mod),
@@ -2089,6 +2091,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2016.1:\n\n"
+                    "- Fix module browser on Py3.\n"
 
                     "\nChanges in version 2015.4:\n\n"
                     "- Support for (somewhat rudimentary) remote debugging\n"
