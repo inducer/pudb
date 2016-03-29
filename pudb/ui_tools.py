@@ -1,4 +1,5 @@
 import urwid
+from urwid.util import _target_encoding
 
 
 # generic urwid helpers -------------------------------------------------------
@@ -22,9 +23,20 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
             line_attr = rle_subseg(line_attr, 0, maxcol)
 
         from urwid.util import apply_target_encoding
-        line, line_cs = apply_target_encoding(line)
+        encoded_line, line_cs = apply_target_encoding(line)
 
-        processed_txt.append(line)
+        # line_cs contains byte counts as requested by TextCanvas, but
+        # line_attr still contains column counts at this point: let's fix this.
+        def get_byte_line_attr(line, line_attr):
+            i = 0
+            for label, column_count in line_attr:
+                byte_count = len(line[i:column_count].encode(_target_encoding))
+                i += column_count
+                yield label, byte_count
+
+        line_attr = list(get_byte_line_attr(line, line_attr))
+
+        processed_txt.append(encoded_line)
         processed_attr.append(line_attr)
         processed_cs.append(line_cs)
 
