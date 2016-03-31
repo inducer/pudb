@@ -25,6 +25,8 @@ setup(name='pudb',
       install_requires=[
           "urwid>=1.1.1",
           "pygments>=1.0",
+          ],
+      test_requires=[
           "pytest>=2",
           ],
       url='http://pypi.python.org/pypi/pudb',
