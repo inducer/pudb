@@ -25,6 +25,7 @@ setup(name='pudb',
       install_requires=[
           "urwid>=1.1.1",
           "pygments>=1.0",
+          "pytest>=2",
           ],
       url='http://pypi.python.org/pypi/pudb',
       classifiers=[
