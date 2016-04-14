@@ -43,7 +43,12 @@ def get_breakpoint_invalid_reason(filename, lineno):
     if not line:
         return "Line is beyond end of file."
 
-    if lineno not in get_executable_lines_for_file(filename):
+    try:
+        executable_lines = get_executable_lines_for_file(filename):
+    except SyntaxError:
+        return "File failed to compile."
+
+    if lineno not in executable_lines:
         return "No executable statement found in line."
 
 
