@@ -1,5 +1,9 @@
 try:
     import IPython
+    # Access a property to verify module exists in case
+    # there's a demand loader wrapping module imports
+    # See https://github.com/inducer/pudb/issues/177
+    IPython.core
 except (ImportError, ValueError):
     # Old IPythons versions (0.12?) may fail to import with
     # ValueError: fallback required, but not specified
@@ -10,6 +14,10 @@ else:
 
 try:
     import bpython  # noqa
+    # Access a property to verify module exists in case
+    # there's a demand loader wrapping module imports
+    # See https://github.com/inducer/pudb/issues/177
+    bpython.version
 except ImportError:
     HAVE_BPYTHON = False
 else:
