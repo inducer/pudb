@@ -1,6 +1,6 @@
 # - encoding: utf-8 -
 
-from pudb.ui_tools import make_canvas
+from pudb.ui_tools import make_canvas, _target_encoding
 
 
 def test_simple():
@@ -47,6 +47,7 @@ def test_byte_boundary():
         attr=[[('var value', len(text))]],
         maxcol=len(text)
     )
+    assert _target_encoding == 'utf-8'
     assert list(canvas.content()) == [[('var value', None, b'aaaaaa\xc3\xa9')]]
 
 
