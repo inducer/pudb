@@ -131,17 +131,17 @@ class RemoteDebugger(Debugger):
         sys.settrace(None)
 
 
-def debugger(term_size=None):
+def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT):
     """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
     if rdb is None or not rdb.active:
-        rdb = _current[0] = RemoteDebugger(term_size=term_size)
+        rdb = _current[0] = RemoteDebugger(host=host, port=port, term_size=term_size)
     return rdb
 
 
-def set_trace(frame=None, term_size=None):
+def set_trace(frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT):
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:
         frame = _frame().f_back
-    return debugger(term_size=term_size).set_trace(frame)
+    return debugger(term_size=term_size, host=host, port=port).set_trace(frame)
