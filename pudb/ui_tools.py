@@ -294,7 +294,7 @@ class double_press_input_filter:
   last_press = None
   last_press_time = -1
   double_press_timing = 0.25
-  
+
   @classmethod
   def __call__(cls, events, raw):
 
@@ -302,7 +302,7 @@ class double_press_input_filter:
     while i < len(events):
       e = events[i]
       i += 1
-      if not urwid.is_mouse_event(e) or not urwid.is_mouse_press(e[0]):
+      if not urwid.is_mouse_event(e) or not urwid.is_mouse_event(e[0]):
         continue
 
       if cls.last_press and \
@@ -313,10 +313,9 @@ class double_press_input_filter:
         if cls.last_press[1] == e[1]:
           events.insert(i, (e[0].replace('press', 'double press'),) + e[1:])
           i += 1
-      elif urwid.is_mouse_press(e[0]) and e[1] not in (4, 5):
+      elif urwid.is_mouse_event(e[0]) and e[1] not in (4, 5):
         cls.last_press = e
         cls.last_press_time = time.time()
         continue
       cls.last_press = None
     return events
-
