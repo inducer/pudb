@@ -17,16 +17,16 @@ def main():
         sys.exit(2)
 
     mainpyfile =  args[0]
-    from os.path import exists, dirname
+    from os.path import exists
     if not exists(mainpyfile):
-        print 'Error:', mainpyfile, 'does not exist'
+        print('Error: %s does not exist' % mainpyfile)
         sys.exit(1)
 
     sys.argv = args
 
     from pudb import runscript
-    runscript(mainpyfile, 
-            pre_run=options.pre_run, 
+    runscript(mainpyfile,
+            pre_run=options.pre_run,
             steal_output=options.steal_output)
 
 
@@ -34,4 +34,3 @@ def main():
 
 if __name__=='__main__':
     main()
-

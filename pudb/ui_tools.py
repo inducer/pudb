@@ -1,11 +1,11 @@
 import time
 
 import urwid
-
-
+from urwid.util import _target_encoding
 
 
 # generic urwid helpers -------------------------------------------------------
+
 def make_canvas(txt, attr, maxcol, fill_attr=None):
     processed_txt = []
     processed_attr = []
@@ -25,9 +25,20 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
             line_attr = rle_subseg(line_attr, 0, maxcol)
 
         from urwid.util import apply_target_encoding
-        line, line_cs = apply_target_encoding(line)
+        encoded_line, line_cs = apply_target_encoding(line)
 
-        processed_txt.append(line)
+        # line_cs contains byte counts as requested by TextCanvas, but
+        # line_attr still contains column counts at this point: let's fix this.
+        def get_byte_line_attr(line, line_attr):
+            i = 0
+            for label, column_count in line_attr:
+                byte_count = len(line[i:i+column_count].encode(_target_encoding))
+                i += column_count
+                yield label, byte_count
+
+        line_attr = list(get_byte_line_attr(line, line_attr))
+
+        processed_txt.append(encoded_line)
         processed_attr.append(line_attr)
         processed_cs.append(line_cs)
 
@@ -36,8 +47,6 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
             processed_attr,
             processed_cs,
             maxcol=maxcol)
-
-
 
 
 def make_hotkey_markup(s):
@@ -52,15 +61,10 @@ def make_hotkey_markup(s):
             ]
 
 
-
-
-
 def labelled_value(label, value):
-    return urwid.AttrWrap(urwid.Text([
+    return urwid.AttrMap(urwid.Text([
         ("label", label), str(value)]),
         "fixed value", "fixed value")
-
-
 
 
 class SelectableText(urwid.Text):
@@ -71,12 +75,12 @@ class SelectableText(urwid.Text):
         return key
 
 
-
 class SignalWrap(urwid.WidgetWrap):
-    def __init__(self, w):
+    def __init__(self, w, is_preemptive=False):
         urwid.WidgetWrap.__init__(self, w)
         self.event_listeners = []
         self.mouse_event_listeners = []
+        self.is_preemptive = is_preemptive
 
     def listen(self, mask, handler):
         self.event_listeners.append((mask, handler))
@@ -85,9 +89,18 @@ class SignalWrap(urwid.WidgetWrap):
         self.mouse_event_listeners.append((event, button, handler))
 
     def keypress(self, size, key):
-        result = self._w.keypress(size, key)
+        result = key
+
+        if self.is_preemptive:
+            for mask, handler in self.event_listeners:
+                if mask is None or mask == key:
+                    result = handler(self, size, key)
+                    break
 
         if result is not None:
+            result = self._w.keypress(size, key)
+
+        if result is not None and not self.is_preemptive:
             for mask, handler in self.event_listeners:
                 if mask is None or mask == key:
                     return handler(self, size, key)
@@ -118,10 +131,11 @@ class StackFrame(urwid.FlowWidget):
     def selectable(self):
         return True
 
-    def rows(self, (maxcol,), focus=False):
+    def rows(self, size, focus=False):
         return 1
 
-    def render(self, (maxcol,), focus=False):
+    def render(self, size, focus=False):
+        maxcol = size[0]
         if focus:
             apfx = "focused "
         else:
@@ -149,6 +163,7 @@ class StackFrame(urwid.FlowWidget):
     def keypress(self, size, key):
         return key
 
+
 class BreakpointFrame(urwid.FlowWidget):
     def __init__(self, is_current, filename, line):
         self.is_current = is_current
@@ -158,10 +173,11 @@ class BreakpointFrame(urwid.FlowWidget):
     def selectable(self):
         return True
 
-    def rows(self, (maxcol,), focus=False):
+    def rows(self, size, focus=False):
         return 1
 
-    def render(self, (maxcol,), focus=False):
+    def render(self, size, focus=False):
+        maxcol = size[0]
         if focus:
             apfx = "focused "
         else:
@@ -183,60 +199,65 @@ class BreakpointFrame(urwid.FlowWidget):
         return key
 
 
-
-
-class SearchBox(urwid.Edit):
+class SearchController(object):
     def __init__(self, ui):
         self.ui = ui
-        urwid.Edit.__init__(self, [("label", "Search: ") ], "")
         self.highlight_line = None
 
-        _, self.search_start = self.ui.source.get_focus()
-
-        from time import time
-        self.search_start_time = time()
-
-    def restart_search(self):
-        from time import time
-        now = time()
-
-        if self.search_start_time > 5:
-            self.set_edit_text("")
-
-        self.search_time = now
-
-    def keypress(self, size, key):
-        result = urwid.Edit.keypress(self, size, key)
-
-        if result is not None:
-            if key == "esc":
-                self.cancel_search()
-                return None
-            elif key == "enter":
-                if self.get_edit_text():
-                    self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[1])
-                else:
-                    self.cancel_search()
-                return None
-        else:
-            if self.do_search(1, self.search_start):
-                self.ui.search_attrwrap.set_attr("search box")
-            else:
-                self.ui.search_attrwrap.set_attr("search not found")
-
-        return result
+        self.search_box = None
+        self.last_search_string = None
 
     def cancel_highlight(self):
         if self.highlight_line is not None:
             self.highlight_line.set_highlight(False)
             self.highlight_line = None
 
-    def do_search(self, dir, start=None):
+    def cancel_search(self):
+        self.cancel_highlight()
+        self.hide_search_ui()
+
+    def hide_search_ui(self):
+        self.search_box = None
+        del self.ui.lhs_col.contents[0]
+        self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
+
+    def open_search_ui(self):
+        lhs_col = self.ui.lhs_col
+
+        if self.search_box is None:
+            _, self.search_start = self.ui.source.get_focus()
+
+            self.search_box = SearchBox(self)
+            self.search_AttrMap = urwid.AttrMap(
+                    self.search_box, "search box")
+
+            lhs_col.item_types.insert(
+                    0, ("flow", None))
+            lhs_col.widget_list.insert(0, self.search_AttrMap)
+
+            self.ui.columns.set_focus(lhs_col)
+            lhs_col.set_focus(self.search_AttrMap)
+        else:
+            self.ui.columns.set_focus(lhs_col)
+            lhs_col.set_focus(self.search_AttrMap)
+            #self.search_box.restart_search()
+
+    def perform_search(self, dir, s=None, start=None, update_search_start=False):
         self.cancel_highlight()
 
+        # self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[1])
+
+        if s is None:
+            s = self.last_search_string
+
+            if s is None:
+                self.ui.message("No previous search term.")
+                return False
+        else:
+            self.last_search_string = s
+
         if start is None:
-            _, start = self.ui.source.get_focus()
-        s = self.ui.search_box.get_edit_text()
+            start = self.search_start
 
         case_insensitive = s.lower() == s
 
@@ -258,21 +279,57 @@ class SearchBox(urwid.Edit):
                 sl.set_highlight(True)
                 self.highlight_line = sl
                 self.ui.source.set_focus(i)
+
+                if update_search_start:
+                    self.search_start = i
+
                 return True
 
-            last_i = i
             i = (i+dir) % len(self.ui.source)
 
         return False
 
-    def cancel_search(self):
-        self.cancel_highlight()
 
-        self.ui.search_box = None
-        del self.ui.lhs_col.item_types[0]
-        del self.ui.lhs_col.widget_list[0]
-        self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
+class SearchBox(urwid.Edit):
+    def __init__(self, controller):
+        urwid.Edit.__init__(self, [("label", "Search: ")], "")
+        self.controller = controller
 
+    def restart_search(self):
+        from time import time
+        now = time()
+
+        if self.search_start_time > 5:
+            self.set_edit_text("")
+
+        self.search_time = now
+
+    def keypress(self, size, key):
+        result = urwid.Edit.keypress(self, size, key)
+        txt = self.get_edit_text()
+
+        if result is not None:
+            if key == "esc":
+                self.controller.cancel_search()
+                return None
+            elif key == "enter":
+                if txt:
+                    self.controller.hide_search_ui()
+                    self.controller.perform_search(dir=1, s=txt,
+                            update_search_start=True)
+                else:
+                    self.controller.cancel_search()
+                return None
+        else:
+            if self.controller.perform_search(dir=1, s=txt):
+                self.controller.search_AttrMap.set_attr_map({None: "search box"})
+            else:
+                self.controller.search_AttrMap.set_attr_map(
+                        {None: "search not found"})
+
+        return result
+
+# }}}
 
 class double_press_input_filter:
   '''

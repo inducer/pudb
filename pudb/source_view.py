@@ -1,6 +1,7 @@
 import urwid
 
 
+TABSTOP = 8
 
 
 class SourceLine(urwid.FlowWidget):
@@ -28,15 +29,19 @@ class SourceLine(urwid.FlowWidget):
         self.has_breakpoint = has_breakpoint
         self._invalidate()
 
-    def rows(self, (maxcol,), focus=False):
+    def rows(self, size, focus=False):
         return 1
 
-    def render(self, (maxcol,), focus=False):
-        from pudb import CONFIG
+    def render(self, size, focus=False):
+        from pudb.debugger import CONFIG
         render_line_nr = CONFIG["line_numbers"]
 
+        maxcol = size[0]
         hscroll = self.dbg_ui.source_hscroll_start
+
+        # attrs is a list of words like 'focused' and 'breakpoint'
         attrs = []
+
         if self.is_current:
             crnt = ">"
             attrs.append("current")
@@ -55,53 +60,85 @@ class SourceLine(urwid.FlowWidget):
             if not self.has_breakpoint:
                 attrs.append("highlighted")
 
-        if not attrs and self.attr is not None:
-            attr = self.attr
-            if render_line_nr:
-                attr = [("line number", len(self.line_nr))] + attr
-        else:
-            attr = [(" ".join(attrs+["source"]), hscroll+maxcol-2)]
-
-        from urwid.util import rle_subseg, rle_len
-
         text = self.text
-        if self.dbg_ui.source_hscroll_start:
-            text = text[hscroll:]
-            attr = rle_subseg(attr,
-                    self.dbg_ui.source_hscroll_start,
-                    rle_len(attr))
+        if not attrs and self.attr is not None:
+            attr = self.attr + [("source", None)]
+        else:
+            attr = [(" ".join(attrs+["source"]), None)]
+
+        from urwid.util import apply_target_encoding, trim_text_attr_cs
+
+        # build line prefix ---------------------------------------------------
+        line_prefix = ""
+        line_prefix_attr = []
 
         if render_line_nr:
-            text = self.line_nr + text
+            line_prefix_attr = [("line number", len(self.line_nr))]
+            line_prefix = self.line_nr
 
-        text = crnt+bp+text
-        attr = [("source", 1), ("bp_star", 1)] + attr
+        line_prefix = crnt+bp+line_prefix
+        line_prefix_attr = [("source", 1), ("breakpoint marker", 1)] \
+                + line_prefix_attr
 
-        # clipping ------------------------------------------------------------
-        if len(text) > maxcol:
-            text = text[:maxcol]
-            attr = rle_subseg(attr, 0, maxcol)
+        # assume rendered width is same as len
+        line_prefix_len = len(line_prefix)
 
-        # shipout -------------------------------------------------------------
-        from urwid.util import apply_target_encoding
-        txt, cs = apply_target_encoding(text)
+        encoded_line_prefix, line_prefix_cs = apply_target_encoding(line_prefix)
 
-        return urwid.TextCanvas([txt], [attr], [cs], maxcol=maxcol)
+        assert len(encoded_line_prefix) == len(line_prefix)
+        # otherwise we'd have to adjust line_prefix_attr... :/
+
+        # shipout, encoding ---------------------------------------------------
+        cs = []
+        encoded_text_segs = []
+        encoded_attr = []
+
+        i = 0
+        for seg_attr, seg_len in attr:
+            if seg_len is None:
+                # means: gobble up remainder of text and rest of line
+                # and fill with attribute
+
+                l = hscroll+maxcol
+                remaining_text = text[i:]
+                encoded_seg_text, seg_cs = apply_target_encoding(
+                        remaining_text + l*" ")
+                encoded_attr.append((seg_attr, len(remaining_text)+l))
+            else:
+                unencoded_seg_text = text[i:i+seg_len]
+                encoded_seg_text, seg_cs = apply_target_encoding(unencoded_seg_text)
+
+                adjustment = len(encoded_seg_text) - len(unencoded_seg_text)
+
+                encoded_attr.append((seg_attr, seg_len + adjustment))
+
+                i += seg_len
+
+            encoded_text_segs.append(encoded_seg_text)
+            cs.extend(seg_cs)
+
+        encoded_text = b"".join(encoded_text_segs)
+        encoded_text, encoded_attr, cs = trim_text_attr_cs(
+                encoded_text, encoded_attr, cs,
+                hscroll, hscroll+maxcol-line_prefix_len)
+
+        encoded_text = encoded_line_prefix + encoded_text
+        encoded_attr = line_prefix_attr + encoded_attr
+        cs = line_prefix_cs + cs
+
+        return urwid.TextCanvas([encoded_text], [encoded_attr], [cs], maxcol=maxcol)
 
     def keypress(self, size, key):
         return key
 
 
-
-
-
 def format_source(debugger_ui, lines, breakpoints):
-    lineno_format = "%%%dd "%(len(str(len(lines))))
+    lineno_format = "%%%dd " % (len(str(len(lines))))
     try:
-        import pygments
+        import pygments  # noqa
     except ImportError:
         return [SourceLine(debugger_ui,
-            line.rstrip("\n\r").replace("\t", 8*" "), 
+            line.rstrip("\n\r").expandtabs(TABSTOP),
             lineno_format % (i+1), None,
             has_breakpoint=i+1 in breakpoints)
             for i, line in enumerate(lines)]
@@ -120,6 +157,13 @@ def format_source(debugger_ui, lines, breakpoints):
                 t.Name.Function: "name",
                 t.Name.Class: "name",
                 t.Punctuation: "punctuation",
+                t.String: "string",
+                # XXX: Single and Double don't actually work yet.
+                # See https://bitbucket.org/birkenfeld/pygments-main/issue/685
+                t.String.Double: "doublestring",
+                t.String.Single: "singlestring",
+                t.String.Backtick: "backtick",
+                t.String.Doc: "docstring",
                 t.Comment: "comment",
                 }
 
@@ -172,8 +216,7 @@ def format_source(debugger_ui, lines, breakpoints):
                 if subself.current_line:
                     shipout_line()
 
-        highlight("".join(l.replace("\t", 8*" ") for l in lines),
+        highlight("".join(l.expandtabs(TABSTOP) for l in lines),
                 PythonLexer(stripnl=False), UrwidFormatter())
 
         return result
-

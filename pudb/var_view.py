@@ -1,4 +1,7 @@
-# constants and imports -------------------------------------------------------
+# -*- coding: utf-8 -*-
+
+# {{{ constants and imports
+
 import urwid
 
 try:
@@ -7,7 +10,20 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
-# data ------------------------------------------------------------------------
+from pudb.py3compat import PY3, execfile, raw_input, xrange, \
+        integer_types, string_types
+if PY3:
+    ELLIPSIS = '…'
+else:
+    ELLIPSIS = unicode('…', 'utf-8')
+
+from pudb.debugger import CONFIG
+
+# }}}
+
+
+# {{{ data
+
 class FrameVarInfo(object):
     def __init__(self):
         self.id_path_to_iinfo = {}
@@ -21,26 +37,32 @@ class FrameVarInfo(object):
             return self.id_path_to_iinfo.setdefault(
                     id_path, InspectInfo())
 
+
 class InspectInfo(object):
     def __init__(self):
         self.show_detail = False
-        self.display_type = "type"
+        self.display_type = CONFIG["stringifier"]
         self.highlighted = False
         self.repeated_at_top = False
-        self.show_private_members = False
+        self.access_level = "public"
+        self.show_methods = False
+        self.wrap = CONFIG["wrap_variables"]
+
 
 class WatchExpression(object):
     def __init__(self, expression):
         self.expression = expression
 
+
 class WatchEvalError(object):
     def __str__(self):
         return "<error>"
 
+# }}}
 
 
+# {{{ safe types
 
-# safe types ------------------------------------------------------------------
 def get_str_safe_types():
     import types
 
@@ -53,26 +75,48 @@ def get_str_safe_types():
 
 STR_SAFE_TYPES = get_str_safe_types()
 
+# }}}
 
 
+# {{{ widget
 
-# widget ----------------------------------------------------------------------
 class VariableWidget(urwid.FlowWidget):
     def __init__(self, prefix, var_label, value_str, id_path=None, attr_prefix=None,
-            watch_expr=None):
+            watch_expr=None, iinfo=None):
         self.prefix = prefix
         self.var_label = var_label
         self.value_str = value_str
         self.id_path = id_path
         self.attr_prefix = attr_prefix or "var"
         self.watch_expr = watch_expr
+        if iinfo is None:
+            self.wrap = CONFIG["wrap_variables"]
+        else:
+            self.wrap = iinfo.wrap
 
     def selectable(self):
         return True
 
     SIZE_LIMIT = 20
 
+    def _get_text(self, size):
+        maxcol = size[0] - len(self.prefix)  # self.prefix is a padding
+        var_label = self.var_label or ''
+        value_str = self.value_str or ''
+        alltext = var_label + ": " + value_str
+        # The first line is not indented
+        firstline = self.prefix + alltext[:maxcol]
+        if not alltext[maxcol:]:
+            return [firstline]
+        fulllines, rest = divmod(len(alltext) - maxcol, maxcol - 2)
+        restlines = [alltext[(maxcol - 2)*i + maxcol:(maxcol - 2)*i + 2*maxcol - 2]
+            for i in xrange(fulllines + bool(rest))]
+        return [firstline] + ["  " + self.prefix + i for i in restlines]
+
     def rows(self, size, focus=False):
+        if self.wrap:
+            return len(self._get_text(size))
+
         if (self.value_str is not None
                 and self.var_label is not None
                 and len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT):
@@ -81,11 +125,41 @@ class VariableWidget(urwid.FlowWidget):
             return 1
 
     def render(self, size, focus=False):
+        from pudb.ui_tools import make_canvas
+
         maxcol = size[0]
         if focus:
             apfx = "focused "+self.attr_prefix+" "
         else:
             apfx = self.attr_prefix+" "
+
+        var_label = self.var_label or ''
+
+        if self.wrap:
+            text = self._get_text(size)
+
+            extralabel_full, extralabel_rem = divmod(len(var_label[maxcol:]), maxcol)
+            totallen = sum([len(i) for i in text])
+            labellen = (
+                    len(self.prefix)  # Padding of first line
+
+                    + (len(self.prefix) + 2)  # Padding of subsequent lines
+                    * (extralabel_full + bool(extralabel_rem))
+
+                    + len(var_label)
+
+                    + 2  # for ": "
+                    )
+
+            _attr = [(apfx+"label", labellen), (apfx+"value", totallen - labellen)]
+            from urwid.util import rle_subseg
+
+            fullcols, rem = divmod(totallen, maxcol)
+
+            attr = [rle_subseg(_attr, i*maxcol, (i + 1)*maxcol)
+                for i in xrange(fullcols + bool(rem))]
+
+            return make_canvas(text, attr, maxcol, apfx+"value")
 
         if self.value_str is not None:
             if self.var_label is not None:
@@ -97,7 +171,7 @@ class VariableWidget(urwid.FlowWidget):
                     attr = [[(apfx+"label", len(self.prefix)+len(self.var_label))],
                             [(apfx+"value", len(self.prefix)+2+len(self.value_str))]]
                 else:
-                    text = [self.prefix + self.var_label +": " + self.value_str]
+                    text = [self.prefix + self.var_label + ": " + self.value_str]
 
                     attr = [[
                             (apfx+"label", len(self.prefix)+len(self.var_label)+2),
@@ -113,19 +187,84 @@ class VariableWidget(urwid.FlowWidget):
         else:
             text = [self.prefix + self.var_label]
 
-            attr = [[ (apfx+"label", len(self.prefix) + len(self.var_label)), ]]
+            attr = [[(apfx+"label", len(self.prefix) + len(self.var_label)), ]]
 
-        from pudb.ui_tools import make_canvas
+        # Ellipses to show text was cut off
+        #encoding = urwid.util.detected_encoding
+
+        if False:  # encoding[:3] == "UTF":
+            # Unicode is supported, use single character ellipsis
+            for i in xrange(len(text)):
+                if len(text[i]) > maxcol:
+                    text[i] = (unicode(text[i][:maxcol-1])
+                    + ELLIPSIS + unicode(text[i][maxcol:]))
+                    # XXX: This doesn't work.  It just gives a ?
+                    # Strangely, the following does work (it gives the …
+                    # three characters from the right):
+                    #
+                    # text[i] = (unicode(text[i][:maxcol-3])
+                    # + unicode(u'…')) + unicode(text[i][maxcol-2:])
+        else:
+            for i in xrange(len(text)):
+                if len(text[i]) > maxcol:
+                    text[i] = text[i][:maxcol-3] + "..."
+
         return make_canvas(text, attr, maxcol, apfx+"value")
 
     def keypress(self, size, key):
         return key
 
 
+custom_stringifier_dict = {}
+
+
+def type_stringifier(value):
+    if HAVE_NUMPY and isinstance(value, numpy.ndarray):
+        return "ndarray %s %s" % (value.dtype, value.shape)
+    elif isinstance(value, STR_SAFE_TYPES):
+        try:
+            return str(value)
+        except Exception:
+            pass
+
+    return type(value).__name__
+
+
+def get_stringifier(iinfo):
+    if iinfo.display_type == "type":
+        return type_stringifier
+    elif iinfo.display_type == "repr":
+        return repr
+    elif iinfo.display_type == "str":
+        return str
+    else:
+        try:
+            if not custom_stringifier_dict:  # Only execfile once
+                from os.path import expanduser
+                execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
+        except:
+            print("Error when importing custom stringifier:")
+            from traceback import print_exc
+            print_exc()
+            raw_input("Hit enter:")
+            return lambda value: "ERROR: Invalid custom stringifier file."
+        else:
+            if "pudb_stringifier" not in custom_stringifier_dict:
+                print("%s does not contain a function named pudb_stringifier at "
+                      "the module level." % iinfo.display_type)
+                raw_input("Hit enter:")
+                return lambda value: ("ERROR: Invalid custom stringifier file: "
+                "pudb_stringifer not defined.")
+            else:
+                return (lambda value:
+                    str(custom_stringifier_dict["pudb_stringifier"](value)))
 
 
 # tree walking ----------------------------------------------------------------
 class ValueWalker:
+
+    PREFIX = "| "
+
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
@@ -135,24 +274,29 @@ class ValueWalker:
 
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
 
-        if isinstance(value, (int, float, long, complex)):
+        if isinstance(value, integer_types + (float, complex)):
             self.add_item(prefix, label, repr(value), id_path, attr_prefix)
-        elif isinstance(value, (str, unicode)):
-            self.add_item(prefix, label, repr(value)[:200], id_path, attr_prefix)
+        elif isinstance(value, string_types):
+            self.add_item(prefix, label, repr(value), id_path, attr_prefix)
         else:
-            if iinfo.display_type == "type":
-                if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-                    displayed_value = "ndarray %s %s" % (value.dtype, value.shape)
-                elif isinstance(value, STR_SAFE_TYPES):
-                    displayed_value = str(value)
+            try:
+                displayed_value = get_stringifier(iinfo)(value)
+            except Exception:
+                # Unfortunately, anything can happen when calling str() or
+                # repr() on a random object.
+                displayed_value = type_stringifier(value) \
+                                + " (!! %s error !!)" % iinfo.display_type
+
+            if iinfo.show_detail:
+                if iinfo.access_level == "public":
+                    marker = "pub"
+                elif iinfo.access_level == "private":
+                    marker = "pri"
                 else:
-                    displayed_value = type(value).__name__
-            elif iinfo.display_type == "repr":
-                displayed_value = repr(value)
-            elif iinfo.display_type == "str":
-                displayed_value = str(value)
-            else:
-                displayed_value = "ERROR: Invalid display_type"
+                    marker = "all"
+                if iinfo.show_methods:
+                    marker += "+()"
+                displayed_value += " [%s]" % marker
 
             self.add_item(prefix, label,
                 displayed_value, id_path, attr_prefix)
@@ -167,35 +311,41 @@ class ValueWalker:
                         cont_id_path = "%s.cont-%d" % (id_path, i)
                         if not self.frame_var_info.get_inspect_info(
                                 cont_id_path, read_only=True).show_detail:
-                            self.add_item(prefix+"  ", "...", None, cont_id_path)
+                            self.add_item(prefix+self.PREFIX, "...",
+                                    None, cont_id_path)
                             break
 
-                    self.walk_value(prefix+"  ", None, entry,
+                    self.walk_value(prefix+self.PREFIX, None, entry,
                         "%s[%d]" % (id_path, i))
                 if not value:
-                    self.add_item(prefix+"  ", "<empty>", None)
+                    self.add_item(prefix+self.PREFIX, "<empty>", None)
                 return
 
             # containers --------------------------------------------------
             key_it = None
+
             try:
-                l = len(value)
+                if PY3:
+                    key_it = value.keys()
+                else:
+                    key_it = value.iterkeys()
             except:
                 pass
-            else:
+
+            if key_it is None:
                 try:
-                    value[0]
-                except IndexError:
-                    key_it = []
+                    l = len(value)
                 except:
                     pass
                 else:
-                    key_it = xrange(l)
-
-            try:
-                key_it = value.iterkeys()
-            except:
-                pass
+                    try:
+                        value[0]
+                    except IndexError:
+                        key_it = []
+                    except:
+                        pass
+                    else:
+                        key_it = xrange(l)
 
             if key_it is not None:
                 cnt = 0
@@ -205,63 +355,64 @@ class ValueWalker:
                         if not self.frame_var_info.get_inspect_info(
                                 cont_id_path, read_only=True).show_detail:
                             self.add_item(
-                                prefix+"  ", "...", None, cont_id_path)
+                                prefix+self.PREFIX, "...", None, cont_id_path)
                             break
 
-                    self.walk_value(prefix+"  ", repr(key), value[key],
+                    self.walk_value(prefix+self.PREFIX, repr(key), value[key],
                         "%s[%r]" % (id_path, key))
                     cnt += 1
                 if not cnt:
-                    self.add_item(prefix+"  ", "<empty>", None)
+                    self.add_item(prefix+self.PREFIX, "<empty>", None)
                 return
 
             # class types -------------------------------------------------
             key_its = []
+
             try:
-                key_its.append(value.__slots__)
+                key_its.append(dir(value))
             except:
                 pass
 
-            try:
-                key_its.append(value.__dict__.iterkeys())
-            except:
-                pass
-
-            if not key_its:
-                try:
-                    key_its.append(dir(value))
-                except:
-                    pass
-
-            keys = [key for key_it in key_its for key in key_it]
+            keys = [key
+                    for ki in key_its
+                    for key in ki]
             keys.sort()
 
-            cnt_omitted = 0
+            cnt_omitted_private = cnt_omitted_methods = 0
 
             for key in keys:
-                if key[0] == "_" and not iinfo.show_private_members:
-                    cnt_omitted += 1
-                    continue
+                if iinfo.access_level == "public":
+                    if key.startswith("_"):
+                        cnt_omitted_private += 1
+                        continue
+                elif iinfo.access_level == "private":
+                    if key.startswith("__") and key.endswith("__"):
+                        cnt_omitted_private += 1
+                        continue
 
                 try:
                     attr_value = getattr(value, key)
+                    if callable(attr_value) and not iinfo.show_methods:
+                        cnt_omitted_methods += 1
+                        continue
                 except:
                     attr_value = WatchEvalError()
 
-                self.walk_value(prefix+"  ",
+                self.walk_value(prefix+self.PREFIX,
                         ".%s" % key, attr_value,
                         "%s.%s" % (id_path, key))
 
             if not keys:
-                if cnt_omitted:
-                    self.add_item(prefix+"  ", "<omitted private attributes>", None)
+                if cnt_omitted_private:
+                    label = "<omitted private attributes>"
+                elif cnt_omitted_methods:
+                    label = "<omitted methods>"
                 else:
-                    self.add_item(prefix+"  ", "<empty>", None)
+                    label = "<empty>"
+                self.add_item(prefix+self.PREFIX, label, None)
 
             if not key_its:
-                self.add_item(prefix+"  ", "<?>", None)
-
-
+                self.add_item(prefix+self.PREFIX, "<?>", None)
 
 
 class BasicValueWalker(ValueWalker):
@@ -275,10 +426,8 @@ class BasicValueWalker(ValueWalker):
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
 
-        self.widget_list.append(
-                VariableWidget(prefix, var_label, value_str, id_path, attr_prefix))
-
-
+        self.widget_list.append(VariableWidget(prefix, var_label, value_str,
+            id_path, attr_prefix, iinfo=iinfo))
 
 
 class WatchValueWalker(ValueWalker):
@@ -294,9 +443,7 @@ class WatchValueWalker(ValueWalker):
 
         self.widget_list.append(
                 VariableWidget(prefix, var_label, value_str, id_path, attr_prefix,
-                    watch_expr=self.watch_expr))
-
-
+                    watch_expr=self.watch_expr, iinfo=iinfo))
 
 
 class TopAndMainVariableWalker(ValueWalker):
@@ -322,20 +469,22 @@ class TopAndMainVariableWalker(ValueWalker):
                 repeated_at_top = True
 
         if repeated_at_top:
-            self.top_widget_list.append(
-                    VariableWidget(prefix, var_label, value_str, id_path, attr_prefix))
+            self.top_widget_list.append(VariableWidget(prefix, var_label,
+                value_str, id_path, attr_prefix, iinfo=iinfo))
 
-        self.main_widget_list.append(
-                VariableWidget(prefix, var_label, value_str, id_path, attr_prefix))
+        self.main_widget_list.append(VariableWidget(prefix, var_label,
+            value_str, id_path, attr_prefix, iinfo=iinfo))
+
+# }}}
 
 
+# {{{ top level
 
+SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
-# top level -------------------------------------------------------------------
-SEPARATOR = urwid.AttrWrap(urwid.Text(""), "variable separator")
 
 def make_var_view(frame_var_info, locals, globals):
-    vars = locals.keys()
+    vars = list(locals.keys())
     vars.sort(key=lambda n: n.lower())
 
     tmv_walker = TopAndMainVariableWalker(frame_var_info)
@@ -352,7 +501,8 @@ def make_var_view(frame_var_info, locals, globals):
                 .walk_value("", watch_expr.expression, value)
 
     if "__return__" in vars:
-        ret_walker.walk_value("", "Return", locals["__return__"], attr_prefix="return")
+        ret_walker.walk_value("", "Return", locals["__return__"],
+                attr_prefix="return")
 
     for var in vars:
         if not var[0] in "_.":
@@ -372,8 +522,6 @@ def make_var_view(frame_var_info, locals, globals):
     return result
 
 
-
-
 class FrameVarInfoKeeper(object):
     def __init__(self):
         self.frame_var_info = {}
@@ -386,3 +534,6 @@ class FrameVarInfoKeeper(object):
         else:
             return self.frame_var_info.setdefault(ssid, FrameVarInfo())
 
+# }}}
+
+# vim: foldmethod=marker
