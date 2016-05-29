@@ -6,7 +6,6 @@ import urwid
 import bdb
 import sys
 import os
-import time
 
 from pudb.settings import load_config, save_config
 CONFIG = load_config()
@@ -425,7 +424,7 @@ class Debugger(bdb.Bdb):
 # UI stuff --------------------------------------------------------------------
 from pudb.ui_tools import double_press_input_filter, labelled_value, \
         make_hotkey_markup, SelectableText, SignalWrap, StackFrame, \
-        BreakpointFrame, SearchBox, make_hotkey_markup
+        BreakpointFrame
 from pudb.var_view import FrameVarInfoKeeper
 
 
