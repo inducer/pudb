@@ -752,7 +752,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             iinfo = self.get_frame_var_info(read_only=False) \
                     .get_inspect_info(var.id_path, read_only=False)
 
-            display_types = ("type", "repr", "str")
+            display_types = ["type", "repr", "str"]
             if CONFIG["custom_stringifier"]:
                 display_types.append(CONFIG["custom_stringifier"])
 
