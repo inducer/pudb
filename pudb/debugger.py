@@ -746,13 +746,12 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ variables listeners
 
-        def change_var_state(w, size, key, *args):
+        def change_var_state(w, size, key, button=None, x=None, y=None, focus=None):
             var, pos = self.var_list._w.get_focus()
 
             iinfo = self.get_frame_var_info(read_only=False) \
                     .get_inspect_info(var.id_path, read_only=False)
 
-            button, x, y, focus = args or (None,)*4
             display_types = ("type", "repr", "str")
 
             if key == "\\" or (key == 'mouse press' and button == 3):
@@ -783,7 +782,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.update_var_view()
 
-        def edit_inspector_detail(w, size, key, *args):
+        def edit_inspector_detail(w, size, key, button=None, x=None, y=None, focus=None):
             var, pos = self.var_list._w.get_focus()
 
             if var is None:
@@ -934,20 +933,20 @@ class DebuggerUI(FrameVarInfoKeeper):
         # }}}
 
         # {{{ stack listeners
-        def examine_frame(w, size, key, *args):
+        def examine_frame(w, size, key, button=None, x=None, y=None, focus=None):
             _, pos = self.stack_list._w.get_focus()
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.stack_list.listen("enter", examine_frame)
         self.stack_list.listen_mouse_event("mouse double press", 1, examine_frame)
 
-        def move_stack_top(w, size, key, *args):
+        def move_stack_top(w, size, key, button=None, x=None, y=None, focus=None):
             self.debugger.set_frame_index(len(self.debugger.stack)-1)
 
-        def move_stack_up(w, size, key, *args):
+        def move_stack_up(w, size, key, button=None, x=None, y=None, focus=None):
             self.debugger.move_up_frame()
 
-        def move_stack_down(w, size, key, *args):
+        def move_stack_down(w, size, key, button=None, x=None, y=None, focus=None):
             self.debugger.move_down_frame()
 
         self.stack_list.listen("H", move_stack_top)
@@ -1001,7 +1000,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.update_breakpoints()
 
-        def examine_breakpoint(w, size, key, *args):
+        def examine_breakpoint(w, size, key, button=None, x=None, y=None, focus=None):
             bp_entry, pos = self.bp_list._w.get_focus()
 
             if bp_entry is None:
@@ -1089,14 +1088,14 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.save_breakpoints()
             self.quit_event_loop = True
 
-        def next(w, size, key, *args):
+        def next(w, size, key, button=None, x=None, y=None, focus=None):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
                 self.debugger.set_next(self.debugger.curframe)
                 end()
 
-        def step(w, size, key, *args):
+        def step(w, size, key, button=None, x=None, y=None, focus=None):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
@@ -1117,7 +1116,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.debugger.set_continue()
                 end()
 
-        def run_to_cursor(w, size, key, *args):
+        def run_to_cursor(w, size, key, button=None, x=None, y=None, focus=None):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
@@ -1177,16 +1176,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 lineno = min(max(0, int(lineno_edit.value())-1), len(self.source)-1)
                 self.source.set_focus(lineno)
 
-        def move_down(w, size, key, *args):
+        def move_down(w, size, key, button=None, x=None, y=None, focus=None):
             w.keypress(size, "down")
 
-        def move_up(w, size, key, *args):
+        def move_up(w, size, key, button=None, x=None, y=None, focus=None):
             w.keypress(size, "up")
 
-        def page_down(w, size, key, *args):
+        def page_down(w, size, key, button=None, x=None, y=None, focus=None):
             w.keypress(size, "page down")
 
-        def page_up(w, size, key, *args):
+        def page_up(w, size, key, button=None, x=None, y=None, focus=None):
             w.keypress(size, "page up")
 
         def scroll_left(w, size, key):
@@ -1210,7 +1209,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def search_previous(w, size, key):
             self.search_controller.perform_search(dir=-1, update_search_start=True)
 
-        def toggle_breakpoint(w, size, key, *args):
+        def toggle_breakpoint(w, size, key, button=None, x=None, y=None, focus=None):
             bp_source_identifier = \
                     self.source_code_provider.get_breakpoint_source_identifier()
 
