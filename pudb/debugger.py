@@ -2333,7 +2333,7 @@ class DebuggerUI(FrameVarInfoKeeper):
     def update_breakpoints(self):
         self.bp_walker[:] = [
                 BreakpointFrame(self.debugger.current_bp == (bp.file, bp.line),
-                    self._format_fname(bp.file), bp.line)
+                    self._format_fname(bp.file), bp)
                 for bp in self._get_bp_list()]
 
     def update_stack(self):
