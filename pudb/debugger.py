@@ -1236,7 +1236,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
                     from pudb.lowlevel import get_breakpoint_invalid_reason
                     invalid_reason = get_breakpoint_invalid_reason(
-                            bp_source_identifier, pos+1)
+                            bp_source_identifier, lineno)
 
                     if invalid_reason is not None:
                         do_set = not self.dialog(
