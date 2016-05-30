@@ -112,6 +112,9 @@ class SignalWrap(urwid.WidgetWrap):
         if not CONFIG["mouse_support"]:
             return False
 
+        # Always select the element first
+        super(SignalWrap, self).mouse_event(size, 'mouse press', 1, x, y, focus)
+
         result = self._w.mouse_event(size, event, button, x, y, focus)
 
         if result is False:
