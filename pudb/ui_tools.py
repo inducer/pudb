@@ -155,6 +155,7 @@ class BreakpointFrame(urwid.FlowWidget):
         self.breakpoint = breakpoint
         self.line = breakpoint.line
         self.enabled = breakpoint.enabled
+        self.hits = breakpoint.hits
 
     def selectable(self):
         return True
@@ -177,7 +178,8 @@ class BreakpointFrame(urwid.FlowWidget):
             bp_pfx += ">>"
         bp_pfx = bp_pfx.ljust(3)
 
-        loc = " %s:%d" % (self.filename, self.line)
+        hits_label = 'hits' if self.hits != 1 else 'hit'
+        loc = " %s:%d (%s %s)" % (self.filename, self.line, self.hits, hits_label)
         text = bp_pfx+loc
         attr = [(apfx+"breakpoint", len(loc))]
 
