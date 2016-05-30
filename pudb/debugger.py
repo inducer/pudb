@@ -780,8 +780,14 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
             elif key == 'mouse press' and button == 5:
+                # SignalWrap.mouse_event by doesn't select on scroll events,
+                # but we want to do that here.
+                super(SignalWrap, self.var_list).mouse_event(size,
+                    'mouse press', 1, x, y, focus)
                 iinfo.display_type = display_types[(display_types.index(iinfo.display_type) + 1) % len(display_types)]
             elif key == 'mouse press' and button == 4:
+                super(SignalWrap, self.var_list).mouse_event(size,
+                    'mouse press', 1, x, y, focus)
                 iinfo.display_type = display_types[(display_types.index(iinfo.display_type) - 1 + len(display_types)) % len(display_types)]
 
             self.update_var_view()
