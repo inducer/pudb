@@ -999,7 +999,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     self.update_breakpoints()
 
-        def enable_disable_breakpoint(w, size, key):
+        def enable_disable_breakpoint(w, size, key, button=None, x=None, y=None, focus=None):
             bp_entry, pos = self.bp_list._w.get_focus()
 
             if bp_entry is None:
@@ -1086,6 +1086,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
         self.bp_list.listen("e", enable_disable_breakpoint)
+        self.bp_list.listen_mouse_event("mouse press", 3, enable_disable_breakpoint)
 
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
