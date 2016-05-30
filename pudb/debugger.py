@@ -948,7 +948,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.stack_list.listen("enter", examine_frame)
-        self.stack_list.listen_mouse_event("mouse double press", 1, examine_frame)
+        self.stack_list.listen_mouse_event("mouse press", 1, examine_frame)
 
         def move_stack_top(w, size, key, button=None, x=None, y=None, focus=None):
             self.debugger.set_frame_index(len(self.debugger.stack)-1)
