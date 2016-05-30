@@ -79,6 +79,8 @@ def load_config():
 
     conf_dict.setdefault("display", "auto")
 
+    conf_dict.setdefault("mouse_support", True)
+
     conf_dict.setdefault("prompt_on_quit", True)
 
     def normalize_bool_inplace(name):
@@ -92,6 +94,7 @@ def load_config():
 
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
+    normalize_bool_inplace("mouse_support")
     normalize_bool_inplace("prompt_on_quit")
 
     return conf_dict
@@ -146,6 +149,9 @@ def edit_config(ui, conf_dict):
     def _update_wrap_variables():
         ui.update_var_view()
 
+    def _update_mouse_support(mouse_support):
+        ui.screen.set_mouse_tracking(mouse_support)
+
     def _update_config(check_box, new_state, option_newvalue):
         option, newvalue = option_newvalue
         new_conf_dict = {option: newvalue}
@@ -189,6 +195,11 @@ def edit_config(ui, conf_dict):
             new_conf_dict["wrap_variables"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
             _update_wrap_variables()
+
+        elif option == "mouse_support":
+            mouse_support = new_conf_dict["mouse_support"] = not check_box.get_state()
+            conf_dict.update(new_conf_dict)
+            _update_mouse_support(mouse_support)
 
     heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
@@ -331,6 +342,18 @@ def edit_config(ui, conf_dict):
 
     # }}}
 
+
+    # {{{ mouse support
+
+    cb_mouse_support = urwid.CheckBox("Mouse support",
+            bool(conf_dict["mouse_support"]), on_state_change=_update_config,
+                user_data=("mouse_support", None))
+
+    mouse_support_info = urwid.Text("Enable mouse support (for terminals that "
+        "support it)? See the help (hit '?') for information about what "
+        "different  mouse buttons do.")
+    # }}}
+
     lb_contents = (
             [heading]
             + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
@@ -361,6 +384,10 @@ def edit_config(ui, conf_dict):
             + [urwid.AttrMap(urwid.Text("\nDisplay driver:\n"), "group head")]
             + [display_info]
             + display_rbs
+
+            + [urwid.AttrMap(urwid.Text("\nMouse support:\n"), "group head")]
+            + [mouse_support_info]
+            + [cb_mouse_support]
             )
 
     lb = urwid.ListBox(urwid.SimpleListWalker(lb_contents))

@@ -108,6 +108,10 @@ class SignalWrap(urwid.WidgetWrap):
         return result
 
     def mouse_event(self, size, event, button, x, y, focus=True):
+        from pudb.debugger import CONFIG
+        if not CONFIG["mouse_support"]:
+            return False
+
         result = self._w.mouse_event(size, event, button, x, y, focus)
 
         if result is False:

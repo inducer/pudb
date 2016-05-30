@@ -2075,7 +2075,8 @@ class DebuggerUI(FrameVarInfoKeeper):
     def show(self):
         if self.show_count == 0:
             self.screen.start()
-            self.screen.set_mouse_tracking()
+            if CONFIG["mouse_support"]:
+                self.screen.set_mouse_tracking()
         self.show_count += 1
 
     def hide(self):
