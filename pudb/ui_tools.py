@@ -172,6 +172,7 @@ class BreakpointFrame(urwid.FlowWidget):
 
         bp_pfx = ''
         if not self.enabled:
+            apfx += "disabled "
             bp_pfx += "X"
         if self.is_current:
             apfx += "current "
