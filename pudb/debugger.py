@@ -1210,8 +1210,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 existing_breaks = self.debugger.get_breaks(
                         bp_source_identifier, lineno)
                 if existing_breaks:
-                    err = self.debugger.clear_break(bp_source_identifier, lineno)
-                    sline.set_breakpoint(False)
+                    err = None
+                    for bp in existing_breaks:
+                        if not bp.enabled:
+                            bp.enable()
+                            sline.set_breakpoint(True)
+                            break # Unsure about this. Are multiple
+                                  # breakpoints even possible?
+                    else:
+                        err = self.debugger.clear_break(bp_source_identifier, lineno)
+                        sline.set_breakpoint(False)
                 else:
                     file_lineno = (bp_source_identifier, lineno)
                     if file_lineno in self.debugger.set_traces:
