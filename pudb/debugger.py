@@ -546,6 +546,8 @@ class FileSourceCodeProvider(SourceCodeProvider):
             return [SourceLine(debugger_ui, self.file_name)]
 
         breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)[:]
+        breakpoints = [lineno for lineno in breakpoints if
+            any(bp.enabled for bp in debugger_ui.debugger.get_breaks(self.file_name, lineno))]
         breakpoints += [i for f, i in debugger_ui.debugger.set_traces if f
             == self.file_name and debugger_ui.debugger.set_traces[f, i]]
         try:
@@ -983,6 +985,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             bp = self._get_bp_list()[pos]
             bp.enabled = not bp.enabled
+
+            sline = self.source[bp.line-1]
+            sline.set_breakpoint(bp.enabled)
 
             self.update_breakpoints()
 
