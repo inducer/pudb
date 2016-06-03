@@ -546,6 +546,8 @@ class FileSourceCodeProvider(SourceCodeProvider):
             return [SourceLine(debugger_ui, self.file_name)]
 
         breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)[:]
+        breakpoints = [lineno for lineno in breakpoints if
+            any(bp.enabled for bp in debugger_ui.debugger.get_breaks(self.file_name, lineno))]
         breakpoints += [i for f, i in debugger_ui.debugger.set_traces if f
             == self.file_name and debugger_ui.debugger.set_traces[f, i]]
         try:
@@ -984,6 +986,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             bp = self._get_bp_list()[pos]
             bp.enabled = not bp.enabled
 
+            sline = self.source[bp.line-1]
+            sline.set_breakpoint(bp.enabled)
+
             self.update_breakpoints()
 
         def examine_breakpoint(w, size, key):
@@ -1205,8 +1210,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 existing_breaks = self.debugger.get_breaks(
                         bp_source_identifier, lineno)
                 if existing_breaks:
-                    err = self.debugger.clear_break(bp_source_identifier, lineno)
-                    sline.set_breakpoint(False)
+                    err = None
+                    for bp in existing_breaks:
+                        if not bp.enabled:
+                            bp.enable()
+                            sline.set_breakpoint(True)
+                            break # Unsure about this. Are multiple
+                                  # breakpoints even possible?
+                    else:
+                        err = self.debugger.clear_break(bp_source_identifier, lineno)
+                        sline.set_breakpoint(False)
                 else:
                     file_lineno = (bp_source_identifier, lineno)
                     if file_lineno in self.debugger.set_traces:
@@ -2333,7 +2346,7 @@ class DebuggerUI(FrameVarInfoKeeper):
     def update_breakpoints(self):
         self.bp_walker[:] = [
                 BreakpointFrame(self.debugger.current_bp == (bp.file, bp.line),
-                    self._format_fname(bp.file), bp.line)
+                    self._format_fname(bp.file), bp)
                 for bp in self._get_bp_list()]
 
     def update_stack(self):

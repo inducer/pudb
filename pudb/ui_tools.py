@@ -149,10 +149,13 @@ class StackFrame(urwid.FlowWidget):
 
 
 class BreakpointFrame(urwid.FlowWidget):
-    def __init__(self, is_current, filename, line):
+    def __init__(self, is_current, filename, breakpoint):
         self.is_current = is_current
         self.filename = filename
-        self.line = line
+        self.breakpoint = breakpoint
+        self.line = breakpoint.line # Starts at 1
+        self.enabled = breakpoint.enabled
+        self.hits = breakpoint.hits
 
     def selectable(self):
         return True
@@ -167,14 +170,18 @@ class BreakpointFrame(urwid.FlowWidget):
         else:
             apfx = ""
 
+        bp_pfx = ''
+        if not self.enabled:
+            apfx += "disabled "
+            bp_pfx += "X"
         if self.is_current:
             apfx += "current "
-            crnt_pfx = ">> "
-        else:
-            crnt_pfx = "   "
+            bp_pfx += ">>"
+        bp_pfx = bp_pfx.ljust(3)
 
-        loc = " %s:%d" % (self.filename, self.line)
-        text = crnt_pfx+loc
+        hits_label = 'hits' if self.hits != 1 else 'hit'
+        loc = " %s:%d (%s %s)" % (self.filename, self.line, self.hits, hits_label)
+        text = bp_pfx+loc
         attr = [(apfx+"breakpoint", len(loc))]
 
         return make_canvas([text], [attr], maxcol, apfx+"breakpoint")
