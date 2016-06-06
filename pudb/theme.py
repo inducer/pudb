@@ -61,9 +61,13 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         # {{{ source
 
         "breakpoint": ("black", "dark cyan"),
+        "disabled breakpoint": ("dark gray", "dark cyan"),
         "focused breakpoint": ("black", "dark green"),
+        "focused disabled breakpoint": ("dark gray", "dark green"),
         "current breakpoint": (add_setting("white", "bold"), "dark cyan"),
+        "disabled current breakpoint": (add_setting("dark gray", "bold"), "dark cyan"),
         "focused current breakpoint": (add_setting("white", "bold"), "dark green", "bold"),
+        "focused disabled current breakpoint": (add_setting("dark gray", "bold"), "dark green", "bold"),
 
         "source": (add_setting("yellow", "bold"), "dark blue"),
         "focused source": ("black", "dark green"),
@@ -247,10 +251,15 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             # {{{ breakpoint view
 
             "breakpoint": ("light gray", "dark gray"),
+            "disabled breakpoint": ("black", "dark gray"),
             "focused breakpoint": ("light gray", "light blue"),
+            "focused disabled breakpoint": ("black", "light blue"),
             "current breakpoint": (add_setting("white", "bold"), "dark gray"),
+            "disabled current breakpoint": ("black", "dark gray"),
             "focused current breakpoint":
                 (add_setting("white", "bold"), "light blue"),
+            "focused disabled current breakpoint":
+                ("black", "light blue"),
 
             # }}}
 
@@ -372,6 +381,15 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             "search box": ("default", "default"),
 
+            "breakpoint": ("white", "default"),
+            "disabled breakpoint": ("dark gray", "default"),
+            "focused breakpoint": ("black", "dark green"),
+            "focused disabled breakpoint": ("dark gray", "dark green"),
+            "current breakpoint": (add_setting("white", "bold"), "default"),
+            "disabled current breakpoint": (add_setting("dark gray", "bold"), "default"),
+            "focused current breakpoint": (add_setting("white", "bold"), "dark green", "bold"),
+            "focused disabled current breakpoint": (add_setting("dark gray", "bold"), "dark green", "bold"),
+
             "source": ("white", "default"),
             "highlighted source": ("white", "light cyan"),
             "current source": ("white", "light gray"),
@@ -460,9 +478,13 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             # breakpoints
             "breakpoint": ("light blue", "default"),
+            "disabled breakpoint": ("light gray", "default"),
             "focused breakpoint": ("white", "light green"),
+            "focused disabled breakpoint": ("light gray", "light green"),
             "current breakpoint": ("white", "dark blue"),
-            "focused current breakpoint": ("white", "dark blue"),
+            "disabled current breakpoint": ("light gray", "dark blue"),
+            "focused current breakpoint": ("white", "light green"),
+            "focused disabled current breakpoint": ("light gray", "light green"),
 
             # source
             "breakpoint source": ("light blue", "black"),
@@ -559,9 +581,13 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             # {{{ breakpoint view
             "breakpoint": ("h80", "h233"),
+            "disabled breakpoint": ("h60", "h233"),
             "focused breakpoint": ("h192", "h24"),
+            "focused disabled breakpoint": ("h182", "h24"),
             "current breakpoint": (add_setting("h255", "bold"), "h22"),
+            "disabled current breakpoint": (add_setting("h016", "bold"), "h22"),
             "focused current breakpoint": (add_setting("h255", "bold"), "h64"),
+            "focused disabled current breakpoint": (add_setting("h016", "bold"), "h64"),
             # }}}
 
             # {{{ ui widgets
