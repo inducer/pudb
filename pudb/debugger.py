@@ -547,7 +547,8 @@ class FileSourceCodeProvider(SourceCodeProvider):
 
         breakpoints = debugger_ui.debugger.get_file_breaks(self.file_name)[:]
         breakpoints = [lineno for lineno in breakpoints if
-            any(bp.enabled for bp in debugger_ui.debugger.get_breaks(self.file_name, lineno))]
+            any(bp.enabled
+                for bp in debugger_ui.debugger.get_breaks(self.file_name, lineno))]
         breakpoints += [i for f, i in debugger_ui.debugger.set_traces if f
             == self.file_name and debugger_ui.debugger.set_traces[f, i]]
         try:
@@ -1215,8 +1216,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                         if not bp.enabled:
                             bp.enable()
                             sline.set_breakpoint(True)
-                            break # Unsure about this. Are multiple
-                                  # breakpoints even possible?
+                            # Unsure about this. Are multiple breakpoints even
+                            # possible?
+                            break
                     else:
                         err = self.debugger.clear_break(bp_source_identifier, lineno)
                         sline.set_breakpoint(False)
@@ -1372,7 +1374,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     if widget is not new_mod_entry:
                         mod_name = widget.base_widget.get_text()[0]
                         mod = sys.modules[mod_name]
-                        reload(mod)
+                        if PY3:
+                            reload(mod)  # noqa (undef on Py3)
+                        else:
+                            import importlib
+                            importlib.reload(mod)
+
                         self.message("'%s' was successfully reloaded." % mod_name)
 
                         if self.source_code_provider is not None:
