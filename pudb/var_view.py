@@ -214,6 +214,8 @@ class VariableWidget(urwid.FlowWidget):
     def keypress(self, size, key):
         return key
 
+# }}}
+
 
 custom_stringifier_dict = {}
 
@@ -260,9 +262,9 @@ def get_stringifier(iinfo):
                     str(custom_stringifier_dict["pudb_stringifier"](value)))
 
 
-# tree walking ----------------------------------------------------------------
-class ValueWalker:
+# {{{ tree walking
 
+class ValueWalker:
     PREFIX = "| "
 
     def __init__(self, frame_var_info):
