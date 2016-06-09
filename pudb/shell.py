@@ -12,6 +12,12 @@ except (ImportError, ValueError):
 else:
     HAVE_IPYTHON = True
 
+
+if HAVE_IPYTHON:
+    from IPython import version_info as IPYTHON_VERSION
+else:
+    IPYTHON_VERSION = None
+
 try:
     import bpython  # noqa
     # Access a property to verify module exists in case
@@ -154,7 +160,13 @@ def run_ipython_shell_v11(locals, globals, first_time):
     old_globals = shell.user_global_ns
     # Update shell with current namespace
     _update_ns(shell, locals, globals)
-    shell.mainloop(banner)
+
+    args = []
+    if IPYTHON_VERSION < (5, 0, 0):
+        args.append(banner)
+    else:
+        print(banner)
+    shell.mainloop(*args)
     # Restore originating namespace
     _update_ns(shell, old_locals, old_globals)
 
