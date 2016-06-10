@@ -7,9 +7,9 @@ Python 2.7:
   - python2.7
   except:
   - tags
-Python 3.4:
+Python 3.5:
   script:
-  - py_version=3.4
+  - py_version=3.5
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
