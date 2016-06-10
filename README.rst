@@ -8,7 +8,7 @@ might look familiar.
 
 Here's a screenshot:
 
-.. image:: http://tiker.net/pub/pudb-screenshot.png
+.. image:: https://tiker.net/pub/pudb-screenshot.png
 
 You may watch a `screencast <http://vimeo.com/5255125>`_, too.
 
