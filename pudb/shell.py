@@ -92,7 +92,7 @@ def run_bpython_shell(locals, globals, first_time):
     ns = SetPropagatingDict([locals, globals], locals)
 
     import bpython.cli
-    bpython.cli.main(locals_=ns)
+    bpython.cli.main(args=[], locals_=ns)
 
 
 # {{{ ipython
@@ -220,3 +220,6 @@ def run_ptpython_shell(locals, globals, first_time):
     history_filename = os.path.expanduser('~/.ptpython_history')
     ptpython_embed(globals.copy(), locals.copy(),
                    history_filename=history_filename)
+
+
+# vim: foldmethod=marker
