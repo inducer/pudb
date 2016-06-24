@@ -17,36 +17,12 @@ else:
     HAVE_PTPYTHON = True
 
 
-# {{{ readline wrangling
-
-def setup_readline():
-    import os
-    import atexit
-
-    from pudb.settings import get_save_config_path
-    histfile = os.path.join(
-            get_save_config_path(),
-            "shell-history")
-
-    try:
-        readline.read_history_file(histfile)
-        atexit.register(readline.write_history_file, histfile)
-    except Exception:
-        pass
-
-    readline.parse_and_bind("tab: complete")
-
-
 try:
     import readline
     import rlcompleter
     HAVE_READLINE = True
 except ImportError:
     HAVE_READLINE = False
-else:
-    setup_readline()
-
-# }}}
 
 
 # {{{ combined locals/globals dict
@@ -78,14 +54,28 @@ def run_classic_shell(locals, globals, first_time):
 
     ns = SetPropagatingDict([locals, globals], locals)
 
+    from pudb.settings import get_save_config_path
+    from os.path import join
+    hist_file = join(
+            get_save_config_path(),
+            "shell-history")
+
     if HAVE_READLINE:
         readline.set_completer(
                 rlcompleter.Completer(ns).complete)
+        readline.parse_and_bind("tab: complete")
+        try:
+            readline.read_history_file(hist_file)
+        except IOError:
+            pass
 
     from code import InteractiveConsole
     cons = InteractiveConsole(ns)
 
     cons.interact(banner)
+
+    if HAVE_READLINE:
+        readline.write_history_file(hist_file)
 
 
 def run_bpython_shell(locals, globals, first_time):
