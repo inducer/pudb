@@ -1774,11 +1774,11 @@ class DebuggerUI(FrameVarInfoKeeper):
             curframe = self.debugger.curframe
 
             import pudb.shell as shell
-            if shell.HAVE_IPYTHON and CONFIG["shell"] == "ipython":
+            if CONFIG["shell"] == "ipython" and shell.have_ipython():
                 runner = shell.run_ipython_shell
-            elif shell.HAVE_BPYTHON and CONFIG["shell"] == "bpython":
+            elif CONFIG["shell"] == "bpython" and shell.HAVE_BPYTHON:
                 runner = shell.run_bpython_shell
-            elif shell.HAVE_PTPYTHON and CONFIG["shell"] == "ptpython":
+            elif CONFIG["shell"] == "ptpython" and shell.HAVE_PTPYTHON:
                 runner = shell.run_ptpython_shell
             else:
                 runner = shell.run_classic_shell

@@ -1,24 +1,4 @@
 try:
-    import IPython
-    # Access a property to verify module exists in case
-    # there's a demand loader wrapping module imports
-    # See https://github.com/inducer/pudb/issues/177
-    IPython.core
-except (ImportError, ValueError):
-    # Old IPythons versions (0.12?) may fail to import with
-    # ValueError: fallback required, but not specified
-    # https://github.com/inducer/pudb/pull/135
-    HAVE_IPYTHON = False
-else:
-    HAVE_IPYTHON = True
-
-
-if HAVE_IPYTHON:
-    from IPython import version_info as IPYTHON_VERSION
-else:
-    IPYTHON_VERSION = None
-
-try:
     import bpython  # noqa
     # Access a property to verify module exists in case
     # there's a demand loader wrapping module imports
@@ -115,6 +95,37 @@ def run_bpython_shell(locals, globals, first_time):
     bpython.cli.main(locals_=ns)
 
 
+# {{{ ipython
+
+def have_ipython():
+    # IPython has started being obnoxious on import, only import
+    # if absolutely needed.
+
+    # https://github.com/ipython/ipython/issues/9435
+
+    try:
+        import IPython
+        # Access a property to verify module exists in case
+        # there's a demand loader wrapping module imports
+        # See https://github.com/inducer/pudb/issues/177
+        IPython.core
+    except (ImportError, ValueError):
+        # Old IPythons versions (0.12?) may fail to import with
+        # ValueError: fallback required, but not specified
+        # https://github.com/inducer/pudb/pull/135
+        return False
+    else:
+        return True
+
+
+def ipython_version():
+    if have_ipython():
+        from IPython import version_info
+        return version_info
+    else:
+        return None
+
+
 def run_ipython_shell_v10(locals, globals, first_time):
     '''IPython shell from IPython version 0.10'''
     if first_time:
@@ -128,6 +139,26 @@ def run_ipython_shell_v10(locals, globals, first_time):
     from IPython.Shell import IPShell
     IPShell(argv=[], user_ns=ns, user_global_ns=globals) \
             .mainloop(banner=banner)
+
+
+def _update_ipython_ns(shell, locals, globals):
+    '''Update the IPython 0.11 namespace at every visit'''
+
+    shell.user_ns = locals.copy()
+
+    try:
+        shell.user_global_ns = globals
+    except AttributeError:
+        class DummyMod(object):
+            "A dummy module used for IPython's interactive namespace."
+            pass
+
+        user_module = DummyMod()
+        user_module.__dict__ = globals
+        shell.user_module = user_module
+
+    shell.init_user_ns()
+    shell.init_completer()
 
 
 def run_ipython_shell_v11(locals, globals, first_time):
@@ -158,49 +189,34 @@ def run_ipython_shell_v11(locals, globals, first_time):
     # Save the originating namespace
     old_locals = shell.user_ns
     old_globals = shell.user_global_ns
+
     # Update shell with current namespace
-    _update_ns(shell, locals, globals)
+    _update_ipython_ns(shell, locals, globals)
 
     args = []
-    if IPYTHON_VERSION < (5, 0, 0):
+    if ipython_version() < (5, 0, 0):
         args.append(banner)
     else:
         print(banner)
     shell.mainloop(*args)
+
     # Restore originating namespace
-    _update_ns(shell, old_locals, old_globals)
+    _update_ipython_ns(shell, old_locals, old_globals)
+
+
+def run_ipython_shell(locals, globals, first_time):
+    import IPython
+    if have_ipython() and hasattr(IPython, 'Shell'):
+        return run_ipython_shell_v10(locals, globals, first_time)
+    else:
+        return run_ipython_shell_v11(locals, globals, first_time)
+
+# }}}
 
 
 def run_ptpython_shell(locals, globals, first_time):
-    ## Use the default ptpython history:
+    # Use the default ptpython history
     import os
     history_filename = os.path.expanduser('~/.ptpython_history')
     ptpython_embed(globals.copy(), locals.copy(),
                    history_filename=history_filename)
-
-
-def _update_ns(shell, locals, globals):
-    '''Update the IPython 0.11 namespace at every visit'''
-
-    shell.user_ns = locals.copy()
-
-    try:
-        shell.user_global_ns = globals
-    except AttributeError:
-        class DummyMod(object):
-            "A dummy module used for IPython's interactive namespace."
-            pass
-
-        user_module = DummyMod()
-        user_module.__dict__ = globals
-        shell.user_module = user_module
-
-    shell.init_user_ns()
-    shell.init_completer()
-
-
-# Set the proper ipython shell
-if HAVE_IPYTHON and hasattr(IPython, 'Shell'):
-    run_ipython_shell = run_ipython_shell_v10
-else:
-    run_ipython_shell = run_ipython_shell_v11
