@@ -69,7 +69,9 @@ class RemoteDebugger(Debugger):
         # makefile ignores encoding if there's no buffering.
         raw_sock_file = self._client.makefile("rwb", 0)
         import codecs
-        sock_file = codecs.StreamReaderWriter(raw_sock_file,
+        sock_file = codecs.StreamRecoder(raw_sock_file,
+                codecs.getencoder("utf-8"),
+                codecs.getdecoder("utf-8"),
                 codecs.getreader("utf-8"),
                 codecs.getwriter("utf-8"))
 
