@@ -422,10 +422,9 @@ class Debugger(bdb.Bdb):
 
 
 # UI stuff --------------------------------------------------------------------
-
-from pudb.ui_tools import make_hotkey_markup, labelled_value, \
-        SelectableText, SignalWrap, StackFrame, BreakpointFrame
-
+from pudb.ui_tools import double_press_input_filter, labelled_value, \
+        make_hotkey_markup, SelectableText, SignalWrap, StackFrame, \
+        BreakpointFrame
 from pudb.var_view import FrameVarInfoKeeper
 
 
@@ -750,13 +749,19 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ variables listeners
 
-        def change_var_state(w, size, key):
+        def change_var_state(w, size, key, button=None, x=None, y=None, focus=None):
             var, pos = self.var_list._w.get_focus()
+            if not var:
+                return
 
             iinfo = self.get_frame_var_info(read_only=False) \
                     .get_inspect_info(var.id_path, read_only=False)
 
-            if key == "\\":
+            display_types = ["type", "repr", "str"]
+            if CONFIG["custom_stringifier"]:
+                display_types.append(CONFIG["custom_stringifier"])
+
+            if key == "\\" or (key == 'mouse press' and button == 3):
                 iinfo.show_detail = not iinfo.show_detail
             elif key == "t":
                 iinfo.display_type = "type"
@@ -766,9 +771,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.display_type = "str"
             elif key == "c":
                 iinfo.display_type = CONFIG["custom_stringifier"]
-            elif key == "h":
+            elif key == "h" or (key == 'ctrl mouse press' and button == 1):
                 iinfo.highlighted = not iinfo.highlighted
-            elif key == "@":
+            elif key == "@" or (key == 'ctrl mouse double press' and button == 1):
                 iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*":
                 levels = ["public", "private", "all", "public"]
@@ -777,10 +782,20 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.wrap = not iinfo.wrap
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
+            elif key == 'mouse press' and button == 5:
+                # SignalWrap.mouse_event by doesn't select on scroll events,
+                # but we want to do that here.
+                super(SignalWrap, self.var_list).mouse_event(size,
+                    'mouse press', 1, x, y, focus)
+                iinfo.display_type = display_types[(display_types.index(iinfo.display_type) + 1) % len(display_types)]
+            elif key == 'mouse press' and button == 4:
+                super(SignalWrap, self.var_list).mouse_event(size,
+                    'mouse press', 1, x, y, focus)
+                iinfo.display_type = display_types[(display_types.index(iinfo.display_type) - 1 + len(display_types)) % len(display_types)]
 
             self.update_var_view()
 
-        def edit_inspector_detail(w, size, key):
+        def edit_inspector_detail(w, size, key, button=None, x=None, y=None, focus=None):
             var, pos = self.var_list._w.get_focus()
 
             if var is None:
@@ -912,12 +927,16 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
         self.var_list.listen("c", change_var_state)
+        self.var_list.listen_mouse_event("mouse press", None, change_var_state)
         self.var_list.listen("h", change_var_state)
+        self.var_list.listen_mouse_event("ctrl mouse press", 1, change_var_state)
         self.var_list.listen("@", change_var_state)
         self.var_list.listen("*", change_var_state)
         self.var_list.listen("w", change_var_state)
         self.var_list.listen("m", change_var_state)
+        self.var_list.listen_mouse_event("ctrl mouse double press", 1, change_var_state)
         self.var_list.listen("enter", edit_inspector_detail)
+        self.var_list.listen_mouse_event("mouse double press", 1, edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
 
@@ -927,24 +946,29 @@ class DebuggerUI(FrameVarInfoKeeper):
         # }}}
 
         # {{{ stack listeners
-        def examine_frame(w, size, key):
+        def examine_frame(w, size, key, button=None, x=None, y=None, focus=None):
             _, pos = self.stack_list._w.get_focus()
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.stack_list.listen("enter", examine_frame)
+        self.stack_list.listen_mouse_event("mouse press", 1, examine_frame)
 
-        def move_stack_top(w, size, key):
+        def move_stack_top(w, size, key, button=None, x=None, y=None, focus=None):
             self.debugger.set_frame_index(len(self.debugger.stack)-1)
 
-        def move_stack_up(w, size, key):
+        def move_stack_up(w, size, key, button=None, x=None, y=None, focus=None):
             self.debugger.move_up_frame()
 
-        def move_stack_down(w, size, key):
+        def move_stack_down(w, size, key, button=None, x=None, y=None, focus=None):
             self.debugger.move_down_frame()
 
         self.stack_list.listen("H", move_stack_top)
         self.stack_list.listen("u", move_stack_up)
+        self.stack_list.listen_mouse_event("mouse press", 4, move_stack_up)
         self.stack_list.listen("d", move_stack_down)
+        self.stack_list.listen_mouse_event("mouse press", 5, move_stack_down)
+        self.source_sigwrap.listen("u", move_stack_up)
+        self.source_sigwrap.listen("d", move_stack_down)
 
         self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
         self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
@@ -978,7 +1002,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     self.update_breakpoints()
 
-        def enable_disable_breakpoint(w, size, key):
+        def enable_disable_breakpoint(w, size, key, button=None, x=None, y=None, focus=None):
             bp_entry, pos = self.bp_list._w.get_focus()
 
             if bp_entry is None:
@@ -992,7 +1016,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.update_breakpoints()
 
-        def examine_breakpoint(w, size, key):
+        def examine_breakpoint(w, size, key, button=None, x=None, y=None, focus=None):
             bp_entry, pos = self.bp_list._w.get_focus()
 
             if bp_entry is None:
@@ -1064,9 +1088,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.update_breakpoints()
 
         self.bp_list.listen("enter", examine_breakpoint)
+        self.bp_list.listen_mouse_event("mouse double press", 1, examine_breakpoint)
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
         self.bp_list.listen("e", enable_disable_breakpoint)
+        self.bp_list.listen_mouse_event("mouse press", 3, enable_disable_breakpoint)
 
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
@@ -1079,14 +1105,14 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.save_breakpoints()
             self.quit_event_loop = True
 
-        def next(w, size, key):
+        def next(w, size, key, button=None, x=None, y=None, focus=None):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
                 self.debugger.set_next(self.debugger.curframe)
                 end()
 
-        def step(w, size, key):
+        def step(w, size, key, button=None, x=None, y=None, focus=None):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
@@ -1107,7 +1133,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.debugger.set_continue()
                 end()
 
-        def run_to_cursor(w, size, key):
+        def run_to_cursor(w, size, key, button=None, x=None, y=None, focus=None):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
@@ -1167,16 +1193,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 lineno = min(max(0, int(lineno_edit.value())-1), len(self.source)-1)
                 self.source.set_focus(lineno)
 
-        def move_down(w, size, key):
+        def move_down(w, size, key, button=None, x=None, y=None, focus=None):
             w.keypress(size, "down")
 
-        def move_up(w, size, key):
+        def move_up(w, size, key, button=None, x=None, y=None, focus=None):
             w.keypress(size, "up")
 
-        def page_down(w, size, key):
+        def page_down(w, size, key, button=None, x=None, y=None, focus=None):
             w.keypress(size, "page down")
 
-        def page_up(w, size, key):
+        def page_up(w, size, key, button=None, x=None, y=None, focus=None):
             w.keypress(size, "page up")
 
         def scroll_left(w, size, key):
@@ -1200,7 +1226,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def search_previous(w, size, key):
             self.search_controller.perform_search(dir=-1, update_search_start=True)
 
-        def toggle_breakpoint(w, size, key):
+        def toggle_breakpoint(w, size, key, button=None, x=None, y=None, focus=None):
             bp_source_identifier = \
                     self.source_code_provider.get_breakpoint_source_identifier()
 
@@ -1232,7 +1258,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
                     from pudb.lowlevel import get_breakpoint_invalid_reason
                     invalid_reason = get_breakpoint_invalid_reason(
-                            bp_source_identifier, pos+1)
+                            bp_source_identifier, lineno)
 
                     if invalid_reason is not None:
                         do_set = not self.dialog(
@@ -1393,16 +1419,23 @@ class DebuggerUI(FrameVarInfoKeeper):
                                 self.translate_ui_stack_index(pos))
 
         self.source_sigwrap.listen("n", next)
+        self.source_sigwrap.listen_mouse_event("meta mouse press", 5, next)
         self.source_sigwrap.listen("s", step)
+        self.source_sigwrap.listen_mouse_event("meta mouse press", 1, step)
         self.source_sigwrap.listen("f", finish)
         self.source_sigwrap.listen("r", finish)
         self.source_sigwrap.listen("c", cont)
         self.source_sigwrap.listen("t", run_to_cursor)
+        self.source_sigwrap.listen_mouse_event("mouse double press", 1, run_to_cursor)
 
         self.source_sigwrap.listen("j", move_down)
+        self.source_sigwrap.listen_mouse_event("mouse press", 5, move_down)
         self.source_sigwrap.listen("k", move_up)
+        self.source_sigwrap.listen_mouse_event("mouse press", 4, move_up)
         self.source_sigwrap.listen("ctrl d", page_down)
+        self.source_sigwrap.listen_mouse_event("ctrl mouse press", 5, page_down)
         self.source_sigwrap.listen("ctrl u", page_up)
+        self.source_sigwrap.listen_mouse_event("ctrl mouse press", 4, page_up)
         self.source_sigwrap.listen("ctrl f", page_down)
         self.source_sigwrap.listen("ctrl b", page_up)
         self.source_sigwrap.listen("h", scroll_left)
@@ -1419,6 +1452,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("L", go_to_line)
 
         self.source_sigwrap.listen("b", toggle_breakpoint)
+        self.source_sigwrap.listen_mouse_event("mouse press", 3, toggle_breakpoint)
         self.source_sigwrap.listen("m", pick_module)
 
         self.source_sigwrap.listen("H", move_stack_top)
@@ -1893,6 +1927,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.current_line = None
 
+        self.double_press_input_filter = double_press_input_filter()
+
         self.quit_event_loop = False
 
         # }}}
@@ -2066,6 +2102,8 @@ class DebuggerUI(FrameVarInfoKeeper):
     def show(self):
         if self.show_count == 0:
             self.screen.start()
+            if CONFIG["mouse_support"]:
+                self.screen.set_mouse_tracking()
         self.show_count += 1
 
     def hide(self):
@@ -2254,10 +2292,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                 canvas = toplevel.render(self.size, focus=True)
                 self.screen.draw_screen(self.size, canvas)
                 keys = self.screen.get_input()
+                keys = self.double_press_input_filter(keys, None)
 
                 for k in keys:
                     if k == "window resize":
                         self.size = self.screen.get_cols_rows()
+                    elif urwid.is_mouse_event(k):
+                        toplevel.mouse_event(self.size, *k, focus=True)
                     else:
                         toplevel.keypress(self.size, k)
 
