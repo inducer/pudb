@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 try:
     import bpython  # noqa
     # Access a property to verify module exists in case
