@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function
+
 THEMES = ["classic", "vim", "dark vim", "midnight", "solarized", "agr-256"]
 
 from pudb.py3compat import execfile, raw_input
