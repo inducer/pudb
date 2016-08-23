@@ -748,332 +748,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.rhs_col.item_types[index] = "weight", weight
             self.rhs_col._invalidate()
 
-        # {{{ variables listeners
-
-        def change_var_state(w, size, key):
-            var, pos = self.var_list._w.get_focus()
-
-            iinfo = self.get_frame_var_info(read_only=False) \
-                    .get_inspect_info(var.id_path, read_only=False)
-
-            if key == "\\":
-                iinfo.show_detail = not iinfo.show_detail
-            elif key == "t":
-                iinfo.display_type = "type"
-            elif key == "r":
-                iinfo.display_type = "repr"
-            elif key == "s":
-                iinfo.display_type = "str"
-            elif key == "c":
-                iinfo.display_type = CONFIG["custom_stringifier"]
-            elif key == "h":
-                iinfo.highlighted = not iinfo.highlighted
-            elif key == "@":
-                iinfo.repeated_at_top = not iinfo.repeated_at_top
-            elif key == "*":
-                levels = ["public", "private", "all", "public"]
-                iinfo.access_level = levels[levels.index(iinfo.access_level)+1]
-            elif key == "w":
-                iinfo.wrap = not iinfo.wrap
-            elif key == "m":
-                iinfo.show_methods = not iinfo.show_methods
-
-            self.update_var_view()
-
-        def edit_inspector_detail(w, size, key):
-            var, pos = self.var_list._w.get_focus()
-
-            if var is None:
-                return
-
-            fvi = self.get_frame_var_info(read_only=False)
-            iinfo = fvi.get_inspect_info(var.id_path, read_only=False)
-
-            buttons = [
-                ("OK", True),
-                ("Cancel", False),
-                ]
-
-            if var.watch_expr is not None:
-                watch_edit = urwid.Edit([
-                    ("label", "Watch expression: ")
-                    ], var.watch_expr.expression)
-                id_segment = [urwid.AttrMap(watch_edit, "value"), urwid.Text("")]
-
-                buttons.extend([None, ("Delete", "del")])
-
-                title = "Watch Expression Options"
-            else:
-                id_segment = [
-                        labelled_value("Identifier Path: ", var.id_path),
-                        urwid.Text(""),
-                        ]
-
-                title = "Variable Inspection Options"
-
-            rb_grp_show = []
-            rb_show_type = urwid.RadioButton(rb_grp_show, "Show Type",
-                    iinfo.display_type == "type")
-            rb_show_repr = urwid.RadioButton(rb_grp_show, "Show repr()",
-                    iinfo.display_type == "repr")
-            rb_show_str = urwid.RadioButton(rb_grp_show, "Show str()",
-                    iinfo.display_type == "str")
-            rb_show_custom = urwid.RadioButton(
-                    rb_grp_show, "Show custom (set in prefs)",
-                    iinfo.display_type == CONFIG["custom_stringifier"])
-
-            rb_grp_access = []
-            rb_access_public = urwid.RadioButton(rb_grp_access, "Public members",
-                    iinfo.access_level == "public")
-            rb_access_private = urwid.RadioButton(
-                    rb_grp_access, "Public and private members",
-                    iinfo.access_level == "private")
-            rb_access_all = urwid.RadioButton(
-                    rb_grp_access, "All members (including __dunder__)",
-                    iinfo.access_level == "all")
-
-            wrap_checkbox = urwid.CheckBox("Line Wrap", iinfo.wrap)
-            expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
-            highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
-            repeated_at_top_checkbox = urwid.CheckBox(
-                    "Repeated at top", iinfo.repeated_at_top)
-            show_methods_checkbox = urwid.CheckBox(
-                    "Show methods", iinfo.show_methods)
-
-            lb = urwid.ListBox(urwid.SimpleListWalker(
-                id_segment +
-                rb_grp_show + [urwid.Text("")] +
-                rb_grp_access + [urwid.Text("")] +
-                [
-                    wrap_checkbox,
-                    expanded_checkbox,
-                    highlighted_checkbox,
-                    repeated_at_top_checkbox,
-                    show_methods_checkbox,
-                ]))
-
-            result = self.dialog(lb, buttons, title=title)
-
-            if result is True:
-                iinfo.show_detail = expanded_checkbox.get_state()
-                iinfo.wrap = wrap_checkbox.get_state()
-                iinfo.highlighted = highlighted_checkbox.get_state()
-                iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
-                iinfo.show_methods = show_methods_checkbox.get_state()
-
-                if rb_show_type.get_state():
-                    iinfo.display_type = "type"
-                elif rb_show_repr.get_state():
-                    iinfo.display_type = "repr"
-                elif rb_show_str.get_state():
-                    iinfo.display_type = "str"
-                elif rb_show_custom.get_state():
-                    iinfo.display_type = CONFIG["custom_stringifier"]
-
-                if rb_access_public.get_state():
-                    iinfo.access_level = "public"
-                elif rb_access_private.get_state():
-                    iinfo.access_level = "private"
-                elif rb_access_all.get_state():
-                    iinfo.access_level = "all"
-
-                if var.watch_expr is not None:
-                    var.watch_expr.expression = watch_edit.get_edit_text()
-
-            elif result == "del":
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
-
-            self.update_var_view()
-
-        def insert_watch(w, size, key):
-            watch_edit = urwid.Edit([
-                ("label", "Watch expression: ")
-                ])
-
-            if self.dialog(
-                    urwid.ListBox(urwid.SimpleListWalker([
-                        urwid.AttrMap(watch_edit, "value")
-                        ])),
-                    [
-                        ("OK", True),
-                        ("Cancel", False),
-                        ], title="Add Watch Expression"):
-
-                from pudb.var_view import WatchExpression
-                we = WatchExpression(watch_edit.get_edit_text())
-                fvi = self.get_frame_var_info(read_only=False)
-                fvi.watches.append(we)
-                self.update_var_view()
-
-        self.var_list.listen("\\", change_var_state)
-        self.var_list.listen("t", change_var_state)
-        self.var_list.listen("r", change_var_state)
-        self.var_list.listen("s", change_var_state)
-        self.var_list.listen("c", change_var_state)
-        self.var_list.listen("h", change_var_state)
-        self.var_list.listen("@", change_var_state)
-        self.var_list.listen("*", change_var_state)
-        self.var_list.listen("w", change_var_state)
-        self.var_list.listen("m", change_var_state)
-        self.var_list.listen("enter", edit_inspector_detail)
-        self.var_list.listen("n", insert_watch)
-        self.var_list.listen("insert", insert_watch)
-
-        self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
-        self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
-
-        # }}}
-
-        # {{{ stack listeners
-        def examine_frame(w, size, key):
-            _, pos = self.stack_list._w.get_focus()
-            self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
-
-        self.stack_list.listen("enter", examine_frame)
-
-        def move_stack_top(w, size, key):
-            self.debugger.set_frame_index(len(self.debugger.stack)-1)
-
-        def move_stack_up(w, size, key):
-            self.debugger.move_up_frame()
-
-        def move_stack_down(w, size, key):
-            self.debugger.move_down_frame()
-
-        self.stack_list.listen("H", move_stack_top)
-        self.stack_list.listen("u", move_stack_up)
-        self.stack_list.listen("d", move_stack_down)
-
-        self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
-        self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
-
-        # }}}
-
-        # {{{ breakpoint listeners
-        def save_breakpoints(w, size, key):
-            self.debugger.save_breakpoints()
-
-        def delete_breakpoint(w, size, key):
-            bp_source_identifier = \
-                    self.source_code_provider.get_breakpoint_source_identifier()
-
-            if bp_source_identifier is None:
-                self.message(
-                    "Cannot currently delete a breakpoint here--"
-                    "source code does not correspond to a file location. "
-                    "(perhaps this is generated code)")
-
-            bp_list = self._get_bp_list()
-            if bp_list:
-                _, pos = self.bp_list._w.get_focus()
-                bp = bp_list[pos]
-                if bp_source_identifier == bp.file and bp.line-1 < len(self.source):
-                    self.source[bp.line-1].set_breakpoint(False)
-
-                err = self.debugger.clear_break(bp.file, bp.line)
-                if err:
-                    self.message("Error clearing breakpoint:\n" + err)
-                else:
-                    self.update_breakpoints()
-
-        def enable_disable_breakpoint(w, size, key):
-            bp_entry, pos = self.bp_list._w.get_focus()
-
-            if bp_entry is None:
-                return
-
-            bp = self._get_bp_list()[pos]
-            bp.enabled = not bp.enabled
-
-            sline = self.source[bp.line-1]
-            sline.set_breakpoint(bp.enabled)
-
-            self.update_breakpoints()
-
-        def examine_breakpoint(w, size, key):
-            bp_entry, pos = self.bp_list._w.get_focus()
-
-            if bp_entry is None:
-                return
-
-            bp = self._get_bp_list()[pos]
-
-            if bp.cond is None:
-                cond = ""
-            else:
-                cond = str(bp.cond)
-
-            enabled_checkbox = urwid.CheckBox(
-                    "Enabled", bp.enabled)
-            cond_edit = urwid.Edit([
-                ("label", "Condition:               ")
-                ], cond)
-            ign_count_edit = urwid.IntEdit([
-                ("label", "Ignore the next N times: ")
-                ], bp.ignore)
-
-            lb = urwid.ListBox(urwid.SimpleListWalker([
-                labelled_value("File: ", bp.file),
-                labelled_value("Line: ", bp.line),
-                labelled_value("Hits: ", bp.hits),
-                urwid.Text(""),
-                enabled_checkbox,
-                urwid.AttrMap(cond_edit, "value", "value"),
-                urwid.AttrMap(ign_count_edit, "value", "value"),
-                ]))
-
-            result = self.dialog(lb, [
-                ("OK", True),
-                ("Cancel", False),
-                None,
-                ("Delete", "del"),
-                ("Location", "loc"),
-                ], title="Edit Breakpoint")
-
-            if result is True:
-                bp.enabled = enabled_checkbox.get_state()
-                bp.ignore = int(ign_count_edit.value())
-                cond = cond_edit.get_edit_text()
-                if cond:
-                    bp.cond = cond
-                else:
-                    bp.cond = None
-            elif result == "loc":
-                self.show_line(bp.line,
-                        FileSourceCodeProvider(self.debugger, bp.file))
-                self.columns.set_focus(0)
-            elif result == "del":
-                bp_source_identifier = \
-                        self.source_code_provider.get_breakpoint_source_identifier()
-
-                if bp_source_identifier is None:
-                    self.message(
-                        "Cannot currently delete a breakpoint here--"
-                        "source code does not correspond to a file location. "
-                        "(perhaps this is generated code)")
-
-                if bp_source_identifier == bp.file:
-                    self.source[bp.line-1].set_breakpoint(False)
-
-                err = self.debugger.clear_break(bp.file, bp.line)
-                if err:
-                    self.message("Error clearing breakpoint:\n" + err)
-                else:
-                    self.update_breakpoints()
-
-        self.bp_list.listen("enter", examine_breakpoint)
-        self.bp_list.listen("d", delete_breakpoint)
-        self.bp_list.listen("s", save_breakpoints)
-        self.bp_list.listen("e", enable_disable_breakpoint)
-
-        self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
-        self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
-
-        # }}}
-
-        # {{{ source listeners
+        # {{{ listener handler functions
 
         def end():
             self.debugger.save_breakpoints()
@@ -1391,6 +1066,341 @@ class DebuggerUI(FrameVarInfoKeeper):
                         _, pos = self.stack_list._w.get_focus()
                         self.debugger.set_frame_index(
                                 self.translate_ui_stack_index(pos))
+
+        # }}}
+
+        # {{{ variables listeners
+
+        def change_var_state(w, size, key):
+            var, pos = self.var_list._w.get_focus()
+
+            iinfo = self.get_frame_var_info(read_only=False) \
+                    .get_inspect_info(var.id_path, read_only=False)
+
+            if key == "\\":
+                iinfo.show_detail = not iinfo.show_detail
+            elif key == "t":
+                iinfo.display_type = "type"
+            elif key == "r":
+                iinfo.display_type = "repr"
+            elif key == "s":
+                iinfo.display_type = "str"
+            elif key == "c":
+                iinfo.display_type = CONFIG["custom_stringifier"]
+            elif key == "h":
+                iinfo.highlighted = not iinfo.highlighted
+            elif key == "@":
+                iinfo.repeated_at_top = not iinfo.repeated_at_top
+            elif key == "*":
+                levels = ["public", "private", "all", "public"]
+                iinfo.access_level = levels[levels.index(iinfo.access_level)+1]
+            elif key == "w":
+                iinfo.wrap = not iinfo.wrap
+            elif key == "m":
+                iinfo.show_methods = not iinfo.show_methods
+
+            self.update_var_view()
+
+        def edit_inspector_detail(w, size, key):
+            var, pos = self.var_list._w.get_focus()
+
+            if var is None:
+                return
+
+            fvi = self.get_frame_var_info(read_only=False)
+            iinfo = fvi.get_inspect_info(var.id_path, read_only=False)
+
+            buttons = [
+                ("OK", True),
+                ("Cancel", False),
+                ]
+
+            if var.watch_expr is not None:
+                watch_edit = urwid.Edit([
+                    ("label", "Watch expression: ")
+                    ], var.watch_expr.expression)
+                id_segment = [urwid.AttrMap(watch_edit, "value"), urwid.Text("")]
+
+                buttons.extend([None, ("Delete", "del")])
+
+                title = "Watch Expression Options"
+            else:
+                id_segment = [
+                        labelled_value("Identifier Path: ", var.id_path),
+                        urwid.Text(""),
+                        ]
+
+                title = "Variable Inspection Options"
+
+            rb_grp_show = []
+            rb_show_type = urwid.RadioButton(rb_grp_show, "Show Type",
+                    iinfo.display_type == "type")
+            rb_show_repr = urwid.RadioButton(rb_grp_show, "Show repr()",
+                    iinfo.display_type == "repr")
+            rb_show_str = urwid.RadioButton(rb_grp_show, "Show str()",
+                    iinfo.display_type == "str")
+            rb_show_custom = urwid.RadioButton(
+                    rb_grp_show, "Show custom (set in prefs)",
+                    iinfo.display_type == CONFIG["custom_stringifier"])
+
+            rb_grp_access = []
+            rb_access_public = urwid.RadioButton(rb_grp_access, "Public members",
+                    iinfo.access_level == "public")
+            rb_access_private = urwid.RadioButton(
+                    rb_grp_access, "Public and private members",
+                    iinfo.access_level == "private")
+            rb_access_all = urwid.RadioButton(
+                    rb_grp_access, "All members (including __dunder__)",
+                    iinfo.access_level == "all")
+
+            wrap_checkbox = urwid.CheckBox("Line Wrap", iinfo.wrap)
+            expanded_checkbox = urwid.CheckBox("Expanded", iinfo.show_detail)
+            highlighted_checkbox = urwid.CheckBox("Highlighted", iinfo.highlighted)
+            repeated_at_top_checkbox = urwid.CheckBox(
+                    "Repeated at top", iinfo.repeated_at_top)
+            show_methods_checkbox = urwid.CheckBox(
+                    "Show methods", iinfo.show_methods)
+
+            lb = urwid.ListBox(urwid.SimpleListWalker(
+                id_segment +
+                rb_grp_show + [urwid.Text("")] +
+                rb_grp_access + [urwid.Text("")] +
+                [
+                    wrap_checkbox,
+                    expanded_checkbox,
+                    highlighted_checkbox,
+                    repeated_at_top_checkbox,
+                    show_methods_checkbox,
+                ]))
+
+            result = self.dialog(lb, buttons, title=title)
+
+            if result is True:
+                iinfo.show_detail = expanded_checkbox.get_state()
+                iinfo.wrap = wrap_checkbox.get_state()
+                iinfo.highlighted = highlighted_checkbox.get_state()
+                iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
+                iinfo.show_methods = show_methods_checkbox.get_state()
+
+                if rb_show_type.get_state():
+                    iinfo.display_type = "type"
+                elif rb_show_repr.get_state():
+                    iinfo.display_type = "repr"
+                elif rb_show_str.get_state():
+                    iinfo.display_type = "str"
+                elif rb_show_custom.get_state():
+                    iinfo.display_type = CONFIG["custom_stringifier"]
+
+                if rb_access_public.get_state():
+                    iinfo.access_level = "public"
+                elif rb_access_private.get_state():
+                    iinfo.access_level = "private"
+                elif rb_access_all.get_state():
+                    iinfo.access_level = "all"
+
+                if var.watch_expr is not None:
+                    var.watch_expr.expression = watch_edit.get_edit_text()
+
+            elif result == "del":
+                for i, watch_expr in enumerate(fvi.watches):
+                    if watch_expr is var.watch_expr:
+                        del fvi.watches[i]
+
+            self.update_var_view()
+
+        def insert_watch(w, size, key):
+            watch_edit = urwid.Edit([
+                ("label", "Watch expression: ")
+                ])
+
+            if self.dialog(
+                    urwid.ListBox(urwid.SimpleListWalker([
+                        urwid.AttrMap(watch_edit, "value")
+                        ])),
+                    [
+                        ("OK", True),
+                        ("Cancel", False),
+                        ], title="Add Watch Expression"):
+
+                from pudb.var_view import WatchExpression
+                we = WatchExpression(watch_edit.get_edit_text())
+                fvi = self.get_frame_var_info(read_only=False)
+                fvi.watches.append(we)
+                self.update_var_view()
+
+        self.var_list.listen("\\", change_var_state)
+        self.var_list.listen("t", change_var_state)
+        self.var_list.listen("r", change_var_state)
+        self.var_list.listen("s", change_var_state)
+        self.var_list.listen("c", change_var_state)
+        self.var_list.listen("h", change_var_state)
+        self.var_list.listen("@", change_var_state)
+        self.var_list.listen("*", change_var_state)
+        self.var_list.listen("w", change_var_state)
+        self.var_list.listen("m", change_var_state)
+        self.var_list.listen("enter", edit_inspector_detail)
+        self.var_list.listen("n", insert_watch)
+        self.var_list.listen("insert", insert_watch)
+        self.var_list.listen("j", move_down)
+        self.var_list.listen("k", move_up)
+
+        self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
+        self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
+
+        # }}}
+
+        # {{{ stack listeners
+        def examine_frame(w, size, key):
+            _, pos = self.stack_list._w.get_focus()
+            self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
+
+        self.stack_list.listen("enter", examine_frame)
+
+        def move_stack_top(w, size, key):
+            self.debugger.set_frame_index(len(self.debugger.stack)-1)
+
+        def move_stack_up(w, size, key):
+            self.debugger.move_up_frame()
+
+        def move_stack_down(w, size, key):
+            self.debugger.move_down_frame()
+
+        self.stack_list.listen("H", move_stack_top)
+        self.stack_list.listen("u", move_stack_up)
+        self.stack_list.listen("d", move_stack_down)
+        self.stack_list.listen("j", move_down)
+        self.stack_list.listen("k", move_up)
+
+        self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
+        self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
+
+        # }}}
+
+        # {{{ breakpoint listeners
+        def save_breakpoints(w, size, key):
+            self.debugger.save_breakpoints()
+
+        def delete_breakpoint(w, size, key):
+            bp_source_identifier = \
+                    self.source_code_provider.get_breakpoint_source_identifier()
+
+            if bp_source_identifier is None:
+                self.message(
+                    "Cannot currently delete a breakpoint here--"
+                    "source code does not correspond to a file location. "
+                    "(perhaps this is generated code)")
+
+            bp_list = self._get_bp_list()
+            if bp_list:
+                _, pos = self.bp_list._w.get_focus()
+                bp = bp_list[pos]
+                if bp_source_identifier == bp.file and bp.line-1 < len(self.source):
+                    self.source[bp.line-1].set_breakpoint(False)
+
+                err = self.debugger.clear_break(bp.file, bp.line)
+                if err:
+                    self.message("Error clearing breakpoint:\n" + err)
+                else:
+                    self.update_breakpoints()
+
+        def enable_disable_breakpoint(w, size, key):
+            bp_entry, pos = self.bp_list._w.get_focus()
+
+            if bp_entry is None:
+                return
+
+            bp = self._get_bp_list()[pos]
+            bp.enabled = not bp.enabled
+
+            sline = self.source[bp.line-1]
+            sline.set_breakpoint(bp.enabled)
+
+            self.update_breakpoints()
+
+        def examine_breakpoint(w, size, key):
+            bp_entry, pos = self.bp_list._w.get_focus()
+
+            if bp_entry is None:
+                return
+
+            bp = self._get_bp_list()[pos]
+
+            if bp.cond is None:
+                cond = ""
+            else:
+                cond = str(bp.cond)
+
+            enabled_checkbox = urwid.CheckBox(
+                    "Enabled", bp.enabled)
+            cond_edit = urwid.Edit([
+                ("label", "Condition:               ")
+                ], cond)
+            ign_count_edit = urwid.IntEdit([
+                ("label", "Ignore the next N times: ")
+                ], bp.ignore)
+
+            lb = urwid.ListBox(urwid.SimpleListWalker([
+                labelled_value("File: ", bp.file),
+                labelled_value("Line: ", bp.line),
+                labelled_value("Hits: ", bp.hits),
+                urwid.Text(""),
+                enabled_checkbox,
+                urwid.AttrMap(cond_edit, "value", "value"),
+                urwid.AttrMap(ign_count_edit, "value", "value"),
+                ]))
+
+            result = self.dialog(lb, [
+                ("OK", True),
+                ("Cancel", False),
+                None,
+                ("Delete", "del"),
+                ("Location", "loc"),
+                ], title="Edit Breakpoint")
+
+            if result is True:
+                bp.enabled = enabled_checkbox.get_state()
+                bp.ignore = int(ign_count_edit.value())
+                cond = cond_edit.get_edit_text()
+                if cond:
+                    bp.cond = cond
+                else:
+                    bp.cond = None
+            elif result == "loc":
+                self.show_line(bp.line,
+                        FileSourceCodeProvider(self.debugger, bp.file))
+                self.columns.set_focus(0)
+            elif result == "del":
+                bp_source_identifier = \
+                        self.source_code_provider.get_breakpoint_source_identifier()
+
+                if bp_source_identifier is None:
+                    self.message(
+                        "Cannot currently delete a breakpoint here--"
+                        "source code does not correspond to a file location. "
+                        "(perhaps this is generated code)")
+
+                if bp_source_identifier == bp.file:
+                    self.source[bp.line-1].set_breakpoint(False)
+
+                err = self.debugger.clear_break(bp.file, bp.line)
+                if err:
+                    self.message("Error clearing breakpoint:\n" + err)
+                else:
+                    self.update_breakpoints()
+
+        self.bp_list.listen("enter", examine_breakpoint)
+        self.bp_list.listen("d", delete_breakpoint)
+        self.bp_list.listen("s", save_breakpoints)
+        self.bp_list.listen("e", enable_disable_breakpoint)
+        self.bp_list.listen("j", move_down)
+        self.bp_list.listen("k", move_up)
+
+        self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
+        self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
+
+        # }}}
+
+        # {{{ source listeners
 
         self.source_sigwrap.listen("n", next)
         self.source_sigwrap.listen("s", step)
