@@ -713,6 +713,13 @@ class DebuggerUI(FrameVarInfoKeeper):
             ])
         self.rhs_col_sigwrap = SignalWrap(self.rhs_col)
 
+        def rhs_up(w, size, key):
+            self.rhs_col.keypress(size, "up")
+
+        def rhs_down(w, size, key):
+            self.rhs_col.keypress(size, "down")
+
+
         # }}}
 
         self.columns = urwid.Columns(
@@ -920,6 +927,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("enter", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
+        self.var_list.listen("j", rhs_down)
+        self.var_list.listen("k", rhs_up)
 
         self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
         self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
@@ -945,6 +954,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_list.listen("H", move_stack_top)
         self.stack_list.listen("u", move_stack_up)
         self.stack_list.listen("d", move_stack_down)
+        self.stack_list.listen("j", rhs_down)
+        self.stack_list.listen("k", rhs_up)
 
         self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
         self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
@@ -1067,6 +1078,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
         self.bp_list.listen("e", enable_disable_breakpoint)
+        self.bp_list.listen("j", rhs_down)
+        self.bp_list.listen("k", rhs_up)
 
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
