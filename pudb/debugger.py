@@ -1375,10 +1375,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                         mod_name = widget.base_widget.get_text()[0]
                         mod = sys.modules[mod_name]
                         if PY3:
-                            reload(mod)  # noqa (undef on Py3)
-                        else:
                             import importlib
                             importlib.reload(mod)
+                        else:
+                            reload(mod)  # noqa (undef on Py3)
 
                         self.message("'%s' was successfully reloaded." % mod_name)
 
