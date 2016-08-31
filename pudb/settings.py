@@ -126,9 +126,7 @@ def edit_config(ui, conf_dict):
 
     def _update_theme():
         ui.setup_palette(ui.screen)
-
-        for sl in ui.source:
-            sl._invalidate()
+        ui.screen.clear()
 
     def _update_line_numbers():
         for sl in ui.source:
