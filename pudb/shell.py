@@ -5,7 +5,7 @@ try:
     # Access a property to verify module exists in case
     # there's a demand loader wrapping module imports
     # See https://github.com/inducer/pudb/issues/177
-    bpython.version
+    bpython.__version__
 except ImportError:
     HAVE_BPYTHON = False
 else:
