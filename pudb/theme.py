@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-THEMES = ["classic", "vim", "dark vim", "midnight", "solarized", "agr-256"]
+THEMES = ["classic", "vim", "dark vim", "midnight", "solarized", "agr-256", "monokai", "monokai-256"]
 
 from pudb.py3compat import execfile, raw_input
 import urwid
@@ -436,7 +436,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         # }}}
     elif theme == "solarized":
-    # {{{ solarized
+        # {{{ solarized
         palette_dict.update({
             # UI
             "header": ("black", "light blue", "standout"),
@@ -537,9 +537,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "command line focused button": ("black", "light blue"),
         })
 
-    # }}}
+        # }}}
     elif theme == "agr-256":
-    # {{{ agr-256
+        # {{{ agr-256
         palette_dict.update({
             "header": ("h235", "h252", "standout"),
 
@@ -666,7 +666,284 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "command line focused button": ("h255", "h24"),
             # }}}
         })
-    # }}}
+        # }}}
+    elif theme == "monokai":
+        # {{{ monokai
+        palette_dict.update({
+            "header": ("black", "light gray", "standout"),
+
+            # {{{ variables view
+            "variables": ("black", "dark gray"),
+            "variable separator": ("dark cyan", "light gray"),
+
+            "var label": ("light gray", "dark gray"),
+            "var value": ("white", "dark gray"),
+            "focused var label": ("light gray", "light blue"),
+            "focused var value": ("white", "light blue"),
+
+            "highlighted var label": ("light gray", "dark green"),
+            "highlighted var value": ("white", "dark green"),
+            "focused highlighted var label": ("light gray", "light blue"),
+            "focused highlighted var value": ("white", "light blue"),
+
+            "return label": ("light gray", "dark gray"),
+            "return value": ("light cyan", "dark gray"),
+            "focused return label": ("yellow", "light blue"),
+            "focused return value": ("white", "light blue"),
+
+            # }}}
+
+            # {{{ stack view
+
+            "stack": ("black", "dark gray"),
+
+            "frame name": ("light gray", "dark gray"),
+            "focused frame name": ("light gray", "light blue"),
+            "frame class": ("dark blue", "dark gray"),
+            "focused frame class": ("dark blue", "light blue"),
+            "frame location": ("white", "dark gray"),
+            "focused frame location": ("white", "light blue"),
+
+            "current frame name": (add_setting("white", "bold"),
+                "dark gray"),
+            "focused current frame name": (add_setting("white", "bold"),
+                "light blue", "bold"),
+            "current frame class": ("dark blue", "dark gray"),
+            "focused current frame class": ("dark blue", "dark green"),
+            "current frame location": ("light cyan", "dark gray"),
+            "focused current frame location": ("light cyan", "light blue"),
+
+            # }}}
+
+            # {{{ breakpoint view
+
+            "breakpoint": ("light gray", "dark gray"),
+            "disabled breakpoint": ("black", "dark gray"),
+            "focused breakpoint": ("light gray", "light blue"),
+            "focused disabled breakpoint": ("black", "light blue"),
+            "current breakpoint": (add_setting("white", "bold"), "dark gray"),
+            "disabled current breakpoint": ("black", "dark gray"),
+            "focused current breakpoint":
+                (add_setting("white", "bold"), "light blue"),
+            "focused disabled current breakpoint":
+                ("black", "light blue"),
+
+            # }}}
+
+            # {{{ ui widgets
+
+            "selectable": ("light gray", "dark gray"),
+            "focused selectable": ("white", "light blue"),
+
+            "button": ("light gray", "dark gray"),
+            "focused button": ("white", "light blue"),
+
+            "background": ("black", "light gray"),
+            "hotkey": (add_setting("black", "underline"), "light gray", "underline"),
+            "focused sidebar": ("light blue", "light gray", "standout"),
+
+            "warning": (add_setting("white", "bold"), "dark red", "standout"),
+
+            "label": ("black", "light gray"),
+            "value": ("white", "dark gray"),
+            "fixed value": ("light gray", "dark gray"),
+
+            "search box": ("white", "dark gray"),
+            "search not found": ("white", "dark red"),
+
+            "dialog title": (add_setting("white", "bold"), "dark gray"),
+
+            # }}}
+
+            # {{{ source view
+
+            "breakpoint marker": ("dark red", "black"),
+
+            "breakpoint source": ("light gray", "dark red"),
+            "breakpoint focused source": ("black", "dark red"),
+            "current breakpoint source": ("black", "dark red"),
+            "current breakpoint focused source": ("white", "dark red"),
+
+            # }}}
+
+            # {{{ highlighting
+
+            "source": ("white", "black"),
+            "focused source": ("white", "light blue"),
+            "highlighted source": ("black", "dark magenta"),
+            "current source": ("black", "light gray"),
+            "current focused source": ("white", "dark cyan"),
+            "current highlighted source": ("white", "dark cyan"),
+
+            "line number": ("dark gray", "black"),
+            "keyword": ("light red", "black"),
+
+            "literal": ("light magenta", "black"),
+            "string": ("yellow", "black"),
+            "doublestring": ("yellow", "black"),
+            "singlestring": ("yellow", "black"),
+            "docstring": ("light gray", "black"),
+
+            "name": ("light green", "black"),
+            "punctuation": ("white", "black"),
+            "comment": ("light gray", "black"),
+
+            # }}}
+
+            # {{{ shell
+
+            "command line edit":
+            ("white", "black"),
+            "command line prompt":
+            (add_setting("yellow", "bold"), "black"),
+
+            "command line output":
+            (add_setting("yellow", "bold"), "black"),
+            "command line input":
+            ("white", "black"),
+            "command line error":
+            (add_setting("light red", "bold"), "black"),
+
+            "focused command line output":
+            ("black", "light blue"),
+            "focused command line input":
+            (add_setting("light cyan", "bold"), "light blue"),
+            "focused command line error":
+            ("black", "light blue"),
+
+            # }}}
+            })
+
+        # }}}
+    elif theme == "monokai-256":
+        # {{{ monokai-256
+        palette_dict.update({
+            "header": ("h235", "h252", "standout"),
+
+            # {{{ variables view
+            "variables": ("h235", "h233"),
+            "variable separator": ("h23", "h252"),
+
+            "var label": ("h111", "h233"),
+            "var value": ("h255", "h233"),
+            "focused var label": ("h237", "h172"),
+            "focused var value": ("h237", "h172"),
+
+            "highlighted var label": ("h252", "h22"),
+            "highlighted var value": ("h255", "h22"),
+            "focused highlighted var label": ("h252", "h64"),
+            "focused highlighted var value": ("h255", "h64"),
+
+            "return label": ("h113", "h233"),
+            "return value": ("h113", "h233"),
+            "focused return label": (add_setting("h192", "bold"), "h24"),
+            "focused return value": ("h237", "h172"),
+            # }}}
+
+            # {{{ stack view
+            "stack": ("h235", "h233"),
+
+            "frame name": ("h192", "h233"),
+            "focused frame name": ("h237", "h172"),
+            "frame class": ("h111", "h233"),
+            "focused frame class": ("h237", "h172"),
+            "frame location": ("h252", "h233"),
+            "focused frame location": ("h237", "h172"),
+
+            "current frame name": ("h255", "h22"),
+            "focused current frame name": ("h255", "h64"),
+            "current frame class": ("h111", "h22"),
+            "focused current frame class": ("h255", "h64"),
+            "current frame location": ("h252", "h22"),
+            "focused current frame location": ("h255", "h64"),
+            # }}}
+
+            # {{{ breakpoint view
+            "breakpoint": ("h80", "h233"),
+            "disabled breakpoint": ("h60", "h233"),
+            "focused breakpoint": ("h237", "h172"),
+            "focused disabled breakpoint": ("h182", "h24"),
+            "current breakpoint": (add_setting("h255", "bold"), "h22"),
+            "disabled current breakpoint": (add_setting("h016", "bold"), "h22"),
+            "focused current breakpoint": (add_setting("h255", "bold"), "h64"),
+            "focused disabled current breakpoint": (add_setting("h016", "bold"), "h64"),
+            # }}}
+
+            # {{{ ui widgets
+
+            "selectable": ("h252", "h235"),
+            "focused selectable": ("h255", "h24"),
+
+            "button": ("h252", "h235"),
+            "focused button": ("h255", "h24"),
+
+            "background": ("h235", "h252"),
+            "hotkey": (add_setting("h235", "underline"), "h252", "underline"),
+            "focused sidebar": ("h23", "h252", "standout"),
+
+            "warning": (add_setting("h255", "bold"), "h124", "standout"),
+
+            "label": ("h235", "h252"),
+            "value": ("h255", "h17"),
+            "fixed value": ("h252", "h17"),
+            "group head": (add_setting("h25", "bold"), "h252"),
+
+            "search box": ("h255", "h235"),
+            "search not found": ("h255", "h124"),
+
+            "dialog title": (add_setting("h255", "bold"), "h235"),
+
+            # }}}
+
+            # {{{ source view
+            "breakpoint marker": ("h160", "h235"),
+
+            "breakpoint source": ("h252", "h124"),
+            "breakpoint focused source": ("h192", "h124"),
+            "current breakpoint source": ("h192", "h124"),
+            "current breakpoint focused source": (add_setting("h192", "bold"), "h124"),
+            # }}}
+
+            # {{{ highlighting
+            "source": ("h255", "h235"),
+            "focused source": ("h237", "h172"),
+            "highlighted source": ("h252", "h22"),
+            "current source": (add_setting("h252", "bold"), "h23"),
+            "current focused source": (add_setting("h192", "bold"), "h23"),
+            "current highlighted source": ("h255", "h22"),
+
+            "line number": ("h241", "h235"),
+            "keyword": ("h198", "h235"),
+
+            "literal": ("h141", "h235"),
+            "string": ("h228", "h235"),
+            "doublestring": ("h228", "h235"),
+            "singlestring": ("h228", "h235"),
+            "docstring": ("h243", "h235"),
+
+            "name": ("h155", "h235"),
+            "punctuation": ("h255", "h235"),
+            "comment": ("h243", "h235"),
+
+            # }}}
+
+            # {{{ shell
+            "command line edit": ("h255", "h233"),
+            "command line prompt": (add_setting("h192", "bold"), "h233"),
+
+            "command line output": ("h80", "h233"),
+            "command line input": ("h255", "h233"),
+            "command line error": ("h160", "h233"),
+
+            "focused command line output": (add_setting("h192", "bold"), "h24"),
+            "focused command line input": ("h255", "h24"),
+            "focused command line error": ("h235", "h24"),
+
+            "command line clear button": (add_setting("h255", "bold"), "h233"),
+            "command line focused button": ("h255", "h24"),
+            # }}}
+        })
+        # }}}
 
     else:
         try:
