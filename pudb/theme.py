@@ -14,6 +14,22 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         def add_setting(color, setting):
             return color
 
+    #-----------------------------------------------------------------------------------
+    # Reference for some palette items:
+    #
+    #  "namespace" : "import", "from", "using"
+    #  "operator"  : "+", "-", "=" etc.
+    #                NOTE: Does not include ".", which is assigned the type "source"
+    #  "argument"  : Function arguments
+    #  "builtin"   : "range", "dict", "set", "list", etc.
+    #  "pseudo"    : "None", "True", "False"
+    #                NOTE: Does not include "self", which is assigned the type "source"
+    #  "dunder"    : Class method names of the form __<name>__ within a class definition
+    #  "keyword"   : All keywords except those specifically assigned to "keyword2"
+    #                ("from", "and", "break", "is", "try", "pass", etc.)
+    #  "keyword2"  : "class", "def", "exec", "lambda", "print"
+    #-----------------------------------------------------------------------------------
+
     palette_dict = { # {{{ ui
 
         "header": ("black", "light gray", "standout"),
