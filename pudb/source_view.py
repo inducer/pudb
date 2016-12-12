@@ -279,14 +279,13 @@ def format_source(debugger_ui, lines, breakpoints):
 
         return result
 
-from enum import Enum
-class ParseState(Enum):
+class ParseState(object):
     '''States for the ArgumentParser class'''
     idle = 1
     found_function = 2
     found_open_paren = 3
 
-class AgumentParser():
+class AgumentParser(object):
     '''Parse source code tokens and identify function arguments.
 
     This parser implements a state machine which accepts
