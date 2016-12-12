@@ -81,9 +81,18 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         # {{{ highlighting
 
         "line number": ("light gray", "dark blue"),
-        "keyword": (add_setting("white", "bold"), "dark blue"),
+        "keyword2": (add_setting("white", "bold"), "dark blue"),
         "name": ("light cyan", "dark blue"),
         "literal": ("light magenta, bold", "dark blue"),
+
+        "namespace": (add_setting("white", "bold"), "dark blue"),
+        "operator": (add_setting("yellow", "bold"), "dark blue"),
+        "argument": (add_setting("yellow", "bold"), "dark blue"),
+        "builtin": (add_setting("yellow", "bold"), "dark blue"),
+        "pseudo": (add_setting("yellow", "bold"), "dark blue"),
+        "dunder": ("light cyan", "dark blue"),
+        "keyword": (add_setting("white", "bold"), "dark blue"),
+        "exception": (add_setting("yellow", "bold"), "dark blue"),
 
         "string": (add_setting("light magenta", "bold"), "dark blue"),
         "doublestring": (add_setting("light magenta", "bold"), "dark blue"),
@@ -161,7 +170,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         palette_dict.update({
             "source": ("black", "default"),
-            "keyword": ("brown", "default"),
+            "keyword2": ("brown", "default"),
             "kw_namespace": ("dark magenta", "default"),
 
             "literal": ("black", "default"),
@@ -176,6 +185,15 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "name": ("dark cyan", "default"),
             "line number": ("dark gray", "default"),
             "breakpoint marker": ("dark red", "default"),
+
+            "namespace": ("brown", "default"),
+            "operator": ("black", "default"),
+            "argument": ("black", "default"),
+            "builtin": ("black", "default"),
+            "pseudo": ("black", "default"),
+            "dunder": ("dark cyan", "default"),
+            "keyword": ("brown", "default"),
+            "exception": ("black", "default"),
 
             # {{{ shell
 
@@ -311,7 +329,16 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current highlighted source": ("white", "dark cyan"),
 
             "line number": ("dark gray", "black"),
+            "keyword2": ("yellow", "black"),
+
+            "namespace": ("yellow", "black"),
+            "operator": ("white", "black"),
+            "argument": ("white", "black"),
+            "builtin": ("white", "black"),
+            "pseudo": ("white", "black"),
+            "dunder": ("light cyan", "black"),
             "keyword": ("yellow", "black"),
+            "exception": ("white", "black"),
 
             "literal": ("dark magenta", "black"),
             "string": ("dark magenta", "black"),
@@ -398,7 +425,17 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current focused source": ("white", "brown"),
 
             "line number": ("light gray", "default"),
+            "keyword2": ("dark magenta", "default"),
+
+            "namespace": ("dark magenta", "default"),
+            "operator": ("white", "default"),
+            "argument": ("white", "default"),
+            "builtin": ("dark magenta", "default"),
+            "pseudo": ("white", "default"),
+            "dunder": ("white", "default"),
             "keyword": ("dark magenta", "default"),
+            "exception": ("white", "default"),
+
             "name": ("white", "default"),
             "literal": ("dark cyan", "default"),
             "string": ("dark red", "default"),
@@ -507,7 +544,17 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "highlighted source": ("light blue", "black"),
 
             "line number": ("light blue", "default"),
+            "keyword2": ("dark green", "default"),
+
+            "namespace": ("dark green", "default"),
+            "operator": ("light blue", "default"),
+            "argument": ("light blue", "default"),
+            "builtin": ("dark green", "default"),
+            "pseudo": ("light blue", "default"),
+            "dunder": ("light cyan", "black"),
             "keyword": ("dark green", "default"),
+            "exception": ("light blue", "default"),
+
             "name": ("light blue", "default"),
             "literal": ("dark cyan", "default"),
             "string": ("dark cyan", "default"),
@@ -636,15 +683,24 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current highlighted source": ("h255", "h22"),
 
             "line number": ("h241", "h235"),
-            "keyword": ("h111", "h235"),
-
+            "keyword2": ("h111", "h235"),
+            "name": ("h192", "h235"),
             "literal": ("h173", "h235"),
+
+            "namespace": ("h111", "h235"),
+            "operator": ("h255", "h235"),
+            "argument": ("h255", "h235"),
+            "builtin": ("h255", "h235"),
+            "pseudo": ("h255", "h235"),
+            "dunder": ("h192", "h235"),
+            "keyword": ("h111", "h235"),
+            "exception": ("h255", "h235"),
+
             "string": ("h113", "h235"),
             "doublestring": ("h113", "h235"),
             "singlestring": ("h113", "h235"),
             "docstring": ("h113", "h235"),
 
-            "name": ("h192", "h235"),
             "punctuation": ("h223", "h235"),
             "comment": ("h246", "h235"),
 
@@ -776,20 +832,24 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current highlighted source": ("white", "dark cyan"),
 
             "line number": ("dark gray", "black"),
+            "keyword2": ("light cyan", "black"),
+            "name": ("light green", "black"),
+            "literal": ("light magenta", "black"),
+            
             "namespace": ("light red", "black"),
-            "keyword": ("light cyan", "black"),
+            "operator": ("light red", "black"),
+            "argument": ("brown", "black"),
             "builtin": ("light cyan", "black"),
             "pseudo": ("light magenta", "black"),
-            "operator": ("light red", "black"),
-            "argument": ("yellow", "black"),
+            "dunder": ("light cyan", "black"),
+            "keyword": ("light red", "black"),
+            "exception": ("light cyan", "black"),
 
-            "literal": ("light magenta", "black"),
             "string": ("yellow", "black"),
             "doublestring": ("yellow", "black"),
             "singlestring": ("yellow", "black"),
             "docstring": ("light gray", "black"),
 
-            "name": ("light green", "black"),
             "punctuation": ("white", "black"),
             "comment": ("light gray", "black"),
 
@@ -918,20 +978,24 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current highlighted source": ("h255", "h22"),
 
             "line number": ("h241", "h235"),
+            "keyword2": ("h51", "h235"),
+            "name": ("h155", "h235"),
+            "literal": ("h141", "h235"),
+
             "namespace": ("h198", "h235"),
-            "keyword": ("h51", "h235"),
-            "builtin": ("h51", "h235"),
-            "pseudo": ("h141", "h235"),
             "operator": ("h198", "h235"),
             "argument": ("h208", "h235"),
+            "builtin": ("h51", "h235"),
+            "pseudo": ("h141", "h235"),
+            "dunder": ("h51", "h235"),
+            "keyword": ("h198", "h235"),
+            "exception": ("h51", "h235"),
 
-            "literal": ("h141", "h235"),
             "string": ("h228", "h235"),
             "doublestring": ("h228", "h235"),
             "singlestring": ("h228", "h235"),
             "docstring": ("h243", "h235"),
 
-            "name": ("h155", "h235"),
             "punctuation": ("h255", "h235"),
             "comment": ("h243", "h235"),
 

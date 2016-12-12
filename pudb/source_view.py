@@ -157,9 +157,11 @@ def format_source(debugger_ui, lines, breakpoints):
                 t.Token: "source",
                 t.Keyword.Namespace: "namespace",
                 t.Token.Argument: "argument",
+                t.Token.Dunder: "dunder",
+                t.Token.Keyword2: 'keyword2',
                 t.Keyword: "keyword",
                 t.Literal: "literal",
-                t.Name.Exception: "keyword",
+                t.Name.Exception: "exception",
                 t.Name.Function: "name",
                 t.Name.Class: "name",
                 t.Name.Builtin: "builtin",
@@ -178,13 +180,11 @@ def format_source(debugger_ui, lines, breakpoints):
 
         ATTR_TRANSLATE = {
                 t.Keyword: {
-                    'try': t.Operator.Word,
-                    'except': t.Operator.Word,
-                    'pass': t.Operator.Word,
-                    'return': t.Operator.Word,
-                    'for': t.Operator.Word,
-                    'if': t.Operator.Word,
-                    'yield': t.Operator.Word,
+                    'class': t.Token.Keyword2,
+                    'def': t.Token.Keyword2,
+                    'exec': t.Token.Keyword2,
+                    'lambda': t.Token.Keyword2,
+                    'print': t.Token.Keyword2,
                     },
                 t.Operator:{
                     '.': t.Token,
@@ -195,9 +195,6 @@ def format_source(debugger_ui, lines, breakpoints):
                 t.Name.Builtin:{
                     'object': t.Name.Class,
                     },
-                # t.Name:{
-                #     'a': t.Token.Argument, # For Debug testing of argument parsing
-                #     }
                 }
 
         class UrwidFormatter(Formatter):
@@ -214,7 +211,7 @@ def format_source(debugger_ui, lines, breakpoints):
 
                     # Find function arguments. When found, set their
                     # ttype to t.Token.Argument
-                    new_ttype= argument_parser.parse_token(ttype, s)
+                    new_ttype = argument_parser.parse_token(ttype, s)
                     if new_ttype:
                         ttype = new_ttype
 
@@ -224,7 +221,7 @@ def format_source(debugger_ui, lines, breakpoints):
                             ttype = ATTR_TRANSLATE[ttype][s]
                     # Translate dunder methods to buitins
                     if ttype == t.Name.Function and s.startswith('__') and s.endswith('__'):
-                        ttype = t.Name.Builtin
+                        ttype = t.Token.Dunder
 
                     while not ttype in ATTR_MAP:
                         if ttype.parent is not None:
