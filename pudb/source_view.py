@@ -151,14 +151,21 @@ def format_source(debugger_ui, lines, breakpoints):
         import pygments.token as t
 
         result = []
+        argument_parser = AgumentParser(t)
 
         ATTR_MAP = {
                 t.Token: "source",
+                t.Keyword.Namespace: "namespace",
+                t.Token.Argument: "argument",
                 t.Keyword: "keyword",
                 t.Literal: "literal",
+                t.Name.Exception: "keyword",
                 t.Name.Function: "name",
                 t.Name.Class: "name",
+                t.Name.Builtin: "builtin",
+                t.Name.Builtin.Pseudo: "pseudo",
                 t.Punctuation: "punctuation",
+                t.Operator: "operator",
                 t.String: "string",
                 # XXX: Single and Double don't actually work yet.
                 # See https://bitbucket.org/birkenfeld/pygments-main/issue/685
@@ -167,6 +174,30 @@ def format_source(debugger_ui, lines, breakpoints):
                 t.String.Backtick: "backtick",
                 t.String.Doc: "docstring",
                 t.Comment: "comment",
+                }
+
+        ATTR_TRANSLATE = {
+                t.Keyword: {
+                    'try': t.Operator.Word,
+                    'except': t.Operator.Word,
+                    'pass': t.Operator.Word,
+                    'return': t.Operator.Word,
+                    'for': t.Operator.Word,
+                    'if': t.Operator.Word,
+                    'yield': t.Operator.Word,
+                    },
+                t.Operator:{
+                    '.': t.Token,
+                    },
+                t.Name.Builtin.Pseudo:{
+                    'self': t.Token,
+                    },
+                t.Name.Builtin:{
+                    'object': t.Name.Class,
+                    },
+                # t.Name:{
+                #     'a': t.Token.Argument, # For Debug testing of argument parsing
+                #     }
                 }
 
         class UrwidFormatter(Formatter):
@@ -180,6 +211,20 @@ def format_source(debugger_ui, lines, breakpoints):
                 def add_snippet(ttype, s):
                     if not s:
                         return
+
+                    # Find function arguments. When found, set their
+                    # ttype to t.Token.Argument
+                    new_ttype= argument_parser.parse_token(ttype, s)
+                    if new_ttype:
+                        ttype = new_ttype
+
+                    # Translate
+                    if ttype in ATTR_TRANSLATE:
+                        if s in ATTR_TRANSLATE[ttype]:
+                            ttype = ATTR_TRANSLATE[ttype][s]
+                    # Translate dunder methods to buitins
+                    if ttype == t.Name.Function and s.startswith('__') and s.endswith('__'):
+                        ttype = t.Name.Builtin
 
                     while not ttype in ATTR_MAP:
                         if ttype.parent is not None:
@@ -222,3 +267,38 @@ def format_source(debugger_ui, lines, breakpoints):
                 PythonLexer(stripnl=False), UrwidFormatter())
 
         return result
+
+from enum import Enum 
+class ParseState(Enum):
+    idle = 1
+    found_function = 2
+    found_open_paren = 3
+
+class AgumentParser():
+    def __init__(self, pygments_token):
+        self.t = pygments_token
+        self.state = ParseState.idle
+        self.paren_level = 0
+
+    def parse_token(self, token, s):
+        if self.state == ParseState.idle:
+            if token is self.t.Name.Function:
+                self.state = ParseState.found_function
+                self.paren_level = 0
+            return None
+        elif self.state == ParseState.found_function:
+            if token is self.t.Punctuation and s == '(':
+                self.state = ParseState.found_open_paren
+                self.paren_level = 1
+            return None
+        else:
+            if ((token is self.t.Name) or
+                (token is self.t.Name.Builtin.Pseudo and s == 'self')):
+                return self.t.Token.Argument
+            elif token is self.t.Punctuation and s == ')':
+                self.paren_level -= 1
+            elif token is self.t.Punctuation and s == '(':
+                self.paren_level += 1
+            if self.paren_level == 0:
+                self.state = ParseState.idle
+        return None

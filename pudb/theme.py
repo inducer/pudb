@@ -776,7 +776,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current highlighted source": ("white", "dark cyan"),
 
             "line number": ("dark gray", "black"),
-            "keyword": ("light red", "black"),
+            "namespace": ("light red", "black"),
+            "keyword": ("light cyan", "black"),
+            "builtin": ("light cyan", "black"),
+            "pseudo": ("light magenta", "black"),
+            "operator": ("light red", "black"),
+            "argument": ("yellow", "black"),
 
             "literal": ("light magenta", "black"),
             "string": ("yellow", "black"),
@@ -913,7 +918,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current highlighted source": ("h255", "h22"),
 
             "line number": ("h241", "h235"),
-            "keyword": ("h198", "h235"),
+            "namespace": ("h198", "h235"),
+            "keyword": ("h51", "h235"),
+            "builtin": ("h51", "h235"),
+            "pseudo": ("h141", "h235"),
+            "operator": ("h198", "h235"),
+            "argument": ("h208", "h235"),
 
             "literal": ("h141", "h235"),
             "string": ("h228", "h235"),
