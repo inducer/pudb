@@ -567,7 +567,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "argument": ("light blue", "default"),
             "builtin": ("dark green", "default"),
             "pseudo": ("light blue", "default"),
-            "dunder": ("light cyan", "black"),
+            "dunder": ("light blue", "default"),
             "keyword": ("dark green", "default"),
             "exception": ("light blue", "default"),
 
