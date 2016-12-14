@@ -25,13 +25,41 @@ def get_palette(may_use_fancy_formats, theme="classic"):
     #  "pseudo"    : "None", "True", "False"
     #                NOTE: Does not include "self", which is assigned the type "source"
     #  "dunder"    : Class method names of the form __<name>__ within a class definition
+    #  "exception" : Exception names
     #  "keyword"   : All keywords except those specifically assigned to "keyword2"
     #                ("from", "and", "break", "is", "try", "pass", etc.)
     #  "keyword2"  : "class", "def", "exec", "lambda", "print"
     #-----------------------------------------------------------------------------------
 
-    palette_dict = { # {{{ ui
+    inheritance_map = (
+        # Style       Inherits from
+        # ----------  ----------
+        ("namespace", "keyword"),
+        ("operator",  "source"),
+        ("argument",  "source"),
+        ("builtin",   "source"),
+        ("pseudo",    "source"),
+        ("dunder",    "name"),
+        ("exception", "source"),
+        ("keyword2",  "keyword")
+    )
 
+    palette_dict = { 
+        # The following styles are initialized to "None".  Themes
+        # (including custom Themes) may set them as needed. 
+        # If they are not set by a theme, then they will
+        # inherit from other styles in accordance with
+        # the inheritance_map.
+        "namespace": None,
+        "operator":  None,
+        "argument":  None,
+        "builtin":   None,
+        "pseudo":    None,
+        "dunder":    None,
+        "exception": None,
+        "keyword2":  None,
+
+        # {{{ ui
         "header": ("black", "light gray", "standout"),
 
         "selectable": ("black", "dark cyan"),
@@ -97,18 +125,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         # {{{ highlighting
 
         "line number": ("light gray", "dark blue"),
-        "keyword2": (add_setting("white", "bold"), "dark blue"),
+        "keyword": (add_setting("white", "bold"), "dark blue"),
         "name": ("light cyan", "dark blue"),
         "literal": ("light magenta, bold", "dark blue"),
-
-        "namespace": (add_setting("white", "bold"), "dark blue"),
-        "operator": (add_setting("yellow", "bold"), "dark blue"),
-        "argument": (add_setting("yellow", "bold"), "dark blue"),
-        "builtin": (add_setting("yellow", "bold"), "dark blue"),
-        "pseudo": (add_setting("yellow", "bold"), "dark blue"),
-        "dunder": ("light cyan", "dark blue"),
-        "keyword": (add_setting("white", "bold"), "dark blue"),
-        "exception": (add_setting("yellow", "bold"), "dark blue"),
 
         "string": (add_setting("light magenta", "bold"), "dark blue"),
         "doublestring": (add_setting("light magenta", "bold"), "dark blue"),
@@ -186,7 +205,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         palette_dict.update({
             "source": ("black", "default"),
-            "keyword2": ("brown", "default"),
+            "keyword": ("brown", "default"),
             "kw_namespace": ("dark magenta", "default"),
 
             "literal": ("black", "default"),
@@ -201,15 +220,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "name": ("dark cyan", "default"),
             "line number": ("dark gray", "default"),
             "breakpoint marker": ("dark red", "default"),
-
-            "namespace": ("brown", "default"),
-            "operator": ("black", "default"),
-            "argument": ("black", "default"),
-            "builtin": ("black", "default"),
-            "pseudo": ("black", "default"),
-            "dunder": ("dark cyan", "default"),
-            "keyword": ("brown", "default"),
-            "exception": ("black", "default"),
 
             # {{{ shell
 
@@ -345,16 +355,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current highlighted source": ("white", "dark cyan"),
 
             "line number": ("dark gray", "black"),
-            "keyword2": ("yellow", "black"),
-
-            "namespace": ("yellow", "black"),
-            "operator": ("white", "black"),
-            "argument": ("white", "black"),
-            "builtin": ("white", "black"),
-            "pseudo": ("white", "black"),
-            "dunder": ("light cyan", "black"),
             "keyword": ("yellow", "black"),
-            "exception": ("white", "black"),
 
             "literal": ("dark magenta", "black"),
             "string": ("dark magenta", "black"),
@@ -441,17 +442,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current focused source": ("white", "brown"),
 
             "line number": ("light gray", "default"),
-            "keyword2": ("dark magenta", "default"),
-
-            "namespace": ("dark magenta", "default"),
-            "operator": ("white", "default"),
-            "argument": ("white", "default"),
-            "builtin": ("dark magenta", "default"),
-            "pseudo": ("white", "default"),
-            "dunder": ("white", "default"),
             "keyword": ("dark magenta", "default"),
-            "exception": ("white", "default"),
-
             "name": ("white", "default"),
             "literal": ("dark cyan", "default"),
             "string": ("dark red", "default"),
@@ -489,7 +480,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         # }}}
     elif theme == "solarized":
-        # {{{ solarized
+    # {{{ solarized
         palette_dict.update({
             # UI
             "header": ("black", "light blue", "standout"),
@@ -560,17 +551,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "highlighted source": ("light blue", "black"),
 
             "line number": ("light blue", "default"),
-            "keyword2": ("dark green", "default"),
-
-            "namespace": ("dark green", "default"),
-            "operator": ("light blue", "default"),
-            "argument": ("light blue", "default"),
-            "builtin": ("dark green", "default"),
-            "pseudo": ("light blue", "default"),
-            "dunder": ("light blue", "default"),
             "keyword": ("dark green", "default"),
-            "exception": ("light blue", "default"),
-
             "name": ("light blue", "default"),
             "literal": ("dark cyan", "default"),
             "string": ("dark cyan", "default"),
@@ -600,9 +581,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "command line focused button": ("black", "light blue"),
         })
 
-        # }}}
+    # }}}
     elif theme == "agr-256":
-        # {{{ agr-256
+    # {{{ agr-256
         palette_dict.update({
             "header": ("h235", "h252", "standout"),
 
@@ -699,24 +680,15 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current highlighted source": ("h255", "h22"),
 
             "line number": ("h241", "h235"),
-            "keyword2": ("h111", "h235"),
-            "name": ("h192", "h235"),
-            "literal": ("h173", "h235"),
-
-            "namespace": ("h111", "h235"),
-            "operator": ("h255", "h235"),
-            "argument": ("h255", "h235"),
-            "builtin": ("h255", "h235"),
-            "pseudo": ("h255", "h235"),
-            "dunder": ("h192", "h235"),
             "keyword": ("h111", "h235"),
-            "exception": ("h255", "h235"),
 
+            "literal": ("h173", "h235"),
             "string": ("h113", "h235"),
             "doublestring": ("h113", "h235"),
             "singlestring": ("h113", "h235"),
             "docstring": ("h113", "h235"),
 
+            "name": ("h192", "h235"),
             "punctuation": ("h223", "h235"),
             "comment": ("h246", "h235"),
 
@@ -740,160 +712,98 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         })
         # }}}
     elif theme == "monokai":
-        # {{{ monokai
+        # {{{ midnight
+
+        # Based on XCode's midnight theme
+        # Looks best in a console with green text against black background
         palette_dict.update({
-            "header": ("black", "light gray", "standout"),
+            "variables": ("white", "default"),
 
-            # {{{ variables view
-            "variables": ("black", "dark gray"),
-            "variable separator": ("dark cyan", "light gray"),
+            "var label": ("light blue", "default"),
+            "var value": ("white", "default"),
 
-            "var label": ("light gray", "dark gray"),
-            "var value": ("white", "dark gray"),
-            "focused var label": ("light gray", "light blue"),
-            "focused var value": ("white", "light blue"),
+            "stack": ("white", "default"),
 
-            "highlighted var label": ("light gray", "dark green"),
-            "highlighted var value": ("white", "dark green"),
-            "focused highlighted var label": ("light gray", "light blue"),
-            "focused highlighted var value": ("white", "light blue"),
+            "frame name": ("white", "default"),
+            "frame class": ("dark blue", "default"),
+            "frame location": ("light cyan", "default"),
 
-            "return label": ("light gray", "dark gray"),
-            "return value": ("light cyan", "dark gray"),
-            "focused return label": ("yellow", "light blue"),
-            "focused return value": ("white", "light blue"),
+            "current frame name": (add_setting("white", "bold"), "default"),
+            "current frame class": ("dark blue", "default"),
+            "current frame location": ("light cyan", "default"),
 
-            # }}}
+            "focused frame name": ("black", "dark green"),
+            "focused frame class": (add_setting("white", "bold"), "dark green"),
+            "focused frame location": ("dark blue", "dark green"),
 
-            # {{{ stack view
+            "focused current frame name": ("black", "dark green"),
+            "focused current frame class": (add_setting("white", "bold"), "dark green"),
+            "focused current frame location": ("dark blue", "dark green"),
 
-            "stack": ("black", "dark gray"),
+            "breakpoint": ("default", "default"),
 
-            "frame name": ("light gray", "dark gray"),
-            "focused frame name": ("light gray", "light blue"),
-            "frame class": ("dark blue", "dark gray"),
-            "focused frame class": ("dark blue", "light blue"),
-            "frame location": ("white", "dark gray"),
-            "focused frame location": ("white", "light blue"),
+            "search box": ("default", "default"),
 
-            "current frame name": (add_setting("white", "bold"),
-                "dark gray"),
-            "focused current frame name": (add_setting("white", "bold"),
-                "light blue", "bold"),
-            "current frame class": ("dark blue", "dark gray"),
-            "focused current frame class": ("dark blue", "dark green"),
-            "current frame location": ("light cyan", "dark gray"),
-            "focused current frame location": ("light cyan", "light blue"),
+            "breakpoint": ("white", "default"),
+            "disabled breakpoint": ("dark gray", "default"),
+            "focused breakpoint": ("black", "dark green"),
+            "focused disabled breakpoint": ("dark gray", "dark green"),
+            "current breakpoint": (add_setting("white", "bold"), "default"),
+            "disabled current breakpoint": (add_setting("dark gray", "bold"), "default"),
+            "focused current breakpoint": (add_setting("white", "bold"), "dark green", "bold"),
+            "focused disabled current breakpoint": (add_setting("dark gray", "bold"), "dark green", "bold"),
 
-            # }}}
-
-            # {{{ breakpoint view
-
-            "breakpoint": ("light gray", "dark gray"),
-            "disabled breakpoint": ("black", "dark gray"),
-            "focused breakpoint": ("light gray", "light blue"),
-            "focused disabled breakpoint": ("black", "light blue"),
-            "current breakpoint": (add_setting("white", "bold"), "dark gray"),
-            "disabled current breakpoint": ("black", "dark gray"),
-            "focused current breakpoint":
-                (add_setting("white", "bold"), "light blue"),
-            "focused disabled current breakpoint":
-                ("black", "light blue"),
-
-            # }}}
-
-            # {{{ ui widgets
-
-            "selectable": ("light gray", "dark gray"),
-            "focused selectable": ("white", "light blue"),
-
-            "button": ("light gray", "dark gray"),
-            "focused button": ("white", "light blue"),
-
-            "background": ("black", "light gray"),
-            "hotkey": (add_setting("black", "underline"), "light gray", "underline"),
-            "focused sidebar": ("light blue", "light gray", "standout"),
-
-            "warning": (add_setting("white", "bold"), "dark red", "standout"),
-
-            "label": ("black", "light gray"),
-            "value": ("white", "dark gray"),
-            "fixed value": ("light gray", "dark gray"),
-
-            "search box": ("white", "dark gray"),
-            "search not found": ("white", "dark red"),
-
-            "dialog title": (add_setting("white", "bold"), "dark gray"),
-
-            # }}}
-
-            # {{{ source view
-
-            "breakpoint marker": ("dark red", "black"),
-
-            "breakpoint source": ("light gray", "dark red"),
-            "breakpoint focused source": ("black", "dark red"),
-            "current breakpoint source": ("black", "dark red"),
-            "current breakpoint focused source": ("white", "dark red"),
-
-            # }}}
-
-            # {{{ highlighting
-
-            "source": ("white", "black"),
-            "focused source": ("white", "light blue"),
-            "highlighted source": ("black", "dark magenta"),
-            "current source": ("black", "light gray"),
-            "current focused source": ("white", "dark cyan"),
-            "current highlighted source": ("white", "dark cyan"),
+            "source": ("white", "default"),
+            "highlighted source": ("white", "light cyan"),
+            "current source": ("white", "light gray"),
+            "current focused source": ("white", "brown"),
 
             "line number": ("dark gray", "black"),
             "keyword2": ("light cyan", "black"),
             "name": ("light green", "black"),
             "literal": ("light magenta", "black"),
-            
+
             "namespace": ("light red", "black"),
             "operator": ("light red", "black"),
             "argument": ("brown", "black"),
             "builtin": ("light cyan", "black"),
             "pseudo": ("light magenta", "black"),
             "dunder": ("light cyan", "black"),
-            "keyword": ("light red", "black"),
             "exception": ("light cyan", "black"),
+            "keyword": ("light red", "black"),
 
-            "string": ("yellow", "black"),
-            "doublestring": ("yellow", "black"),
-            "singlestring": ("yellow", "black"),
-            "docstring": ("light gray", "black"),
+            "string": ("dark red", "default"),
+            "doublestring": ("dark red", "default"),
+            "singlestring": ("light blue", "default"),
+            "docstring": ("light red", "default"),
+            "backtick": ("light green", "default"),
+            "punctuation": ("white", "default"),
+            "comment": ("dark green", "default"),
+            "classname": ("dark cyan", "default"),
+            "funcname": ("white", "default"),
 
-            "punctuation": ("white", "black"),
-            "comment": ("light gray", "black"),
-
-            # }}}
+            "breakpoint marker": ("dark red", "default"),
 
             # {{{ shell
 
-            "command line edit":
-            ("white", "black"),
-            "command line prompt":
-            (add_setting("yellow", "bold"), "black"),
+            "command line edit": ("white", "default"),
+            "command line prompt": (add_setting("white", "bold"), "default"),
 
-            "command line output":
-            (add_setting("yellow", "bold"), "black"),
-            "command line input":
-            ("white", "black"),
-            "command line error":
-            (add_setting("light red", "bold"), "black"),
+            "command line output": (add_setting("white", "bold"), "default"),
+            "command line input": (add_setting("white", "bold"), "default"),
+            "command line error": (add_setting("light red", "bold"), "default"),
 
-            "focused command line output":
-            ("black", "light blue"),
-            "focused command line input":
-            (add_setting("light cyan", "bold"), "light blue"),
-            "focused command line error":
-            ("black", "light blue"),
+            "focused command line output": ("black", "dark green"),
+            "focused command line input": (add_setting("white", "bold"), "dark green"),
+            "focused command line error": ("black", "dark green"),
+
+            "command line clear button": (add_setting("white", "bold"), "default"),
+            "command line focused button": ("black", "light gray"), # White
+            # doesn't work in curses mode
 
             # }}}
-            })
+
+        })
 
         # }}}
     elif theme == "monokai-256":
@@ -1004,8 +914,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "builtin": ("h51", "h235"),
             "pseudo": ("h141", "h235"),
             "dunder": ("h51", "h235"),
-            "keyword": ("h198", "h235"),
             "exception": ("h51", "h235"),
+            "keyword": ("h198", "h235"),
 
             "string": ("h228", "h235"),
             "doublestring": ("h228", "h235"),
@@ -1049,6 +959,11 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             from traceback import print_exc
             print_exc()
             raw_input("Hit enter:")
+
+    # Apply style inheritance
+    for child, parent in inheritance_map:
+        if palette_dict[child] is None:
+            palette_dict[child] = palette_dict[parent] 
 
     palette_list = []
     for setting_name, color_values in palette_dict.items():
