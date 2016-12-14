@@ -151,7 +151,7 @@ def format_source(debugger_ui, lines, breakpoints):
         import pygments.token as t
 
         result = []
-        argument_parser = AgumentParser(t)
+        argument_parser = ArgumentParser(t)
 
         # NOTE: Tokens of the form t.Token.<name> are not native
         #       Pygments token types; they are user defined token
@@ -285,14 +285,14 @@ class ParseState(object):
     found_function = 2
     found_open_paren = 3
 
-class AgumentParser(object):
+class ArgumentParser(object):
     '''Parse source code tokens and identify function arguments.
 
     This parser implements a state machine which accepts
     Pygments tokens, delivered sequentially from the beginning
-    of a source file to it's end.
+    of a source file to its end.
 
-    parse_token() processes each token (and it's associated string)
+    parse_token() processes each token (and its associated string)
     and returns None if that token does not require modification.
     When it finds a token which represents a function
     argument, it returns the correct token type for that
