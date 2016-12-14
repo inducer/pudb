@@ -151,14 +151,34 @@ def format_source(debugger_ui, lines, breakpoints):
         import pygments.token as t
 
         result = []
+        argument_parser = ArgumentParser(t)
 
+        # NOTE: Tokens of the form t.Token.<name> are not native
+        #       Pygments token types; they are user defined token
+        #       types.
+        #
+        #       t.Token is a Pygments token creator object
+        #       (see http://pygments.org/docs/tokens/)
+        #
+        #       The user defined token types get assigned by 
+        #       one of several translation operations at the
+        #       beginning of add_snippet().
+        #
         ATTR_MAP = {
                 t.Token: "source",
+                t.Keyword.Namespace: "namespace",
+                t.Token.Argument: "argument",
+                t.Token.Dunder: "dunder",
+                t.Token.Keyword2: 'keyword2',
                 t.Keyword: "keyword",
                 t.Literal: "literal",
+                t.Name.Exception: "exception",
                 t.Name.Function: "name",
                 t.Name.Class: "name",
+                t.Name.Builtin: "builtin",
+                t.Name.Builtin.Pseudo: "pseudo",
                 t.Punctuation: "punctuation",
+                t.Operator: "operator",
                 t.String: "string",
                 # XXX: Single and Double don't actually work yet.
                 # See https://bitbucket.org/birkenfeld/pygments-main/issue/685
@@ -167,6 +187,27 @@ def format_source(debugger_ui, lines, breakpoints):
                 t.String.Backtick: "backtick",
                 t.String.Doc: "docstring",
                 t.Comment: "comment",
+                }
+
+        # Token translation table. Maps token types and their
+        # associated strings to new token types.
+        ATTR_TRANSLATE = {
+                t.Keyword: {
+                    'class': t.Token.Keyword2,
+                    'def': t.Token.Keyword2,
+                    'exec': t.Token.Keyword2,
+                    'lambda': t.Token.Keyword2,
+                    'print': t.Token.Keyword2,
+                    },
+                t.Operator:{
+                    '.': t.Token,
+                    },
+                t.Name.Builtin.Pseudo:{
+                    'self': t.Token,
+                    },
+                t.Name.Builtin:{
+                    'object': t.Name.Class,
+                    },
                 }
 
         class UrwidFormatter(Formatter):
@@ -180,6 +221,21 @@ def format_source(debugger_ui, lines, breakpoints):
                 def add_snippet(ttype, s):
                     if not s:
                         return
+
+                    # Find function arguments. When found, change their
+                    # ttype to t.Token.Argument
+                    new_ttype = argument_parser.parse_token(ttype, s)
+                    if new_ttype:
+                        ttype = new_ttype
+
+                    # Translate tokens
+                    if ttype in ATTR_TRANSLATE:
+                        if s in ATTR_TRANSLATE[ttype]:
+                            ttype = ATTR_TRANSLATE[ttype][s]
+                    
+                    # Translate dunder method tokens
+                    if ttype == t.Name.Function and s.startswith('__') and s.endswith('__'):
+                        ttype = t.Token.Dunder
 
                     while not ttype in ATTR_MAP:
                         if ttype.parent is not None:
@@ -222,3 +278,50 @@ def format_source(debugger_ui, lines, breakpoints):
                 PythonLexer(stripnl=False), UrwidFormatter())
 
         return result
+
+class ParseState(object):
+    '''States for the ArgumentParser class'''
+    idle = 1
+    found_function = 2
+    found_open_paren = 3
+
+class ArgumentParser(object):
+    '''Parse source code tokens and identify function arguments.
+
+    This parser implements a state machine which accepts
+    Pygments tokens, delivered sequentially from the beginning
+    of a source file to its end.
+
+    parse_token() processes each token (and its associated string)
+    and returns None if that token does not require modification.
+    When it finds a token which represents a function
+    argument, it returns the correct token type for that
+    item (the caller should then replace the associated item's
+    token type with the returned type)
+    '''
+    def __init__(self, pygments_token):
+        self.t = pygments_token
+        self.state = ParseState.idle
+        self.paren_level = 0
+
+    def parse_token(self, token, s):
+        '''Parse token. Return None or replacement token type'''
+        if self.state == ParseState.idle:
+            if token is self.t.Name.Function:
+                self.state = ParseState.found_function
+                self.paren_level = 0
+        elif self.state == ParseState.found_function:
+            if token is self.t.Punctuation and s == '(':
+                self.state = ParseState.found_open_paren
+                self.paren_level = 1
+        else:
+            if ((token is self.t.Name) or
+                (token is self.t.Name.Builtin.Pseudo and s == 'self')):
+                return self.t.Token.Argument
+            elif token is self.t.Punctuation and s == ')':
+                self.paren_level -= 1
+            elif token is self.t.Punctuation and s == '(':
+                self.paren_level += 1
+            if self.paren_level == 0:
+                self.state = ParseState.idle
+        return None

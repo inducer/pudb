@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-THEMES = ["classic", "vim", "dark vim", "midnight", "solarized", "agr-256"]
+THEMES = ["classic", "vim", "dark vim", "midnight", "solarized", "agr-256", "monokai", "monokai-256"]
 
 from pudb.py3compat import execfile, raw_input
 import urwid
@@ -14,8 +14,52 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         def add_setting(color, setting):
             return color
 
-    palette_dict = { # {{{ ui
+    #-----------------------------------------------------------------------------------
+    # Reference for some palette items:
+    #
+    #  "namespace" : "import", "from", "using"
+    #  "operator"  : "+", "-", "=" etc.
+    #                NOTE: Does not include ".", which is assigned the type "source"
+    #  "argument"  : Function arguments
+    #  "builtin"   : "range", "dict", "set", "list", etc.
+    #  "pseudo"    : "None", "True", "False"
+    #                NOTE: Does not include "self", which is assigned the type "source"
+    #  "dunder"    : Class method names of the form __<name>__ within a class definition
+    #  "exception" : Exception names
+    #  "keyword"   : All keywords except those specifically assigned to "keyword2"
+    #                ("from", "and", "break", "is", "try", "pass", etc.)
+    #  "keyword2"  : "class", "def", "exec", "lambda", "print"
+    #-----------------------------------------------------------------------------------
 
+    inheritance_map = (
+        # Style       Inherits from
+        # ----------  ----------
+        ("namespace", "keyword"),
+        ("operator",  "source"),
+        ("argument",  "source"),
+        ("builtin",   "source"),
+        ("pseudo",    "source"),
+        ("dunder",    "name"),
+        ("exception", "source"),
+        ("keyword2",  "keyword")
+    )
+
+    palette_dict = { 
+        # The following styles are initialized to "None".  Themes
+        # (including custom Themes) may set them as needed. 
+        # If they are not set by a theme, then they will
+        # inherit from other styles in accordance with
+        # the inheritance_map.
+        "namespace": None,
+        "operator":  None,
+        "argument":  None,
+        "builtin":   None,
+        "pseudo":    None,
+        "dunder":    None,
+        "exception": None,
+        "keyword2":  None,
+
+        # {{{ ui
         "header": ("black", "light gray", "standout"),
 
         "selectable": ("black", "dark cyan"),
@@ -666,7 +710,240 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "command line focused button": ("h255", "h24"),
             # }}}
         })
-    # }}}
+        # }}}
+    elif theme == "monokai":
+        # {{{ midnight
+
+        # Based on XCode's midnight theme
+        # Looks best in a console with green text against black background
+        palette_dict.update({
+            "variables": ("white", "default"),
+
+            "var label": ("light blue", "default"),
+            "var value": ("white", "default"),
+
+            "stack": ("white", "default"),
+
+            "frame name": ("white", "default"),
+            "frame class": ("dark blue", "default"),
+            "frame location": ("light cyan", "default"),
+
+            "current frame name": (add_setting("white", "bold"), "default"),
+            "current frame class": ("dark blue", "default"),
+            "current frame location": ("light cyan", "default"),
+
+            "focused frame name": ("black", "dark green"),
+            "focused frame class": (add_setting("white", "bold"), "dark green"),
+            "focused frame location": ("dark blue", "dark green"),
+
+            "focused current frame name": ("black", "dark green"),
+            "focused current frame class": (add_setting("white", "bold"), "dark green"),
+            "focused current frame location": ("dark blue", "dark green"),
+
+            "breakpoint": ("default", "default"),
+
+            "search box": ("default", "default"),
+
+            "breakpoint": ("white", "default"),
+            "disabled breakpoint": ("dark gray", "default"),
+            "focused breakpoint": ("black", "dark green"),
+            "focused disabled breakpoint": ("dark gray", "dark green"),
+            "current breakpoint": (add_setting("white", "bold"), "default"),
+            "disabled current breakpoint": (add_setting("dark gray", "bold"), "default"),
+            "focused current breakpoint": (add_setting("white", "bold"), "dark green", "bold"),
+            "focused disabled current breakpoint": (add_setting("dark gray", "bold"), "dark green", "bold"),
+
+            "source": ("white", "default"),
+            "highlighted source": ("white", "light cyan"),
+            "current source": ("white", "light gray"),
+            "current focused source": ("white", "brown"),
+
+            "line number": ("dark gray", "black"),
+            "keyword2": ("light cyan", "black"),
+            "name": ("light green", "black"),
+            "literal": ("light magenta", "black"),
+
+            "namespace": ("light red", "black"),
+            "operator": ("light red", "black"),
+            "argument": ("brown", "black"),
+            "builtin": ("light cyan", "black"),
+            "pseudo": ("light magenta", "black"),
+            "dunder": ("light cyan", "black"),
+            "exception": ("light cyan", "black"),
+            "keyword": ("light red", "black"),
+
+            "string": ("dark red", "default"),
+            "doublestring": ("dark red", "default"),
+            "singlestring": ("light blue", "default"),
+            "docstring": ("light red", "default"),
+            "backtick": ("light green", "default"),
+            "punctuation": ("white", "default"),
+            "comment": ("dark green", "default"),
+            "classname": ("dark cyan", "default"),
+            "funcname": ("white", "default"),
+
+            "breakpoint marker": ("dark red", "default"),
+
+            # {{{ shell
+
+            "command line edit": ("white", "default"),
+            "command line prompt": (add_setting("white", "bold"), "default"),
+
+            "command line output": (add_setting("white", "bold"), "default"),
+            "command line input": (add_setting("white", "bold"), "default"),
+            "command line error": (add_setting("light red", "bold"), "default"),
+
+            "focused command line output": ("black", "dark green"),
+            "focused command line input": (add_setting("white", "bold"), "dark green"),
+            "focused command line error": ("black", "dark green"),
+
+            "command line clear button": (add_setting("white", "bold"), "default"),
+            "command line focused button": ("black", "light gray"), # White
+            # doesn't work in curses mode
+
+            # }}}
+
+        })
+
+        # }}}
+    elif theme == "monokai-256":
+        # {{{ monokai-256
+        palette_dict.update({
+            "header": ("h235", "h252", "standout"),
+
+            # {{{ variables view
+            "variables": ("h235", "h233"),
+            "variable separator": ("h23", "h252"),
+
+            "var label": ("h111", "h233"),
+            "var value": ("h255", "h233"),
+            "focused var label": ("h237", "h172"),
+            "focused var value": ("h237", "h172"),
+
+            "highlighted var label": ("h252", "h22"),
+            "highlighted var value": ("h255", "h22"),
+            "focused highlighted var label": ("h252", "h64"),
+            "focused highlighted var value": ("h255", "h64"),
+
+            "return label": ("h113", "h233"),
+            "return value": ("h113", "h233"),
+            "focused return label": (add_setting("h192", "bold"), "h24"),
+            "focused return value": ("h237", "h172"),
+            # }}}
+
+            # {{{ stack view
+            "stack": ("h235", "h233"),
+
+            "frame name": ("h192", "h233"),
+            "focused frame name": ("h237", "h172"),
+            "frame class": ("h111", "h233"),
+            "focused frame class": ("h237", "h172"),
+            "frame location": ("h252", "h233"),
+            "focused frame location": ("h237", "h172"),
+
+            "current frame name": ("h255", "h22"),
+            "focused current frame name": ("h255", "h64"),
+            "current frame class": ("h111", "h22"),
+            "focused current frame class": ("h255", "h64"),
+            "current frame location": ("h252", "h22"),
+            "focused current frame location": ("h255", "h64"),
+            # }}}
+
+            # {{{ breakpoint view
+            "breakpoint": ("h80", "h233"),
+            "disabled breakpoint": ("h60", "h233"),
+            "focused breakpoint": ("h237", "h172"),
+            "focused disabled breakpoint": ("h182", "h24"),
+            "current breakpoint": (add_setting("h255", "bold"), "h22"),
+            "disabled current breakpoint": (add_setting("h016", "bold"), "h22"),
+            "focused current breakpoint": (add_setting("h255", "bold"), "h64"),
+            "focused disabled current breakpoint": (add_setting("h016", "bold"), "h64"),
+            # }}}
+
+            # {{{ ui widgets
+
+            "selectable": ("h252", "h235"),
+            "focused selectable": ("h255", "h24"),
+
+            "button": ("h252", "h235"),
+            "focused button": ("h255", "h24"),
+
+            "background": ("h235", "h252"),
+            "hotkey": (add_setting("h235", "underline"), "h252", "underline"),
+            "focused sidebar": ("h23", "h252", "standout"),
+
+            "warning": (add_setting("h255", "bold"), "h124", "standout"),
+
+            "label": ("h235", "h252"),
+            "value": ("h255", "h17"),
+            "fixed value": ("h252", "h17"),
+            "group head": (add_setting("h25", "bold"), "h252"),
+
+            "search box": ("h255", "h235"),
+            "search not found": ("h255", "h124"),
+
+            "dialog title": (add_setting("h255", "bold"), "h235"),
+
+            # }}}
+
+            # {{{ source view
+            "breakpoint marker": ("h160", "h235"),
+
+            "breakpoint source": ("h252", "h124"),
+            "breakpoint focused source": ("h192", "h124"),
+            "current breakpoint source": ("h192", "h124"),
+            "current breakpoint focused source": (add_setting("h192", "bold"), "h124"),
+            # }}}
+
+            # {{{ highlighting
+            "source": ("h255", "h235"),
+            "focused source": ("h237", "h172"),
+            "highlighted source": ("h252", "h22"),
+            "current source": (add_setting("h252", "bold"), "h23"),
+            "current focused source": (add_setting("h192", "bold"), "h23"),
+            "current highlighted source": ("h255", "h22"),
+
+            "line number": ("h241", "h235"),
+            "keyword2": ("h51", "h235"),
+            "name": ("h155", "h235"),
+            "literal": ("h141", "h235"),
+
+            "namespace": ("h198", "h235"),
+            "operator": ("h198", "h235"),
+            "argument": ("h208", "h235"),
+            "builtin": ("h51", "h235"),
+            "pseudo": ("h141", "h235"),
+            "dunder": ("h51", "h235"),
+            "exception": ("h51", "h235"),
+            "keyword": ("h198", "h235"),
+
+            "string": ("h228", "h235"),
+            "doublestring": ("h228", "h235"),
+            "singlestring": ("h228", "h235"),
+            "docstring": ("h243", "h235"),
+
+            "punctuation": ("h255", "h235"),
+            "comment": ("h243", "h235"),
+
+            # }}}
+
+            # {{{ shell
+            "command line edit": ("h255", "h233"),
+            "command line prompt": (add_setting("h192", "bold"), "h233"),
+
+            "command line output": ("h80", "h233"),
+            "command line input": ("h255", "h233"),
+            "command line error": ("h160", "h233"),
+
+            "focused command line output": (add_setting("h192", "bold"), "h24"),
+            "focused command line input": ("h255", "h24"),
+            "focused command line error": ("h235", "h24"),
+
+            "command line clear button": (add_setting("h255", "bold"), "h233"),
+            "command line focused button": ("h255", "h24"),
+            # }}}
+        })
+        # }}}
 
     else:
         try:
@@ -682,6 +959,11 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             from traceback import print_exc
             print_exc()
             raw_input("Hit enter:")
+
+    # Apply style inheritance
+    for child, parent in inheritance_map:
+        if palette_dict[child] is None:
+            palette_dict[child] = palette_dict[parent] 
 
     palette_list = []
     for setting_name, color_values in palette_dict.items():
