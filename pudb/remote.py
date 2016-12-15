@@ -154,4 +154,7 @@ def set_trace(frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:
         frame = _frame().f_back
+    if term_size is None:
+        rows, columns = os.popen('stty size', 'r').read().split()
+        term_size = int(columns), int(rows)
     return debugger(term_size=term_size, host=host, port=port).set_trace(frame)
