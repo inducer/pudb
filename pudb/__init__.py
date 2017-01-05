@@ -18,7 +18,9 @@ class PudbShortcuts(object):
         import sys
         dbg = _get_debugger()
 
-        set_interrupt_handler()
+        import threading
+        if isinstance(threading.current_thread(), threading._MainThread):
+            set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
 if PY3:
@@ -152,7 +154,9 @@ def set_trace():
     import sys
     dbg = _get_debugger()
 
-    set_interrupt_handler()
+    import threading
+    if isinstance(threading.current_thread(), threading._MainThread):
+        set_interrupt_handler()
     dbg.set_trace(sys._getframe().f_back)
 
 
@@ -178,6 +182,8 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
     >>> pudb.DEFAULT_SIGNAL = signal.SIGALRM
 
     Note, this may not work if you use threads or subprocesses.
+
+    Note, this only works when called from the main thread.
     """
     import signal
     old_handler = signal.getsignal(interrupt_signal)
@@ -193,6 +199,13 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
         return warn("A non-default handler for signal %d is already installed (%s). "
                 "Skipping pudb interrupt support."
                 % (interrupt_signal, old_handler))
+
+    import threading
+    if not isinstance(threading.current_thread(), threading._MainThread):
+        from warnings import warn
+        # Setting signals from a non-main thread will not work
+        return warn("Setting the interrupt handler can only be done on the main "
+                "thread. The interrupt handler was NOT installed.")
 
     try:
         signal.signal(interrupt_signal, _interrupt_handler)
