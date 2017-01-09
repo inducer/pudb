@@ -281,6 +281,8 @@ class ValueWalker:
             self.add_item(prefix, label, repr(value), id_path, attr_prefix)
         elif isinstance(value, string_types):
             self.add_item(prefix, label, repr(value), id_path, attr_prefix)
+        elif value is None:
+            self.add_item(prefix, label, repr(value), id_path, attr_prefix)
         else:
             try:
                 displayed_value = get_stringifier(iinfo)(value)
