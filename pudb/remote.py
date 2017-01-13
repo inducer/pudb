@@ -9,8 +9,10 @@ import errno
 import os
 import socket
 import sys
+import shutil
 
 from pudb.debugger import Debugger
+from pudb.py3compat import PY3
 
 __all__ = ['PUDB_RDB_HOST', 'PUDB_RDB_PORT', 'default_port',
            'debugger', 'set_trace']
@@ -155,6 +157,11 @@ def set_trace(frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT
     if frame is None:
         frame = _frame().f_back
     if term_size is None:
-        rows, columns = os.popen('stty size', 'r').read().split()
-        term_size = int(columns), int(rows)
+        if PY3:
+            s = shutil.get_terminal_size(fallback=(80, 24))
+            term_size = s.columns, s.lines
+        else:
+            rows, columns = os.popen('stty size', 'r').read().split()
+            term_size = int(columns), int(rows)
+
     return debugger(term_size=term_size, host=host, port=port).set_trace(frame)
