@@ -12,7 +12,7 @@ else:
     HAVE_BPYTHON = True
 
 try:
-    from prompt_toolkit.contrib.repl import embed as ptpython_embed
+    from ptpython.repl import embed as ptpython_embed
 except ImportError:
     HAVE_PTPYTHON = False
 else:
