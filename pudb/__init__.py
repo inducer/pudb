@@ -1,7 +1,7 @@
 
 from __future__ import absolute_import, division, print_function
 
-NUM_VERSION = (2016, 2)
+NUM_VERSION = (2017, 1)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
