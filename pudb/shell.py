@@ -66,6 +66,7 @@ def run_classic_shell(locals, globals, first_time):
         readline.set_completer(
                 rlcompleter.Completer(ns).complete)
         readline.parse_and_bind("tab: complete")
+        readline.clear_history()
         try:
             readline.read_history_file(hist_file)
         except IOError:
