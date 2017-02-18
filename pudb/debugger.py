@@ -2095,7 +2095,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e028"  # noqa
+        WELCOME_LEVEL = "e030"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2111,6 +2111,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2017.1.1:\n\n"
+                    "- IMPORTANT: 2017.1 and possibly earlier versions had a \n"
+                    "  bug with exponential growth of shell history for the \n"
+                    "  'classic' shell, which (among other problems) could lead\n"
+                    "  to slow startup of the classic shell. Check the file\n\n"
+                    "  ~/.config/pudb/shell-history\n\n"
+                    "  for size (and useful content) and delete/trim as needed.\n"
 
                     "\nChanges in version 2017.1:\n\n"
                     "- Many, many bug fixes (thank you to all who contributed!)\n"
