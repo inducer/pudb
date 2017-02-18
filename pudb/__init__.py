@@ -23,6 +23,7 @@ class PudbShortcuts(object):
             set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
+
 if PY3:
     import builtins
     builtins.__dict__["pu"] = PudbShortcuts()
@@ -44,7 +45,8 @@ def _get_debugger(**kwargs):
     else:
         return CURRENT_DEBUGGER[0]
 
-import signal
+
+import signal  # noqa
 DEFAULT_SIGNAL = signal.SIGINT
 del signal
 
@@ -240,7 +242,7 @@ def pm():
         e_value = sys.last_value
         tb = sys.last_traceback
     except AttributeError:
-        ## No exception on record. Do nothing.
+        # No exception on record. Do nothing.
         return
     post_mortem(tb, e_type, e_value)
 
