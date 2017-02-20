@@ -101,7 +101,7 @@ Usage with pytest
 ^^^^^^^^^^^^^^^^^
 
 As of version 2017.1.2, pudb can be used to debug test failures in `pytest
-<http://docs.pytest.org/en/latest/>`_, by running thte test runner like so::
+<http://docs.pytest.org/en/latest/>`_, by running the test runner like so::
 
     $ pytest --pdbcls pudb.debugger:Debugger --pdb --capture=no
 
