@@ -4,8 +4,10 @@
 from __future__ import absolute_import, division, print_function
 import urwid
 import bdb
-import sys
+import gc
 import os
+import sys
+from types import TracebackType
 
 from pudb.settings import load_config, save_config
 CONFIG = load_config()
@@ -309,6 +311,14 @@ class Debugger(bdb.Bdb):
     def interaction(self, frame, exc_tuple=None, show_exc_dialog=True):
         if exc_tuple is None:
             tb = None
+        elif isinstance(exc_tuple, TracebackType):
+            # For API compatibility with other debuggers, the second variable
+            # can be a traceback object.  In that case, we need to retrieve the
+            # corresponding exception tuple.
+            tb = exc_tuple
+            exc, = (exc for exc in gc.get_referrers(tb)
+                    if getattr(exc, "__traceback__", None) is tb)
+            exc_tuple = type(exc), exc, tb
         else:
             tb = exc_tuple[2]
 
