@@ -97,6 +97,17 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
+Usage with pytest
+^^^^^^^^^^^^^^^^^
+
+As of version 2017.1.2, pudb can be used to debug test failures in `pytest
+<http://docs.pytest.org/en/latest/>`_, by running thte test runner like so::
+
+    $ pytest --pdbcls pudb.debugger:Debugger --pdb --capture=no
+
+Note the need to pass --capture=no (or its synonym -s) as otherwise
+pytest tries to manage the standard streams itself. (contributed by Antony Lee)
+
 Documentation and Support
 -------------------------
 
