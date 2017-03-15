@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division
+from __future__ import absolute_import, division, print_function
 from pudb.py3compat import PY3
 
 
@@ -21,7 +21,7 @@ def get_executable_lines_for_file(filename):
     # inspired by rpdb2
 
     from linecache import getlines
-    codes = [compile("".join(getlines(filename)), filename, "exec")]
+    codes = [compile("".join(getlines(filename)), filename, "exec", dont_inherit=1)]
 
     from types import CodeType
 
