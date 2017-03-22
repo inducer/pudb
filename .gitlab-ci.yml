@@ -5,6 +5,7 @@ Python 2.7:
   - ". ./build-and-test-py-project.sh"
   tags:
   - python2.7
+  - linux
   except:
   - tags
 Python 3.5:
@@ -13,7 +14,18 @@ Python 3.5:
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.4
+  - python3.5
+  - linux
+  except:
+  - tags
+Python 3.6:
+  script:
+  - py_version=3.6
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python3.6
+  - linux
   except:
   - tags
 Python 2.6:
@@ -23,5 +35,6 @@ Python 2.6:
   - ". ./build-and-test-py-project.sh"
   tags:
   - python2.6
+  - linux
   except:
   - tags
