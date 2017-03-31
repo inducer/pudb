@@ -35,7 +35,9 @@ def pudb(line):
     from pudb import runscript
     runscript(path, args)
 
+
 register_line_magic(pudb)
+
 
 def debugger(self, force=False):
     """Call the PuDB debugger."""
@@ -51,6 +53,7 @@ def debugger(self, force=False):
 
     with self.readline_no_record:
         pm()
+
 
 ip = get_ipython()
 ip.__class__.debugger = debugger

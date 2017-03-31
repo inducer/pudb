@@ -1,6 +1,15 @@
 from __future__ import absolute_import, division, print_function
 
-THEMES = ["classic", "vim", "dark vim", "midnight", "solarized", "agr-256", "monokai", "monokai-256"]
+THEMES = [
+        "classic",
+        "vim",
+        "dark vim",
+        "midnight",
+        "solarized",
+        "agr-256",
+        "monokai",
+        "monokai-256"
+        ]
 
 from pudb.py3compat import execfile, raw_input
 import urwid
@@ -14,7 +23,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         def add_setting(color, setting):
             return color
 
-    #-----------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
     # Reference for some palette items:
     #
     #  "namespace" : "import", "from", "using"
@@ -23,13 +32,15 @@ def get_palette(may_use_fancy_formats, theme="classic"):
     #  "argument"  : Function arguments
     #  "builtin"   : "range", "dict", "set", "list", etc.
     #  "pseudo"    : "None", "True", "False"
-    #                NOTE: Does not include "self", which is assigned the type "source"
-    #  "dunder"    : Class method names of the form __<name>__ within a class definition
+    #                NOTE: Does not include "self", which is assigned the
+    #                type "source"
+    #  "dunder"    : Class method names of the form __<name>__ within
+    #               a class definition
     #  "exception" : Exception names
     #  "keyword"   : All keywords except those specifically assigned to "keyword2"
     #                ("from", "and", "break", "is", "try", "pass", etc.)
     #  "keyword2"  : "class", "def", "exec", "lambda", "print"
-    #-----------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
 
     inheritance_map = (
         # Style       Inherits from
@@ -44,9 +55,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("keyword2",  "keyword")
     )
 
-    palette_dict = { 
+    palette_dict = {
         # The following styles are initialized to "None".  Themes
-        # (including custom Themes) may set them as needed. 
+        # (including custom Themes) may set them as needed.
         # If they are not set by a theme, then they will
         # inherit from other styles in accordance with
         # the inheritance_map.
@@ -96,7 +107,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         "command line error": (add_setting("light red", "bold"), "dark blue"),
 
         "focused command line output": ("black", "dark green"),
-        "focused command line input": (add_setting("light cyan", "bold"), "dark green"),
+        "focused command line input": (
+                add_setting("light cyan", "bold"),
+                "dark green"),
         "focused command line error": ("black", "dark green"),
 
         "command line clear button": (add_setting("white", "bold"), "dark blue"),
@@ -111,9 +124,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         "focused breakpoint": ("black", "dark green"),
         "focused disabled breakpoint": ("dark gray", "dark green"),
         "current breakpoint": (add_setting("white", "bold"), "dark cyan"),
-        "disabled current breakpoint": (add_setting("dark gray", "bold"), "dark cyan"),
-        "focused current breakpoint": (add_setting("white", "bold"), "dark green", "bold"),
-        "focused disabled current breakpoint": (add_setting("dark gray", "bold"), "dark green", "bold"),
+        "disabled current breakpoint": (
+                add_setting("dark gray", "bold"), "dark cyan"),
+        "focused current breakpoint": (
+                add_setting("white", "bold"), "dark green", "bold"),
+        "focused disabled current breakpoint": (
+                add_setting("dark gray", "bold"), "dark green", "bold"),
 
         "source": (add_setting("yellow", "bold"), "dark blue"),
         "focused source": ("black", "dark green"),
@@ -420,10 +436,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "focused frame location": ("dark blue", "dark green"),
 
             "focused current frame name": ("black", "dark green"),
-            "focused current frame class": (add_setting("white", "bold"), "dark green"),
+            "focused current frame class": (
+                add_setting("white", "bold"), "dark green"),
             "focused current frame location": ("dark blue", "dark green"),
-
-            "breakpoint": ("default", "default"),
 
             "search box": ("default", "default"),
 
@@ -432,9 +447,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "focused breakpoint": ("black", "dark green"),
             "focused disabled breakpoint": ("dark gray", "dark green"),
             "current breakpoint": (add_setting("white", "bold"), "default"),
-            "disabled current breakpoint": (add_setting("dark gray", "bold"), "default"),
-            "focused current breakpoint": (add_setting("white", "bold"), "dark green", "bold"),
-            "focused disabled current breakpoint": (add_setting("dark gray", "bold"), "dark green", "bold"),
+            "disabled current breakpoint": (
+                add_setting("dark gray", "bold"), "default"),
+            "focused current breakpoint": (
+                add_setting("white", "bold"), "dark green", "bold"),
+            "focused disabled current breakpoint": (
+                add_setting("dark gray", "bold"), "dark green", "bold"),
 
             "source": ("white", "default"),
             "highlighted source": ("white", "light cyan"),
@@ -467,11 +485,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "command line error": (add_setting("light red", "bold"), "default"),
 
             "focused command line output": ("black", "dark green"),
-            "focused command line input": (add_setting("white", "bold"), "dark green"),
+            "focused command line input": (
+                    add_setting("white", "bold"), "dark green"),
             "focused command line error": ("black", "dark green"),
 
             "command line clear button": (add_setting("white", "bold"), "default"),
-            "command line focused button": ("black", "light gray"), # White
+            "command line focused button": ("black", "light gray"),  # White
             # doesn't work in curses mode
 
             # }}}
@@ -480,7 +499,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         # }}}
     elif theme == "solarized":
-    # {{{ solarized
+        # {{{ solarized
         palette_dict.update({
             # UI
             "header": ("black", "light blue", "standout"),
@@ -583,7 +602,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
     # }}}
     elif theme == "agr-256":
-    # {{{ agr-256
+        # {{{ agr-256
         palette_dict.update({
             "header": ("h235", "h252", "standout"),
 
@@ -633,7 +652,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current breakpoint": (add_setting("h255", "bold"), "h22"),
             "disabled current breakpoint": (add_setting("h016", "bold"), "h22"),
             "focused current breakpoint": (add_setting("h255", "bold"), "h64"),
-            "focused disabled current breakpoint": (add_setting("h016", "bold"), "h64"),
+            "focused disabled current breakpoint": (
+                add_setting("h016", "bold"), "h64"),
             # }}}
 
             # {{{ ui widgets
@@ -668,7 +688,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "breakpoint source": ("h252", "h124"),
             "breakpoint focused source": ("h192", "h124"),
             "current breakpoint source": ("h192", "h124"),
-            "current breakpoint focused source": (add_setting("h192", "bold"), "h124"),
+            "current breakpoint focused source": (
+                    add_setting("h192", "bold"), "h124"),
             # }}}
 
             # {{{ highlighting
@@ -737,10 +758,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "focused frame location": ("dark blue", "dark green"),
 
             "focused current frame name": ("black", "dark green"),
-            "focused current frame class": (add_setting("white", "bold"), "dark green"),
+            "focused current frame class": (
+                add_setting("white", "bold"), "dark green"),
             "focused current frame location": ("dark blue", "dark green"),
-
-            "breakpoint": ("default", "default"),
 
             "search box": ("default", "default"),
 
@@ -749,9 +769,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "focused breakpoint": ("black", "dark green"),
             "focused disabled breakpoint": ("dark gray", "dark green"),
             "current breakpoint": (add_setting("white", "bold"), "default"),
-            "disabled current breakpoint": (add_setting("dark gray", "bold"), "default"),
-            "focused current breakpoint": (add_setting("white", "bold"), "dark green", "bold"),
-            "focused disabled current breakpoint": (add_setting("dark gray", "bold"), "dark green", "bold"),
+            "disabled current breakpoint": (
+                add_setting("dark gray", "bold"), "default"),
+            "focused current breakpoint": (
+                add_setting("white", "bold"), "dark green", "bold"),
+            "focused disabled current breakpoint": (
+                add_setting("dark gray", "bold"), "dark green", "bold"),
 
             "source": ("white", "default"),
             "highlighted source": ("white", "light cyan"),
@@ -794,11 +817,12 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "command line error": (add_setting("light red", "bold"), "default"),
 
             "focused command line output": ("black", "dark green"),
-            "focused command line input": (add_setting("white", "bold"), "dark green"),
+            "focused command line input": (
+                    add_setting("white", "bold"), "dark green"),
             "focused command line error": ("black", "dark green"),
 
             "command line clear button": (add_setting("white", "bold"), "default"),
-            "command line focused button": ("black", "light gray"), # White
+            "command line focused button": ("black", "light gray"),  # White
             # doesn't work in curses mode
 
             # }}}
@@ -857,7 +881,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current breakpoint": (add_setting("h255", "bold"), "h22"),
             "disabled current breakpoint": (add_setting("h016", "bold"), "h22"),
             "focused current breakpoint": (add_setting("h255", "bold"), "h64"),
-            "focused disabled current breakpoint": (add_setting("h016", "bold"), "h64"),
+            "focused disabled current breakpoint": (
+                add_setting("h016", "bold"), "h64"),
             # }}}
 
             # {{{ ui widgets
@@ -892,7 +917,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "breakpoint source": ("h252", "h124"),
             "breakpoint focused source": ("h192", "h124"),
             "current breakpoint source": ("h192", "h124"),
-            "current breakpoint focused source": (add_setting("h192", "bold"), "h124"),
+            "current breakpoint focused source": (
+                    add_setting("h192", "bold"), "h124"),
             # }}}
 
             # {{{ highlighting
@@ -963,7 +989,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
     # Apply style inheritance
     for child, parent in inheritance_map:
         if palette_dict[child] is None:
-            palette_dict[child] = palette_dict[parent] 
+            palette_dict[child] = palette_dict[parent]
 
     palette_list = []
     for setting_name, color_values in palette_dict.items():

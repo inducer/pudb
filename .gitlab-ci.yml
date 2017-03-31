@@ -8,6 +8,7 @@ Python 2.7:
   - linux
   except:
   - tags
+
 Python 3.5:
   script:
   - py_version=3.5
@@ -18,6 +19,7 @@ Python 3.5:
   - linux
   except:
   - tags
+
 Python 3.6:
   script:
   - py_version=3.6
@@ -28,6 +30,7 @@ Python 3.6:
   - linux
   except:
   - tags
+
 Python 2.6:
   script:
   - py_version=2.6
@@ -36,5 +39,14 @@ Python 2.6:
   tags:
   - python2.6
   - linux
+  except:
+  - tags
+
+Flake8:
+  script:
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+  - ". ./prepare-and-run-flake8.sh pudb test"
+  tags:
+  - python3.5
   except:
   - tags

@@ -16,7 +16,7 @@ from pudb.py3compat import PY3, execfile, raw_input, xrange, \
 if PY3:
     ELLIPSIS = '…'
 else:
-    ELLIPSIS = unicode('…', 'utf-8')
+    ELLIPSIS = unicode('…', 'utf-8')  # noqa: F821
 
 from pudb.debugger import CONFIG
 
@@ -73,6 +73,7 @@ def get_str_safe_types():
         "LambdaType MemberDescriptorType MethodType ModuleType "
         "SliceType TypeType TracebackType UnboundMethodType XRangeType".split()
         if hasattr(types, s)) + (WatchEvalError,)
+
 
 STR_SAFE_TYPES = get_str_safe_types()
 
@@ -197,8 +198,8 @@ class VariableWidget(urwid.FlowWidget):
             # Unicode is supported, use single character ellipsis
             for i in xrange(len(text)):
                 if len(text[i]) > maxcol:
-                    text[i] = (unicode(text[i][:maxcol-1])
-                    + ELLIPSIS + unicode(text[i][maxcol:]))
+                    text[i] = (unicode(text[i][:maxcol-1])  # noqa: F821
+                            + ELLIPSIS + unicode(text[i][maxcol:]))  # noqa: F821
                     # XXX: This doesn't work.  It just gives a ?
                     # Strangely, the following does work (it gives the …
                     # three characters from the right):

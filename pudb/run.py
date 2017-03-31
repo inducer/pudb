@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+
 def main():
     import sys
 
@@ -18,7 +19,8 @@ def main():
         parser.print_help()
         sys.exit(2)
 
-    mainpyfile =  args[0]
+    mainpyfile = args[0]
+
     from os.path import exists
     if not exists(mainpyfile):
         print('Error: %s does not exist' % mainpyfile)
@@ -32,7 +34,5 @@ def main():
             steal_output=options.steal_output)
 
 
-
-
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

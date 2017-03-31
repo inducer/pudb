@@ -84,6 +84,7 @@ def lookup_module(filename):
 
 # }}}
 
+
 # {{{ file encoding detection
 # stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 

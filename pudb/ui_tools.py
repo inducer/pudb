@@ -154,7 +154,7 @@ class BreakpointFrame(urwid.FlowWidget):
         self.is_current = is_current
         self.filename = filename
         self.breakpoint = breakpoint
-        self.line = breakpoint.line # Starts at 1
+        self.line = breakpoint.line  # Starts at 1
         self.enabled = breakpoint.enabled
         self.hits = breakpoint.hits
 

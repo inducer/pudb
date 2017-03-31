@@ -36,6 +36,7 @@ def get_save_config_path(*resource):
 
 # end LGPL violation
 
+
 CONF_SECTION = "pudb"
 XDG_CONF_RESOURCE = "pudb"
 CONF_FILE_NAME = "pudb.cfg"
@@ -472,12 +473,12 @@ def load_breakpoints():
     lines = []
     for fname in file_names:
         try:
-            rcFile = open(fname)
+            rc_file = open(fname, "rt")
         except IOError:
             pass
         else:
-            lines.extend([l.strip() for l in rcFile.readlines()])
-            rcFile.close()
+            lines.extend([l.strip() for l in rc_file.readlines()])
+            rc_file.close()
 
     return parse_breakpoints(lines)
 
