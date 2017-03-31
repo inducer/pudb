@@ -160,11 +160,11 @@ def format_source(debugger_ui, lines, breakpoints):
         #       t.Token is a Pygments token creator object
         #       (see http://pygments.org/docs/tokens/)
         #
-        #       The user defined token types get assigned by 
+        #       The user defined token types get assigned by
         #       one of several translation operations at the
         #       beginning of add_snippet().
         #
-        ATTR_MAP = {
+        ATTR_MAP = {  # noqa: N806
                 t.Token: "source",
                 t.Keyword.Namespace: "namespace",
                 t.Token.Argument: "argument",
@@ -191,7 +191,7 @@ def format_source(debugger_ui, lines, breakpoints):
 
         # Token translation table. Maps token types and their
         # associated strings to new token types.
-        ATTR_TRANSLATE = {
+        ATTR_TRANSLATE = {  # noqa: N806
                 t.Keyword: {
                     'class': t.Token.Keyword2,
                     'def': t.Token.Keyword2,
@@ -199,25 +199,25 @@ def format_source(debugger_ui, lines, breakpoints):
                     'lambda': t.Token.Keyword2,
                     'print': t.Token.Keyword2,
                     },
-                t.Operator:{
+                t.Operator: {
                     '.': t.Token,
                     },
-                t.Name.Builtin.Pseudo:{
+                t.Name.Builtin.Pseudo: {
                     'self': t.Token,
                     },
-                t.Name.Builtin:{
+                t.Name.Builtin: {
                     'object': t.Name.Class,
                     },
                 }
 
         class UrwidFormatter(Formatter):
-            def __init__(subself, **options):
+            def __init__(subself, **options):  # noqa: N805
                 Formatter.__init__(subself, **options)
                 subself.current_line = ""
                 subself.current_attr = []
                 subself.lineno = 1
 
-            def format(subself, tokensource, outfile):
+            def format(subself, tokensource, outfile):  # noqa: N805
                 def add_snippet(ttype, s):
                     if not s:
                         return
@@ -232,12 +232,15 @@ def format_source(debugger_ui, lines, breakpoints):
                     if ttype in ATTR_TRANSLATE:
                         if s in ATTR_TRANSLATE[ttype]:
                             ttype = ATTR_TRANSLATE[ttype][s]
-                    
+
                     # Translate dunder method tokens
-                    if ttype == t.Name.Function and s.startswith('__') and s.endswith('__'):
+                    if ttype == (
+                            t.Name.Function
+                            and s.startswith('__') and s.endswith('__')
+                            ):
                         ttype = t.Token.Dunder
 
-                    while not ttype in ATTR_MAP:
+                    while ttype not in ATTR_MAP:
                         if ttype.parent is not None:
                             ttype = ttype.parent
                         else:
@@ -279,11 +282,13 @@ def format_source(debugger_ui, lines, breakpoints):
 
         return result
 
+
 class ParseState(object):
     '''States for the ArgumentParser class'''
     idle = 1
     found_function = 2
     found_open_paren = 3
+
 
 class ArgumentParser(object):
     '''Parse source code tokens and identify function arguments.
@@ -299,6 +304,7 @@ class ArgumentParser(object):
     item (the caller should then replace the associated item's
     token type with the returned type)
     '''
+
     def __init__(self, pygments_token):
         self.t = pygments_token
         self.state = ParseState.idle
@@ -316,7 +322,7 @@ class ArgumentParser(object):
                 self.paren_level = 1
         else:
             if ((token is self.t.Name) or
-                (token is self.t.Name.Builtin.Pseudo and s == 'self')):
+                    (token is self.t.Name.Builtin.Pseudo and s == 'self')):
                 return self.t.Token.Argument
             elif token is self.t.Punctuation and s == ')':
                 self.paren_level -= 1
