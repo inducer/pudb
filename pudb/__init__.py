@@ -22,6 +22,25 @@ class PudbShortcuts(object):
             set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
+    @property
+    def cont(self):
+        import sys
+        dbg = _get_debugger()
+
+        frame = sys._getframe().f_back
+
+        while frame:
+            frame.f_trace = dbg.trace_dispatch
+            dbg.botframe = frame
+            frame = frame.f_back
+
+        import threading
+        if isinstance(threading.current_thread(), threading._MainThread):
+            set_interrupt_handler()
+
+        dbg.set_continue()
+        sys.settrace(dbg.trace_dispatch)
+
 
 if PY3:
     import builtins
