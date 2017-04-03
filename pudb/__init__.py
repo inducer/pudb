@@ -160,7 +160,7 @@ def set_trace():
         set_interrupt_handler()
     dbg.set_trace(sys._getframe().f_back)
 
-def set_continue():
+def activate_and_continue():
     """
     Acts like a set_trace() immediately followed by a 'c' (continue).
 
