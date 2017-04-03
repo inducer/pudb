@@ -160,6 +160,28 @@ def set_trace():
         set_interrupt_handler()
     dbg.set_trace(sys._getframe().f_back)
 
+def set_continue():
+    """
+    Acts like a set_trace() immediately followed by a 'c' (continue).
+
+    In other words, it only stops on a previously defined breakpoint.
+    """
+    import sys
+    dbg = _get_debugger()
+
+    frame = sys._getframe().f_back
+
+    while frame:
+        frame.f_trace = dbg.trace_dispatch
+        dbg.botframe = frame
+        frame = frame.f_back
+
+    import threading
+    if isinstance(threading.current_thread(), threading._MainThread):
+        set_interrupt_handler()
+
+    dbg.set_continue()
+    sys.settrace(dbg.trace_dispatch)
 
 def _interrupt_handler(signum, frame):
     from pudb import _get_debugger
