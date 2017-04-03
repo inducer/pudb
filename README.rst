@@ -123,12 +123,19 @@ Attaching to Running Code
 
 An alternative to using ``set_trace`` is to use::
 
-    from pudb import set_interrupt_handler; set_interrupt_handler()
+    from pudb import activate_and_continue; activate_and_continue()
 
-at the top of your code.  This will set ``SIGINT`` (i.e., ``Ctrl-c``) to
-run ``set_trace``, so that typing ``Ctrl-c`` while your code is running
-will break the code and start debugging.  See the docstring of
-``set_interrupt_handler`` for more information.
+at the top of your code.  This will start the debugger without breaking, and
+run it until a predefined breakpoint is hit.
+
+Interrupt Handlers
+------------------
+
+Both ``set_trace`` and ``activate_and_continue`` set ``SIGINT`` (i.e.,
+``Ctrl-c``) to run ``set_trace``, so that typing ``Ctrl-c`` while your code is
+running will break the code and start debugging. See the docstring of
+``set_interrupt_handler`` for more information. Note that this only works in
+the main thread.
 
 Programming PuDB
 ----------------
