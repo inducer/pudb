@@ -74,7 +74,7 @@ class SourceLine(urwid.FlowWidget):
         line_prefix = ""
         line_prefix_attr = []
 
-        if render_line_nr:
+        if render_line_nr and self.line_nr:
             line_prefix_attr = [("line number", len(self.line_nr))]
             line_prefix = self.line_nr
 
