@@ -1554,8 +1554,10 @@ class DebuggerUI(FrameVarInfoKeeper):
             sys.stdin = None
             sys.stderr = sys.stdout = StringIO()
             try:
+                # Don't use cmdline_get_namespace() here, it breaks things in
+                # Python 2 (issue #166).
                 eval(compile(cmd, "<pudb command line>", 'single'),
-                        cmdline_get_namespace())
+                        self.debugger.curframe.f_globals, self.debugger.curframe.f_locals)
             except:
                 tp, val, tb = sys.exc_info()
 
