@@ -1557,7 +1557,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 # Don't use cmdline_get_namespace() here, it breaks things in
                 # Python 2 (issue #166).
                 eval(compile(cmd, "<pudb command line>", 'single'),
-                        self.debugger.curframe.f_globals, self.debugger.curframe.f_locals)
+                        self.debugger.curframe.f_globals,
+                        self.debugger.curframe.f_locals)
             except:
                 tp, val, tb = sys.exc_info()
 
