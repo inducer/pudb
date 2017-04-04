@@ -22,24 +22,16 @@ class PudbShortcuts(object):
             set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
+
     @property
     def cont(self):
         import sys
         dbg = _get_debugger()
 
-        frame = sys._getframe().f_back
-
-        while frame:
-            frame.f_trace = dbg.trace_dispatch
-            dbg.botframe = frame
-            frame = frame.f_back
-
         import threading
         if isinstance(threading.current_thread(), threading._MainThread):
             set_interrupt_handler()
-
-        dbg.set_continue()
-        sys.settrace(dbg.trace_dispatch)
+        dbg.set_trace(sys._getframe().f_back, paused=False)
 
 
 if PY3:
@@ -170,37 +162,21 @@ def runcall(*args, **kwds):
     return _get_debugger().runcall(*args, **kwds)
 
 
-def set_trace():
+def set_trace(paused=True):
+    """
+    Start the debugger
+
+    If paused=False (the default is True), the debugger will not stop here
+    (same as immediately pressing 'c' to continue).
+    """
     import sys
     dbg = _get_debugger()
 
     import threading
     if isinstance(threading.current_thread(), threading._MainThread):
         set_interrupt_handler()
-    dbg.set_trace(sys._getframe().f_back)
 
-def activate_and_continue():
-    """
-    Acts like a set_trace() immediately followed by a 'c' (continue).
-
-    In other words, it only stops on a previously defined breakpoint.
-    """
-    import sys
-    dbg = _get_debugger()
-
-    frame = sys._getframe().f_back
-
-    while frame:
-        frame.f_trace = dbg.trace_dispatch
-        dbg.botframe = frame
-        frame = frame.f_back
-
-    import threading
-    if isinstance(threading.current_thread(), threading._MainThread):
-        set_interrupt_handler()
-
-    dbg.set_continue()
-    sys.settrace(dbg.trace_dispatch)
+    dbg.set_trace(sys._getframe().f_back, paused=paused)
 
 def _interrupt_handler(signum, frame):
     from pudb import _get_debugger
