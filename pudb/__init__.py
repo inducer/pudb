@@ -178,6 +178,8 @@ def set_trace(paused=True):
 
     dbg.set_trace(sys._getframe().f_back, paused=paused)
 
+start = set_trace
+
 def _interrupt_handler(signum, frame):
     from pudb import _get_debugger
     _get_debugger().set_trace(frame, as_breakpoint=False)
