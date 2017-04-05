@@ -2,6 +2,7 @@ Python 2.7:
   script:
   - py_version=2.7
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - export REQUIREMENTS_TXT=requirements.dev.txt
   - ". ./build-and-test-py-project.sh"
   tags:
   - python2.7
@@ -13,6 +14,7 @@ Python 3.5:
   script:
   - py_version=3.5
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - export REQUIREMENTS_TXT=requirements.dev.txt
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3.5
@@ -24,6 +26,7 @@ Python 3.6:
   script:
   - py_version=3.6
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - export REQUIREMENTS_TXT=requirements.dev.txt
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3.6
@@ -35,6 +38,7 @@ Python 2.6:
   script:
   - py_version=2.6
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - export REQUIREMENTS_TXT=requirements.dev.txt
   - ". ./build-and-test-py-project.sh"
   tags:
   - python2.6

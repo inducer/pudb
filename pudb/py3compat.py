@@ -18,3 +18,11 @@ else:
     string_types = (basestring,)  # noqa: F821
     text_type = unicode  # noqa: F821
     execfile = execfile
+
+
+try:
+    import builtins
+    from configparser import ConfigParser
+except ImportError:
+    import __builtin__ as builtins  # noqa: F401
+    from ConfigParser import ConfigParser  # noqa: F401

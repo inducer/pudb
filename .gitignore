@@ -10,3 +10,5 @@ setuptools-*gz
 setuptools-*egg
 traceback*txt
 .DS_Store
+.cache/
+.coverage
