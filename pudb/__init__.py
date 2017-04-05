@@ -24,7 +24,7 @@ class PudbShortcuts(object):
 
 
     @property
-    def cont(self):
+    def go(self):
         import sys
         dbg = _get_debugger()
 
