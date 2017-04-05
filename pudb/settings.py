@@ -3,11 +3,8 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 
-from pudb.py3compat import PY3
-if PY3:
-    from configparser import ConfigParser
-else:
-    from ConfigParser import ConfigParser
+from pudb.py3compat import ConfigParser
+from pudb.lowlevel import lookup_module, get_breakpoint_invalid_reason
 
 # minor LGPL violation: stolen from python-xdg
 
@@ -15,21 +12,24 @@ _home = os.environ.get('HOME', None)
 xdg_data_home = os.environ.get('XDG_DATA_HOME',
             os.path.join(_home, '.local', 'share') if _home else None)
 
-xdg_config_home = os.environ.get('XDG_CONFIG_HOME',
-            os.path.join(_home, '.config') if _home else None)
 
-xdg_config_dirs = [xdg_config_home] if xdg_config_home else [] + \
-    os.environ.get('XDG_CONFIG_DIRS', '/etc/xdg').split(':')
+XDG_CONFIG_HOME = os.environ.get('XDG_CONFIG_HOME',
+                                 os.path.join(_home, '.config') if _home else None)
+
+if XDG_CONFIG_HOME:
+    XDG_CONFIG_DIRS = [XDG_CONFIG_HOME]
+else:
+    XDG_CONFIG_DIRS = os.environ.get('XDG_CONFIG_DIRS', '/etc/xdg').split(':')
 
 
 def get_save_config_path(*resource):
-    if xdg_config_home is None:
+    if XDG_CONFIG_HOME is None:
         return None
     if not resource:
         resource = [XDG_CONF_RESOURCE]
     resource = os.path.join(*resource)
     assert not resource.startswith('/')
-    path = os.path.join(xdg_config_home, resource)
+    path = os.path.join(XDG_CONFIG_HOME, resource)
     if not os.path.isdir(path):
         os.makedirs(path, 448)  # 0o700
     return path
@@ -54,7 +54,7 @@ def load_config():
     try:
         cparser.read([
             join(cdir, XDG_CONF_RESOURCE, CONF_FILE_NAME)
-            for cdir in xdg_config_dirs if isdir(cdir)])
+            for cdir in XDG_CONFIG_DIRS if isdir(cdir)])
 
         if cparser.has_section(CONF_SECTION):
             conf_dict.update(dict(cparser.items(CONF_SECTION)))
@@ -429,9 +429,7 @@ def parse_breakpoints(lines):
         if colon > 0:
             filename = arg[:colon].strip()
 
-            from pudb.lowlevel import lookup_module
             f = lookup_module(filename)
-
             if not f:
                 continue
             else:
@@ -445,7 +443,6 @@ def parse_breakpoints(lines):
         else:
             continue
 
-        from pudb.lowlevel import get_breakpoint_invalid_reason
         if get_breakpoint_invalid_reason(filename, lineno) is None:
             breakpoints.append((filename, lineno, False, cond, funcname))
 
@@ -462,13 +459,17 @@ def get_breakpoints_file_name():
 
 
 def load_breakpoints():
+    """
+    Loads and check saved breakpoints out from files
+    Returns: list of tuples
+    """
     from os.path import join, isdir
 
-    file_names = [
-            join(cdir, XDG_CONF_RESOURCE, name)
-            for cdir in xdg_config_dirs if isdir(cdir)
-            for name in [SAVED_BREAKPOINTS_FILE_NAME, BREAKPOINTS_FILE_NAME]
-            ]
+    file_names = []
+    for cdir in XDG_CONFIG_DIRS:
+        if isdir(cdir):
+            for name in [SAVED_BREAKPOINTS_FILE_NAME, BREAKPOINTS_FILE_NAME]:
+                file_names.append(join(cdir, XDG_CONF_RESOURCE, name))
 
     lines = []
     for fname in file_names:
@@ -485,12 +486,12 @@ def load_breakpoints():
 
 def save_breakpoints(bp_list):
     """
-    :arg bp_list: a list of tuples `(file_name, line)`
+    :arg bp_list: a list of `bdb.Breakpoint` objects
     """
-
     save_path = get_breakpoints_file_name()
     if not save_path:
         return
+
     histfile = open(get_breakpoints_file_name(), 'w')
     bp_list = set([(bp.file, bp.line, bp.cond) for bp in bp_list])
     for bp in bp_list:
