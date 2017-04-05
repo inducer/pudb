@@ -24,5 +24,5 @@ try:
     import builtins
     from configparser import ConfigParser
 except ImportError:
-    import __builtin__ as builtins
-    from ConfigParser import ConfigParser
+    import __builtin__ as builtins  # noqa: F401
+    from ConfigParser import ConfigParser  # noqa: F401
