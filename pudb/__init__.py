@@ -22,7 +22,6 @@ class PudbShortcuts(object):
             set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
-
     @property
     def go(self):
         import sys
@@ -178,7 +177,9 @@ def set_trace(paused=True):
 
     dbg.set_trace(sys._getframe().f_back, paused=paused)
 
+
 start = set_trace
+
 
 def _interrupt_handler(signum, frame):
     from pudb import _get_debugger
