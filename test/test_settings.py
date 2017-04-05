@@ -1,6 +1,6 @@
 import collections
 
-import pytest
+import pytest  # noqa: F401
 
 from pudb.py3compat import builtins
 from pudb.settings import load_breakpoints, save_breakpoints
@@ -11,8 +11,10 @@ def test_load_breakpoints(mocker):
     mock_open = mocker.mock_open()
     mock_open.return_value.readlines.side_effect = fake_data
     mocker.patch.object(builtins, 'open', mock_open)
-    mocker.patch('pudb.settings.lookup_module', mocker.Mock(return_value='/home/user/test.py'))
-    mocker.patch('pudb.settings.get_breakpoint_invalid_reason', mocker.Mock(return_value=None))
+    mocker.patch('pudb.settings.lookup_module',
+            mocker.Mock(return_value='/home/user/test.py'))
+    mocker.patch('pudb.settings.get_breakpoint_invalid_reason',
+            mocker.Mock(return_value=None))
     result = load_breakpoints()
     expected = [('/home/user/test.py', 41, False, None, None),
                 ('/home/user/test.py', 50, False, None, None)]
