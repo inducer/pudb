@@ -522,7 +522,13 @@ class NullSourceCodeProvider(SourceCodeProvider):
                 SourceLine(debugger_ui, ""),
                 SourceLine(debugger_ui, "If this is generated code and you would "
                     "like the source code to show up here,"),
-                SourceLine(debugger_ui, "simply set the attribute "
+                SourceLine(debugger_ui, "add it to linecache.cache, like"),
+                SourceLine(debugger_ui, ""),
+                SourceLine(debugger_ui, "    import linecache"),
+                SourceLine(debugger_ui, "    linecache.cache[filename] = "
+                    "(size, mtime, lines, fullname)"),
+                SourceLine(debugger_ui, ""),
+                SourceLine(debugger_ui, "You can also set the attribute "
                     "_MODULE_SOURCE_CODE in the module in which this function"),
                 SourceLine(debugger_ui, "was compiled to a string containing "
                     "the code."),
