@@ -194,7 +194,7 @@ class Debugger(bdb.Bdb):
                     break
                 frame = frame.f_back
 
-    def set_trace(self, frame=None, as_breakpoint=True):
+    def set_trace(self, frame=None, as_breakpoint=None, paused=True):
         """Start debugging from `frame`.
 
         If frame is not specified, debugging starts from caller's frame.
@@ -202,7 +202,19 @@ class Debugger(bdb.Bdb):
         Unlike Bdb.set_trace(), this does not call self.reset(), which causes
         the debugger to enter bdb source code. This also implements treating
         set_trace() calls as breakpoints in the PuDB UI.
+
+        If as_breakpoint=True (the default), this call will be treated like a
+        breakpoint in the UI (you can press 'b' on it to disable breaking
+        here).
+
+        If paused=False, the debugger will not break here.
         """
+        if as_breakpoint is None:
+            if not paused:
+                as_breakpoint = False
+            else:
+                as_breakpoint = True
+
         if frame is None:
             frame = thisframe = sys._getframe().f_back
         else:
@@ -225,7 +237,10 @@ class Debugger(bdb.Bdb):
                     self.ui.set_source_code_provider(
                             self.ui.source_code_provider, force_update=True)
 
-            self.set_step()
+            if paused:
+                self.set_step()
+            else:
+                self.set_continue()
             sys.settrace(self.trace_dispatch)
         else:
             return

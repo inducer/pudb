@@ -23,6 +23,17 @@ class PudbShortcuts(object):
         dbg.set_trace(sys._getframe().f_back)
 
 
+    @property
+    def go(self):
+        import sys
+        dbg = _get_debugger()
+
+        import threading
+        if isinstance(threading.current_thread(), threading._MainThread):
+            set_interrupt_handler()
+        dbg.set_trace(sys._getframe().f_back, paused=False)
+
+
 if PY3:
     import builtins
     builtins.__dict__["pu"] = PudbShortcuts()
@@ -151,15 +162,23 @@ def runcall(*args, **kwds):
     return _get_debugger().runcall(*args, **kwds)
 
 
-def set_trace():
+def set_trace(paused=True):
+    """
+    Start the debugger
+
+    If paused=False (the default is True), the debugger will not stop here
+    (same as immediately pressing 'c' to continue).
+    """
     import sys
     dbg = _get_debugger()
 
     import threading
     if isinstance(threading.current_thread(), threading._MainThread):
         set_interrupt_handler()
-    dbg.set_trace(sys._getframe().f_back)
 
+    dbg.set_trace(sys._getframe().f_back, paused=paused)
+
+start = set_trace
 
 def _interrupt_handler(signum, frame):
     from pudb import _get_debugger
