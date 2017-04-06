@@ -1,3 +1,9 @@
+.. image:: https://travis-ci.org/inducer/pudb.svg?branch=master
+  :target: https://travis-ci.org/inducer/pudb
+
+.. image:: https://codecov.io/gh/inducer/pudb/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/inducer/pudb
+
 PuDB is a full-screen, console-based visual debugger for Python.
 
 Its goal is to provide all the niceties of modern GUI-based debuggers in a
