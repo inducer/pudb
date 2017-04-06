@@ -1,0 +1,17 @@
+language: python
+python:
+  - "2.6"
+  - "2.7"
+  - "3.5"
+  - "3.6"
+
+# command to install dependencies
+install: "pip install -r requirements.dev.txt"
+
+# command to run tests
+script: pytest --cov=pudb test
+
+after_success:
+  - upload_coverage.sh
+
+sudo: false

@@ -12,3 +12,4 @@ traceback*txt
 .DS_Store
 .cache/
 .coverage
+coverage.xml
