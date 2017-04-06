@@ -321,6 +321,16 @@ class Debugger(bdb.Bdb):
                 stack = stack[i:]
                 index -= i
 
+        if CONFIG['hide_importlib_frames']:
+            # see Python/import.c remove_importlib_frames function for more info
+            hidden_filenames = [
+                "<frozen importlib._bootstrap>",
+                "<frozen importlib._bootstrap_external>",
+            ]
+            pref_len = len(stack)
+            stack = [f for f in stack if f[0].f_code.co_filename not in hidden_filenames]
+            index -= pref_len - len(stack)
+
         return stack, index
 
     def interaction(self, frame, exc_tuple=None, show_exc_dialog=True):
