@@ -15,6 +15,6 @@ script:
     - "(cd test && pytest --cov=pudb)"
 
 after_success:
-  - upload_coverage.sh
+  - bash upload_coverage.sh
 
 sudo: false

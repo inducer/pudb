@@ -7,4 +7,5 @@ fi
 
 echo "uploading coverage"
 
+cd test
 eval "codecov --token=$COVERAGE"
