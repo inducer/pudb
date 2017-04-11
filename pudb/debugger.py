@@ -10,15 +10,12 @@ import sys
 from functools import partial
 from types import TracebackType
 
+from pudb.lowlevel import detect_encoding
 from pudb.settings import load_config, save_config
+from pudb.py3compat import PY3, raw_input
+
 CONFIG = load_config()
 save_config(CONFIG)
-
-from pudb.py3compat import PY3, raw_input
-if PY3:
-    _next = "__next__"
-else:
-    _next = "next"
 
 
 HELP_TEXT = """\
@@ -575,8 +572,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
             from linecache import getlines
             lines = getlines(self.file_name)
 
-            from pudb.lowlevel import detect_encoding
-            source_enc, _ = detect_encoding(getattr(iter(lines), _next))
+            source_enc, _ = detect_encoding(partial(next, iter(lines)))
 
             decoded_lines = []
             for l in lines:
@@ -621,9 +617,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
         from pudb.source_view import format_source
 
         lines = self.code.split("\n")
-
-        from pudb.lowlevel import detect_encoding
-        source_enc, _ = detect_encoding(getattr(iter(lines), _next))
+        source_enc, _ = detect_encoding(partial(next, iter(lines)))
 
         decoded_lines = []
         for i, l in enumerate(lines):
