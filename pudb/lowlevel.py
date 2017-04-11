@@ -166,6 +166,15 @@ def detect_encoding(lines):
 
     return 'utf-8', [first, second]
 
+
+def decode_lines(lines):
+    source_enc, _ = detect_encoding(lines)
+
+    for line in lines:
+        if hasattr(line, "decode"):
+            yield line.decode(source_enc)
+        else:
+            yield line
 # }}}
 
 

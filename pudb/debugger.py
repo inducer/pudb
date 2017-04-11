@@ -10,7 +10,7 @@ import sys
 from functools import partial
 from types import TracebackType
 
-from pudb.lowlevel import detect_encoding
+from pudb.lowlevel import decode_lines
 from pudb.settings import load_config, save_config
 from pudb.py3compat import PY3, raw_input
 
@@ -571,17 +571,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         try:
             from linecache import getlines
             lines = getlines(self.file_name)
-
-            source_enc, _ = detect_encoding(lines)
-
-            decoded_lines = []
-            for l in lines:
-                if hasattr(l, "decode"):
-                    decoded_lines.append(l.decode(source_enc))
-                else:
-                    decoded_lines.append(l)
-
-            return format_source(debugger_ui, decoded_lines, set(breakpoints))
+            return format_source(debugger_ui, list(decode_lines(lines)), set(breakpoints))
         except:
             from pudb.lowlevel import format_exception
             debugger_ui.message("Could not load source file '%s':\n\n%s" % (
@@ -616,20 +606,8 @@ class DirectSourceCodeProvider(SourceCodeProvider):
     def get_lines(self, debugger_ui):
         from pudb.source_view import format_source
 
-        lines = self.code.split("\n")
-        source_enc, _ = detect_encoding(lines)
-
-        decoded_lines = []
-        for i, l in enumerate(lines):
-            if hasattr(l, "decode"):
-                l = l.decode(source_enc)
-
-            if i+1 < len(lines):
-                l += "\n"
-
-            decoded_lines.append(l)
-
-        return format_source(debugger_ui, decoded_lines, set())
+        lines = self.code.splitlines(True)
+        return format_source(debugger_ui, list(decode_lines(lines)), set())
 
 # }}}
 
