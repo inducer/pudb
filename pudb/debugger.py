@@ -7,6 +7,7 @@ import bdb
 import gc
 import os
 import sys
+from functools import partial
 from types import TracebackType
 
 from pudb.settings import load_config, save_config
@@ -19,18 +20,6 @@ if PY3:
 else:
     _next = "next"
 
-try:
-    from functools import partial
-except ImportError:
-    def partial(func, *args, **keywords):
-        def newfunc(*fargs, **fkeywords):
-            newkeywords = keywords.copy()
-            newkeywords.update(fkeywords)
-            return func(*(args + fargs), **newkeywords)
-        newfunc.func = func
-        newfunc.args = args
-        newfunc.keywords = keywords
-        return newfunc
 
 HELP_TEXT = """\
 Welcome to PuDB, the Python Urwid debugger.
