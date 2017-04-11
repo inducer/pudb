@@ -572,7 +572,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
             from linecache import getlines
             lines = getlines(self.file_name)
 
-            source_enc, _ = detect_encoding(partial(next, iter(lines)))
+            source_enc, _ = detect_encoding(lines)
 
             decoded_lines = []
             for l in lines:
@@ -617,7 +617,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
         from pudb.source_view import format_source
 
         lines = self.code.split("\n")
-        source_enc, _ = detect_encoding(partial(next, iter(lines)))
+        source_enc, _ = detect_encoding(lines)
 
         decoded_lines = []
         for i, l in enumerate(lines):
