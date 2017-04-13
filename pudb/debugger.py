@@ -324,9 +324,9 @@ class Debugger(bdb.Bdb):
                 "<frozen importlib._bootstrap>",
                 "<frozen importlib._bootstrap_external>",
             ]
-            pref_len = len(stack)
+            unhidden_len = len(stack)
             stack = [f for f in stack if f[0].f_code.co_filename not in hidden_filenames]
-            index -= pref_len - len(stack)
+            index -= unhidden_len - len(stack)
 
         return stack, index
 
