@@ -77,6 +77,7 @@ def load_config():
 
     conf_dict.setdefault("custom_theme", "")
     conf_dict.setdefault("custom_stringifier", "")
+    conf_dict.setdefault("custom_shell", "")
 
     conf_dict.setdefault("wrap_variables", True)
 
@@ -211,12 +212,27 @@ def edit_config(ui, conf_dict):
     shell_info = urwid.Text("This is the shell that will be "
             "used when you hit '!'.\n")
     shells = ["internal", "classic", "ipython", "bpython", "ptpython"]
+    known_shell = conf_dict["shell"] in shells
+    shell_edit = urwid.Edit(edit_text=conf_dict["custom_shell"])
+    shell_edit_list_item = urwid.AttrMap(shell_edit, "value")
 
     shell_rb_group = []
     shell_rbs = [
             urwid.RadioButton(shell_rb_group, name,
                 conf_dict["shell"] == name)
-            for name in shells]
+            for name in shells]+[
+                urwid.RadioButton(shell_rb_group, "Custom:",
+                not known_shell, on_state_change=_update_config,
+                user_data=("shell", None)),
+                shell_edit_list_item,
+                urwid.Text("\nTo use a custom shell, see example-shell.py "
+                    "in the pudb distribution. Enter the full path to a "
+                    "file like it in the box above. '~' will be expanded "
+                    "to your home directory. The file should contain a "
+                    "function called pudb_shell(_globals, _locals, first_time) "
+                    "at the module level. See the PuDB documentation for "
+                    "more information."),
+            ]
 
     # }}}
 
@@ -386,9 +402,14 @@ def edit_config(ui, conf_dict):
             conf_dict.update(stringifier=newvalue, custom_stringifier=newvalue)
             _update_stringifier()
 
-        for shell, shell_rb in zip(shells, shell_rbs):
-            if shell_rb.get_state():
-                conf_dict["shell"] = shell
+        if shell_rb_group[-1].state:
+            newvalue = shell_edit.get_edit_text()
+            conf_dict.update(shell=newvalue, custom_shell=newvalue)
+        else:
+            for shell, shell_rb in zip(shells, shell_rbs):
+                if shell_rb.get_state():
+                    conf_dict["shell"] = shell
+
 
         for display, display_rb in zip(displays, display_rbs):
             if display_rb.get_state():

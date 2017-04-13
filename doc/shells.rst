@@ -54,3 +54,28 @@ PuDB supports the following external shells.
 - `IPython <https://ipython.org/>`_
 - `bpython <https://bpython-interpreter.org/>`_
 - `ptpython <https://github.com/jonathanslenders/ptpython>`_
+
+Custom shells
+-------------
+
+To define a custom external shell, create a file with a function
+``pudb_shell(_globals, _locals, first_time)`` at the module level. Then, in
+the settings (``Ctrl-p``), select "Custom" under the shell settings, and add
+the path to the file.
+
+Here is an example custom shell file:
+
+.. literalinclude:: ../example-shell.py
+   :language: python
+
+Note, many shells do not allow passing in globals and locals dictionaries
+separately. In this case, you can merge the two with
+
+.. code-block:: python
+
+   from pudb.shell import SetPropagatingDict
+   ns = SetPropagatingDict([_locals, _globals], _locals)
+
+Here is more information on ``SetPropagatingDict``:
+
+.. autoclass:: pudb.shell.SetPropagatingDict

@@ -13,7 +13,7 @@ from pudb.settings import load_config, save_config
 CONFIG = load_config()
 save_config(CONFIG)
 
-from pudb.py3compat import PY3, raw_input
+from pudb.py3compat import PY3, raw_input, execfile
 if PY3:
     _next = "__next__"
 else:
@@ -1814,8 +1814,27 @@ class DebuggerUI(FrameVarInfoKeeper):
                 runner = shell.run_bpython_shell
             elif CONFIG["shell"] == "ptpython" and shell.HAVE_PTPYTHON:
                 runner = shell.run_ptpython_shell
-            else:
+            elif CONFIG["shell"] == "classic":
                 runner = shell.run_classic_shell
+            else:
+                try:
+                    if not shell.custom_shell_dict:  # Only execfile once
+                        from os.path import expanduser
+                        execfile(expanduser(CONFIG["shell"]), shell.custom_shell_dict)
+                except:
+                    print("Error when importing custom shell:")
+                    from traceback import print_exc
+                    print_exc()
+                    print("Falling back to classic shell")
+                    runner = shell.run_classic_shell
+                else:
+                    if "pudb_shell" not in shell.custom_shell_dict:
+                        print("%s does not contain a function named pudb_shell at "
+                              "the module level." % CONFIG["shell"])
+                        print("Falling back to classic shell")
+                        runner = shell.run_classic_shell
+                    else:
+                        runner = shell.custom_shell_dict['pudb_shell']
 
             runner(curframe.f_locals, curframe.f_globals,
                     first_cmdline_run)
