@@ -1,0 +1,56 @@
+Shells
+======
+
+Internal shell
+--------------
+
+At any point while debugging, press ``Ctrl-x`` to switch to the built in
+interactive shell. From here, you can execute Python commands at the current
+point of the debugger. Press ``Ctrl-x`` again to move back to the debugger.
+
+Keyboard shortcuts defined in the internal shell:
+
++--------------------+--------------------+
+|Enter               |Execute the current |
+|                    |command             |
++--------------------+--------------------+
+|Ctrl-v              |Insert a newline    |
+|                    |(for multiline      |
+|                    |commands)           |
++--------------------+--------------------+
+|Ctrl-n/p            |Browse command      |
+|                    |history             |
++--------------------+--------------------+
+|Up/down arrow       |Select history      |
++--------------------+--------------------+
+|TAB                 |Tab completion      |
++--------------------+--------------------+
+|+/-                 |grow/shrink the     |
+|                    |shell (when a       |
+|                    |history item is     |
+|                    |selected)           |
++--------------------+--------------------+
+|_/=                 |minimize/maximize   |
+|                    |the shell (when a   |
+|                    |history item is     |
+|                    |selected)           |
++--------------------+--------------------+
+
+External shells
+---------------
+
+To open the external shell, press the ``!`` key while debugging. Unlike the
+internal shell, external shells close the debugger UI while the shell is
+active. Press ``Ctrl-d`` at any time to exit the shell and return to the
+debugger.
+
+To configure the shell used by PuDB, open the settings (``Ctrl-p``) and select
+the shell.
+
+PuDB supports the following external shells.
+
+- Internal (same as pressing ``Ctrl-x``). This is the default.
+- Classic (similar to the default ``python`` interactive shell)
+- `IPython <https://ipython.org/>`_
+- `bpython <https://bpython-interpreter.org/>`_
+- `ptpython <https://github.com/jonathanslenders/ptpython>`_
