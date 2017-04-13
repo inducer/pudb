@@ -187,7 +187,7 @@ class Debugger(bdb.Bdb):
         if not self.breaks:
             # no breakpoints; run without debugger overhead
             sys.settrace(None)
-            frame = sys._getframe().f_back
+            frame = sys._getframe(1)
             while frame:
                 del frame.f_trace
                 if frame is self.botframe:
@@ -216,34 +216,36 @@ class Debugger(bdb.Bdb):
                 as_breakpoint = True
 
         if frame is None:
-            frame = thisframe = sys._getframe().f_back
-        else:
-            thisframe = frame
+            frame = sys._getframe(1)
+
         # See pudb issue #52. If this works well enough we should upstream to
         # stdlib bdb.py.
         #self.reset()
 
-        while frame:
-            frame.f_trace = self.trace_dispatch
-            self.botframe = frame
-            frame = frame.f_back
+        self.botframe = frame
+        self.botframe.f_trace = self.trace_dispatch
+        while self.botframe.f_back:
+            self.botframe = self.botframe.f_back
+            self.botframe.f_trace = self.trace_dispatch
 
-        thisframe_info = (
-                self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
-        if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
-            if as_breakpoint:
-                self.set_traces[thisframe_info] = True
-                if self.ui.source_code_provider is not None:
-                    self.ui.set_source_code_provider(
-                            self.ui.source_code_provider, force_update=True)
+        stack, _ = self.get_stack(frame, None)
+        if stack:
+            thisframe, _ = stack[-1]
+            thisframe_info = (
+                    self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
 
-            if paused:
-                self.set_step()
-            else:
-                self.set_continue()
-            sys.settrace(self.trace_dispatch)
-        else:
-            return
+            if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
+                if as_breakpoint:
+                    self.set_traces[thisframe_info] = True
+                    if self.ui.source_code_provider is not None:
+                        self.ui.set_source_code_provider(
+                                self.ui.source_code_provider, force_update=True)
+
+                if paused:
+                    self.set_next(thisframe)
+                else:
+                    self.set_continue()
+                sys.settrace(self.trace_dispatch)
 
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
@@ -313,13 +315,8 @@ class Debugger(bdb.Bdb):
         if self.curindex < len(self.stack)-1:
             self.set_frame_index(self.curindex+1)
 
-    def get_shortened_stack(self, frame, tb):
-        stack, index = self.get_stack(frame, tb)
-
-        for i, (s_frame, lineno) in enumerate(stack):
-            if s_frame is self.bottom_frame and index >= i:
-                stack = stack[i:]
-                index -= i
+    def get_stack(self, f, t):
+        stack, index = bdb.Bdb.get_stack(self, f, t)
 
         if CONFIG['hide_importlib_frames']:
             # see Python/import.c remove_importlib_frames function for more info
@@ -330,6 +327,16 @@ class Debugger(bdb.Bdb):
             pref_len = len(stack)
             stack = [f for f in stack if f[0].f_code.co_filename not in hidden_filenames]
             index -= pref_len - len(stack)
+
+        return stack, index
+
+    def get_shortened_stack(self, frame, tb):
+        stack, index = self.get_stack(frame, tb)
+
+        for i, (s_frame, lineno) in enumerate(stack):
+            if s_frame is self.bottom_frame and index >= i:
+                stack = stack[i:]
+                index -= i
 
         return stack, index
 
