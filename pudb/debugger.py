@@ -229,23 +229,25 @@ class Debugger(bdb.Bdb):
             self.botframe.f_trace = self.trace_dispatch
 
         stack, _ = self.get_stack(frame, None)
-        if stack:
-            thisframe, _ = stack[-1]
-            thisframe_info = (
-                    self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
+        if not stack:
+            return
 
-            if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
-                if as_breakpoint:
-                    self.set_traces[thisframe_info] = True
-                    if self.ui.source_code_provider is not None:
-                        self.ui.set_source_code_provider(
-                                self.ui.source_code_provider, force_update=True)
+        thisframe, _ = stack[-1]
+        thisframe_info = (
+                self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
 
-                if paused:
-                    self.set_next(thisframe)
-                else:
-                    self.set_continue()
-                sys.settrace(self.trace_dispatch)
+        if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
+            if as_breakpoint:
+                self.set_traces[thisframe_info] = True
+                if self.ui.source_code_provider is not None:
+                    self.ui.set_source_code_provider(
+                            self.ui.source_code_provider, force_update=True)
+
+            if paused:
+                self.set_next(thisframe)
+            else:
+                self.set_continue()
+            sys.settrace(self.trace_dispatch)
 
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
