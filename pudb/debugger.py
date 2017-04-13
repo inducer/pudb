@@ -77,12 +77,12 @@ Keys:
 
     Ctrl-l - redraw screen
 
-Command line-related:
-    ! - invoke configured python command line in current environment
-    Ctrl-x - toggle inline command line focus
+Shell-related:
+    ! - open the external shell (configured in the settings)
+    Ctrl-x - toggle the internal shell focus
 
-    +/- - grow/shrink inline command line (active in command line history)
-    _/= - minimize/maximize inline command line (active in command line history)
+    +/- - grow/shrink inline shell (active in command line history)
+    _/= - minimize/maximize inline shell (active in command line history)
 
     Ctrl-v - insert newline
     Ctrl-n/p - browse command line history
