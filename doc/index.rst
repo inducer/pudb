@@ -13,6 +13,7 @@ Table of Contents
     starting
     usage
     shells
+    configuration
     misc
 
 
