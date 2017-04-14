@@ -1,6 +1,7 @@
 Configuration
 -------------
 
+PuDB uses configuration file is located at ``~/.config/pudb/pudb.cfg``.
 Following options are available to customise PuDB behaviour:
 
 shell
