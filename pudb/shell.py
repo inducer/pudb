@@ -64,9 +64,10 @@ class SetPropagatingDict(dict):
 
 custom_shell_dict = {}
 
-def run_classic_shell(locals, globals, first_time):
+def run_classic_shell(globals, locals, first_time=[True]):
     if first_time:
         banner = "Hit Ctrl-D to return to PuDB."
+        first_time.pop()
     else:
         banner = ""
 
@@ -97,7 +98,7 @@ def run_classic_shell(locals, globals, first_time):
         readline.write_history_file(hist_file)
 
 
-def run_bpython_shell(locals, globals, first_time):
+def run_bpython_shell(globals, locals):
     ns = SetPropagatingDict([locals, globals], locals)
 
     import bpython.cli
@@ -135,10 +136,11 @@ def ipython_version():
         return None
 
 
-def run_ipython_shell_v10(locals, globals, first_time):
+def run_ipython_shell_v10(globals, locals, first_time=[True]):
     '''IPython shell from IPython version 0.10'''
     if first_time:
         banner = "Hit Ctrl-D to return to PuDB."
+        first_time.pop()
     else:
         banner = ""
 
@@ -150,7 +152,7 @@ def run_ipython_shell_v10(locals, globals, first_time):
             .mainloop(banner=banner)
 
 
-def _update_ipython_ns(shell, locals, globals):
+def _update_ipython_ns(shell, globals, locals):
     '''Update the IPython 0.11 namespace at every visit'''
 
     shell.user_ns = locals.copy()
@@ -170,10 +172,11 @@ def _update_ipython_ns(shell, locals, globals):
     shell.init_completer()
 
 
-def run_ipython_shell_v11(locals, globals, first_time):
+def run_ipython_shell_v11(globals, locals, first_time=[True]):
     '''IPython shell from IPython version 0.11'''
     if first_time:
         banner = "Hit Ctrl-D to return to PuDB."
+        first_time.pop()
     else:
         banner = ""
 
@@ -200,7 +203,7 @@ def run_ipython_shell_v11(locals, globals, first_time):
     old_globals = shell.user_global_ns
 
     # Update shell with current namespace
-    _update_ipython_ns(shell, locals, globals)
+    _update_ipython_ns(shell, globals, locals)
 
     args = []
     if ipython_version() < (5, 0, 0):
@@ -210,20 +213,20 @@ def run_ipython_shell_v11(locals, globals, first_time):
     shell.mainloop(*args)
 
     # Restore originating namespace
-    _update_ipython_ns(shell, old_locals, old_globals)
+    _update_ipython_ns(shell, old_globals, old_locals)
 
 
-def run_ipython_shell(locals, globals, first_time):
+def run_ipython_shell(globals, locals):
     import IPython
     if have_ipython() and hasattr(IPython, 'Shell'):
-        return run_ipython_shell_v10(locals, globals, first_time)
+        return run_ipython_shell_v10(globals, locals)
     else:
-        return run_ipython_shell_v11(locals, globals, first_time)
+        return run_ipython_shell_v11(globals, locals)
 
 # }}}
 
 
-def run_ptpython_shell(locals, globals, first_time):
+def run_ptpython_shell(globals, locals):
     # Use the default ptpython history
     import os
     history_filename = os.path.expanduser('~/.ptpython_history')

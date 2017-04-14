@@ -229,7 +229,7 @@ def edit_config(ui, conf_dict):
                     "in the pudb distribution. Enter the full path to a "
                     "file like it in the box above. '~' will be expanded "
                     "to your home directory. The file should contain a "
-                    "function called pudb_shell(_globals, _locals, first_time) "
+                    "function called pudb_shell(_globals, _locals) "
                     "at the module level. See the PuDB documentation for "
                     "more information."),
             ]

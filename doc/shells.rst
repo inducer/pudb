@@ -59,7 +59,7 @@ Custom shells
 -------------
 
 To define a custom external shell, create a file with a function
-``pudb_shell(_globals, _locals, first_time)`` at the module level. Then, in
+``pudb_shell(_globals, _locals)`` at the module level. Then, in
 the settings (``Ctrl-p``), select "Custom" under the shell settings, and add
 the path to the file.
 

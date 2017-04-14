@@ -1799,12 +1799,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         def run_external_cmdline(w, size, key):
             self.screen.stop()
 
-            if not hasattr(self, "have_been_to_cmdline"):
-                self.have_been_to_cmdline = True
-                first_cmdline_run = True
-            else:
-                first_cmdline_run = False
-
             curframe = self.debugger.curframe
 
             import pudb.shell as shell
@@ -1836,8 +1830,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     else:
                         runner = shell.custom_shell_dict['pudb_shell']
 
-            runner(curframe.f_locals, curframe.f_globals,
-                    first_cmdline_run)
+            runner(curframe.f_globals, curframe.f_locals)
 
             self.screen.start()
 
