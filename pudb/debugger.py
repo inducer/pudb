@@ -541,10 +541,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         self.file_name = debugger.canonic(file_name)
 
     def __eq__(self, other):
-        return (
-                type(self) == type(other)
-                and
-                self.file_name == other.file_name)
+        return type(self) == type(other) and self.file_name == other.file_name
 
     def identifier(self):
         return self.file_name
