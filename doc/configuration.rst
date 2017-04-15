@@ -1,7 +1,13 @@
 Configuration
 -------------
 
-PuDB uses configuration file is located at ``~/.config/pudb/pudb.cfg``.
+All PuDB information is stored in a location specified by the `XDG Base
+Directory Specification
+<http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_.
+Usually, it is ``~/.config/pudb``. The PuDB configuration is stored at
+``pudb.cfg`` file inside that directory. Therefore the whole path is usually
+``~/.config/pudb/pudb.cfg``.
+
 Following options are available to customise PuDB behaviour:
 
 shell
