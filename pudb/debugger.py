@@ -7,30 +7,15 @@ import bdb
 import gc
 import os
 import sys
+from functools import partial
 from types import TracebackType
 
+from pudb.lowlevel import decode_lines
 from pudb.settings import load_config, save_config
+from pudb.py3compat import PY3, raw_input, execfile
+
 CONFIG = load_config()
 save_config(CONFIG)
-
-from pudb.py3compat import PY3, raw_input, execfile
-if PY3:
-    _next = "__next__"
-else:
-    _next = "next"
-
-try:
-    from functools import partial
-except ImportError:
-    def partial(func, *args, **keywords):
-        def newfunc(*fargs, **fkeywords):
-            newkeywords = keywords.copy()
-            newkeywords.update(fkeywords)
-            return func(*(args + fargs), **newkeywords)
-        newfunc.func = func
-        newfunc.args = args
-        newfunc.keywords = keywords
-        return newfunc
 
 HELP_TEXT = """\
 Welcome to PuDB, the Python Urwid debugger.
@@ -555,10 +540,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         self.file_name = debugger.canonic(file_name)
 
     def __eq__(self, other):
-        return (
-                type(self) == type(other)
-                and
-                self.file_name == other.file_name)
+        return type(self) == type(other) and self.file_name == other.file_name
 
     def identifier(self):
         return self.file_name
@@ -585,18 +567,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         try:
             from linecache import getlines
             lines = getlines(self.file_name)
-
-            from pudb.lowlevel import detect_encoding
-            source_enc, _ = detect_encoding(getattr(iter(lines), _next))
-
-            decoded_lines = []
-            for l in lines:
-                if hasattr(l, "decode"):
-                    decoded_lines.append(l.decode(source_enc))
-                else:
-                    decoded_lines.append(l)
-
-            return format_source(debugger_ui, decoded_lines, set(breakpoints))
+            return format_source(debugger_ui, list(decode_lines(lines)), set(breakpoints))
         except:
             from pudb.lowlevel import format_exception
             debugger_ui.message("Could not load source file '%s':\n\n%s" % (
@@ -631,22 +602,8 @@ class DirectSourceCodeProvider(SourceCodeProvider):
     def get_lines(self, debugger_ui):
         from pudb.source_view import format_source
 
-        lines = self.code.split("\n")
-
-        from pudb.lowlevel import detect_encoding
-        source_enc, _ = detect_encoding(getattr(iter(lines), _next))
-
-        decoded_lines = []
-        for i, l in enumerate(lines):
-            if hasattr(l, "decode"):
-                l = l.decode(source_enc)
-
-            if i+1 < len(lines):
-                l += "\n"
-
-            decoded_lines.append(l)
-
-        return format_source(debugger_ui, decoded_lines, set())
+        lines = self.code.splitlines(True)
+        return format_source(debugger_ui, list(decode_lines(lines)), set())
 
 # }}}
 
