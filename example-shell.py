@@ -46,3 +46,4 @@ def pudb_shell(_globals, _locals):
     from code import InteractiveConsole
     cons = InteractiveConsole(ns)
     cons.interact("Press Ctrl-D to return to the debugger")
+    # When the function returns, control will be returned to the debugger.
