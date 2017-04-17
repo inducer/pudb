@@ -12,11 +12,10 @@ from types import TracebackType
 
 from pudb.lowlevel import decode_lines
 from pudb.settings import load_config, save_config
-from pudb.py3compat import PY3, raw_input
+from pudb.py3compat import PY3, raw_input, execfile
 
 CONFIG = load_config()
 save_config(CONFIG)
-
 
 HELP_TEXT = """\
 Welcome to PuDB, the Python Urwid debugger.
@@ -63,12 +62,12 @@ Keys:
 
     Ctrl-l - redraw screen
 
-Command line-related:
-    ! - invoke configured python command line in current environment
-    Ctrl-x - toggle inline command line focus
+Shell-related:
+    ! - open the external shell (configured in the settings)
+    Ctrl-x - toggle the internal shell focus
 
-    +/- - grow/shrink inline command line (active in command line history)
-    _/= - minimize/maximize inline command line (active in command line history)
+    +/- - grow/shrink inline shell (active in command line history)
+    _/= - minimize/maximize inline shell (active in command line history)
 
     Ctrl-v - insert newline
     Ctrl-n/p - browse command line history
@@ -1757,12 +1756,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         def run_external_cmdline(w, size, key):
             self.screen.stop()
 
-            if not hasattr(self, "have_been_to_cmdline"):
-                self.have_been_to_cmdline = True
-                first_cmdline_run = True
-            else:
-                first_cmdline_run = False
-
             curframe = self.debugger.curframe
 
             import pudb.shell as shell
@@ -1772,11 +1765,29 @@ class DebuggerUI(FrameVarInfoKeeper):
                 runner = shell.run_bpython_shell
             elif CONFIG["shell"] == "ptpython" and shell.HAVE_PTPYTHON:
                 runner = shell.run_ptpython_shell
-            else:
+            elif CONFIG["shell"] == "classic":
                 runner = shell.run_classic_shell
+            else:
+                try:
+                    if not shell.custom_shell_dict:  # Only execfile once
+                        from os.path import expanduser
+                        execfile(expanduser(CONFIG["shell"]), shell.custom_shell_dict)
+                except:
+                    print("Error when importing custom shell:")
+                    from traceback import print_exc
+                    print_exc()
+                    print("Falling back to classic shell")
+                    runner = shell.run_classic_shell
+                else:
+                    if "pudb_shell" not in shell.custom_shell_dict:
+                        print("%s does not contain a function named pudb_shell at "
+                              "the module level." % CONFIG["shell"])
+                        print("Falling back to classic shell")
+                        runner = shell.run_classic_shell
+                    else:
+                        runner = shell.custom_shell_dict['pudb_shell']
 
-            runner(curframe.f_locals, curframe.f_globals,
-                    first_cmdline_run)
+            runner(curframe.f_globals, curframe.f_locals)
 
             self.screen.start()
 

@@ -12,8 +12,8 @@ Table of Contents
 
     starting
     usage
+    shells
     misc
-
 
 
 Indices and Tables
