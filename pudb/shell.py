@@ -62,7 +62,9 @@ class SetPropagatingDict(dict):
 
 # }}}
 
+
 custom_shell_dict = {}
+
 
 def run_classic_shell(globals, locals, first_time=[True]):
     if first_time:

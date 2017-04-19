@@ -567,7 +567,8 @@ class FileSourceCodeProvider(SourceCodeProvider):
         try:
             from linecache import getlines
             lines = getlines(self.file_name)
-            return format_source(debugger_ui, list(decode_lines(lines)), set(breakpoints))
+            return format_source(
+                    debugger_ui, list(decode_lines(lines)), set(breakpoints))
         except:
             from pudb.lowlevel import format_exception
             debugger_ui.message("Could not load source file '%s':\n\n%s" % (
@@ -1771,7 +1772,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 try:
                     if not shell.custom_shell_dict:  # Only execfile once
                         from os.path import expanduser
-                        execfile(expanduser(CONFIG["shell"]), shell.custom_shell_dict)
+                        execfile(
+                                expanduser(CONFIG["shell"]), shell.custom_shell_dict)
                 except:
                     print("Error when importing custom shell:")
                     from traceback import print_exc

@@ -410,7 +410,6 @@ def edit_config(ui, conf_dict):
                 if shell_rb.get_state():
                     conf_dict["shell"] = shell
 
-
         for display, display_rb in zip(displays, display_rbs):
             if display_rb.get_state():
                 conf_dict["display"] = display
