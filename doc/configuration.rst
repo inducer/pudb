@@ -40,26 +40,6 @@ line_numbers
 
 Show or hide the line numbers in the source code pane.
 
-sidebar_width
-*************
-
-The sidebar pane width.
-
-variables_weight
-****************
-
-The variables pane height.
-
-stack_weight
-************
-
-The stack pane height.
-
-breakpoints_weight
-******************
-
-The breakpoints pane height.
-
 current_stack_frame
 *******************
 
