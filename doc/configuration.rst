@@ -1,8 +1,9 @@
 Configuration
 -------------
 
-All PuDB information is stored in a location specified by the `XDG Base
-Directory Specification
+At debugging session ``Ctrl-P`` shortcut opens configuration dialog.
+Additionally all PuDB information is stored in a location specified by the
+`XDG Base Directory Specification
 <http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_.
 Usually, it is ``~/.config/pudb``. The PuDB configuration is stored at
 ``pudb.cfg`` file inside that directory. Therefore the whole path is usually
