@@ -51,15 +51,12 @@ def load_config():
     cparser = ConfigParser()
 
     conf_dict = {}
-    try:
-        cparser.read([
-            join(cdir, XDG_CONF_RESOURCE, CONF_FILE_NAME)
-            for cdir in XDG_CONFIG_DIRS if isdir(cdir)])
+    cparser.read([
+        join(cdir, XDG_CONF_RESOURCE, CONF_FILE_NAME)
+        for cdir in XDG_CONFIG_DIRS if isdir(cdir)])
 
-        if cparser.has_section(CONF_SECTION):
-            conf_dict.update(dict(cparser.items(CONF_SECTION)))
-    except:
-        pass
+    if cparser.has_section(CONF_SECTION):
+        conf_dict.update(dict(cparser.items(CONF_SECTION)))
 
     conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
@@ -86,13 +83,10 @@ def load_config():
     conf_dict.setdefault("prompt_on_quit", True)
 
     def normalize_bool_inplace(name):
-        try:
-            if conf_dict[name].lower() in ["0", "false", "off"]:
-                conf_dict[name] = False
-            else:
-                conf_dict[name] = True
-        except:
-            pass
+        if conf_dict[name].lower() in ["0", "false", "off"]:
+            conf_dict[name] = False
+        else:
+            conf_dict[name] = True
 
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
@@ -110,15 +104,12 @@ def save_config(conf_dict):
     for key in sorted(conf_dict):
         cparser.set(CONF_SECTION, key, str(conf_dict[key]))
 
-    try:
-        save_path = get_save_config_path()
-        if not save_path:
-            return
-        outf = open(join(save_path, CONF_FILE_NAME), "w")
-        cparser.write(outf)
-        outf.close()
-    except:
-        pass
+    save_path = get_save_config_path()
+    if not save_path:
+        return
+    outf = open(join(save_path, CONF_FILE_NAME), "w")
+    cparser.write(outf)
+    outf.close()
 
 
 def edit_config(ui, conf_dict):
