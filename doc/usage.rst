@@ -26,3 +26,21 @@ as Python's built-in `pdb module <http://docs.python.org/library/pdb.html>`_.
 Just replace ``pdb`` with ``pudb``.
 (One exception: ``run`` is called ``runstatement``.)
 
+Controlling How Values Get Shown
+--------------------------------
+
+*   Set a custom stringifer in the preferences.
+
+    An example file might look like this::
+
+        def pudb_stringifier(obj):
+            return "HI"
+
+*   Add a :meth:`safely_stringify_for_pudb` to the type.
+
+A stringifier is expected to *never* raise an exception.
+If an exception is raised, pudb will silently fall back
+to its built-in stringification behavior.
+
+A stringifier that takes a long time will further stall
+the debugger UI while it runs.
