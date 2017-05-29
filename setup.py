@@ -16,7 +16,7 @@ try:
 finally:
     readme.close()
 
-setup(name='pudb',
+setup(name='pudb2',
       version=VERSION,
       description='A full-screen, console-based Python debugger',
       long_description=long_description,
@@ -57,6 +57,6 @@ setup(name='pudb',
           ],
       packages=["pudb"],
       entry_points={
-          'console_scripts': ['pudb' + PY_VERSION + ' = pudb.run:main'],
+          'console_scripts': ['pudb2' + PY_VERSION + ' = pudb.run:main'],
           'gui_script': []},
       )

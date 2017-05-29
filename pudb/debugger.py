@@ -283,7 +283,7 @@ class Debugger(bdb.Bdb):
 
         else:
             self.ui.set_current_line(lineno,
-                FileSourceCodeProvider(self, filename))
+                FileSourceCodeProvider(self.debugger, filename))
 
         self.ui.update_var_view()
         self.ui.update_stack()
