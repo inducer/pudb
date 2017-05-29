@@ -43,6 +43,7 @@ CONF_FILE_NAME = "pudb.cfg"
 
 SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
 BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
+SAVED_WATCHES_FILE_NAME = "saved-watches-%d.%d" % sys.version_info[:2]
 
 
 def load_config():
@@ -523,5 +524,31 @@ def save_breakpoints(bp_list):
     histfile.close()
 
 # }}}
+
+
+def get_watches_file_name():
+    from os.path import join
+    return join(get_save_config_path(), SAVED_WATCHES_FILE_NAME)
+
+
+def save_watches(w_list):
+    """
+    :arg w_list: a list of strings
+    """
+
+    with open(get_watches_file_name(), 'w+') as histfile:
+        for watch in w_list:
+            histfile.write(watch + '\n')
+
+
+def load_watches():
+    if os.path.exists(get_watches_file_name()):
+        with open(get_watches_file_name(), 'r') as histfile:
+            watches = histfile.readlines()
+            for line in watches:
+                line = line.strip()
+        return watches
+    else:
+        return []
 
 # vim:foldmethod=marker
