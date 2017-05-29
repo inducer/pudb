@@ -116,12 +116,19 @@ def have_ipython():
     # https://github.com/ipython/ipython/issues/9435
 
     try:
+        # Assume don't have IronPython unless this variable is
+        # defined, see:
+        # http://stackoverflow.com/questions/5376837/run-from-ipython
+        # this skips the pain of demandimporters when IPython
+        # is available but not actually active:
+        # https://bz.mercurial-scm.org/show_bug.cgi?id=5346
+        __IPYTHON__
         import IPython
         # Access a property to verify module exists in case
         # there's a demand loader wrapping module imports
         # See https://github.com/inducer/pudb/issues/177
         IPython.core
-    except (ImportError, ValueError):
+    except (NameError, ImportError, ValueError):
         # Old IPythons versions (0.12?) may fail to import with
         # ValueError: fallback required, but not specified
         # https://github.com/inducer/pudb/pull/135
