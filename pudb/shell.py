@@ -12,7 +12,7 @@ else:
     HAVE_BPYTHON = True
 
 try:
-    from ptpython.repl import embed as ptpython_embed
+    from ptpython.repl import embed as ptpython_embed, run_config
 except ImportError:
     HAVE_PTPYTHON = False
 else:
@@ -233,7 +233,8 @@ def run_ptpython_shell(globals, locals):
     import os
     history_filename = os.path.expanduser('~/.ptpython_history')
     ptpython_embed(globals.copy(), locals.copy(),
-                   history_filename=history_filename)
+                   history_filename=history_filename,
+                   configure=run_config)
 
 
 # vim: foldmethod=marker
