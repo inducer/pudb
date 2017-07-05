@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 import urwid
-from urwid.util import _target_encoding
+from urwid.util import _target_encoding, calc_width
 
 
 # generic urwid helpers -------------------------------------------------------
@@ -14,7 +14,7 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
         # filter out zero-length attrs
         line_attr = [(aname, l) for aname, l in line_attr if l > 0]
 
-        diff = maxcol - len(line)
+        diff = maxcol - calc_width(line, 0, len(line))
         if diff > 0:
             line += " "*diff
             line_attr.append((fill_attr, diff))

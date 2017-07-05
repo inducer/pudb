@@ -49,6 +49,19 @@ def test_byte_boundary():
     )
     assert list(canvas.content()) == [[('var value', None, b'aaaaaa\xc3\xa9')]]
 
+def test_wide_chars():
+    text = u"data: '中文'"
+    canvas = make_canvas(
+        txt=[text],
+        attr=[[('var label', 6), ('var value', 4)]],
+        maxcol=47,
+    )
+    assert list(canvas.content()) == [[
+        ('var label', None, b'data: '),
+        ('var value', None, "'中文'".encode('utf-8')),
+        (None, None, b' '*(47 - 12)), # 10 chars, 2 of which are double width
+        ]]
+
 
 if __name__ == "__main__":
     import sys
