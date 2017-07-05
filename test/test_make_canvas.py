@@ -58,7 +58,7 @@ def test_wide_chars():
     )
     assert list(canvas.content()) == [[
         ('var label', None, b'data: '),
-        ('var value', None, "'中文'".encode('utf-8')),
+        ('var value', None, u"'中文'".encode('utf-8')),
         (None, None, b' '*(47 - 12)), # 10 chars, 2 of which are double width
         ]]
 
