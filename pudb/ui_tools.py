@@ -74,6 +74,7 @@ class SelectableText(urwid.Text):
         return key
 
 
+import xtraceback; xtraceback.compat.install()
 class SignalWrap(urwid.WidgetWrap):
     def __init__(self, w, is_preemptive=False):
         urwid.WidgetWrap.__init__(self, w)
@@ -84,6 +85,20 @@ class SignalWrap(urwid.WidgetWrap):
         self.event_listeners.append((mask, handler))
 
     def keypress(self, size, key):
+        # with open('/home/adam/tmp/keypress', 'a') as fp:
+        #     if 1 or (key == 'down' and 0 in size):
+        #         import traceback; traceback.print_stack(file=fp)
+        #         fp.write('self: {!r}, w: {!r}, '
+        #                  'size: {!r}, key: {!r}\n\n'.format(
+        #                      self, self._w, size, key))
+        #         fp.write(repr(dir(self._w)) + '\n')
+        #         fp.write(repr(self._w.contents)+'\n\n--------------------------------------------------------------------------------\n')
+        #         # if 0 in size:
+        #         #     fp.write('\nsomething\n\n\n')
+        #         # else:
+        #         #     fp.write('\nnothing here\n\n\n')
+
+
         result = key
 
         if self.is_preemptive:
