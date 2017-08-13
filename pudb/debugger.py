@@ -2120,6 +2120,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "\nChanges in version 2017.1.3:\n\n"
                     "- Add handling of safely_stringify_for_pudb to allow custom \n"
                     "  per-type stringification.\n"
+                    "- Add support for custom shells.\n"
+                    "- Better support for 2-wide characters in the var view.\n"
+                    "- Bug fixes.\n"
 
                     "\nChanges in version 2017.1.2:\n\n"
                     "- Bug fixes.\n"
