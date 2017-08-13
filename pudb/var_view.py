@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import, division, print_function
 import urwid
+import re
 
 try:
     import numpy
@@ -496,7 +497,30 @@ class TopAndMainVariableWalker(ValueWalker):
 SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 
-def make_var_view(frame_var_info, locals, globals):
+def checkInnerFilter(f, var, regex):
+    if not regex:
+        pattern = r".*" + f.strip() + ".*"
+    else:
+        pattern = f.strip()
+
+    return re.search(pattern, var, re.I)
+
+
+def checkFilter(var, filter, regex):
+    isOnFilter = True
+    if (filter):
+        if re.search(r",", filter):
+            splitFilter = filter.split(",")
+            for f in splitFilter:
+                isOnFilter = checkInnerFilter(f, var, regex)
+                if isOnFilter:
+                    break
+        else:
+            isOnFilter = checkInnerFilter(filter, var, regex)
+
+    return isOnFilter
+
+def make_var_view(frame_var_info, locals, globals, filter, regex):
     vars = list(locals.keys())
     vars.sort(key=lambda n: n.lower())
 
@@ -518,7 +542,7 @@ def make_var_view(frame_var_info, locals, globals):
                 attr_prefix="return")
 
     for var in vars:
-        if not var[0] in "_.":
+        if not var[0] in "_." and checkFilter(var, filter, regex):
             tmv_walker.walk_value("", var, locals[var])
 
     result = tmv_walker.main_widget_list
