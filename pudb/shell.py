@@ -14,7 +14,7 @@ else:
 
 
 try:
-    from ptpython.ipython import embed as ptipython_embed, run_config
+    from ptpython.ipython import embed as ptipython_embed
     from ptpython.repl import run_config
 except ImportError:
     HAVE_PTIPYTHON = False
