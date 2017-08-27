@@ -12,10 +12,8 @@ else:
     HAVE_BPYTHON = True
 
 
-
 try:
     from ptpython.ipython import embed as ptipython_embed
-    from ptpython.repl import run_config
 except ImportError:
     HAVE_PTIPYTHON = False
 else:
@@ -245,7 +243,6 @@ def run_ptpython_shell(globals, locals):
     ptpython_embed(globals.copy(), locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)
-
 
 
 def run_ptipython_shell(globals, locals):
