@@ -11,6 +11,16 @@ except ImportError:
 else:
     HAVE_BPYTHON = True
 
+
+
+try:
+    from ptpython.ipython import embed as ptipython_embed, run_config
+    from ptpython.repl import run_config
+except ImportError:
+    HAVE_PTIPYTHON = False
+else:
+    HAVE_PTIPYTHON = True
+
 try:
     from ptpython.repl import embed as ptpython_embed, run_config
 except ImportError:
@@ -236,5 +246,14 @@ def run_ptpython_shell(globals, locals):
                    history_filename=history_filename,
                    configure=run_config)
 
+
+
+def run_ptipython_shell(globals, locals):
+    # Use the default ptpython history
+    import os
+    history_filename = os.path.expanduser('~/.ptpython_history')
+    ptipython_embed(globals.copy(), locals.copy(),
+                   history_filename=history_filename,
+                   configure=run_config)
 
 # vim: foldmethod=marker
