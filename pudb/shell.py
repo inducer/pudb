@@ -11,7 +11,6 @@ except ImportError:
 else:
     HAVE_BPYTHON = True
 
-
 try:
     from ptpython.ipython import embed as ptipython_embed
 except ImportError:
@@ -239,8 +238,8 @@ def run_ipython_shell(globals, locals):
 def run_ptpython_shell(globals, locals):
     # Use the default ptpython history
     import os
-    history_filename = os.path.expanduser('~/.ptpython_history')
-    ptpython_embed(globals.copy(), locals.copy(),
+    history_filename = os.path.expanduser('~/.ptpython/history')
+    ptpython_embed(globals=globals.copy(), locals=locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)
 
@@ -248,8 +247,9 @@ def run_ptpython_shell(globals, locals):
 def run_ptipython_shell(globals, locals):
     # Use the default ptpython history
     import os
-    history_filename = os.path.expanduser('~/.ptpython_history')
-    ptipython_embed(globals.copy(), locals.copy(),
+
+    history_filename = os.path.expanduser('~/.ptpython/history')
+    ptipython_embed(globals=globals.copy(), locals=locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)
 
