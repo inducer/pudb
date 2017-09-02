@@ -234,9 +234,14 @@ def type_stringifier(value):
 
     elif hasattr(value, "safely_stringify_for_pudb"):
         try:
-            return value.safely_stringify_for_pudb()
+            # (E.g.) Mock objects will pretend to have this
+            # and return nonsense.
+            result = value.safely_stringify_for_pudb()
         except Exception:
             pass
+        else:
+            if isinstance(result, string_types):
+                return result
 
     return type(value).__name__
 
