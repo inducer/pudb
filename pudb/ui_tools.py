@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 import urwid
-from urwid.util import _target_encoding, calc_width
+from urwid.util import _target_encoding, calc_width, calc_text_pos
 
 
 # generic urwid helpers -------------------------------------------------------
@@ -30,7 +30,7 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
             line_attr.append((fill_attr, diff))
         else:
             from urwid.util import rle_subseg
-            line = line[:maxcol]
+            line = line[:calc_text_pos(line, 0, len(line), maxcol)[0]]
             line_attr = rle_subseg(line_attr, 0, maxcol)
 
         from urwid.util import apply_target_encoding
