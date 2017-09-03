@@ -19,7 +19,7 @@ else:
     ELLIPSIS = unicode('…', 'utf-8')  # noqa: F821
 
 from pudb.debugger import CONFIG
-
+from pudb.ui_tools import text_width
 # }}}
 
 
@@ -110,7 +110,7 @@ class VariableWidget(urwid.FlowWidget):
         firstline = self.prefix + alltext[:maxcol]
         if not alltext[maxcol:]:
             return [firstline]
-        fulllines, rest = divmod(len(alltext) - maxcol, maxcol - 2)
+        fulllines, rest = divmod(text_width(alltext) - maxcol, maxcol - 2)
         restlines = [alltext[(maxcol - 2)*i + maxcol:(maxcol - 2)*i + 2*maxcol - 2]
             for i in xrange(fulllines + bool(rest))]
         return [firstline] + ["  " + self.prefix + i for i in restlines]
@@ -121,7 +121,7 @@ class VariableWidget(urwid.FlowWidget):
 
         if (self.value_str is not None
                 and self.var_label is not None
-                and len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT):
+                and len(self.prefix) + text_width(self.var_label) > self.SIZE_LIMIT):
             return 2
         else:
             return 1
@@ -140,15 +140,15 @@ class VariableWidget(urwid.FlowWidget):
         if self.wrap:
             text = self._get_text(size)
 
-            extralabel_full, extralabel_rem = divmod(len(var_label[maxcol:]), maxcol)
-            totallen = sum([len(i) for i in text])
+            extralabel_full, extralabel_rem = divmod(text_width(var_label[maxcol:]), maxcol)
+            totallen = sum([text_width(i) for i in text])
             labellen = (
                     len(self.prefix)  # Padding of first line
 
                     + (len(self.prefix) + 2)  # Padding of subsequent lines
                     * (extralabel_full + bool(extralabel_rem))
 
-                    + len(var_label)
+                    + text_width(var_label)
 
                     + 2  # for ": "
                     )
@@ -165,31 +165,31 @@ class VariableWidget(urwid.FlowWidget):
 
         if self.value_str is not None:
             if self.var_label is not None:
-                if len(self.prefix) + len(self.var_label) > self.SIZE_LIMIT:
+                if len(self.prefix) + text_width(self.var_label) > self.SIZE_LIMIT:
                     # label too long? generate separate value line
                     text = [self.prefix + self.var_label,
                             self.prefix+"  " + self.value_str]
 
-                    attr = [[(apfx+"label", len(self.prefix)+len(self.var_label))],
-                            [(apfx+"value", len(self.prefix)+2+len(self.value_str))]]
+                    attr = [[(apfx+"label", len(self.prefix)+text_width(self.var_label))],
+                            [(apfx+"value", len(self.prefix)+2+text_width(self.value_str))]]
                 else:
                     text = [self.prefix + self.var_label + ": " + self.value_str]
 
                     attr = [[
-                            (apfx+"label", len(self.prefix)+len(self.var_label)+2),
-                            (apfx+"value", len(self.value_str)),
+                            (apfx+"label", len(self.prefix)+text_width(self.var_label)+2),
+                            (apfx+"value", text_width(self.value_str)),
                             ]]
             else:
                 text = [self.prefix + self.value_str]
 
                 attr = [[
                         (apfx+"label", len(self.prefix)),
-                        (apfx+"value", len(self.value_str)),
+                        (apfx+"value", text_width(self.value_str)),
                         ]]
         else:
             text = [self.prefix + self.var_label]
 
-            attr = [[(apfx+"label", len(self.prefix) + len(self.var_label)), ]]
+            attr = [[(apfx+"label", len(self.prefix) + text_width(self.var_label)), ]]
 
         # Ellipses to show text was cut off
         #encoding = urwid.util.detected_encoding
@@ -208,7 +208,7 @@ class VariableWidget(urwid.FlowWidget):
                     # + unicode(u'…')) + unicode(text[i][maxcol-2:])
         else:
             for i in xrange(len(text)):
-                if len(text[i]) > maxcol:
+                if text_width(text[i]) > maxcol:
                     text[i] = text[i][:maxcol-3] + "..."
 
         return make_canvas(text, attr, maxcol, apfx+"value")
