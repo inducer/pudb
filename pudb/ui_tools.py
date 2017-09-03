@@ -5,6 +5,16 @@ from urwid.util import _target_encoding, calc_width
 
 # generic urwid helpers -------------------------------------------------------
 
+def text_width(txt):
+    """
+    Return the width of the text in the terminal
+
+    Use this instead of len() whenever txt could contain double- or zero-width
+    Unicode characters.
+
+    """
+    return calc_width(txt, 0, len(txt))
+
 def make_canvas(txt, attr, maxcol, fill_attr=None):
     processed_txt = []
     processed_attr = []
@@ -14,7 +24,7 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
         # filter out zero-length attrs
         line_attr = [(aname, l) for aname, l in line_attr if l > 0]
 
-        diff = maxcol - calc_width(line, 0, len(line))
+        diff = maxcol - text_width(line)
         if diff > 0:
             line += " "*diff
             line_attr.append((fill_attr, diff))
