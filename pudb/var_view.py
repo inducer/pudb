@@ -232,7 +232,7 @@ def type_stringifier(value):
         except Exception:
             pass
 
-    elif hasattr(value, "safely_stringify_for_pudb"):
+    elif hasattr(type(value), "safely_stringify_for_pudb"):
         try:
             # (E.g.) Mock objects will pretend to have this
             # and return nonsense.
