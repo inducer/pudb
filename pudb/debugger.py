@@ -409,10 +409,8 @@ class Debugger(bdb.Bdb):
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
-        if frame.f_code.co_name == '<module>':
-            return
-
-        frame.f_locals['__return__'] = return_value
+        if frame.f_code.co_name != '<module>':
+            frame.f_locals['__return__'] = return_value
 
         if self._wait_for_mainpyfile:
             if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
