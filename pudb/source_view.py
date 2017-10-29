@@ -1,5 +1,31 @@
 from __future__ import absolute_import, division, print_function
 
+__copyright__ = """
+Copyright (C) 2009-2017 Andreas Kloeckner
+Copyright (C) 2014-2017 Aaron Meurer
+"""
+
+__license__ = """
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
+
+
 import urwid
 
 
@@ -101,11 +127,11 @@ class SourceLine(urwid.FlowWidget):
                 # means: gobble up remainder of text and rest of line
                 # and fill with attribute
 
-                l = hscroll+maxcol
+                rowlen = hscroll+maxcol
                 remaining_text = text[i:]
                 encoded_seg_text, seg_cs = apply_target_encoding(
-                        remaining_text + l*" ")
-                encoded_attr.append((seg_attr, len(remaining_text)+l))
+                        remaining_text + rowlen*" ")
+                encoded_attr.append((seg_attr, len(remaining_text)+rowlen))
             else:
                 unencoded_seg_text = text[i:i+seg_len]
                 encoded_seg_text, seg_cs = apply_target_encoding(unencoded_seg_text)

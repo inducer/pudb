@@ -2,6 +2,33 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
+
+__copyright__ = """
+Copyright (C) 2009-2017 Andreas Kloeckner
+Copyright (C) 2014-2017 Aaron Meurer
+"""
+
+__license__ = """
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
+
+
 import urwid
 import bdb
 import gc
@@ -572,7 +599,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
             lines = getlines(self.file_name)
             return format_source(
                     debugger_ui, list(decode_lines(lines)), set(breakpoints))
-        except:
+        except Exception:
             from pudb.lowlevel import format_exception
             debugger_ui.message("Could not load source file '%s':\n\n%s" % (
                 self.file_name, "".join(format_exception(sys.exc_info()))),
@@ -1346,7 +1373,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         new_mod_name = filt_edit.get_edit_text()
                         try:
                             __import__(str(new_mod_name))
-                        except:
+                        except Exception:
                             from pudb.lowlevel import format_exception
 
                             self.message("Could not import module '%s':\n\n%s" % (
@@ -1541,7 +1568,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 eval(compile(cmd, "<pudb command line>", 'single'),
                         self.debugger.curframe.f_globals,
                         self.debugger.curframe.f_locals)
-            except:
+            except Exception:
                 tp, val, tb = sys.exc_info()
 
                 import traceback
@@ -1779,7 +1806,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         from os.path import expanduser
                         execfile(
                                 expanduser(CONFIG["shell"]), shell.custom_shell_dict)
-                except:
+                except Exception:
                     print("Error when importing custom shell:")
                     from traceback import print_exc
                     print_exc()
@@ -1885,7 +1912,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         if curses:
             try:
                 curses.setupterm()
-            except:
+            except Exception:
                 # Something went wrong--oh well. Nobody will die if their
                 # 256 color support breaks. Just carry on without it.
                 # https://github.com/inducer/pudb/issues/78
@@ -2404,7 +2431,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             if code.co_argcount and code.co_varnames[0] == "self":
                 try:
                     class_name = frame.f_locals["self"].__class__.__name__
-                except:
+                except Exception:
                     pass
 
             return StackFrame(frame is self.debugger.curframe,

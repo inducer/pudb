@@ -1,8 +1,35 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import, division, print_function
+
+__copyright__ = """
+Copyright (C) 2009-2017 Andreas Kloeckner
+Copyright (C) 2014-2017 Aaron Meurer
+"""
+
+__license__ = """
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
+
+
 # {{{ constants and imports
 
-from __future__ import absolute_import, division, print_function
 import urwid
 
 try:
@@ -258,7 +285,7 @@ def get_stringifier(iinfo):
             if not custom_stringifier_dict:  # Only execfile once
                 from os.path import expanduser
                 execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
-        except:
+        except Exception:
             print("Error when importing custom stringifier:")
             from traceback import print_exc
             print_exc()
@@ -347,23 +374,23 @@ class ValueWalker:
                     key_it = value.keys()
                 else:
                     key_it = value.iterkeys()
-            except:
+            except Exception:
                 pass
 
             if key_it is None:
                 try:
-                    l = len(value)
-                except:
+                    len_value = len(value)
+                except Exception:
                     pass
                 else:
                     try:
                         value[0]
                     except IndexError:
                         key_it = []
-                    except:
+                    except Exception:
                         pass
                     else:
-                        key_it = xrange(l)
+                        key_it = xrange(len_value)
 
             if key_it is not None:
                 cnt = 0
@@ -388,7 +415,7 @@ class ValueWalker:
 
             try:
                 key_its.append(dir(value))
-            except:
+            except Exception:
                 pass
 
             keys = [key
@@ -413,7 +440,7 @@ class ValueWalker:
                     if callable(attr_value) and not iinfo.show_methods:
                         cnt_omitted_methods += 1
                         continue
-                except:
+                except Exception:
                     attr_value = WatchEvalError()
 
                 self.walk_value(prefix+self.PREFIX,
@@ -512,7 +539,7 @@ def make_var_view(frame_var_info, locals, globals):
     for watch_expr in frame_var_info.watches:
         try:
             value = eval(watch_expr.expression, globals, locals)
-        except:
+        except Exception:
             value = WatchEvalError()
 
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
