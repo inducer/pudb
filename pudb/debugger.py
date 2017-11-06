@@ -1168,13 +1168,14 @@ class DebuggerUI(FrameVarInfoKeeper):
             _, line = self.source.get_focus()
 
             lineno_edit = urwid.IntEdit([
-                ("label", "Line number: ")
-                ], line+1)
+                ("label", "Go to Line   :")
+                ], '')
 
             if self.dialog(
                     urwid.ListBox(urwid.SimpleListWalker([
                         labelled_value("File :",
                             self.source_code_provider.identifier()),
+                        labelled_value("Current Line :", line+1),
                         urwid.AttrMap(lineno_edit, "value")
                         ])),
                     [
