@@ -1169,7 +1169,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             lineno_edit = urwid.IntEdit([
                 ("label", "Go to Line   :")
-                ], '')
+                ], None)
 
             if self.dialog(
                     urwid.ListBox(urwid.SimpleListWalker([
