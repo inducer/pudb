@@ -109,6 +109,8 @@ def load_config():
     conf_dict.setdefault("wrap_variables", True)
     conf_dict.setdefault("default_variables_access_level", "public")
 
+    conf_dict.setdefault("persist_watches", False)
+
     conf_dict.setdefault("display", "auto")
 
     conf_dict.setdefault("prompt_on_quit", True)
@@ -124,6 +126,7 @@ def load_config():
 
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
+    normalize_bool_inplace("persist_watches")
     normalize_bool_inplace("prompt_on_quit")
 
     return conf_dict
@@ -179,6 +182,9 @@ def edit_config(ui, conf_dict):
     def _update_wrap_variables():
         ui.update_var_view()
 
+    def _update_persist_watches():
+        pass
+
     def _update_config(check_box, new_state, option_newvalue):
         option, newvalue = option_newvalue
         new_conf_dict = {option: newvalue}
@@ -229,6 +235,11 @@ def edit_config(ui, conf_dict):
             new_conf_dict["wrap_variables"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
             _update_wrap_variables()
+
+        elif option == "persist_watches":
+            new_conf_dict["persist_watches"] = not check_box.get_state()
+            conf_dict.update(new_conf_dict)
+            _update_persist_watches()
 
     heading = urwid.Text("This is the preferences screen for PuDB. "
         "Hit Ctrl-P at any time to get back to it.\n\n"
@@ -384,6 +395,17 @@ def edit_config(ui, conf_dict):
 
     # }}}
 
+    # {{{ persist watches
+
+    cb_persist_watches = urwid.CheckBox("Persist watches",
+            bool(conf_dict["persist_watches"]), on_state_change=_update_config,
+                user_data=("persist_watches", None))
+
+    persist_watches_info = urwid.Text("\nKeep watched expressions between "
+                                      "debugging sessions.")
+
+    # }}}
+
     # {{{ display
 
     display_info = urwid.Text("What driver is used to talk to your terminal. "
@@ -437,6 +459,10 @@ def edit_config(ui, conf_dict):
             + [urwid.AttrMap(urwid.Text("\nWrap Variables:\n"), "group head")]
             + [cb_wrap_variables]
             + [wrap_variables_info]
+
+            + [urwid.AttrMap(urwid.Text("\nPersist Watches:\n"), "group head")]
+            + [cb_persist_watches]
+            + [persist_watches_info]
 
             + [urwid.AttrMap(urwid.Text("\nDisplay driver:\n"), "group head")]
             + [display_info]

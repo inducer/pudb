@@ -901,17 +901,19 @@ class DebuggerUI(FrameVarInfoKeeper):
                     var.watch_expr.expression = watch_edit.get_edit_text()
 
             elif result == "del":
-                from pudb.settings import load_watches, save_watches
-                stored_expressions = [expr.strip() for expr in load_watches()]
+                if CONFIG["persist_watches"]:
+                    from pudb.settings import load_watches, save_watches
+                    stored_expressions = [expr.strip()
+                                          for expr in load_watches()]
 
-                # Remove saved expression
-                for i, stored_expr in enumerate(stored_expressions):
-                    if stored_expr == var.watch_expr.expression:
-                        del stored_watches[i]
+                    # Remove saved expression
+                    for i, stored_expr in enumerate(stored_expressions):
+                        if stored_expr == var.watch_expr.expression:
+                            del stored_expressions[i]
 
-                # Save it here because self.update_var_view() is going to
-                # read saved watches again
-                save_watches(stored_watches)
+                    # Save it here because self.update_var_view() is going to
+                    # read saved watches again
+                    save_watches(stored_expressions)
 
                 for i, watch_expr in enumerate(fvi.watches):
                     if watch_expr is var.watch_expr:
