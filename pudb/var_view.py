@@ -270,6 +270,9 @@ def type_stringifier(value):
             if isinstance(result, string_types):
                 return result
 
+    elif type(value) in [set, frozenset, list, tuple, dict]:
+        return "%s (%s)" % (type(value).__name__, len(value))
+
     return type(value).__name__
 
 
