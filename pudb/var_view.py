@@ -238,7 +238,7 @@ def type_stringifier(value):
         except Exception:
             pass
 
-    elif type(value) in [set, frozenset, list, tuple, dict]:
+    elif isinstance(value, (set, frozenset, list, tuple, dict)):
         return "%s (%s)" % (type(value).__name__, len(value))
 
     return type(value).__name__
