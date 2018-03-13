@@ -1,9 +1,19 @@
 from __future__ import absolute_import, division, print_function
 import urwid
-from urwid.util import _target_encoding, calc_width
+from urwid.util import _target_encoding, calc_width, calc_text_pos
 
 
 # generic urwid helpers -------------------------------------------------------
+
+def text_width(txt):
+    """
+    Return the width of the text in the terminal
+
+    Use this instead of len() whenever txt could contain double- or zero-width
+    Unicode characters.
+
+    """
+    return calc_width(txt, 0, len(txt))
 
 def make_canvas(txt, attr, maxcol, fill_attr=None):
     processed_txt = []
@@ -14,13 +24,13 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
         # filter out zero-length attrs
         line_attr = [(aname, l) for aname, l in line_attr if l > 0]
 
-        diff = maxcol - calc_width(line, 0, len(line))
+        diff = maxcol - text_width(line)
         if diff > 0:
             line += " "*diff
             line_attr.append((fill_attr, diff))
         else:
             from urwid.util import rle_subseg
-            line = line[:maxcol]
+            line = line[:calc_text_pos(line, 0, len(line), maxcol)[0]]
             line_attr = rle_subseg(line_attr, 0, maxcol)
 
         from urwid.util import apply_target_encoding
