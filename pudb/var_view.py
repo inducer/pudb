@@ -553,7 +553,7 @@ def make_var_view(frame_var_info, locals, globals):
                 attr_prefix="return")
 
     for var in vars:
-        if not var[0] in "_.":
+        if not (var.startswith('__') and var.endswith('__')):
             tmv_walker.walk_value("", var, locals[var])
 
     result = tmv_walker.main_widget_list
