@@ -26,7 +26,7 @@ THE SOFTWARE.
 """
 
 
-NUM_VERSION = (2017, 1, 4)
+NUM_VERSION = (2018, 1)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
