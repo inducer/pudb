@@ -15,6 +15,7 @@ def text_width(txt):
     """
     return calc_width(txt, 0, len(txt))
 
+
 def make_canvas(txt, attr, maxcol, fill_attr=None):
     processed_txt = []
     processed_attr = []

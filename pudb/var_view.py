@@ -167,7 +167,8 @@ class VariableWidget(urwid.FlowWidget):
         if self.wrap:
             text = self._get_text(size)
 
-            extralabel_full, extralabel_rem = divmod(text_width(var_label[maxcol:]), maxcol)
+            extralabel_full, extralabel_rem = divmod(
+                    text_width(var_label[maxcol:]), maxcol)
             totallen = sum([text_width(i) for i in text])
             labellen = (
                     len(self.prefix)  # Padding of first line
@@ -190,6 +191,8 @@ class VariableWidget(urwid.FlowWidget):
 
             return make_canvas(text, attr, maxcol, apfx+"value")
 
+        lprefix = len(self.prefix)
+
         if self.value_str is not None:
             if self.var_label is not None:
                 if len(self.prefix) + text_width(self.var_label) > self.SIZE_LIMIT:
@@ -197,13 +200,15 @@ class VariableWidget(urwid.FlowWidget):
                     text = [self.prefix + self.var_label,
                             self.prefix+"  " + self.value_str]
 
-                    attr = [[(apfx+"label", len(self.prefix)+text_width(self.var_label))],
-                            [(apfx+"value", len(self.prefix)+2+text_width(self.value_str))]]
+                    attr = [
+                        [(apfx+"label", lprefix+text_width(self.var_label))],
+                        [(apfx+"value", lprefix+2+text_width(self.value_str))]
+                        ]
                 else:
                     text = [self.prefix + self.var_label + ": " + self.value_str]
 
                     attr = [[
-                            (apfx+"label", len(self.prefix)+text_width(self.var_label)+2),
+                            (apfx+"label", lprefix+text_width(self.var_label)+2),
                             (apfx+"value", text_width(self.value_str)),
                             ]]
             else:
@@ -216,7 +221,7 @@ class VariableWidget(urwid.FlowWidget):
         else:
             text = [self.prefix + self.var_label]
 
-            attr = [[(apfx+"label", len(self.prefix) + text_width(self.var_label)), ]]
+            attr = [[(apfx+"label", lprefix + text_width(self.var_label)), ]]
 
         # Ellipses to show text was cut off
         #encoding = urwid.util.detected_encoding
