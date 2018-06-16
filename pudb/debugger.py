@@ -106,7 +106,7 @@ Sidebar-related (active in sidebar):
     [/] - grow/shrink relative size of active sidebar box
 
 Keys in variables list:
-    \ - expand/collapse
+    \/space - expand/collapse
     t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
     @ - toggle repetition at top
