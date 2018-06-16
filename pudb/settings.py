@@ -106,6 +106,7 @@ def load_config():
     conf_dict.setdefault("custom_shell", "")
 
     conf_dict.setdefault("wrap_variables", True)
+    conf_dict.setdefault("variables_access_level", "public")
 
     conf_dict.setdefault("display", "auto")
 
@@ -171,6 +172,9 @@ def edit_config(ui, conf_dict):
         pudb.var_view.custom_stringifier_dict = {}
         ui.update_var_view()
 
+    def _update_variables_access_level():
+        ui.update_var_view()
+
     def _update_wrap_variables():
         ui.update_var_view()
 
@@ -213,6 +217,13 @@ def edit_config(ui, conf_dict):
 
                 conf_dict.update(stringifier=newvalue)
                 _update_stringifier()
+
+        elif option == "variables_access_level":
+            # only activate if the new state of the radio button is 'on'
+            if new_state:
+                conf_dict.update(variables_access_level=newvalue)
+                _update_variables_access_level()
+
         elif option == "wrap_variables":
             new_conf_dict["wrap_variables"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
@@ -340,6 +351,25 @@ def edit_config(ui, conf_dict):
 
     # }}}
 
+    # {{{ variables access level
+
+    variables_access_level_opts = ["public", "private", "all"]
+    variables_access_level_rb_group = []
+    variables_access_level_info = urwid.Text("Set the default attribute visibility "
+        "of variables in the variables list.\n"
+        "\nNote that you can change this option on "
+        "a per-variable basis by selecting the "
+        "variable and pressing '*'.")
+    variables_access_level_rbs = [
+            urwid.RadioButton(variables_access_level_rb_group, name,
+                conf_dict["variables_access_level"] == name,
+                on_state_change=_update_config,
+                user_data=("variables_access_level", name))
+            for name in variables_access_level_opts
+            ]
+
+    # }}}
+
     # {{{ wrap variables
 
     cb_wrap_variables = urwid.CheckBox("Wrap variables",
@@ -396,6 +426,10 @@ def edit_config(ui, conf_dict):
             + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
             + [stringifier_info]
             + stringifier_rbs
+
+            + [urwid.AttrMap(urwid.Text("\nVariables Attribute Visibility:\n"), "group head")]
+            + [variables_access_level_info]
+            + variables_access_level_rbs
 
             + [urwid.AttrMap(urwid.Text("\nWrap Variables:\n"), "group head")]
             + [cb_wrap_variables]
