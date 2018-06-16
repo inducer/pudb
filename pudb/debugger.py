@@ -106,7 +106,7 @@ Sidebar-related (active in sidebar):
     [/] - grow/shrink relative size of active sidebar box
 
 Keys in variables list:
-    \ - expand/collapse
+    \/space - expand/collapse
     t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
     @ - toggle repetition at top
@@ -776,7 +776,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             iinfo = self.get_frame_var_info(read_only=False) \
                     .get_inspect_info(var.id_path, read_only=False)
 
-            if key == "\\":
+            if key == "\\" or key == ' ':
                 iinfo.show_detail = not iinfo.show_detail
             elif key == "t":
                 iinfo.display_type = "type"
@@ -928,6 +928,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.update_var_view()
 
         self.var_list.listen("\\", change_var_state)
+        self.var_list.listen(" ", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
