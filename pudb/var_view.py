@@ -72,7 +72,7 @@ class InspectInfo(object):
         self.display_type = CONFIG["stringifier"]
         self.highlighted = False
         self.repeated_at_top = False
-        self.access_level = CONFIG["variables_access_level"]
+        self.access_level = CONFIG["default_variables_access_level"]
         self.show_methods = False
         self.wrap = CONFIG["wrap_variables"]
 
