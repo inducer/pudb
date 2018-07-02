@@ -355,11 +355,12 @@ def edit_config(ui, conf_dict):
 
     default_variables_access_level_opts = ["public", "private", "all"]
     default_variables_access_level_rb_group = []
-    default_variables_access_level_info = urwid.Text("Set the default attribute visibility "
-        "of variables in the variables list.\n"
-        "\nNote that you can change this option on "
-        "a per-variable basis by selecting the "
-        "variable and pressing '*'.")
+    default_variables_access_level_info = urwid.Text(
+            "Set the default attribute visibility "
+            "of variables in the variables list.\n"
+            "\nNote that you can change this option on "
+            "a per-variable basis by selecting the "
+            "variable and pressing '*'.")
     default_variables_access_level_rbs = [
             urwid.RadioButton(default_variables_access_level_rb_group, name,
                 conf_dict["default_variables_access_level"] == name,
@@ -427,7 +428,8 @@ def edit_config(ui, conf_dict):
             + [stringifier_info]
             + stringifier_rbs
 
-            + [urwid.AttrMap(urwid.Text("\nVariables Attribute Visibility:\n"), "group head")]
+            + [urwid.AttrMap(urwid.Text("\nVariables Attribute Visibility:\n"),
+                "group head")]
             + [default_variables_access_level_info]
             + default_variables_access_level_rbs
 
