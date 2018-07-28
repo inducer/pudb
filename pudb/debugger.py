@@ -206,6 +206,9 @@ class Debugger(bdb.Bdb):
                     break
                 frame = frame.f_back
 
+    def set_jump(self, frame, line):
+        frame.f_lineno = line
+
     def set_trace(self, frame=None, as_breakpoint=None, paused=True):
         """Start debugging from `frame`.
 
@@ -1161,6 +1164,48 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.debugger.set_continue()
                     end()
 
+
+        def jump_to_cursor(w, size, key):
+            if self.debugger.post_mortem:
+                self.message("Post-mortem mode: Can't modify state.")
+            else:
+                sline, pos = self.source.get_focus()
+                lineno = pos+1
+
+                bp_source_identifier = \
+                        self.source_code_provider.get_breakpoint_source_identifier()
+
+                if bp_source_identifier is None:
+                    self.message(
+                        "Cannot jump here--"
+                        "source code does not correspond to a file location. "
+                        "(perhaps this is generated code)")
+
+                from pudb.lowlevel import get_breakpoint_invalid_reason
+                invalid_reason = get_breakpoint_invalid_reason(
+                        bp_source_identifier, lineno)
+
+                if invalid_reason is not None:
+                    self.message(
+                        "Cannot jump to the line you indicated, "
+                        "for the following reason:\n\n"
+                        + invalid_reason)
+                else:
+                    err = self.debugger.set_break(
+                         bp_source_identifier, pos+1, temporary=True)
+                    if err:
+                        self.message("Error dealing with jump:\n" + err)
+
+                    try:
+                        self.debugger.set_jump(
+                            self.debugger.curframe, pos+1)
+                    except ValueError as e:
+                        self.message("""\
+Error with jump. Note that jumping only works on the topmost stack frame.
+(The error was: %s)""" % (e.args[0],))
+
+                    end()
+
         def move_home(w, size, key):
             self.source.set_focus(0)
 
@@ -1187,6 +1232,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         ], title="Go to Line Number"):
                 lineno = min(max(0, int(lineno_edit.value())-1), len(self.source)-1)
                 self.source.set_focus(lineno)
+
 
         def move_down(w, size, key):
             w.keypress(size, "down")
@@ -1419,6 +1465,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("r", finish)
         self.source_sigwrap.listen("c", cont)
         self.source_sigwrap.listen("t", run_to_cursor)
+        self.source_sigwrap.listen("J", jump_to_cursor)
 
         self.source_sigwrap.listen("j", move_down)
         self.source_sigwrap.listen("k", move_up)
