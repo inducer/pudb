@@ -1297,6 +1297,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             def mod_exists(mod):
                 if not hasattr(mod, "__file__"):
                     return False
+                if mod.__file__ is None:
+                    return False
                 filename = mod.__file__
 
                 base, ext = splitext(filename)
