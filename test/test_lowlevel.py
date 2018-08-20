@@ -4,7 +4,7 @@ from pudb.py3compat import PY3
 
 
 def test_detect_encoding_nocookie():
-    lines = ['Test Проверка']
+    lines = [u'Test Проверка']
     lines = [l.encode('utf-8') for l in lines]
     encoding, _ = detect_encoding(iter(lines))
     assert encoding == 'utf-8'
@@ -12,9 +12,9 @@ def test_detect_encoding_nocookie():
 
 def test_detect_encoding_cookie():
     lines = [
-        '# coding=utf-8',
-        'Test',
-        'Проверка'
+        u'# coding=utf-8',
+        u'Test',
+        u'Проверка'
     ]
     lines = [l.encode('utf-8') for l in lines]
     encoding, _ = detect_encoding(iter(lines))
@@ -23,9 +23,9 @@ def test_detect_encoding_cookie():
 
 def test_decode_lines():
     unicode_lines = [
-        '# coding=utf-8',
-        'Test',
-        'Проверка',
+        u'# coding=utf-8',
+        u'Test',
+        u'Проверка',
     ]
     lines = [l.encode('utf-8') for l in unicode_lines]
     if PY3:
