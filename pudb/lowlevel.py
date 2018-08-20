@@ -26,7 +26,7 @@ THE SOFTWARE.
 """
 
 
-from pudb.py3compat import PY3
+from pudb.py3compat import PY3, text_type
 
 
 # {{{ breakpoint validity
@@ -122,7 +122,7 @@ if PY3:
     BOM_UTF8 = BOM_UTF8.decode()
 
 
-def detect_encoding(lines):
+def detect_encoding(line_iter):
     """
     The detect_encoding() function is used to detect the encoding that should
     be used to decode a Python source file. It requires one argment, lines,
@@ -140,11 +140,10 @@ def detect_encoding(lines):
     If no encoding is specified, then the default of 'utf-8' will be returned.
     """
     bom_found = False
-    line_iterator = iter(lines)
 
     def read_or_stop():
         try:
-            return next(line_iterator)
+            return next(line_iter)
         except StopIteration:
             return ''
 
@@ -173,6 +172,9 @@ def detect_encoding(lines):
         return encoding
 
     first = read_or_stop()
+    if isinstance(first, text_type):
+        return None, [first]
+
     if first.startswith(BOM_UTF8):
         bom_found = True
         first = first[3:]
@@ -195,13 +197,18 @@ def detect_encoding(lines):
 
 
 def decode_lines(lines):
-    source_enc, _ = detect_encoding(lines)
+    line_iter = iter(lines)
+    source_enc, detection_read_lines = detect_encoding(line_iter)
 
-    for line in lines:
-        if hasattr(line, "decode"):
+    for line in detection_read_lines:
+        yield line
+
+    for line in line_iter:
+        if hasattr(line, "decode") and source_enc is not None:
             yield line.decode(source_enc)
         else:
             yield line
+
 # }}}
 
 
