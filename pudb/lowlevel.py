@@ -26,7 +26,7 @@ THE SOFTWARE.
 """
 
 
-from pudb.py3compat import PY3
+from pudb.py3compat import PY3, text_type
 
 
 # {{{ breakpoint validity
@@ -116,17 +116,15 @@ def lookup_module(filename):
 # the main idea stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 
 import re
-cookie_re = re.compile("^\s*#.*coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile(b"^\s*#.*coding[:=]\s*([-\w.]+)")
 from codecs import lookup, BOM_UTF8
-if PY3:
-    BOM_UTF8 = BOM_UTF8.decode()
 
 
-def detect_encoding(lines):
+def detect_encoding(line_iter):
     """
     The detect_encoding() function is used to detect the encoding that should
-    be used to decode a Python source file. It requires one argment, lines,
-    iterable lines stream.
+    be used to decode a Python source file. It requires one argment, line_iter,
+    an iterator on the lines to be read.
 
     It will read a maximum of two lines, and return the encoding used
     (as a string) and a list of any lines (left as bytes) it has read
@@ -140,11 +138,10 @@ def detect_encoding(lines):
     If no encoding is specified, then the default of 'utf-8' will be returned.
     """
     bom_found = False
-    line_iterator = iter(lines)
 
     def read_or_stop():
         try:
-            return next(line_iterator)
+            return next(line_iter)
         except StopIteration:
             return ''
 
@@ -160,7 +157,7 @@ def detect_encoding(lines):
         matches = cookie_re.findall(line_string)
         if not matches:
             return None
-        encoding = matches[0]
+        encoding = matches[0].decode()
         try:
             codec = lookup(encoding)
         except LookupError:
@@ -173,6 +170,9 @@ def detect_encoding(lines):
         return encoding
 
     first = read_or_stop()
+    if isinstance(first, text_type):
+        return None, [first]
+
     if first.startswith(BOM_UTF8):
         bom_found = True
         first = first[3:]
@@ -195,13 +195,17 @@ def detect_encoding(lines):
 
 
 def decode_lines(lines):
-    source_enc, _ = detect_encoding(lines)
+    line_iter = iter(lines)
+    source_enc, detection_read_lines = detect_encoding(line_iter)
 
-    for line in lines:
-        if hasattr(line, "decode"):
+    from itertools import chain
+
+    for line in chain(detection_read_lines, line_iter):
+        if hasattr(line, "decode") and source_enc is not None:
             yield line.decode(source_enc)
         else:
             yield line
+
 # }}}
 
 
