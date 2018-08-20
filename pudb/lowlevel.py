@@ -116,17 +116,15 @@ def lookup_module(filename):
 # the main idea stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 
 import re
-cookie_re = re.compile("^\s*#.*coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile(b"^\s*#.*coding[:=]\s*([-\w.]+)")
 from codecs import lookup, BOM_UTF8
-if PY3:
-    BOM_UTF8 = BOM_UTF8.decode()
 
 
 def detect_encoding(line_iter):
     """
     The detect_encoding() function is used to detect the encoding that should
-    be used to decode a Python source file. It requires one argment, lines,
-    iterable lines stream.
+    be used to decode a Python source file. It requires one argment, line_iter,
+    an iterator on the lines to be read.
 
     It will read a maximum of two lines, and return the encoding used
     (as a string) and a list of any lines (left as bytes) it has read
@@ -159,7 +157,7 @@ def detect_encoding(line_iter):
         matches = cookie_re.findall(line_string)
         if not matches:
             return None
-        encoding = matches[0]
+        encoding = matches[0].decode()
         try:
             codec = lookup(encoding)
         except LookupError:
@@ -200,10 +198,9 @@ def decode_lines(lines):
     line_iter = iter(lines)
     source_enc, detection_read_lines = detect_encoding(line_iter)
 
-    for line in detection_read_lines:
-        yield line
+    from itertools import chain
 
-    for line in line_iter:
+    for line in chain(detection_read_lines, line_iter):
         if hasattr(line, "decode") and source_enc is not None:
             yield line.decode(source_enc)
         else:
