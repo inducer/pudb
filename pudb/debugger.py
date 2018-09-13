@@ -159,8 +159,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
-    def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False):
-        bdb.Bdb.__init__(self)
+    def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False, **kwargs):
+        # Pass remaining kwargs to python debugger framework
+        bdb.Bdb.__init__(self, **kwargs)
         self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
         self.steal_output = steal_output
 
