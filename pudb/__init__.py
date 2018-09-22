@@ -70,8 +70,24 @@ else:
 CURRENT_DEBUGGER = []
 
 
+def _tty_override():
+    import os
+    return os.environ.get('PUDB_TTY')
+
+
 def _get_debugger(**kwargs):
     if not CURRENT_DEBUGGER:
+        tty_path = _tty_override()
+        if tty_path:
+            import io, sys
+            if sys.version_info[0] == 2:
+                tty_file = open(tty_path, 'r+b')
+            else:
+                tty_file = io.TextIOWrapper(open(tty_path, 'r+b'))
+
+            kwargs.setdefault('stdin', tty_file)
+            kwargs.setdefault('stdout', tty_file)
+
         from pudb.debugger import Debugger
         dbg = Debugger(**kwargs)
 
