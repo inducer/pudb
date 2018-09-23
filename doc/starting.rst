@@ -29,6 +29,24 @@ This is equivalent to::
 which is useful if you want to run PuDB in a version of Python other than the
 one you most recently installed PuDB with.
 
+Debugging from a separate terminal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's possible to control the debugger from a separate terminal. This is useful
+if there are several threads running that are printing to stdout while
+you're debugging and messing up the terminal, or if you want to keep the
+original terminal available for any other reason.
+
+To create a new terminal, use the utility script (tmux must be installed)::
+
+    python -m pudb.create_tty
+
+Then set the PUDB_TTY environment variable to this path, for example::
+
+    PUDB_TTY=/dev/pts/3 pudb my-script.py
+
+Now instead of using the current terminal, pudb will use this tty for its UI.
+
 Remote debugging
 ^^^^^^^^^^^^^^^^
 
