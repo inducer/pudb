@@ -81,10 +81,10 @@ def _get_debugger(**kwargs):
         if tty_path:
             import io, os, sys
             if sys.version_info[0] == 2:
-                tty_file = open(tty_path, 'r+b')
+                tty_file = open(tty_path, 'r+b', buffering=0)
                 term_size = None
             else:
-                tty_file = io.TextIOWrapper(open(tty_path, 'r+b'))
+                tty_file = io.TextIOWrapper(open(tty_path, 'r+b', buffering=0))
                 term_size = os.get_terminal_size(tty_file.fileno())
 
             kwargs.setdefault('stdin', tty_file)
