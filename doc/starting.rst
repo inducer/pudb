@@ -37,11 +37,17 @@ if there are several threads running that are printing to stdout while
 you're debugging and messing up the terminal, or if you want to keep the
 original terminal available for any other reason.
 
-To create a new terminal, use the utility script (tmux must be installed)::
+Open a new terminal. First, you need to get the path of the tty of the
+terminal you want to debug from. To do that, use the standard unix
+command `tty`. It will print something like `/dev/pts/3`.
 
-    python -m pudb.create_tty
+Then you need to make sure that your terminal doesn't have a shell actively
+reading and possibly capturing some of the input that should go to pudb.
+To do that run a placeholder command that does nothing,
+such as `perl -MPOSIX -e pause`.
 
-Then set the PUDB_TTY environment variable to this path, for example::
+Then set the PUDB_TTY environment variable to the path tty gave you,
+for example::
 
     PUDB_TTY=/dev/pts/3 pudb my-script.py
 
