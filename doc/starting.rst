@@ -52,6 +52,8 @@ for example::
     PUDB_TTY=/dev/pts/3 pudb my-script.py
 
 Now instead of using the current terminal, pudb will use this tty for its UI.
+You may want to use the internal shell in pudb, as others will still use the
+original terminal.
 
 Remote debugging
 ^^^^^^^^^^^^^^^^
