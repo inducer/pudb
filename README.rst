@@ -43,6 +43,8 @@ Features
 * PuDB places special emphasis on exception handling. A post-mortem mode makes
   it easy to retrace a crashing program's last steps.
 
+* Ability to control the debugger from a separate terminal.
+
 * IPython integration (see `wiki <http://wiki.tiker.net/PuDB>`_)
 
 * Should work with Python 2.6 and newer, including Python 3.

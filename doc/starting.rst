@@ -29,6 +29,32 @@ This is equivalent to::
 which is useful if you want to run PuDB in a version of Python other than the
 one you most recently installed PuDB with.
 
+Debugging from a separate terminal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's possible to control the debugger from a separate terminal. This is useful
+if there are several threads running that are printing to stdout while
+you're debugging and messing up the terminal, or if you want to keep the
+original terminal available for any other reason.
+
+Open a new terminal. First, you need to get the path of the tty of the
+terminal you want to debug from. To do that, use the standard unix
+command `tty`. It will print something like `/dev/pts/3`.
+
+Then you need to make sure that your terminal doesn't have a shell actively
+reading and possibly capturing some of the input that should go to pudb.
+To do that run a placeholder command that does nothing,
+such as `perl -MPOSIX -e pause`.
+
+Then set the PUDB_TTY environment variable to the path tty gave you,
+for example::
+
+    PUDB_TTY=/dev/pts/3 pudb my-script.py
+
+Now instead of using the current terminal, pudb will use this tty for its UI.
+You may want to use the internal shell in pudb, as others will still use the
+original terminal.
+
 Remote debugging
 ^^^^^^^^^^^^^^^^
 
