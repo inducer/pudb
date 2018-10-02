@@ -159,7 +159,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
-    def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False, **kwargs):
+    def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
+            **kwargs):
         # Pass remaining kwargs to python debugger framework
         bdb.Bdb.__init__(self, **kwargs)
         self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
@@ -615,10 +616,8 @@ class DirectSourceCodeProvider(SourceCodeProvider):
     def __eq__(self, other):
         return (
                 type(self) == type(other)
-                and
-                self.function_name == other.function_name
-                and
-                self.code is other.code)
+                and self.function_name == other.function_name
+                and self.code is other.code)
 
     def identifier(self):
         return "<source code of function %s>" % self.function_name
@@ -862,10 +861,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "Show methods", iinfo.show_methods)
 
             lb = urwid.ListBox(urwid.SimpleListWalker(
-                id_segment +
-                rb_grp_show + [urwid.Text("")] +
-                rb_grp_access + [urwid.Text("")] +
-                [
+                id_segment
+                + rb_grp_show + [urwid.Text("")]
+                + rb_grp_access + [urwid.Text("")]
+                + [
                     wrap_checkbox,
                     expanded_checkbox,
                     highlighted_checkbox,
@@ -1888,11 +1887,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 CONFIG["display"] == "curses"
                 or (
                     CONFIG["display"] == "auto"
-                    and
-                    not (
+                    and not (
                         os.environ.get("TERM", "").startswith("xterm")
-                        or
-                        os.environ.get("TERM", "").startswith("rxvt")
+                        or os.environ.get("TERM", "").startswith("rxvt")
                     )))
 
         if (want_curses_display

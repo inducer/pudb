@@ -76,7 +76,9 @@ def _tty_override():
 
 
 def _open_tty(tty_path):
-    import io, os, sys
+    import io
+    import os
+    import sys
     if sys.version_info[0] == 2:
         tty_file = open(tty_path, 'r+b', buffering=0)
         term_size = None
