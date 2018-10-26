@@ -347,8 +347,8 @@ class ArgumentParser(object):
                 self.state = ParseState.found_open_paren
                 self.paren_level = 1
         else:
-            if ((token is self.t.Name) or
-                    (token is self.t.Name.Builtin.Pseudo and s == 'self')):
+            if ((token is self.t.Name)
+                    or (token is self.t.Name.Builtin.Pseudo and s == 'self')):
                 return self.t.Token.Argument
             elif token is self.t.Punctuation and s == ')':
                 self.paren_level -= 1

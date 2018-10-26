@@ -116,7 +116,7 @@ def lookup_module(filename):
 # the main idea stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 
 import re
-cookie_re = re.compile(b"^\s*#.*coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile(br"^\s*#.*coding[:=]\s*([-\w.]+)")
 from codecs import lookup, BOM_UTF8
 
 
