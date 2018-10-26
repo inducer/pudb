@@ -44,7 +44,7 @@ from pudb.py3compat import PY3, raw_input, execfile
 CONFIG = load_config()
 save_config(CONFIG)
 
-HELP_TEXT = """\
+HELP_TEXT = r"""\
 Welcome to PuDB, the Python Urwid debugger.
 -------------------------------------------
 
