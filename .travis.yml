@@ -9,7 +9,7 @@ python:
 install:
     - |
         PY_VER=$(python -c 'import sys; sys.stdout.write("%d.%d" % sys.version_info[:2])') ; \
-        if test "$PY_VER"= "2.6"; then ; \
+        if test "$PY_VER"= "2.6"; then \
             pip install -r requirements.dev-2.6.txt"; \
         else \
             pip install -r requirements.dev.txt"; \
