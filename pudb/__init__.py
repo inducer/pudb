@@ -92,6 +92,10 @@ def _open_tty(tty_path):
 def _get_debugger(**kwargs):
     if not CURRENT_DEBUGGER:
         tty_path = _tty_override()
+        user_tty = kwargs.pop('tty', None)
+        if user_tty is not None:
+            tty_path = user_tty
+
         if tty_path and ('stdin' not in kwargs or 'stdout' not in kwargs):
             tty_file, term_size = _open_tty(tty_path)
 
@@ -214,15 +218,18 @@ def runcall(*args, **kwds):
     return _get_debugger().runcall(*args, **kwds)
 
 
-def set_trace(paused=True):
+def set_trace(paused=True, tty=None):
     """
     Start the debugger
 
     If paused=False (the default is True), the debugger will not stop here
     (same as immediately pressing 'c' to continue).
+
+    tty- Allow the user to control the debugger from seperate terminal given in tty
+
     """
     import sys
-    dbg = _get_debugger()
+    dbg = _get_debugger(tty=tty)
 
     import threading
     if isinstance(threading.current_thread(), threading._MainThread):
