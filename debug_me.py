@@ -7,6 +7,8 @@ class MyClass(object):
 mc = MyClass(15, MyClass(12, None))
 
 
+from pudb import set_trace; set_trace()
+
 def simple_func(x):
     x += 1
 

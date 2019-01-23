@@ -45,7 +45,6 @@ if PY3:
 else:
     ELLIPSIS = unicode('…', 'utf-8')  # noqa: F821
 
-from pudb.debugger import CONFIG
 from pudb.ui_tools import text_width
 # }}}
 
@@ -68,6 +67,9 @@ class FrameVarInfo(object):
 
 class InspectInfo(object):
     def __init__(self):
+        # Do not globalize: cyclic import
+        from pudb.debugger import CONFIG
+
         self.show_detail = False
         self.display_type = CONFIG["stringifier"]
         self.highlighted = False
@@ -119,6 +121,9 @@ class VariableWidget(urwid.FlowWidget):
         self.attr_prefix = attr_prefix or "var"
         self.watch_expr = watch_expr
         if iinfo is None:
+            # Do not globalize: cyclic import
+            from pudb.debugger import CONFIG
+
             self.wrap = CONFIG["wrap_variables"]
         else:
             self.wrap = iinfo.wrap
