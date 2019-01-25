@@ -125,6 +125,7 @@ Keys in breakpoints view:
     enter - edit breakpoint
     d - delete breakpoint
     e - enable/disable breakpoint
+    g - go to breakpoint
 
 License:
 --------
@@ -1013,6 +1014,15 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.update_breakpoints()
 
+        def goto_breakpoint(w, size, key):
+            bp_entry, pos = self.bp_list._w.get_focus()
+            if bp_entry is None:
+                return
+            bp = self._get_bp_list()[pos]
+            self.set_source_code_provider(
+                    FileSourceCodeProvider(self.debugger, bp.file))
+            self.source_list.set_focus(bp.line)
+
         def examine_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
 
@@ -1085,6 +1095,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.update_breakpoints()
 
         self.bp_list.listen("enter", examine_breakpoint)
+        self.bp_list.listen("g", goto_breakpoint)
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
         self.bp_list.listen("e", enable_disable_breakpoint)
