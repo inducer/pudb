@@ -2,7 +2,7 @@ Python 2.6:
   script:
   - py_version=2.6
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - export REQUIREMENTS_TXT=requirements.dev.txt
+  - export REQUIREMENTS_TXT=requirements.dev-2.6.txt
   - ". ./build-and-test-py-project.sh"
   tags:
   - python2.6
