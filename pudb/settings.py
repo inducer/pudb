@@ -159,7 +159,7 @@ def edit_config(ui, conf_dict):
 
     def _update_line_numbers():
         for sl in ui.source:
-                sl._invalidate()
+            sl._invalidate()
 
     def _update_prompt_on_quit():
         pass
