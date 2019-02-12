@@ -112,6 +112,8 @@ def load_config():
 
     conf_dict.setdefault("prompt_on_quit", True)
 
+    conf_dict.setdefault("hide_importlib_frames", True)
+
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
@@ -124,6 +126,7 @@ def load_config():
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
     normalize_bool_inplace("prompt_on_quit")
+    normalize_bool_inplace("hide_importlib_frames")
 
     return conf_dict
 
