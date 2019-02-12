@@ -945,6 +945,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
         self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
 
+        self.var_list.listen("j", self.rhs_scroll_down)
+        self.var_list.listen("k", self.rhs_scroll_up)
+
         # }}}
 
         # {{{ stack listeners
@@ -969,6 +972,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
         self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
+
+        self.stack_list.listen("j", self.rhs_scroll_down)
+        self.stack_list.listen("k", self.rhs_scroll_up)
 
         # }}}
 
@@ -1092,6 +1098,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
 
+        self.bp_list.listen("j", self.rhs_scroll_down)
+        self.bp_list.listen("k", self.rhs_scroll_up)
         # }}}
 
         # {{{ source listeners
@@ -1940,6 +1948,13 @@ class DebuggerUI(FrameVarInfoKeeper):
     # }}}
 
     # {{{ UI helpers
+    def rhs_scroll_down(self, w, size, key):
+        if key == 'j' and CONFIG['jk_sidebar_scroll']:
+            w.keypress(size, "down")
+
+    def rhs_scroll_up(self, w, size, key):
+        if key == 'k' and CONFIG['jk_sidebar_scroll']:
+            w.keypress(size, "up")
 
     def translate_ui_stack_index(self, index):
         # note: self-inverse

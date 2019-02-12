@@ -112,6 +112,8 @@ def load_config():
 
     conf_dict.setdefault("prompt_on_quit", True)
 
+    conf_dict.setdefault("jk_sidebar_scroll", False)
+
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
@@ -124,6 +126,7 @@ def load_config():
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
     normalize_bool_inplace("prompt_on_quit")
+    normalize_bool_inplace("jk_sidebar_scroll")
 
     return conf_dict
 
@@ -164,6 +167,9 @@ def edit_config(ui, conf_dict):
     def _update_prompt_on_quit():
         pass
 
+    def _update_jk_sidebar_scroll():
+        pass
+
     def _update_current_stack_frame():
         ui.update_stack()
 
@@ -201,6 +207,11 @@ def edit_config(ui, conf_dict):
             new_conf_dict["prompt_on_quit"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
             _update_prompt_on_quit()
+
+        elif option == "jk_sidebar_scroll":
+            new_conf_dict["jk_sidebar_scroll"] = not check_box.get_state()
+            conf_dict.update(new_conf_dict)
+            _update_jk_sidebar_scroll()
 
         elif option == "current_stack_frame":
             # only activate if the new state of the radio button is 'on'
@@ -243,6 +254,11 @@ def edit_config(ui, conf_dict):
     cb_prompt_on_quit = urwid.CheckBox("Prompt before quitting",
             bool(conf_dict["prompt_on_quit"]), on_state_change=_update_config,
                 user_data=("prompt_on_quit", None))
+
+    cb_jk_sidebar_scroll = urwid.CheckBox("Use j/k keys for scrolling in "
+                                          "sidebar",
+            bool(conf_dict["jk_sidebar_scroll"]), on_state_change=_update_config,
+                user_data=("jk_sidebar_scroll", None))
 
     # {{{ shells
 
@@ -412,6 +428,9 @@ def edit_config(ui, conf_dict):
 
             + [urwid.AttrMap(urwid.Text("\nPrompt on quit:\n"), "group head")]
             + [cb_prompt_on_quit]
+
+            + [urwid.AttrMap(urwid.Text("\nKeys:\n"), "group head")]
+            + [cb_jk_sidebar_scroll]
 
             + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
             + [shell_info]
