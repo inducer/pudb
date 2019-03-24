@@ -442,8 +442,8 @@ class Debugger(bdb.Bdb):
         import __main__
         __main__.__dict__.clear()
         __main__.__dict__.update({
-            "__name__"    : "__main__",
-            "__file__"    : filename,
+            "__name__": "__main__",
+            "__file__": filename,
             "__builtins__": __builtins__,
             })
 
