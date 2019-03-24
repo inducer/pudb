@@ -433,11 +433,19 @@ class Debugger(bdb.Bdb):
             self.interaction(frame, exc_tuple)
 
     def _runscript(self, filename):
-        # Start with fresh empty copy of globals and locals and tell the script
-        # that it's being run as __main__ to avoid scripts being able to access
-        # the debugger's namespace.
-        globals_ = {"__name__": "__main__", "__file__": filename}
-        locals_ = globals_
+        # Provide separation from current __main__, which is likely
+        # pudb.__main__ run.  Preserving its namespace is not important, and
+        # having the script share it ensures that, e.g., pickle can find
+        # types defined there:
+        # https://github.com/inducer/pudb/issues/331
+
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update({
+            "__name__": "__main__",
+            "__file__": filename,
+            "__builtins__": __builtins__,
+            })
 
         # When bdb sets tracing, a number of call and line events happens
         # BEFORE debugger even reaches user's code (and the exact sequence of
@@ -456,7 +464,8 @@ class Debugger(bdb.Bdb):
         from pudb import set_interrupt_handler
         set_interrupt_handler()
 
-        self.run(statement, globals=globals_, locals=locals_)
+        # Implicitly runs in the namespace of __main__.
+        self.run(statement)
 
 # }}}
 
