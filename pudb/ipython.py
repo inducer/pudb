@@ -41,7 +41,7 @@ register_line_magic(pudb)
 
 def debugger(self, force=False):
     """Call the PuDB debugger."""
-    from IPython.utils.warn import error
+    from logging import error
     if not (force or self.call_pdb):
         return
 
