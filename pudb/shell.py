@@ -72,14 +72,7 @@ class SetPropagatingDict(dict):
 
 custom_shell_dict = {}
 
-
-def run_classic_shell(globals, locals, first_time=[True]):
-    if first_time:
-        banner = "Hit Ctrl-D to return to PuDB."
-        first_time.pop()
-    else:
-        banner = ""
-
+def readline_init(globals, locals):
     ns = SetPropagatingDict([locals, globals], locals)
 
     from pudb.settings import get_save_config_path
@@ -98,14 +91,27 @@ def run_classic_shell(globals, locals, first_time=[True]):
         except IOError:
             pass
 
+    return hist_file, ns
+
+def readline_fini(hist_file):
+    if HAVE_READLINE:
+        readline.write_history_file(hist_file)
+
+def run_classic_shell(globals, locals, first_time=[True]):
+    if first_time:
+        banner = "Hit Ctrl-D to return to PuDB."
+        first_time.pop()
+    else:
+        banner = ""
+
+    hist_file, ns = readline_init(globals, locals)
+
     from code import InteractiveConsole
     cons = InteractiveConsole(ns)
 
     cons.interact(banner)
 
-    if HAVE_READLINE:
-        readline.write_history_file(hist_file)
-
+    readline_fini(hist_file)
 
 def run_bpython_shell(globals, locals):
     ns = SetPropagatingDict([locals, globals], locals)

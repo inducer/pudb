@@ -1853,9 +1853,21 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.update_var_view()
 
+        def run_internal_shell(w, size, key, first_time=[True]):
+            frame = self.debugger.curframe
+            if first_time: self.screen.stop()
+            import pudb.shell as sh
+            histfile, ns = sh.readline_init(frame.f_globals, frame.f_locals)
+            ret = toggle_cmdline_focus(w, size, key)
+            sh.readline_fini(histfile)
+            if first_time:
+                self.screen.start()
+                first_time.pop()
+            return ret
+
         def run_cmdline(w, size, key):
             if CONFIG["shell"] == "internal":
-                return toggle_cmdline_focus(w, size, key)
+                return run_internal_shell(w, size, key)
             else:
                 return run_external_cmdline(w, size, key)
 
