@@ -2182,7 +2182,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
                     "\nChanges in version 2019.1:\n\n"
                     "- Allow 'space' as a key to expand variables (Enrico Troeger)\n"
-                    "- Have a persistent setting on variable visibility (Enrico Troeger)\n"
+                    "- Have a persistent setting on variable visibility \n"
+                    "  (Enrico Troeger)\n"
                     "- Enable/partially automate opening the debugger in another \n"
                     "  terminal (Anton Barkovsky)\n"
                     "- Make sidebar scrollable with j/k (Clayton Craft)\n"
