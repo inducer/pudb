@@ -262,11 +262,11 @@ custom_stringifier_dict = {}
 
 def type_stringifier(value):
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-        return "ndarray %s %s" % (value.dtype, value.shape)
+        return text_type("ndarray %s %s") % (value.dtype, value.shape)
 
     elif isinstance(value, STR_SAFE_TYPES):
         try:
-            return str(value)
+            return text_type(value)
         except Exception:
             pass
 
@@ -301,7 +301,9 @@ def get_stringifier(iinfo):
         if PY3:
             return str
         else:
-            return lambda value: str(value).decode("utf-8")
+            return lambda value: (
+                    value.decode("utf-8") if isinstance(value, bytes)
+                    else text_type(value))
     else:
         try:
             if not custom_stringifier_dict:  # Only execfile once
