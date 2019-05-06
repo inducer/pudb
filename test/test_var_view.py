@@ -27,5 +27,3 @@ def test_get_stringifier():
 
             s = strifier(value)
             assert isinstance(s, text_type)
-
-test_get_stringifier()
