@@ -6,8 +6,9 @@ from urwid.util import _target_encoding, calc_width, calc_text_pos
 # generic urwid helpers -------------------------------------------------------
 
 def text_width(txt):
-    """
-    Return the width of the text in the terminal
+    """Return the width of the text in the terminal.
+
+    :arg txt: A Unicode text object.
 
     Use this instead of len() whenever txt could contain double- or zero-width
     Unicode characters.
