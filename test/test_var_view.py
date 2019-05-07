@@ -16,7 +16,7 @@ def test_get_stringifier():
 
     try:
         import numpy as np
-    except Import Error:
+    except ImportError:
         numpy_values = []
     else:
         numpy_values = [np.float32(5), np.zeros(5)]
