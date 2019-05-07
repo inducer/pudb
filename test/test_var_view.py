@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from pudb.py3compat import text_type
-import numpy as np
 
 
 class A:
