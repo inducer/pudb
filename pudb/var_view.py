@@ -31,6 +31,7 @@ THE SOFTWARE.
 # {{{ constants and imports
 
 import urwid
+import inspect
 
 try:
     import numpy
@@ -462,7 +463,7 @@ class ValueWalker:
 
                 try:
                     attr_value = getattr(value, key)
-                    if callable(attr_value) and not iinfo.show_methods:
+                    if inspect.ismethod(attr_value) and not iinfo.show_methods:
                         cnt_omitted_methods += 1
                         continue
                 except Exception:
