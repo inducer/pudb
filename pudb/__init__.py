@@ -85,9 +85,10 @@ def _open_tty(tty_path):
         import struct
         tty_file = open(tty_path, 'r+b', buffering=0)
         try:
-            s = struct.unpack('hh', fcntl.ioctl(tty_file.fileno(), termios.TIOCGWINSZ, '1234'))
+            s = struct.unpack('hh', fcntl.ioctl(
+                tty_file.fileno(), termios.TIOCGWINSZ, '1234'))
             term_size = (s[1], s[0])
-        except:
+        except Exception:
             term_size = None
     else:
         tty_file = io.TextIOWrapper(open(tty_path, 'r+b', buffering=0))
