@@ -13,7 +13,18 @@ Or, if pudb is already imported, just this will suffice::
 
     pu.db
 
-Insert either of these snippets into the piece of code you want to debug, or
+If you are using Python 3.7 or newer, you can add::
+
+    # Set breakpoint() in Python to call pudb
+    export PYTHONBREAKPOINT="pudb.set_trace"
+
+in your ~/.bashrc. Then use::
+
+    breakpoint()
+
+to start pudb.
+
+Insert one of these snippets into the piece of code you want to debug, or
 run the entire script with::
 
     pudb my-script.py
@@ -83,5 +94,3 @@ like so::
 
 Note the need to pass --capture=no (or its synonym -s) as otherwise
 pytest tries to manage the standard streams itself. (contributed by Antony Lee)
-
-
