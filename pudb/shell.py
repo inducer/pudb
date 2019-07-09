@@ -26,14 +26,6 @@ else:
     HAVE_PTPYTHON = True
 
 
-try:
-    import readline
-    import rlcompleter
-    HAVE_READLINE = True
-except ImportError:
-    HAVE_READLINE = False
-
-
 # {{{ combined locals/globals dict
 
 class SetPropagatingDict(dict):
@@ -87,6 +79,13 @@ def run_classic_shell(globals, locals, first_time=[True]):
     hist_file = join(
             get_save_config_path(),
             "shell-history")
+
+    try:
+        import readline
+        import rlcompleter
+        HAVE_READLINE = True
+    except ImportError:
+        HAVE_READLINE = False
 
     if HAVE_READLINE:
         readline.set_completer(
