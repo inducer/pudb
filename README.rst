@@ -47,7 +47,7 @@ Features
 
 * IPython integration (see `wiki <http://wiki.tiker.net/PuDB>`_)
 
-* Should work with Python 2.6 and newer, including Python 3.
+* Should work with Python 2.7 and newer, including Python 3.
 
 Links
 -----
