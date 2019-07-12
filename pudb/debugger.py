@@ -1115,6 +1115,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("s", save_breakpoints)
         self.bp_list.listen("e", examine_breakpoint)
         self.bp_list.listen("b", enable_disable_breakpoint)
+        self.bp_list.listen("H", move_stack_top)
 
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
