@@ -1504,7 +1504,11 @@ class DebuggerUI(FrameVarInfoKeeper):
             chopped_text = text[:pos]
             suffix = text[pos:]
 
-            completions = Interpreter(chopped_text, [cmdline_get_namespace()]).completions()
+            try:
+                completions = Interpreter(chopped_text, [cmdline_get_namespace()]).completions()
+            except:
+                # Jedi sometimes produces errors. Ignore
+                return
             full_completions = [i.name_with_symbols for i in completions]
             chopped_completions = [i.complete for i in completions]
 
