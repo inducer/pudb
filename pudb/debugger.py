@@ -44,6 +44,11 @@ from pudb.py3compat import PY3, raw_input, execfile
 CONFIG = load_config()
 save_config(CONFIG)
 
+HELP_HEADER = r"""
+Key Assignments: Use Arrow Down/Up or Page Down/Up to scroll.
+
+"""
+
 HELP_MAIN = r"""
 Keys:
     Ctrl-p - edit preferences
@@ -932,7 +937,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.update_var_view()
 
         def helpside(w, size, key):
-            help(HELP_SIDE + HELP_MAIN + HELP_LICENSE)
+            help(HELP_HEADER + HELP_SIDE + HELP_MAIN + HELP_LICENSE)
 
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen(" ", change_var_state)
@@ -1449,7 +1454,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                                 self.translate_ui_stack_index(pos))
 
         def helpmain(w, size, key):
-            help(HELP_MAIN + HELP_SIDE + HELP_LICENSE)
+            help(HELP_HEADER + HELP_MAIN + HELP_SIDE + HELP_LICENSE)
 
         self.source_sigwrap.listen("n", next)
         self.source_sigwrap.listen("s", step)
