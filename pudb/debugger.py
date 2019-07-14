@@ -101,7 +101,7 @@ Sidebar-related (active in sidebar):
     [/] - grow/shrink relative size of active sidebar box
 
 Keys in variables list:
-    \/space - expand/collapse
+    \/enter/space - expand/collapse
     t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
     @ - toggle repetition at top
@@ -109,7 +109,7 @@ Keys in variables list:
     m - toggle method visibility
     w - toggle line wrapping
     n/insert - add new watch expression
-    e/enter - edit options (also to delete)
+    e - edit options (also to delete)
 
 Keys in stack list:
     enter - jump to frame
