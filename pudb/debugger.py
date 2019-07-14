@@ -46,7 +46,6 @@ save_config(CONFIG)
 
 HELP_HEADER = r"""
 Key Assignments: Use Arrow Down/Up or Page Down/Up to scroll.
-
 """
 
 HELP_MAIN = r"""
