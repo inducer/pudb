@@ -44,12 +44,11 @@ from pudb.py3compat import PY3, raw_input, execfile
 CONFIG = load_config()
 save_config(CONFIG)
 
-HELP_TEXT = r"""\
-Welcome to PuDB, the Python Urwid debugger.
--------------------------------------------
+HELP_HEADER = r"""
+Key Assignments: Use Arrow Down/Up or Page Down/Up to scroll.
+"""
 
-(This help screen is scrollable. Hit Page Down to see more.)
-
+HELP_MAIN = r"""
 Keys:
     Ctrl-p - edit preferences
 
@@ -59,14 +58,13 @@ Keys:
     r/f - finish current function
     t - run to cursor
     e - show traceback [post-mortem or in exception state]
+    b - set/clear breakpoint
 
     H - move to current line (bottom of stack)
     u - move up one stack frame
     d - move down one stack frame
 
     o - show console/output screen
-
-    b - toggle breakpoint
     m - open module
 
     j/k - up/down
@@ -86,7 +84,6 @@ Keys:
     q - quit
 
     Ctrl-c - when in continue mode, break back to PuDB
-
     Ctrl-l - redraw screen
 
 Shell-related:
@@ -99,14 +96,16 @@ Shell-related:
     Ctrl-v - insert newline
     Ctrl-n/p - browse command line history
     Tab - yes, there is (simple) tab completion
+"""
 
+HELP_SIDE = r"""
 Sidebar-related (active in sidebar):
     +/- - grow/shrink sidebar
     _/= - minimize/maximize sidebar
     [/] - grow/shrink relative size of active sidebar box
 
 Keys in variables list:
-    \/space - expand/collapse
+    \/enter/space - expand/collapse
     t/r/s/c - show type/repr/str/custom for this variable
     h - toggle highlighting
     @ - toggle repetition at top
@@ -114,18 +113,19 @@ Keys in variables list:
     m - toggle method visibility
     w - toggle line wrapping
     n/insert - add new watch expression
-    enter - edit options (also to delete)
+    e - edit options (also to delete)
 
 Keys in stack list:
-
     enter - jump to frame
 
-Keys in breakpoints view:
-
-    enter - edit breakpoint
+Keys in breakpoints list:
+    enter - jump to breakpoint
+    b - toggle breakpoint
     d - delete breakpoint
-    e - enable/disable breakpoint
+    e - edit breakpoint
+"""
 
+HELP_LICENSE = r"""
 License:
 --------
 
@@ -154,7 +154,6 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
-
 
 # {{{ debugger interface
 
@@ -785,7 +784,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             iinfo = self.get_frame_var_info(read_only=False) \
                     .get_inspect_info(var.id_path, read_only=False)
 
-            if key == "\\" or key == ' ':
+            if key == "enter" or key == "\\" or key == ' ':
                 iinfo.show_detail = not iinfo.show_detail
             elif key == "t":
                 iinfo.display_type = "type"
@@ -936,6 +935,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 fvi.watches.append(we)
                 self.update_var_view()
 
+        def helpside(w, size, key):
+            help(HELP_HEADER + HELP_SIDE + HELP_MAIN + HELP_LICENSE)
+
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen(" ", change_var_state)
         self.var_list.listen("t", change_var_state)
@@ -947,7 +949,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("*", change_var_state)
         self.var_list.listen("w", change_var_state)
         self.var_list.listen("m", change_var_state)
-        self.var_list.listen("enter", edit_inspector_detail)
+        self.var_list.listen("enter", change_var_state)
+        self.var_list.listen("e", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
 
@@ -956,6 +959,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.var_list.listen("j", self.rhs_scroll_down)
         self.var_list.listen("k", self.rhs_scroll_up)
+        self.var_list.listen("f1", helpside)
+        self.var_list.listen("?", helpside)
 
         # }}}
 
@@ -984,6 +989,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.stack_list.listen("j", self.rhs_scroll_down)
         self.stack_list.listen("k", self.rhs_scroll_up)
+        self.stack_list.listen("f1", helpside)
+        self.stack_list.listen("?", helpside)
 
         # }}}
 
@@ -1099,16 +1106,28 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     self.update_breakpoints()
 
-        self.bp_list.listen("enter", examine_breakpoint)
+        def show_breakpoint(w, size, key):
+            bp_entry, pos = self.bp_list._w.get_focus()
+
+            if bp_entry is not None:
+                bp = self._get_bp_list()[pos]
+                self.show_line(bp.line,
+                        FileSourceCodeProvider(self.debugger, bp.file))
+
+        self.bp_list.listen("enter", show_breakpoint)
         self.bp_list.listen("d", delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
-        self.bp_list.listen("e", enable_disable_breakpoint)
+        self.bp_list.listen("e", examine_breakpoint)
+        self.bp_list.listen("b", enable_disable_breakpoint)
+        self.bp_list.listen("H", move_stack_top)
 
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
 
         self.bp_list.listen("j", self.rhs_scroll_down)
         self.bp_list.listen("k", self.rhs_scroll_up)
+        self.bp_list.listen("f1", helpside)
+        self.bp_list.listen("?", helpside)
         # }}}
 
         # {{{ source listeners
@@ -1433,6 +1452,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                         self.debugger.set_frame_index(
                                 self.translate_ui_stack_index(pos))
 
+        def helpmain(w, size, key):
+            help(HELP_HEADER + HELP_MAIN + HELP_SIDE + HELP_LICENSE)
+
         self.source_sigwrap.listen("n", next)
         self.source_sigwrap.listen("s", step)
         self.source_sigwrap.listen("f", finish)
@@ -1465,6 +1487,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("H", move_stack_top)
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
+        self.source_sigwrap.listen("f1", helpmain)
+        self.source_sigwrap.listen("?", helpmain)
 
         # }}}
 
@@ -1881,8 +1905,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         def redraw_screen(w, size, key):
             self.screen.clear()
 
-        def help(w, size, key):
-            self.message(HELP_TEXT, title="PuDB Help")
+        def help(pages):
+            self.message(pages, title="PuDB - The Python Urwid Debugger")
 
         self.top.listen("o", show_output)
         self.top.listen("ctrl r", reload_breakpoints)
@@ -1897,8 +1921,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
         self.top.listen("ctrl l", redraw_screen)
-        self.top.listen("f1", help)
-        self.top.listen("?", help)
 
         # }}}
 
