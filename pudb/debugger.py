@@ -1506,9 +1506,10 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             try:
                 completions = Interpreter(chopped_text, [cmdline_get_namespace()]).completions()
-            except:
+            except Exception as e:
                 # Jedi sometimes produces errors. Ignore
-                return
+                add_cmdline_content("Could not tab complete (error jedi: %r)" % e)
+
             full_completions = [i.name_with_symbols for i in completions]
             chopped_completions = [i.complete for i in completions]
 
