@@ -700,10 +700,12 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_sigwrap = SignalWrap(
                 urwid.AttrMap(self.cmdline_pile, None, "focused sidebar")
                 )
-
+        self.cmdline_on = not CONFIG["hide_cmdline_win"]
+        self.cmdline_weight = 1
         self.lhs_col = urwid.Pile([
             ("weight", 5, self.source_attr),
-            ("weight", 1, self.cmdline_sigwrap),
+            ("weight", self.cmdline_weight if self.cmdline_on else 0,
+                self.cmdline_sigwrap),
             ])
 
         # }}}
@@ -1692,8 +1694,12 @@ class DebuggerUI(FrameVarInfoKeeper):
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
+                if CONFIG["hide_cmdline_win"]:
+                    self.set_cmdline_state(False)
                 self.lhs_col.set_focus(self.source_attr)
             else:
+                if CONFIG["hide_cmdline_win"]:
+                    self.set_cmdline_state(True)
                 self.cmdline_pile.set_focus(self.cmdline_edit_bar)
                 self.lhs_col.set_focus(self.cmdline_sigwrap)
 
@@ -1712,30 +1718,29 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("ctrl x", toggle_cmdline_focus)
 
         # {{{ command line sizing
+        def set_cmdline_default_size(weight):
+            self.cmdline_weight = weight
+            self.set_cmdline_size()
 
         def max_cmdline(w, size, key):
-            self.lhs_col.item_types[-1] = "weight", 5
-            self.lhs_col._invalidate()
+            set_cmdline_default_size(5)
 
         def min_cmdline(w, size, key):
-            self.lhs_col.item_types[-1] = "weight", 1/2
-            self.lhs_col._invalidate()
+            set_cmdline_default_size(1/2)
 
         def grow_cmdline(w, size, key):
             _, weight = self.lhs_col.item_types[-1]
 
             if weight < 5:
                 weight *= 1.25
-                self.lhs_col.item_types[-1] = "weight", weight
-                self.lhs_col._invalidate()
+                set_cmdline_default_size(weight)
 
         def shrink_cmdline(w, size, key):
             _, weight = self.lhs_col.item_types[-1]
 
             if weight > 1/2:
                 weight /= 1.25
-                self.lhs_col.item_types[-1] = "weight", weight
-                self.lhs_col._invalidate()
+                set_cmdline_default_size(weight)
 
         self.cmdline_sigwrap.listen("=", max_cmdline)
         self.cmdline_sigwrap.listen("+", grow_cmdline)
@@ -1983,13 +1988,23 @@ class DebuggerUI(FrameVarInfoKeeper):
     # }}}
 
     # {{{ UI helpers
+    def set_cmdline_size(self, weight=None):
+        if weight is None:
+            weight = self.cmdline_weight
+
+        self.lhs_col.item_types[-1] = "weight", weight
+        self.lhs_col._invalidate()
+
+    def set_cmdline_state(self, state_on):
+        if state_on != self.cmdline_on:
+            self.cmdline_on = state_on
+            self.set_cmdline_size(None if state_on else 0)
+
     def rhs_scroll_down(self, w, size, key):
-        if key == 'j' and CONFIG['jk_sidebar_scroll']:
-            w.keypress(size, "down")
+        w.keypress(size, "down")
 
     def rhs_scroll_up(self, w, size, key):
-        if key == 'k' and CONFIG['jk_sidebar_scroll']:
-            w.keypress(size, "up")
+        w.keypress(size, "up")
 
     def translate_ui_stack_index(self, index):
         # note: self-inverse
@@ -2512,6 +2527,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             raise ValueError("invalid value for 'current_stack_frame' pref")
 
         self.stack_walker[:] = frame_uis
+
+    def update_cmdline_win(self):
+        self.set_cmdline_state(not CONFIG["hide_cmdline_win"])
 
     # }}}
 
