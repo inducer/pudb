@@ -112,7 +112,7 @@ def load_config():
 
     conf_dict.setdefault("prompt_on_quit", True)
 
-    conf_dict.setdefault("hide_cmdline_win", True)
+    conf_dict.setdefault("hide_cmdline_win", False)
 
     def normalize_bool_inplace(name):
         try:
