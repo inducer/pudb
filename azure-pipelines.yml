@@ -57,6 +57,9 @@ jobs:
             . ./build-and-test-py-project.sh
             bash ../upload_coverage.sh
 
+        env:
+            COVERAGE: $(COVERAGE)
+
         displayName: 'Pytest'
 
     -
