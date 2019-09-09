@@ -32,7 +32,6 @@ jobs:
             testResultsFormat: 'JUnit'
             testResultsFiles: 'test/pytest.xml'
 
-jobs:
 -
     job: 'PytestCoverage'
     pool:
