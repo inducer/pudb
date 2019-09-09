@@ -74,7 +74,7 @@ jobs:
         vmImage: 'ubuntu-16.04'
     strategy:
         matrix:
-            Python36:
+            Python37:
                 python.version: '3.7'
 
     steps:
