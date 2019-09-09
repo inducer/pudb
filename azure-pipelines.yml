@@ -55,7 +55,7 @@ jobs:
             PYTEST_FLAGS="--cov=pudb"
             curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
             . ./build-and-test-py-project.sh
-            bash upload_coverage.sh
+            bash ../upload_coverage.sh
 
         displayName: 'Pytest'
 
