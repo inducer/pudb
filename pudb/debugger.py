@@ -1109,6 +1109,17 @@ class DebuggerUI(FrameVarInfoKeeper):
                 else:
                     self.update_breakpoints()
 
+        def breakpoint_location(w, size, key):
+            bp_entry, pos = self.bp_list._w.get_focus()
+
+            if bp_entry is None:
+                return
+
+            bp = self._get_bp_list()[pos]
+
+            self.show_line(bp.line,
+                        FileSourceCodeProvider(self.debugger, bp.file))
+
         def show_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
 
@@ -1123,6 +1134,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("e", examine_breakpoint)
         self.bp_list.listen("b", enable_disable_breakpoint)
         self.bp_list.listen("H", move_stack_top)
+        self.bp_list.listen("l", breakpoint_location)
 
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
