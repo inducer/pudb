@@ -123,6 +123,7 @@ Keys in breakpoints list:
     b - toggle breakpoint
     d - delete breakpoint
     e - edit breakpoint
+    l - show breakpoint location
 """
 
 HELP_LICENSE = r"""
