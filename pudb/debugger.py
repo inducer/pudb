@@ -701,13 +701,12 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_sigwrap = SignalWrap(
                 urwid.AttrMap(self.cmdline_pile, None, "focused sidebar")
                 )
-        self.cmdline_on = not CONFIG["hide_cmdline_win"]
+        self.source_weight = 5
         self.cmdline_weight = 1
-        self.lhs_col = urwid.Pile([
-            ("weight", 5, self.source_attr),
-            ("weight", self.cmdline_weight if self.cmdline_on else 0,
-                self.cmdline_sigwrap),
-            ])
+        self.lhs_col = urwid.Pile([("weight", self.source_weight,
+            self.source_attr)])
+        self.cmdline_on = False
+        self.set_cmdline()
 
         # }}}
 
@@ -1695,12 +1694,11 @@ class DebuggerUI(FrameVarInfoKeeper):
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
-                if CONFIG["hide_cmdline_win"]:
-                    self.set_cmdline_state(False)
-                self.lhs_col.set_focus(self.source_attr)
+                self.set_cmdline(False)
+                self.lhs_col.set_focus(self.search_controller.search_AttrMap
+                        if self.search_controller.search_box else self.source_attr)
             else:
-                if CONFIG["hide_cmdline_win"]:
-                    self.set_cmdline_state(True)
+                self.set_cmdline(True)
                 self.cmdline_pile.set_focus(self.cmdline_edit_bar)
                 self.lhs_col.set_focus(self.cmdline_sigwrap)
 
@@ -1719,29 +1717,31 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("ctrl x", toggle_cmdline_focus)
 
         # {{{ command line sizing
-        def set_cmdline_default_size(weight):
+        def set_cmdline_size(weight):
             self.cmdline_weight = weight
-            self.set_cmdline_size()
+            self.lhs_col.item_types[-1] = "weight", weight
+            self.lhs_col._invalidate()
 
         def max_cmdline(w, size, key):
-            set_cmdline_default_size(5)
+            # Limit max to same size as source window
+            set_cmdline_size(self.source_weight)
 
         def min_cmdline(w, size, key):
-            set_cmdline_default_size(1/2)
+            set_cmdline_size(1/2)
 
         def grow_cmdline(w, size, key):
-            _, weight = self.lhs_col.item_types[-1]
+            weight = self.lhs_col.item_types[-1][1]
 
-            if weight < 5:
+            if weight < self.source_weight:
                 weight *= 1.25
-                set_cmdline_default_size(weight)
+                set_cmdline_size(weight)
 
         def shrink_cmdline(w, size, key):
-            _, weight = self.lhs_col.item_types[-1]
+            weight = self.lhs_col.item_types[-1][1]
 
             if weight > 1/2:
                 weight /= 1.25
-                set_cmdline_default_size(weight)
+                set_cmdline_size(weight)
 
         self.cmdline_sigwrap.listen("=", max_cmdline)
         self.cmdline_sigwrap.listen("+", grow_cmdline)
@@ -1989,17 +1989,27 @@ class DebuggerUI(FrameVarInfoKeeper):
     # }}}
 
     # {{{ UI helpers
-    def set_cmdline_size(self, weight=None):
-        if weight is None:
-            weight = self.cmdline_weight
+    def set_cmdline(self, state_on=None):
+        always_on = not CONFIG["hide_cmdline_win"]
+        if always_on and self.cmdline_on:
+            return
 
-        self.lhs_col.item_types[-1] = "weight", weight
-        self.lhs_col._invalidate()
+        if state_on is None:
+            state_on = always_on
 
-    def set_cmdline_state(self, state_on):
-        if state_on != self.cmdline_on:
-            self.cmdline_on = state_on
-            self.set_cmdline_size(None if state_on else 0)
+        # Only open/close window on change
+        if state_on == self.cmdline_on:
+            return
+
+        self.cmdline_on = state_on
+        lhs_col = self.lhs_col
+
+        if state_on:
+            lhs_col.item_types[-1] = "weight", self.source_weight
+            lhs_col.item_types.append(("weight", self.cmdline_weight))
+            lhs_col.widget_list.append(self.cmdline_sigwrap)
+        else:
+            del lhs_col.contents[-1]
 
     def rhs_scroll_down(self, w, size, key):
         w.keypress(size, "down")
@@ -2530,7 +2540,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_walker[:] = frame_uis
 
     def update_cmdline_win(self):
-        self.set_cmdline_state(not CONFIG["hide_cmdline_win"])
+        self.set_cmdline()
 
     # }}}
 
