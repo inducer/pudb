@@ -238,13 +238,10 @@ class SearchController(object):
             lhs_col.item_types.insert(
                     0, ("flow", None))
             lhs_col.widget_list.insert(0, self.search_AttrMap)
+            self.ui.reset_cmdline_size()
 
-            self.ui.columns.set_focus(lhs_col)
-            lhs_col.set_focus(self.search_AttrMap)
-        else:
-            self.ui.columns.set_focus(lhs_col)
-            lhs_col.set_focus(self.search_AttrMap)
-            #self.search_box.restart_search()
+        self.ui.columns.set_focus(lhs_col)
+        lhs_col.set_focus(self.search_AttrMap)
 
     def perform_search(self, dir, s=None, start=None, update_search_start=False):
         self.cancel_highlight()
