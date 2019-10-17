@@ -762,7 +762,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
 
-            _, weight = self.rhs_col.item_types[index]
+            weight = self.rhs_col.item_types[index][1]
 
             if direction < 0:
                 if weight > 1/5:
@@ -1697,7 +1697,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
                 if CONFIG["hide_cmdline_win"]:
                     self.set_cmdline_state(False)
-                self.lhs_col.set_focus(self.source_attr)
+                self.lhs_col.set_focus(self.search_controller.search_AttrMap
+                        if self.search_controller.search_box else
+                        self.source_attr)
             else:
                 if CONFIG["hide_cmdline_win"]:
                     self.set_cmdline_state(True)
@@ -1730,14 +1732,14 @@ class DebuggerUI(FrameVarInfoKeeper):
             set_cmdline_default_size(1/2)
 
         def grow_cmdline(w, size, key):
-            _, weight = self.lhs_col.item_types[-1]
+            weight = self.cmdline_weight
 
             if weight < 5:
                 weight *= 1.25
                 set_cmdline_default_size(weight)
 
         def shrink_cmdline(w, size, key):
-            _, weight = self.lhs_col.item_types[-1]
+            weight = self.cmdline_weight
 
             if weight > 1/2:
                 weight /= 1.25
@@ -1777,7 +1779,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def grow_sidebar(w, size, key):
             from pudb.settings import save_config
 
-            _, weight = self.columns.column_types[1]
+            weight = self.columns.column_types[1][1]
 
             if weight < 5:
                 weight *= 1.25
@@ -1789,7 +1791,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def shrink_sidebar(w, size, key):
             from pudb.settings import save_config
 
-            _, weight = self.columns.column_types[1]
+            weight = self.columns.column_types[1][1]
 
             if weight > 1/5:
                 weight /= 1.25
@@ -1989,6 +1991,10 @@ class DebuggerUI(FrameVarInfoKeeper):
     # }}}
 
     # {{{ UI helpers
+    def reset_cmdline_size(self):
+        self.lhs_col.item_types[-1] = "weight", \
+                self.cmdline_weight if self.cmdline_on else 0
+
     def set_cmdline_size(self, weight=None):
         if weight is None:
             weight = self.cmdline_weight
