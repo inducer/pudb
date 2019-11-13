@@ -265,6 +265,9 @@ def type_stringifier(value):
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
         return text_type("ndarray %s %s") % (value.dtype, value.shape)
 
+    elif HAVE_NUMPY and isinstance(value, numpy.number):
+        return text_type("%s (%s)" % (value, value.dtype))
+
     elif isinstance(value, STR_SAFE_TYPES):
         try:
             return text_type(value)
