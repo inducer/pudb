@@ -35,8 +35,13 @@ def generate_executable_lines_for_code(code):
     lineno = code.co_firstlineno
     yield lineno
     if PY3:
-        for c in code.co_lnotab[1::2]:
-            lineno += c
+        # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
+        addr = 0
+        for addr_incr, line_incr in zip(code.co_lnotab[::2], code.co_lnotab[1::2]):
+            addr += addr_incr
+            if line_incr >= 0x80:
+                line_incr -= 0x100
+            lineno += line_incr
             yield lineno
     else:
         for c in code.co_lnotab[1::2]:
