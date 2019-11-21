@@ -36,10 +36,15 @@ def generate_executable_lines_for_code(code):
     yield lineno
     if PY3:
         # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
-        addr = 0
-        for addr_incr, line_incr in zip(code.co_lnotab[::2], code.co_lnotab[1::2]):
-            addr += addr_incr
-            if line_incr >= 0x80:
+        import sys
+        use_36_line_incr = sys.version_info >= (3, 6)
+
+        for line_incr in code.co_lnotab[1::2]:
+            # This showed up between the v3.5 and v3.6 cycles:
+            # https://github.com/python/cpython/blob/v3.5.0/Objects/lnotab_notes.txt
+            # https://github.com/python/cpython/blob/v3.6.0/Objects/lnotab_notes.txt
+            # Gate the check on 3.6-or-newer.
+            if line_incr >= 0x80 and use_36_line_incr:
                 line_incr -= 0x100
             lineno += line_incr
             yield lineno
@@ -49,11 +54,8 @@ def generate_executable_lines_for_code(code):
             yield lineno
 
 
-def get_executable_lines_for_file(filename):
-    # inspired by rpdb2
-
-    from linecache import getlines
-    codes = [compile("".join(getlines(filename)), filename, "exec", dont_inherit=1)]
+def get_executable_lines_for_codes_recursive(codes):
+    codes = codes[:]
 
     from types import CodeType
 
@@ -67,6 +69,16 @@ def get_executable_lines_for_file(filename):
                 if isinstance(const, CodeType))
 
     return execable_lines
+
+
+def get_executable_lines_for_file(filename):
+    # inspired by rpdb2
+
+    from linecache import getlines
+    codes = [compile("".join(getlines(filename)), filename, "exec", dont_inherit=1)]
+
+    return get_executable_lines_for_codes_recursive(codes)
+
 
 
 def get_breakpoint_invalid_reason(filename, lineno):
