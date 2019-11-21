@@ -80,7 +80,6 @@ def get_executable_lines_for_file(filename):
     return get_executable_lines_for_codes_recursive(codes)
 
 
-
 def get_breakpoint_invalid_reason(filename, lineno):
     # simple logic stolen from pdb
     import linecache
