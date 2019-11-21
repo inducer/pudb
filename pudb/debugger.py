@@ -2207,7 +2207,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e035"  # noqa
+        WELCOME_LEVEL = "e036"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2223,6 +2223,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2019.2:\n\n"
+                    "- Auto-hide the command line (Mark Blakeney)\n"
+                    "- Improve help and add jump to breakpoint (Mark Blakeney)\n"
+                    "- Drop Py2.6 support\n"
+                    "- Show callable attributes in var view\n"
+                    "- Allow scrolling sidebar with j/k\n"
+                    "- Fix setting breakpoints in Py3.8 (Aaron Meurer)\n"
 
                     "\nChanges in version 2019.1:\n\n"
                     "- Allow 'space' as a key to expand variables (Enrico Troeger)\n"
