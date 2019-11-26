@@ -82,7 +82,7 @@ Keys:
     B - focus breakpoint list
     C - focus code
 
-    f1/?/H - show this help screen
+    F1/? - show this help screen
     q - quit
 
     Ctrl-c - when in continue mode, break back to PuDB
@@ -132,6 +132,16 @@ Other keys:
     Ctrl-f/b - page down/up
     Ctrl-d/u - page down/up
     G/g - end/home
+
+    V - focus variables
+    S - focus stack
+    B - focus breakpoint list
+    C - focus code
+
+    F1/? - show this help screen
+    q - quit
+
+    Ctrl-l - redraw screen
 """
 
 HELP_LICENSE = r"""
