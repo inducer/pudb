@@ -7,7 +7,7 @@ for display in the variables list.  The default is type()*, as this is fast and
 cannot fail.  PuDB also includes built-in options for using str() and repr().
 
 Note that str() and repr() will be slower than type(), which is especially
-noticable when you have many varialbes, or some of your variables have very
+noticable when you have many variables, or some of your variables have very
 large string/repr representations.
 
 Also note that if you just want to change the type for one or two variables,
