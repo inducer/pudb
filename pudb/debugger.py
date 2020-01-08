@@ -67,10 +67,12 @@ Keys:
     o - show console/output screen
     m - open module
 
-    j/k - up/down
-    Ctrl-u/d - page up/down
-    h/l - scroll left/right
-    g/G - start/end
+    j/k - down/up
+    l/h - right/left
+    Ctrl-f/b - page down/up
+    Ctrl-d/u - page down/up
+    G/g - end/home
+
     L - show (file/line) location / go to line
     / - search
     ,/. - search next/previous
@@ -80,7 +82,7 @@ Keys:
     B - focus breakpoint list
     C - focus code
 
-    f1/?/H - show this help screen
+    F1/? - show this help screen
     q - quit
 
     Ctrl-c - when in continue mode, break back to PuDB
@@ -107,7 +109,7 @@ Sidebar-related (active in sidebar):
 Keys in variables list:
     \/enter/space - expand/collapse
     t/r/s/c - show type/repr/str/custom for this variable
-    h - toggle highlighting
+    H - toggle highlighting
     @ - toggle repetition at top
     * - cycle attribute visibility: public/_private/__dunder__
     m - toggle method visibility
@@ -123,6 +125,23 @@ Keys in breakpoints list:
     b - toggle breakpoint
     d - delete breakpoint
     e - edit breakpoint
+
+Other keys:
+    j/k - down/up
+    l/h - right/left
+    Ctrl-f/b - page down/up
+    Ctrl-d/u - page down/up
+    G/g - end/home
+
+    V - focus variables
+    S - focus stack
+    B - focus breakpoint list
+    C - focus code
+
+    F1/? - show this help screen
+    q - quit
+
+    Ctrl-l - redraw screen
 """
 
 HELP_LICENSE = r"""
@@ -663,6 +682,50 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ build ui
 
+        # {{{ key bindings
+
+        def move_up(w, size, key):
+            w.keypress(size, "up")
+
+        def move_down(w, size, key):
+            w.keypress(size, "down")
+
+        def move_left(w, size, key):
+            w.keypress(size, "left")
+
+        def move_right(w, size, key):
+            w.keypress(size, "right")
+
+        def page_up(w, size, key):
+            w.keypress(size, "page up")
+
+        def page_down(w, size, key):
+            w.keypress(size, "page down")
+
+        def move_home(w, size, key):
+            w.keypress(size, "home")
+
+        def move_end(w, size, key):
+            w.keypress(size, "end")
+
+        def add_vi_nav_keys(widget):
+            widget.listen("k", move_up)
+            widget.listen("j", move_down)
+            widget.listen("h", move_left)
+            widget.listen("l", move_right)
+            widget.listen("ctrl b", page_up)
+            widget.listen("ctrl f", page_down)
+            widget.listen("ctrl u", page_up)
+            widget.listen("ctrl d", page_down)
+            widget.listen("g", move_home)
+            widget.listen("G", move_end)
+
+        def add_help_keys(widget):
+            widget.listen("f1", helpside)
+            widget.listen("?", helpside)
+
+        # }}}
+
         # {{{ left/source column
 
         self.source = urwid.SimpleListWalker([])
@@ -741,6 +804,12 @@ class DebuggerUI(FrameVarInfoKeeper):
             ])
         self.rhs_col_sigwrap = SignalWrap(self.rhs_col)
 
+        def helpside(w, size, key):
+            help(HELP_HEADER + HELP_SIDE + HELP_MAIN + HELP_LICENSE)
+
+        add_vi_nav_keys(self.rhs_col_sigwrap)
+        add_help_keys(self.rhs_col_sigwrap)
+
         # }}}
 
         self.columns = urwid.Columns(
@@ -797,7 +866,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.display_type = "str"
             elif key == "c":
                 iinfo.display_type = CONFIG["custom_stringifier"]
-            elif key == "h":
+            elif key == "H":
                 iinfo.highlighted = not iinfo.highlighted
             elif key == "@":
                 iinfo.repeated_at_top = not iinfo.repeated_at_top
@@ -938,16 +1007,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                 fvi.watches.append(we)
                 self.update_var_view()
 
-        def helpside(w, size, key):
-            help(HELP_HEADER + HELP_SIDE + HELP_MAIN + HELP_LICENSE)
-
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen(" ", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
         self.var_list.listen("c", change_var_state)
-        self.var_list.listen("h", change_var_state)
+        self.var_list.listen("H", change_var_state)
         self.var_list.listen("@", change_var_state)
         self.var_list.listen("*", change_var_state)
         self.var_list.listen("w", change_var_state)
@@ -960,14 +1026,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
         self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
 
-        self.var_list.listen("j", self.rhs_scroll_down)
-        self.var_list.listen("k", self.rhs_scroll_up)
-        self.var_list.listen("f1", helpside)
-        self.var_list.listen("?", helpside)
-
         # }}}
 
         # {{{ stack listeners
+
         def examine_frame(w, size, key):
             _, pos = self.stack_list._w.get_focus()
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
@@ -990,14 +1052,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
         self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
 
-        self.stack_list.listen("j", self.rhs_scroll_down)
-        self.stack_list.listen("k", self.rhs_scroll_up)
-        self.stack_list.listen("f1", helpside)
-        self.stack_list.listen("?", helpside)
-
         # }}}
 
         # {{{ breakpoint listeners
+
         def save_breakpoints(w, size, key):
             self.debugger.save_breakpoints()
 
@@ -1127,10 +1185,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
 
-        self.bp_list.listen("j", self.rhs_scroll_down)
-        self.bp_list.listen("k", self.rhs_scroll_up)
-        self.bp_list.listen("f1", helpside)
-        self.bp_list.listen("?", helpside)
         # }}}
 
         # {{{ source listeners
@@ -1201,12 +1255,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.debugger.set_continue()
                     end()
 
-        def move_home(w, size, key):
-            self.source.set_focus(0)
-
-        def move_end(w, size, key):
-            self.source.set_focus(len(self.source)-1)
-
         def go_to_line(w, size, key):
             _, line = self.source.get_focus()
 
@@ -1227,18 +1275,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                         ], title="Go to Line Number"):
                 lineno = min(max(0, int(lineno_edit.value())-1), len(self.source)-1)
                 self.source.set_focus(lineno)
-
-        def move_down(w, size, key):
-            w.keypress(size, "down")
-
-        def move_up(w, size, key):
-            w.keypress(size, "up")
-
-        def page_down(w, size, key):
-            w.keypress(size, "page down")
-
-        def page_up(w, size, key):
-            w.keypress(size, "page up")
 
         def scroll_left(w, size, key):
             self.source_hscroll_start = max(
@@ -1465,24 +1501,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("c", cont)
         self.source_sigwrap.listen("t", run_to_cursor)
 
-        self.source_sigwrap.listen("j", move_down)
-        self.source_sigwrap.listen("k", move_up)
-        self.source_sigwrap.listen("ctrl d", page_down)
-        self.source_sigwrap.listen("ctrl u", page_up)
-        self.source_sigwrap.listen("ctrl f", page_down)
-        self.source_sigwrap.listen("ctrl b", page_up)
-        self.source_sigwrap.listen("h", scroll_left)
-        self.source_sigwrap.listen("l", scroll_right)
-
+        self.source_sigwrap.listen("L", go_to_line)
         self.source_sigwrap.listen("/", search)
         self.source_sigwrap.listen(",", search_previous)
         self.source_sigwrap.listen(".", search_next)
-
-        self.source_sigwrap.listen("home", move_home)
-        self.source_sigwrap.listen("end", move_end)
-        self.source_sigwrap.listen("g", move_home)
-        self.source_sigwrap.listen("G", move_end)
-        self.source_sigwrap.listen("L", go_to_line)
 
         self.source_sigwrap.listen("b", toggle_breakpoint)
         self.source_sigwrap.listen("m", pick_module)
@@ -1490,8 +1512,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("H", move_stack_top)
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
-        self.source_sigwrap.listen("f1", helpmain)
-        self.source_sigwrap.listen("?", helpmain)
+
+        add_vi_nav_keys(self.source_sigwrap)
+        add_help_keys(self.source_sigwrap)
 
         # }}}
 
@@ -2006,12 +2029,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         if state_on != self.cmdline_on:
             self.cmdline_on = state_on
             self.set_cmdline_size(None if state_on else 0)
-
-    def rhs_scroll_down(self, w, size, key):
-        w.keypress(size, "down")
-
-    def rhs_scroll_up(self, w, size, key):
-        w.keypress(size, "up")
 
     def translate_ui_stack_index(self, index):
         # note: self-inverse
