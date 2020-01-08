@@ -708,6 +708,22 @@ class DebuggerUI(FrameVarInfoKeeper):
         def move_end(w, size, key):
             w.keypress(size, "end")
 
+        def add_vi_nav_keys(widget):
+            widget.listen("k", move_up)
+            widget.listen("j", move_down)
+            widget.listen("h", move_left)
+            widget.listen("l", move_right)
+            widget.listen("ctrl b", page_up)
+            widget.listen("ctrl f", page_down)
+            widget.listen("ctrl u", page_up)
+            widget.listen("ctrl d", page_down)
+            widget.listen("g", move_home)
+            widget.listen("G", move_end)
+
+        def add_help_keys(widget):
+            widget.listen("f1", helpside)
+            widget.listen("?", helpside)
+
         # }}}
 
         # {{{ left/source column
@@ -790,6 +806,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def helpside(w, size, key):
             help(HELP_HEADER + HELP_SIDE + HELP_MAIN + HELP_LICENSE)
+
+        add_vi_nav_keys(self.rhs_col_sigwrap)
+        add_help_keys(self.rhs_col_sigwrap)
 
         # }}}
 
@@ -1007,23 +1026,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
         self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
 
-        self.var_list.listen("k", move_up)
-        self.var_list.listen("j", move_down)
-        self.var_list.listen("h", move_left)
-        self.var_list.listen("l", move_right)
-        self.var_list.listen("ctrl b", page_up)
-        self.var_list.listen("ctrl f", page_down)
-        self.var_list.listen("ctrl u", page_up)
-        self.var_list.listen("ctrl d", page_down)
-        self.var_list.listen("g", move_home)
-        self.var_list.listen("G", move_end)
-
-        self.var_list.listen("f1", helpside)
-        self.var_list.listen("?", helpside)
-
         # }}}
 
         # {{{ stack listeners
+
         def examine_frame(w, size, key):
             _, pos = self.stack_list._w.get_focus()
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
@@ -1046,23 +1052,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
         self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
 
-        self.stack_list.listen("k", move_up)
-        self.stack_list.listen("j", move_down)
-        self.stack_list.listen("h", move_left)
-        self.stack_list.listen("l", move_right)
-        self.stack_list.listen("ctrl b", page_up)
-        self.stack_list.listen("ctrl f", page_down)
-        self.stack_list.listen("ctrl u", page_up)
-        self.stack_list.listen("ctrl d", page_down)
-        self.stack_list.listen("g", move_home)
-        self.stack_list.listen("G", move_end)
-
-        self.stack_list.listen("f1", helpside)
-        self.stack_list.listen("?", helpside)
-
         # }}}
 
         # {{{ breakpoint listeners
+
         def save_breakpoints(w, size, key):
             self.debugger.save_breakpoints()
 
@@ -1192,19 +1185,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
         self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
 
-        self.bp_list.listen("k", move_up)
-        self.bp_list.listen("j", move_down)
-        self.bp_list.listen("h", move_left)
-        self.bp_list.listen("l", move_right)
-        self.bp_list.listen("ctrl b", page_up)
-        self.bp_list.listen("ctrl f", page_down)
-        self.bp_list.listen("ctrl u", page_up)
-        self.bp_list.listen("ctrl d", page_down)
-        self.bp_list.listen("g", move_home)
-        self.bp_list.listen("G", move_end)
-
-        self.bp_list.listen("f1", helpside)
-        self.bp_list.listen("?", helpside)
         # }}}
 
         # {{{ source listeners
@@ -1521,17 +1501,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("c", cont)
         self.source_sigwrap.listen("t", run_to_cursor)
 
-        self.source_sigwrap.listen("k", move_up)
-        self.source_sigwrap.listen("j", move_down)
-        self.source_sigwrap.listen("h", scroll_left)
-        self.source_sigwrap.listen("l", scroll_right)
-        self.source_sigwrap.listen("ctrl b", page_up)
-        self.source_sigwrap.listen("ctrl f", page_down)
-        self.source_sigwrap.listen("ctrl u", page_up)
-        self.source_sigwrap.listen("ctrl d", page_down)
-        self.source_sigwrap.listen("g", move_home)
-        self.source_sigwrap.listen("G", move_end)
-
         self.source_sigwrap.listen("L", go_to_line)
         self.source_sigwrap.listen("/", search)
         self.source_sigwrap.listen(",", search_previous)
@@ -1543,8 +1512,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("H", move_stack_top)
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
-        self.source_sigwrap.listen("f1", helpmain)
-        self.source_sigwrap.listen("?", helpmain)
+
+        add_vi_nav_keys(self.source_sigwrap)
+        add_help_keys(self.source_sigwrap)
 
         # }}}
 
