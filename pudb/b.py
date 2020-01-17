@@ -4,7 +4,7 @@ import sys
 from pudb import _get_debugger, set_interrupt_handler
 
 
-def __myimport__(name, *args, **kwargs):  # noqa: N802
+def __myimport__(name, *args, **kwargs):  # noqa: N807
     if name == 'pudb.b':
         set_trace()
     return __origimport__(name, *args, **kwargs)  # noqa: F821
