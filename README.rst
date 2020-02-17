@@ -54,6 +54,8 @@ Features
 
 * Should work with Python 2.7 and newer, including Python 3.
 
+* Windows is not supported.
+
 Links
 -----
 
