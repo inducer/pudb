@@ -69,8 +69,8 @@ Development Version
 You may obtain the development version using the `Git <http://git-scm.org/>`_
 version control tool.::
 
-    git clone http://git.tiker.net/trees/pudb.git
+    git clone https://github.com/inducer/pudb.git
 
-You may also `browse the code <http://git.tiker.net/pudb.git>`_ online.
+You may also `browse the code <https://github.com/inducer/pudb>`_ online.
 
 The repository is also mirrored at `GitHub <https://github.com/inducer/pudb>`_.
