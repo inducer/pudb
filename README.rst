@@ -72,5 +72,3 @@ version control tool.::
     git clone https://github.com/inducer/pudb.git
 
 You may also `browse the code <https://github.com/inducer/pudb>`_ online.
-
-The repository is also mirrored at `GitHub <https://github.com/inducer/pudb>`_.
