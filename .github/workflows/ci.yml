@@ -44,7 +44,7 @@ jobs:
                 . ./build-and-test-py-project.sh
 
     pytest_coverage:
-        name: Pytest on Py${{ matrix.python-version }}
+        name: Pytest with Coverage Test
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v2
