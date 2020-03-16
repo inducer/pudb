@@ -1,0 +1,67 @@
+name: CI
+on:
+    push:
+        branches:
+        - master
+    pull_request:
+        paths-ignore:
+        - 'doc/*.rst'
+    schedule:
+        - cron:  '17 3 * * 0'
+
+jobs:
+    flake8:
+        name: Flake8
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -
+            uses: actions/setup-python@v1
+            with:
+                python-version: '3.x' 
+        -   name: "Main Script"
+            run: |
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+                . ./prepare-and-run-flake8.sh ./pudb ./test
+
+    pytest:
+        name: Pytest on Py${{ matrix.python-version }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: [2.7, 3.6, 3.7, 3.8, pypy2, pypy3]
+        steps:
+        -   uses: actions/checkout@v2
+        -
+            uses: actions/setup-python@v1
+            with:
+                python-version: ${{ matrix.python-version }}
+        -   name: "Main Script"
+            run: |
+                EXTRA_INSTALL="numpy"
+                REQUIREMENTS_TXT=requirements.dev.txt
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+                . ./build-and-test-py-project.sh
+
+    pytest_coverage:
+        name: Pytest on Py${{ matrix.python-version }}
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -
+            uses: actions/setup-python@v1
+            with:
+                python-version: '3.x'
+        -   name: "Main Script"
+            run: |
+                EXTRA_INSTALL="numpy"
+                REQUIREMENTS_TXT=requirements.dev.txt
+                PYTEST_FLAGS="--cov=pudb"
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+                . ./build-and-test-py-project.sh
+                bash ../upload_coverage.sh
+            env:
+                COVERAGE: ${{ secrets.COVERAGE }}
+
+# vim: sw=4
+
