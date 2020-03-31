@@ -1542,7 +1542,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     coming_from="above")
 
         def cmdline_tab_complete(w, size, key):
-            from rlcompleter import Completer
+            try:
+                from jedi import Interpreter
+            except ImportError:
+                add_cmdline_content("Tab completion requires jedi to be installed.",
+                                    "command line output")
 
             text = self.cmdline_edit.edit_text
             pos = self.cmdline_edit.edit_pos
@@ -1550,30 +1554,14 @@ class DebuggerUI(FrameVarInfoKeeper):
             chopped_text = text[:pos]
             suffix = text[pos:]
 
-            # stolen from readline in the Python interactive shell
-            delimiters = " \t\n`~!@#$%^&*()-=+[{]}\\|;:\'\",<>/?"
+            try:
+                completions = Interpreter(chopped_text, [cmdline_get_namespace()]).completions()
+            except Exception as e:
+                # Jedi sometimes produces errors. Ignore
+                add_cmdline_content("Could not tab complete (error jedi: %r)" % e)
 
-            complete_start_index = max(
-                    chopped_text.rfind(delim_i)
-                    for delim_i in delimiters)
-
-            if complete_start_index == -1:
-                prefix = ""
-            else:
-                prefix = chopped_text[:complete_start_index+1]
-                chopped_text = chopped_text[complete_start_index+1:]
-
-            state = 0
-            chopped_completions = []
-            completer = Completer(cmdline_get_namespace())
-            while True:
-                completion = completer.complete(chopped_text, state)
-
-                if not isinstance(completion, str):
-                    break
-
-                chopped_completions.append(completion)
-                state += 1
+            full_completions = [i.name_with_symbols for i in completions]
+            chopped_completions = [i.complete for i in completions]
 
             def common_prefix(a, b):
                 for i, (a_i, b_i) in enumerate(zip(a, b)):
@@ -1596,16 +1584,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 return
 
             if (
-                    len(completed_chopped_text) == len(chopped_text)
-                    and len(chopped_completions) > 1):
+                    len(completed_chopped_text) == 0
+                    and len(completions) > 1):
                 add_cmdline_content(
-                        "   ".join(chopped_completions),
+                        "   ".join(full_completions),
                         "command line output")
                 return
 
             self.cmdline_edit.edit_text = \
-                    prefix+completed_chopped_text+suffix
-            self.cmdline_edit.edit_pos = len(prefix) + len(completed_chopped_text)
+                    chopped_text+completed_chopped_text+suffix
+            self.cmdline_edit.edit_pos = len(chopped_text) + len(completed_chopped_text)
 
         def cmdline_append_newline(w, size, key):
             self.cmdline_edit.insert_text("\n")
