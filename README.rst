@@ -4,9 +4,9 @@ PuDB: a console-based visual debugger for Python
 .. image:: https://gitlab.tiker.net/inducer/pudb/badges/master/pipeline.svg
     :alt: Gitlab Build Status
     :target: https://gitlab.tiker.net/inducer/pudb/commits/master
-.. image:: https://github.com/inducer/pudb/workflows/CI/badge.svg?branch=master
+.. image:: https://github.com/inducer/pudb/workflows/CI/badge.svg?branch=master&event=push
     :alt: Github Build Status
-    :target: https://github.com/inducer/pudb/actions?query=branch%3Amaster+workflow%3ACI
+    :target: https://github.com/inducer/pudb/actions?query=branch%3Amaster+workflow%3ACI+event%3Apush
 .. image:: https://badge.fury.io/py/pudb.png
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pudb/
