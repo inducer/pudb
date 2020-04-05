@@ -1555,7 +1555,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             suffix = text[pos:]
 
             try:
-                completions = Interpreter(chopped_text, [cmdline_get_namespace()]).completions()
+                completions = Interpreter(
+                        chopped_text,
+                        [cmdline_get_namespace()]).completions()
             except Exception as e:
                 # Jedi sometimes produces errors. Ignore
                 add_cmdline_content("Could not tab complete (error jedi: %r)" % e)
@@ -1593,7 +1595,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             self.cmdline_edit.edit_text = \
                     chopped_text+completed_chopped_text+suffix
-            self.cmdline_edit.edit_pos = len(chopped_text) + len(completed_chopped_text)
+            self.cmdline_edit.edit_pos = (
+                    len(chopped_text)
+                    + len(completed_chopped_text))
 
         def cmdline_append_newline(w, size, key):
             self.cmdline_edit.insert_text("\n")

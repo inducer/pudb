@@ -83,11 +83,11 @@ def run_classic_shell(globals, locals, first_time=[True]):
     try:
         import readline
         import rlcompleter
-        HAVE_READLINE = True
+        have_readline = True
     except ImportError:
-        HAVE_READLINE = False
+        have_readline = False
 
-    if HAVE_READLINE:
+    if have_readline:
         readline.set_completer(
                 rlcompleter.Completer(ns).complete)
         readline.parse_and_bind("tab: complete")
@@ -102,7 +102,7 @@ def run_classic_shell(globals, locals, first_time=[True]):
 
     cons.interact(banner)
 
-    if HAVE_READLINE:
+    if have_readline:
         readline.write_history_file(hist_file)
 
 
