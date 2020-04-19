@@ -246,7 +246,7 @@ def _interrupt_handler(signum, frame):
     _get_debugger().set_trace(frame, as_breakpoint=False)
 
 
-def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
+def set_interrupt_handler(interrupt_signal=None):
     """
     Set up an interrupt handler, to activate PuDB when Python receives the
     signal `interrupt_signal`.  By default it is SIGINT (i.e., Ctrl-c).
@@ -266,6 +266,10 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
 
     Note, this only works when called from the main thread.
     """
+
+    if interrupt_signal is None:
+        interrupt_signal = DEFAULT_SIGNAL
+
     import signal
     old_handler = signal.getsignal(interrupt_signal)
 
