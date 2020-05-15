@@ -575,7 +575,7 @@ def load_breakpoints():
         except IOError:
             pass
         else:
-            lines.extend([l.strip() for l in rc_file.readlines()])
+            lines.extend([line.strip() for line in rc_file.readlines()])
             rc_file.close()
 
     return parse_breakpoints(lines)

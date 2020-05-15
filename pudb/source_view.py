@@ -303,7 +303,7 @@ def format_source(debugger_ui, lines, breakpoints):
                 if subself.current_line:
                     shipout_line()
 
-        highlight("".join(l.expandtabs(TABSTOP) for l in lines),
+        highlight("".join(line.expandtabs(TABSTOP) for line in lines),
                 PythonLexer(stripnl=False), UrwidFormatter())
 
         return result
