@@ -5,7 +5,7 @@ from pudb.py3compat import PY3
 
 def test_detect_encoding_nocookie():
     lines = [u'Test Проверка']
-    lines = [l.encode('utf-8') for l in lines]
+    lines = [line.encode('utf-8') for line in lines]
     encoding, _ = detect_encoding(iter(lines))
     assert encoding == 'utf-8'
 
@@ -16,7 +16,7 @@ def test_detect_encoding_cookie():
         u'Test',
         u'Проверка'
     ]
-    lines = [l.encode('utf-8') for l in lines]
+    lines = [line.encode('utf-8') for line in lines]
     encoding, _ = detect_encoding(iter(lines))
     assert encoding == 'utf-8'
 
@@ -27,11 +27,12 @@ def test_decode_lines():
         u'Test',
         u'Проверка',
     ]
-    lines = [l.encode('utf-8') for l in unicode_lines]
+    lines = [line.encode('utf-8') for line in unicode_lines]
     if PY3:
         assert unicode_lines == list(decode_lines(iter(lines)))
     else:
-        assert [l.decode('utf-8') for l in lines] == list(decode_lines(iter(lines)))
+        assert [line.decode('utf-8')
+                for line in lines] == list(decode_lines(iter(lines)))
 
 
 # {{{ remove common indentation
