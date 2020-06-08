@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 import urwid
-from urwid.util import _target_encoding, calc_width, calc_text_pos
+from urwid.util import calc_width, calc_text_pos
 
 
 # generic urwid helpers -------------------------------------------------------
@@ -15,6 +15,18 @@ def text_width(txt):
 
     """
     return calc_width(txt, 0, len(txt))
+
+
+def encode_like_urwid(s):
+    from urwid import escape
+    from urwid.util import _target_encoding
+
+    # Consistent with
+    # https://github.com/urwid/urwid/blob/2cc54891965283faf9113da72202f5d405f90fa3/urwid/util.py#L126-L128
+
+    s = s.replace(escape.SI+escape.SO, u"")  # remove redundant shifts
+    s = s.encode(_target_encoding, "replace")
+    return s
 
 
 def make_canvas(txt, attr, maxcol, fill_attr=None):
@@ -43,7 +55,7 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
         def get_byte_line_attr(line, line_attr):
             i = 0
             for label, column_count in line_attr:
-                byte_count = len(line[i:i+column_count].encode(_target_encoding))
+                byte_count = len(encode_like_urwid(line[i:i+column_count]))
                 i += column_count
                 yield label, byte_count
 
