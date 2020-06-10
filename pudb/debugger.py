@@ -1545,8 +1545,17 @@ class DebuggerUI(FrameVarInfoKeeper):
             try:
                 from jedi import Interpreter
             except ImportError:
-                add_cmdline_content("Tab completion requires jedi to be installed.",
-                                    "command line output")
+                add_cmdline_content(
+                        "Tab completion requires jedi to be installed. ",
+                        "command line error")
+                return
+
+            import jedi
+            from distutils.version import LooseVersion
+            if LooseVersion(jedi.__version__) < LooseVersion("0.16.0"):
+                add_cmdline_content(
+                        "jedi 0.16.0 is required for Tab completion",
+                        "command line error")
 
             text = self.cmdline_edit.edit_text
             pos = self.cmdline_edit.edit_pos
@@ -1557,10 +1566,13 @@ class DebuggerUI(FrameVarInfoKeeper):
             try:
                 completions = Interpreter(
                         chopped_text,
-                        [cmdline_get_namespace()]).completions()
+                        [cmdline_get_namespace()]).complete()
             except Exception as e:
-                # Jedi sometimes produces errors. Ignore
-                add_cmdline_content("Could not tab complete (error jedi: %r)" % e)
+                # Jedi sometimes produces errors. Ignore them.
+                add_cmdline_content(
+                        "Could not tab complete (Jedi error: '%s')" % e,
+                        "command line error")
+                return
 
             full_completions = [i.name_with_symbols for i in completions]
             chopped_completions = [i.complete for i in completions]
