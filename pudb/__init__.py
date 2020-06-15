@@ -120,7 +120,13 @@ DEFAULT_SIGNAL = signal.SIGINT
 del signal
 
 
-def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
+def runmodule(*args, **kwargs):
+    kwargs['run_as_module'] = True
+    runscript(*args, **kwargs)
+
+
+def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
+              run_as_module=False):
     dbg = _get_debugger(steal_output=steal_output)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
@@ -132,7 +138,10 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
     import sys
     if args is not None:
         prev_sys_argv = sys.argv[:]
-        sys.argv = [mainpyfile] + args
+        if run_as_module:
+            sys.argv = args
+        else:
+            sys.argv = [mainpyfile] + args
 
     # replace pudb's dir with script's dir in front of module search path.
     from os.path import dirname
@@ -150,11 +159,19 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
         status_msg = ""
 
         try:
-            dbg._runscript(mainpyfile)
-        except SystemExit:
-            se = sys.exc_info()[1]
-            status_msg = "The debuggee exited normally with " \
-                    "status code %s.\n\n" % se.code
+            if run_as_module:
+                try:
+                    dbg._runmodule(mainpyfile)
+                except ImportError as e:
+                    print(e, file=sys.stderr)
+                    sys.exit(1)
+            else:
+                try:
+                    dbg._runscript(mainpyfile)
+                except SystemExit:
+                    se = sys.exc_info()[1]
+                    status_msg = "The debuggee exited normally with " \
+                            "status code %s.\n\n" % se.code
         except Exception:
             dbg.post_mortem = True
             dbg.interaction(None, sys.exc_info())

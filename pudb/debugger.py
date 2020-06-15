@@ -486,6 +486,37 @@ class Debugger(bdb.Bdb):
         # Implicitly runs in the namespace of __main__.
         self.run(statement)
 
+    def _runmodule(self, module_name):
+        # This is basically stolen from the pdb._runmodule from CPython 3.8
+        # and adapted to work also in Python 2
+        # https://github.com/python/cpython/blob/a1d3be4623c8ec7069bd34ccdce336be9cdeb644/Lib/pdb.py#L1530
+        import runpy
+
+        # here we unpack the module details manually, so that it works in PY2 as well
+        mod_details = runpy._get_module_details(module_name)
+        mod_spec = mod_details[1]
+        code = mod_details[2]
+
+        self.mainpyfile = self.canonic(code.co_filename)
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update({
+            "__name__": "__main__",
+            "__file__": self.mainpyfile,
+            "__spec__": mod_spec,
+            "__builtins__": __builtins__,
+        })
+
+        if PY3:
+            __main__.__dict__.update({
+                "__package__": mod_spec.parent,
+                "__loader__": mod_spec.loader,
+            })
+
+        self._wait_for_mainpyfile = True
+
+        self.run(code)
+
 # }}}
 
 
