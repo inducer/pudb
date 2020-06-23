@@ -18,7 +18,7 @@ jobs:
         -
             uses: actions/setup-python@v1
             with:
-                python-version: '3.x' 
+                python-version: '3.x'
         -   name: "Main Script"
             run: |
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
@@ -29,7 +29,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: [2.7, 3.6, 3.7, 3.8, pypy2, pypy3]
+                python-version: [3.6, 3.7, 3.8, pypy3]
         steps:
         -   uses: actions/checkout@v2
         -
