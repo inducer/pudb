@@ -96,7 +96,7 @@ Shell-related:
     _/= - minimize/maximize inline shell (active in command line history)
 
     Ctrl-v - insert newline
-    Ctrl-n/p - browse command line history
+    Arrow Down/Up - browse command line history
     Tab - yes, there is (simple) tab completion
 """
 
