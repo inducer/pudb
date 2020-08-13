@@ -44,6 +44,7 @@ Features
   under the cursor.
 
 * Drop to a Python shell in the current environment by pressing "!".
+  Or open a command prompt alongside the source-code via "Ctrl-X".
 
 * PuDB places special emphasis on exception handling. A post-mortem mode makes
   it easy to retrace a crashing program's last steps.
@@ -52,7 +53,8 @@ Features
 
 * IPython integration (see `wiki <http://wiki.tiker.net/PuDB>`_)
 
-* Should work with Python 2.7 and newer, including Python 3.
+* Should work with Python 3.6 and newer. (Versions 2019.2 and older continue
+  to support Python 2.7.)
 
 Links
 -----
