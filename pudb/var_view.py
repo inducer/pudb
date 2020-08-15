@@ -559,7 +559,7 @@ SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 def make_var_view(frame_var_info, locals, globals):
     vars = list(locals.keys())
-    vars.sort(key=lambda n: n.lower())
+    vars.sort(key=str.lower)
 
     tmv_walker = TopAndMainVariableWalker(frame_var_info)
     ret_walker = BasicValueWalker(frame_var_info)
