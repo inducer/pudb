@@ -751,9 +751,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             widget.listen("g", move_home)
             widget.listen("G", move_end)
 
-        def add_help_keys(widget):
-            widget.listen("f1", helpside)
-            widget.listen("?", helpside)
+        def add_help_keys(widget, helpfunc):
+            widget.listen("f1", helpfunc)
+            widget.listen("?", helpfunc)
 
         # }}}
 
@@ -839,7 +839,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             help(HELP_HEADER + HELP_SIDE + HELP_MAIN + HELP_LICENSE)
 
         add_vi_nav_keys(self.rhs_col_sigwrap)
-        add_help_keys(self.rhs_col_sigwrap)
+        add_help_keys(self.rhs_col_sigwrap, helpside)
 
         # }}}
 
@@ -1545,7 +1545,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("d", move_stack_down)
 
         add_vi_nav_keys(self.source_sigwrap)
-        add_help_keys(self.source_sigwrap)
+        add_help_keys(self.source_sigwrap, helpmain)
 
         # }}}
 
