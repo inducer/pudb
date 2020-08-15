@@ -29,7 +29,6 @@ THE SOFTWARE.
 """
 
 
-import __builtin__
 import urwid
 import bdb
 import gc
@@ -893,7 +892,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 desired_prefix = var.prefix[:-len(ValueWalker.PREFIX)]
                 try:
                     # Walk backwards to find first shorter prefix
-                    parent = __builtin__.next(
+                    parent = next(
                         variable_widget
                         for variable_widget in reversed(self.locals[:pos+1])
                         if variable_widget.prefix == desired_prefix
@@ -1257,7 +1256,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.save_breakpoints()
             self.quit_event_loop = True
 
-        def next(w, size, key):
+        def next_line(w, size, key):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
@@ -1558,7 +1557,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def helpmain(w, size, key):
             help(HELP_HEADER + HELP_MAIN + HELP_SIDE + HELP_LICENSE)
 
-        self.source_sigwrap.listen("n", next)
+        self.source_sigwrap.listen("n", next_line)
         self.source_sigwrap.listen("s", step)
         self.source_sigwrap.listen("f", finish)
         self.source_sigwrap.listen("r", finish)
