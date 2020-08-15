@@ -29,6 +29,7 @@ THE SOFTWARE.
 """
 
 
+import __builtin__
 import urwid
 import bdb
 import gc
@@ -525,7 +526,7 @@ class Debugger(bdb.Bdb):
 from pudb.ui_tools import make_hotkey_markup, labelled_value, \
         SelectableText, SignalWrap, StackFrame, BreakpointFrame
 
-from pudb.var_view import FrameVarInfoKeeper
+from pudb.var_view import FrameVarInfoKeeper, ValueWalker
 
 
 # {{{ display setup
@@ -710,6 +711,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.search_controller = SearchController(self)
 
         self.last_module_filter = ""
+        self.var_focus_index = None
 
         # {{{ build ui
 
@@ -878,17 +880,46 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ variables listeners
 
+        def get_inspect_info(id_path, read_only=False):
+            return (self.get_frame_var_info(read_only)
+                    .get_inspect_info(id_path, read_only))
+
+        def collapse_current(var, pos, iinfo):
+            if iinfo.show_detail:
+                # Simple case: collapse current variable
+                iinfo.show_detail = False
+            else:
+                # Complex case: collapse parent/container variable
+                desired_prefix = var.prefix[:-len(ValueWalker.PREFIX)]
+                try:
+                    # Walk backwards to find first shorter prefix
+                    parent = __builtin__.next(
+                        variable_widget
+                        for variable_widget in reversed(self.locals[:pos+1])
+                        if variable_widget.prefix == desired_prefix
+                    )
+                except StopIteration:
+                    # No parent found, so don't do anything
+                    pass
+                else:
+                    p_iinfo = get_inspect_info(parent.id_path)
+                    p_iinfo.show_detail = False
+                    self.var_focus_index = self.locals.index(parent)
+
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
             if var is None:
                 return
 
-            iinfo = self.get_frame_var_info(read_only=False) \
-                    .get_inspect_info(var.id_path, read_only=False)
+            iinfo = get_inspect_info(var.id_path)
 
             if key == "enter" or key == "\\" or key == ' ':
                 iinfo.show_detail = not iinfo.show_detail
+            elif key == "h":
+                collapse_current(var, pos, iinfo)
+            elif key == "l":
+                iinfo.show_detail = True
             elif key == "t":
                 iinfo.display_type = "type"
             elif key == "r":
@@ -1040,6 +1071,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen(" ", change_var_state)
+        self.var_list.listen("h", change_var_state)
+        self.var_list.listen("l", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
@@ -2546,6 +2579,13 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.locals[:] = make_var_view(
                 self.get_frame_var_info(read_only=True),
                 locals, globals)
+        if self.var_focus_index is not None:
+            # Have to set the focus _after_ updating the locals list, as there
+            # appears to be a brief moment while reseting the list when the
+            # list is empty but urwid will attempt to set the focus anyway,
+            # which causes problems.
+            self.var_list._w.set_focus(self.var_focus_index)
+            self.var_focus_index = None
 
     def _get_bp_list(self):
         return [bp
