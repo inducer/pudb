@@ -108,6 +108,8 @@ Sidebar-related (active in sidebar):
 
 Keys in variables list:
     \/enter/space - expand/collapse
+    h - collapse
+    l - expand
     t/r/s/c - show type/repr/str/custom for this variable
     H - toggle highlighting
     @ - toggle repetition at top
