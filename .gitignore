@@ -13,3 +13,4 @@ traceback*txt
 .cache/
 .coverage
 coverage.xml
+tags
