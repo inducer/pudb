@@ -891,13 +891,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.show_detail = False
             else:
                 # Complex case: collapse parent/container variable
-                desired_prefix = var.prefix[:-len(ValueWalker.PREFIX)]
+                desired_level = max(0, var.nesting_level - 1)
                 try:
                     # Walk backwards to find first shorter prefix
                     parent = next(
                         variable_widget
                         for variable_widget in reversed(self.locals[:pos+1])
-                        if variable_widget.prefix == desired_prefix
+                        if variable_widget.nesting_level == desired_level
                     )
                 except StopIteration:
                     # No parent found, so don't do anything
