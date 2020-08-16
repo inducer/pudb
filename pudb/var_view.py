@@ -263,7 +263,8 @@ custom_stringifier_dict = {}
 
 def type_stringifier(value):
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-        return text_type("ndarray %s %s") % (value.dtype, value.shape)
+        return text_type("%s(%s) %s") % (
+                type(value).__name__, value.dtype, value.shape)
 
     elif HAVE_NUMPY and isinstance(value, numpy.number):
         return text_type("%s (%s)" % (value, value.dtype))
