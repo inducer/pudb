@@ -116,10 +116,11 @@ STR_SAFE_TYPES = get_str_safe_types()
 class VariableWidget(urwid.FlowWidget):
     PREFIX = "| "
 
-    def __init__(self, nesting_level, var_label, value_str, id_path=None,
+    def __init__(self, parent, var_label, value_str, id_path=None,
             attr_prefix=None, watch_expr=None, iinfo=None):
-        self.nesting_level = nesting_level
-        self.prefix = self.PREFIX * nesting_level
+        self.parent = parent
+        self.nesting_level = 0 if parent is None else parent.nesting_level + 1
+        self.prefix = self.PREFIX * self.nesting_level
         self.var_label = var_label
         self.value_str = value_str
         self.id_path = id_path
@@ -132,6 +133,14 @@ class VariableWidget(urwid.FlowWidget):
             self.wrap = CONFIG["wrap_variables"]
         else:
             self.wrap = iinfo.wrap
+
+    def __str__(self):
+        return ('VariableWidget: {value_str}, level {nesting_level}, at {id_path}'
+                .format(
+                    value_str=self.value_str,
+                    nesting_level=self.nesting_level,
+                    id_path=self.id_path,
+                ))
 
     def selectable(self):
         return True
@@ -341,18 +350,18 @@ class ValueWalker:
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
-    def walk_value(self, nesting_level, label, value, id_path=None, attr_prefix=None):
+    def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
         if id_path is None:
             id_path = label
 
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
 
         if isinstance(value, integer_types + (float, complex)):
-            self.add_item(nesting_level, label, repr(value), id_path, attr_prefix)
+            self.add_item(parent, label, repr(value), id_path, attr_prefix)
         elif isinstance(value, string_types):
-            self.add_item(nesting_level, label, repr(value), id_path, attr_prefix)
+            self.add_item(parent, label, repr(value), id_path, attr_prefix)
         elif value is None:
-            self.add_item(nesting_level, label, repr(value), id_path, attr_prefix)
+            self.add_item(parent, label, repr(value), id_path, attr_prefix)
         else:
             try:
                 displayed_value = get_stringifier(iinfo)(value)
@@ -373,8 +382,8 @@ class ValueWalker:
                     marker += "+()"
                 displayed_value += " [%s]" % marker
 
-            self.add_item(nesting_level, label,
-                displayed_value, id_path, attr_prefix)
+            new_parent_item = self.add_item(parent, label, displayed_value,
+                id_path, attr_prefix)
 
             if not iinfo.show_detail:
                 return
@@ -386,14 +395,14 @@ class ValueWalker:
                         cont_id_path = "%s.cont-%d" % (id_path, i)
                         if not self.frame_var_info.get_inspect_info(
                                 cont_id_path, read_only=True).show_detail:
-                            self.add_item(nesting_level + 1, "...",
-                                    None, cont_id_path)
+                            self.add_item(new_parent_item, "...", None,
+                                cont_id_path)
                             break
 
-                    self.walk_value(nesting_level + 1, None, entry,
+                    self.walk_value(new_parent_item, None, entry,
                         "%s[%d]" % (id_path, i))
                 if not value:
-                    self.add_item(nesting_level + 1, "<empty>", None)
+                    self.add_item(new_parent_item, "<empty>", None)
                 return
 
             # containers --------------------------------------------------
@@ -430,14 +439,14 @@ class ValueWalker:
                         if not self.frame_var_info.get_inspect_info(
                                 cont_id_path, read_only=True).show_detail:
                             self.add_item(
-                                nesting_level + 1, "...", None, cont_id_path)
+                                new_parent_item, "...", None, cont_id_path)
                             break
 
-                    self.walk_value(nesting_level + 1, repr(key), value[key],
+                    self.walk_value(new_parent_item, repr(key), value[key],
                         "%s[%r]" % (id_path, key))
                     cnt += 1
                 if not cnt:
-                    self.add_item(nesting_level + 1, "<empty>", None)
+                    self.add_item(new_parent_item, "<empty>", None)
                 return
 
             # class types -------------------------------------------------
@@ -473,7 +482,7 @@ class ValueWalker:
                 except Exception:
                     attr_value = WatchEvalError()
 
-                self.walk_value(nesting_level + 1,
+                self.walk_value(new_parent_item,
                         ".%s" % key, attr_value,
                         "%s.%s" % (id_path, key))
 
@@ -484,10 +493,10 @@ class ValueWalker:
                     label = "<omitted methods>"
                 else:
                     label = "<empty>"
-                self.add_item(nesting_level + 1, label, None)
+                self.add_item(new_parent_item, label, None)
 
             if not key_its:
-                self.add_item(nesting_level + 1, "<?>", None)
+                self.add_item(new_parent_item, "<?>", None)
 
 
 class BasicValueWalker(ValueWalker):
@@ -496,13 +505,15 @@ class BasicValueWalker(ValueWalker):
 
         self.widget_list = []
 
-    def add_item(self, nesting_level, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
 
-        self.widget_list.append(VariableWidget(nesting_level, var_label, value_str,
-            id_path, attr_prefix, iinfo=iinfo))
+        new_item = VariableWidget(parent, var_label, value_str, id_path,
+            attr_prefix, iinfo=iinfo)
+        self.widget_list.append(new_item)
+        return new_item
 
 
 class WatchValueWalker(ValueWalker):
@@ -511,14 +522,15 @@ class WatchValueWalker(ValueWalker):
         self.widget_list = widget_list
         self.watch_expr = watch_expr
 
-    def add_item(self, nesting_level, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
 
-        self.widget_list.append(
-                VariableWidget(nesting_level, var_label, value_str, id_path, attr_prefix,
-                    watch_expr=self.watch_expr, iinfo=iinfo))
+        new_item = VariableWidget(parent, var_label, value_str, id_path,
+            attr_prefix, watch_expr=self.watch_expr, iinfo=iinfo)
+        self.widget_list.append(new_item)
+        return new_item
 
 
 class TopAndMainVariableWalker(ValueWalker):
@@ -530,7 +542,7 @@ class TopAndMainVariableWalker(ValueWalker):
 
         self.top_id_path_prefixes = []
 
-    def add_item(self, nesting_level, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
@@ -544,11 +556,13 @@ class TopAndMainVariableWalker(ValueWalker):
                 repeated_at_top = True
 
         if repeated_at_top:
-            self.top_widget_list.append(VariableWidget(nesting_level, var_label,
+            self.top_widget_list.append(VariableWidget(parent, var_label,
                 value_str, id_path, attr_prefix, iinfo=iinfo))
 
-        self.main_widget_list.append(VariableWidget(nesting_level, var_label,
-            value_str, id_path, attr_prefix, iinfo=iinfo))
+        new_item = VariableWidget(parent, var_label, value_str, id_path,
+            attr_prefix, iinfo=iinfo)
+        self.main_widget_list.append(new_item)
+        return new_item
 
 # }}}
 
@@ -573,15 +587,15 @@ def make_var_view(frame_var_info, locals, globals):
             value = WatchEvalError()
 
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
-                .walk_value(0, watch_expr.expression, value)
+                .walk_value(None, watch_expr.expression, value)
 
     if "__return__" in vars:
-        ret_walker.walk_value(0, "Return", locals["__return__"],
+        ret_walker.walk_value(None, "Return", locals["__return__"],
                 attr_prefix="return")
 
     for var in vars:
         if not (var.startswith('__') and var.endswith('__')):
-            tmv_walker.walk_value(0, var, locals[var])
+            tmv_walker.walk_value(None, var, locals[var])
 
     result = tmv_walker.main_widget_list
 

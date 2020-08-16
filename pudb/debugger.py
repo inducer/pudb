@@ -887,25 +887,14 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def collapse_current(var, pos, iinfo):
             if iinfo.show_detail:
-                # Simple case: collapse current variable
+                # collapse current variable
                 iinfo.show_detail = False
             else:
-                # Complex case: collapse parent/container variable
-                desired_level = max(0, var.nesting_level - 1)
-                try:
-                    # Walk backwards to find first shorter prefix
-                    parent = next(
-                        variable_widget
-                        for variable_widget in reversed(self.locals[:pos+1])
-                        if variable_widget.nesting_level == desired_level
-                    )
-                except StopIteration:
-                    # No parent found, so don't do anything
-                    pass
-                else:
-                    p_iinfo = get_inspect_info(parent.id_path)
+                # collapse parent/container variable
+                if var.parent is not None:
+                    p_iinfo = get_inspect_info(var.parent.id_path)
                     p_iinfo.show_detail = False
-                    self.var_focus_index = self.locals.index(parent)
+                    self.var_focus_index = self.locals.index(var.parent)
 
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
@@ -2585,8 +2574,13 @@ class DebuggerUI(FrameVarInfoKeeper):
             # appears to be a brief moment while reseting the list when the
             # list is empty but urwid will attempt to set the focus anyway,
             # which causes problems.
-            self.var_list._w.set_focus(self.var_focus_index)
-            self.var_focus_index = None
+            try:
+                self.var_list._w.set_focus(self.var_focus_index)
+            except IndexError:
+                # sigh oh well we tried
+                pass
+            finally:
+                self.var_focus_index = None
 
     def _get_bp_list(self):
         return [bp
