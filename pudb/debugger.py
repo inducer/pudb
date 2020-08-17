@@ -527,7 +527,7 @@ class Debugger(bdb.Bdb):
 from pudb.ui_tools import make_hotkey_markup, labelled_value, \
         SelectableText, SignalWrap, StackFrame, BreakpointFrame
 
-from pudb.var_view import FrameVarInfoKeeper, ValueWalker
+from pudb.var_view import FrameVarInfoKeeper
 
 
 # {{{ display setup
