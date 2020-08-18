@@ -108,6 +108,8 @@ Sidebar-related (active in sidebar):
 
 Keys in variables list:
     \/enter/space - expand/collapse
+    h - collapse
+    l - expand
     t/r/s/c - show type/repr/str/custom for this variable
     H - toggle highlighting
     @ - toggle repetition at top
@@ -878,17 +880,37 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ variables listeners
 
+        def get_inspect_info(id_path, read_only=False):
+            return (self.get_frame_var_info(read_only)
+                    .get_inspect_info(id_path, read_only))
+
+        def collapse_current(var, pos, iinfo):
+            if iinfo.show_detail:
+                # collapse current variable
+                iinfo.show_detail = False
+            else:
+                # collapse parent/container variable
+                if var.parent is not None:
+                    p_iinfo = get_inspect_info(var.parent.id_path)
+                    p_iinfo.show_detail = False
+                    return self.locals.index(var.parent)
+            return None
+
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
             if var is None:
                 return
 
-            iinfo = self.get_frame_var_info(read_only=False) \
-                    .get_inspect_info(var.id_path, read_only=False)
+            iinfo = get_inspect_info(var.id_path)
+            focus_index = None
 
             if key == "enter" or key == "\\" or key == ' ':
                 iinfo.show_detail = not iinfo.show_detail
+            elif key == "h":
+                focus_index = collapse_current(var, pos, iinfo)
+            elif key == "l":
+                iinfo.show_detail = True
             elif key == "t":
                 iinfo.display_type = "type"
             elif key == "r":
@@ -909,7 +931,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
 
-            self.update_var_view()
+            self.update_var_view(focus_index=focus_index)
 
         def edit_inspector_detail(w, size, key):
             var, pos = self.var_list._w.get_focus()
@@ -1040,6 +1062,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen(" ", change_var_state)
+        self.var_list.listen("h", change_var_state)
+        self.var_list.listen("l", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
@@ -1224,7 +1248,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.save_breakpoints()
             self.quit_event_loop = True
 
-        def next(w, size, key):
+        def next_line(w, size, key):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
@@ -1525,7 +1549,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def helpmain(w, size, key):
             help(HELP_HEADER + HELP_MAIN + HELP_SIDE + HELP_LICENSE)
 
-        self.source_sigwrap.listen("n", next)
+        self.source_sigwrap.listen("n", next_line)
         self.source_sigwrap.listen("s", step)
         self.source_sigwrap.listen("f", finish)
         self.source_sigwrap.listen("r", finish)
@@ -2536,7 +2560,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
-    def update_var_view(self, locals=None, globals=None):
+    def update_var_view(self, locals=None, globals=None, focus_index=None):
         if locals is None:
             locals = self.debugger.curframe.f_locals
         if globals is None:
@@ -2546,6 +2570,16 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.locals[:] = make_var_view(
                 self.get_frame_var_info(read_only=True),
                 locals, globals)
+        if focus_index is not None:
+            # Have to set the focus _after_ updating the locals list, as there
+            # appears to be a brief moment while reseting the list when the
+            # list is empty but urwid will attempt to set the focus anyway,
+            # which causes problems.
+            try:
+                self.var_list._w.set_focus(focus_index)
+            except IndexError:
+                # sigh oh well we tried
+                pass
 
     def _get_bp_list(self):
         return [bp
