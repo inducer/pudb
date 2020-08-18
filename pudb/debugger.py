@@ -712,7 +712,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.search_controller = SearchController(self)
 
         self.last_module_filter = ""
-        self.var_focus_index = None
 
         # {{{ build ui
 
@@ -894,7 +893,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 if var.parent is not None:
                     p_iinfo = get_inspect_info(var.parent.id_path)
                     p_iinfo.show_detail = False
-                    self.var_focus_index = self.locals.index(var.parent)
+                    return self.locals.index(var.parent)
+            return None
 
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
@@ -903,11 +903,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                 return
 
             iinfo = get_inspect_info(var.id_path)
+            focus_index = None
 
             if key == "enter" or key == "\\" or key == ' ':
                 iinfo.show_detail = not iinfo.show_detail
             elif key == "h":
-                collapse_current(var, pos, iinfo)
+                focus_index = collapse_current(var, pos, iinfo)
             elif key == "l":
                 iinfo.show_detail = True
             elif key == "t":
@@ -930,7 +931,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
 
-            self.update_var_view()
+            self.update_var_view(focus_index=focus_index)
 
         def edit_inspector_detail(w, size, key):
             var, pos = self.var_list._w.get_focus()
@@ -2559,7 +2560,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
-    def update_var_view(self, locals=None, globals=None):
+    def update_var_view(self, locals=None, globals=None, focus_index=None):
         if locals is None:
             locals = self.debugger.curframe.f_locals
         if globals is None:
@@ -2569,18 +2570,16 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.locals[:] = make_var_view(
                 self.get_frame_var_info(read_only=True),
                 locals, globals)
-        if self.var_focus_index is not None:
+        if focus_index is not None:
             # Have to set the focus _after_ updating the locals list, as there
             # appears to be a brief moment while reseting the list when the
             # list is empty but urwid will attempt to set the focus anyway,
             # which causes problems.
             try:
-                self.var_list._w.set_focus(self.var_focus_index)
+                self.var_list._w.set_focus(focus_index)
             except IndexError:
                 # sigh oh well we tried
                 pass
-            finally:
-                self.var_focus_index = None
 
     def _get_bp_list(self):
         return [bp
