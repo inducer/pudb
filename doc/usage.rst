@@ -36,7 +36,7 @@ Controlling How Values Get Shown
         def pudb_stringifier(obj):
             return "HI"
 
-*   Add a :meth:`safely_stringify_for_pudb` to the type.
+*   Add a method ``safely_stringify_for_pudb`` to the type.
 
 A stringifier is expected to *never* raise an exception.
 If an exception is raised, pudb will silently fall back
