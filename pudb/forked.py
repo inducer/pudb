@@ -10,6 +10,7 @@ import struct
 
 from pudb.debugger import Debugger
 
+
 def forked_pudb():
     frame = sys._getframe().f_back
     try:
@@ -23,5 +24,7 @@ def forked_pudb():
         term_size = (80, 24)
 
     Debugger(
-        stdin=open("/dev/stdin"), stdout=open("/dev/stdout", "w"), term_size=term_size
+        stdin=open("/dev/stdin"),
+        stdout=open("/dev/stdout", "w"),
+        term_size=term_size,
     ).set_trace(frame)
