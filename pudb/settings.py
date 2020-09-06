@@ -25,12 +25,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-
 import os
 import sys
 
 from pudb.py3compat import ConfigParser
-from pudb.lowlevel import lookup_module, get_breakpoint_invalid_reason
+from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
+                           settings_log)
 
 # minor LGPL violation: stolen from python-xdg
 
@@ -85,7 +85,7 @@ def load_config():
         if cparser.has_section(CONF_SECTION):
             conf_dict.update(dict(cparser.items(CONF_SECTION)))
     except Exception:
-        pass
+        settings_log.exception('Failed to load config')
 
     conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
@@ -121,7 +121,7 @@ def load_config():
             else:
                 conf_dict[name] = True
         except Exception:
-            pass
+            settings_log.exception('Failed to process config')
 
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
@@ -148,7 +148,7 @@ def save_config(conf_dict):
         cparser.write(outf)
         outf.close()
     except Exception:
-        pass
+        settings_log.exception('Failed to save config')
 
 
 def edit_config(ui, conf_dict):

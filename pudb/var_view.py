@@ -33,6 +33,8 @@ THE SOFTWARE.
 import urwid
 import inspect
 
+from pudb.lowlevel import ui_log
+
 try:
     import numpy
     HAVE_NUMPY = 1
@@ -285,7 +287,7 @@ def type_stringifier(value):
         try:
             return text_type(value)
         except Exception:
-            pass
+            ui_log.exception('string safe type stringifier failed')
 
     elif hasattr(type(value), "safely_stringify_for_pudb"):
         try:
@@ -293,7 +295,7 @@ def type_stringifier(value):
             # and return nonsense.
             result = value.safely_stringify_for_pudb()
         except Exception:
-            pass
+            ui_log.exception('safely_stringify_for_pudb call failed')
         else:
             if isinstance(result, string_types):
                 return text_type(result)
@@ -371,6 +373,7 @@ class ValueWalker:
                 # repr() on a random object.
                 displayed_value = type_stringifier(value) \
                                 + " (!! %s error !!)" % iinfo.display_type
+                ui_log.exception('stringifier failed')
 
             if iinfo.show_detail:
                 if iinfo.access_level == "public":
@@ -414,21 +417,27 @@ class ValueWalker:
                     key_it = value.keys()
                 else:
                     key_it = value.iterkeys()
-            except Exception:
+            except AttributeError:
+                # keys or iterkeys doesn't exist, not worth mentioning!
                 pass
+            except Exception:
+                ui_log.exception('Failed to obtain key iterator')
 
             if key_it is None:
                 try:
                     len_value = len(value)
-                except Exception:
+                except TypeError:
+                    # no __len__ defined on the value, not worth mentioning!
                     pass
+                except Exception:
+                    ui_log.exception('Failed to determine container length')
                 else:
                     try:
                         value[0]
                     except IndexError:
                         key_it = []
                     except Exception:
-                        pass
+                        ui_log.exception('Item is not iterable')
                     else:
                         key_it = xrange(len_value)
 
@@ -456,7 +465,7 @@ class ValueWalker:
             try:
                 key_its.append(dir(value))
             except Exception:
-                pass
+                ui_log.exception('Failed to lookup attributes')
 
             keys = [key
                     for ki in key_its

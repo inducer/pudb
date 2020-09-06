@@ -28,6 +28,26 @@ THE SOFTWARE.
 
 from pudb.py3compat import PY3, text_type
 
+import logging
+
+ui_formatter = logging.Formatter(
+    fmt='\n*** Pudb UI Exception Encountered: %(message)s ***\n'
+)
+ui_handler = logging.StreamHandler()
+ui_handler.setFormatter(ui_formatter)
+ui_log = logging.getLogger('ui')
+ui_log.setLevel(logging.CRITICAL)
+ui_log.addHandler(ui_handler)
+
+settings_formatter = logging.Formatter(
+    fmt='\n*** Pudb Settings Exception Encountered: %(message)s ***\n'
+)
+settings_handler = logging.StreamHandler()
+settings_handler.setFormatter(settings_formatter)
+settings_log = logging.getLogger('settings')
+settings_log.setLevel(logging.CRITICAL)
+settings_log.addHandler(settings_handler)
+
 
 # {{{ breakpoint validity
 

@@ -15,16 +15,26 @@ def main():
     #    python -m pudb -m http.server -h
     # where the -h will be passed to the http.server module
     parser.add_argument("-m", "--module", action='store_true',
-                      help="Debug as module or package instead of as a script")
+                        help="Debug as module or package instead of as a script")
 
+    parser.add_argument("-le", "--log-errors", action='store_true',
+                        help="If an unexpected exception is encountered, "
+                             "log the exception information to stderr",
+                        default=False)
     parser.add_argument("--pre-run", metavar="COMMAND",
-            help="Run command before each program run",
-            default="")
+                        help="Run command before each program run",
+                        default="")
     parser.add_argument('script_args', nargs=argparse.REMAINDER,
                         help="Arguments to pass to script or module")
 
     options = parser.parse_args()
     args = options.script_args
+
+    if options.log_errors:
+        import logging
+        from pudb.lowlevel import ui_log, settings_log
+        ui_log.setLevel(logging.ERROR)
+        settings_log.setLevel(logging.ERROR)
 
     options_kwargs = {
         'pre_run': options.pre_run,
