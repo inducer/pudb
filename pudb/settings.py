@@ -89,7 +89,7 @@ def load_config():
 
     conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
-    conf_dict.setdefault("line_numbers", False)
+    conf_dict.setdefault("line_numbers", "False")
     conf_dict.setdefault("seen_welcome", "a")
 
     conf_dict.setdefault("sidebar_width", 0.5)
@@ -105,14 +105,14 @@ def load_config():
     conf_dict.setdefault("custom_stringifier", "")
     conf_dict.setdefault("custom_shell", "")
 
-    conf_dict.setdefault("wrap_variables", True)
+    conf_dict.setdefault("wrap_variables", "True")
     conf_dict.setdefault("default_variables_access_level", "public")
 
     conf_dict.setdefault("display", "auto")
 
-    conf_dict.setdefault("prompt_on_quit", True)
+    conf_dict.setdefault("prompt_on_quit", "True")
 
-    conf_dict.setdefault("hide_cmdline_win", False)
+    conf_dict.setdefault("hide_cmdline_win", "False")
 
     def normalize_bool_inplace(name):
         try:
