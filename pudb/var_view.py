@@ -465,7 +465,7 @@ class ValueWalker:
             try:
                 key_its.append(dir(value))
             except Exception:
-                ui_log.exception('Failed to lookup attributes')
+                ui_log.exception('Failed to look up attributes')
 
             keys = [key
                     for ki in key_its
