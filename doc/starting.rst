@@ -18,7 +18,7 @@ If you are using Python 3.7 or newer, you can add::
     # Set breakpoint() in Python to call pudb
     export PYTHONBREAKPOINT="pudb.set_trace"
 
-in your ~/.bashrc. Then use::
+in your ``~/.bashrc``. Then use::
 
     breakpoint()
 
@@ -50,12 +50,12 @@ original terminal available for any other reason.
 
 Open a new terminal. First, you need to get the path of the tty of the
 terminal you want to debug from. To do that, use the standard unix
-command `tty`. It will print something like `/dev/pts/3`.
+command ``tty``. It will print something like ``/dev/pts/3``.
 
 Then you need to make sure that your terminal doesn't have a shell actively
 reading and possibly capturing some of the input that should go to pudb.
 To do that run a placeholder command that does nothing,
-such as `perl -MPOSIX -e pause`.
+such as ``perl -MPOSIX -e pause``.
 
 Then set the PUDB_TTY environment variable to the path tty gave you,
 for example::
@@ -80,6 +80,20 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
+Logging Errors
+^^^^^^^^^^^^^^
+
+Unexpected exceptions encountered by pudb internals are suppressed by default.
+You can use the ``--log-errors`` flag to have these exceptions logged to stderr.
+This works best if you pipe stderr to a file and watch the log from another
+terminal::
+
+    python -m pudb --log-errors debug_me.py 2> errors.log
+    
+And then in another shell::
+
+    tail -f errors.log
+    
 Usage with pytest
 ^^^^^^^^^^^^^^^^^
 
