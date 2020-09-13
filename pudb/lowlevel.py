@@ -30,10 +30,23 @@ from pudb.py3compat import PY3, text_type
 
 import logging
 
+
+class SafeStreamHandler(logging.StreamHandler):
+    """
+    Logging stream handler that clears up the UI when it's done, if needed.
+    """
+    def emit(self, record):
+        from pudb import _have_debugger, _get_debugger
+        super(SafeStreamHandler, self).emit(record)
+        if _have_debugger():
+            dbg = _get_debugger()
+            dbg.ui.screen.clear()
+
+
 ui_formatter = logging.Formatter(
     fmt='\n*** Pudb UI Exception Encountered: %(message)s ***\n'
 )
-ui_handler = logging.StreamHandler()
+ui_handler = SafeStreamHandler()
 ui_handler.setFormatter(ui_formatter)
 ui_log = logging.getLogger('ui')
 ui_log.setLevel(logging.CRITICAL)
@@ -42,7 +55,7 @@ ui_log.addHandler(ui_handler)
 settings_formatter = logging.Formatter(
     fmt='\n*** Pudb Settings Exception Encountered: %(message)s ***\n'
 )
-settings_handler = logging.StreamHandler()
+settings_handler = SafeStreamHandler()
 settings_handler.setFormatter(settings_formatter)
 settings_log = logging.getLogger('settings')
 settings_log.setLevel(logging.CRITICAL)

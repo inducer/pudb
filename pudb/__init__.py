@@ -115,6 +115,10 @@ def _get_debugger(**kwargs):
         return CURRENT_DEBUGGER[0]
 
 
+def _have_debugger():
+    return len(CURRENT_DEBUGGER) > 0
+
+
 import signal  # noqa
 DEFAULT_SIGNAL = signal.SIGINT
 del signal
