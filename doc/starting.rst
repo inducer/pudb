@@ -80,20 +80,6 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
-Logging Errors
-^^^^^^^^^^^^^^
-
-Unexpected exceptions encountered by pudb internals are suppressed by default.
-You can use the ``--log-errors`` flag to have these exceptions logged to stderr.
-This works best if you pipe stderr to a file and watch the log from another
-terminal::
-
-    python -m pudb --log-errors debug_me.py 2> errors.log
-    
-And then in another shell::
-
-    tail -f errors.log
-    
 Usage with pytest
 ^^^^^^^^^^^^^^^^^
 
