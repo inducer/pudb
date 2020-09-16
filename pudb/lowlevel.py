@@ -49,7 +49,6 @@ ui_formatter = logging.Formatter(
 ui_handler = SafeStreamHandler()
 ui_handler.setFormatter(ui_formatter)
 ui_log = logging.getLogger('ui')
-ui_log.setLevel(logging.CRITICAL)
 ui_log.addHandler(ui_handler)
 
 settings_formatter = logging.Formatter(
@@ -58,7 +57,6 @@ settings_formatter = logging.Formatter(
 settings_handler = SafeStreamHandler()
 settings_handler.setFormatter(settings_formatter)
 settings_log = logging.getLogger('settings')
-settings_log.setLevel(logging.CRITICAL)
 settings_log.addHandler(settings_handler)
 
 
