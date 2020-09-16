@@ -80,6 +80,22 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
+Debugging forked processes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On Unix system, e.g. Linux & MacOS e.g. Linux & MacOS, debugging a forked
+process is supported::
+
+    from pudb.forked import set_trace
+    set_trace()
+    
+Or use it with Python's built-in ``breakpoint()`` (from Python 3.7)::
+
+    export PYTHONBREAKPOINT=pudb.forked.set_trace
+    your-command  # using breakpoint() in the code
+
+In- and output will be redirected to ``/dev/stdin`` & ``/dev/stdout``.
+
 Usage with pytest
 ^^^^^^^^^^^^^^^^^
 
