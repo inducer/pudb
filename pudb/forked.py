@@ -11,7 +11,12 @@ import struct
 from pudb.debugger import Debugger
 
 
-def forked_pudb():
+def set_trace():
+    """Set a breakpoint in a forked process on Unix system, e.g. Linux & MacOS e.g. Linux & MacOS.
+    In- and output will be redirected to /dev/stdin & /dev/stdout.
+    You can call pudb.forked.set_trace() directly or use it with python's built-in breakpoint():
+    PYTHONBREAKPOINT=pudb.forked.set_trace python …
+    """
     frame = sys._getframe().f_back
     try:
         # Getting terminal size
