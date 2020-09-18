@@ -80,21 +80,33 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
-Debugging forked processes
+Using the debugger after forking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On Unix system, e.g. Linux & MacOS e.g. Linux & MacOS, debugging a forked
-process is supported::
+In a forked process no tty is attached usually, which leads to
+``TypeError: ord() expected a character, but string of length 0 found``
+when debugging with standard pudb. E.g. consider this ``script.py``::
 
-    from pudb.forked import set_trace
-    set_trace()
+    from multiprocessing import Process
+    def f(name):
+        # breakpoint was introduced in Python 3.7
+        breakpoint()
+        print('hello', name)
     
-Or use it with Python's built-in ``breakpoint()`` (from Python 3.7)::
+    p = Process(target=f, args=('bob',))
+    p.start()
+    p.join()
 
-    export PYTHONBREAKPOINT=pudb.forked.set_trace
-    your-command  # using breakpoint() in the code
+Running it with standard pudb breaks::
 
-In- and output will be redirected to ``/dev/stdin`` & ``/dev/stdout``.
+    PYTHONBREAKPOINT=pudb.set_trace python script.py
+
+However, on Unix system, e.g. Linux & MacOS, debugging a forked
+process is supported using ``pudb.forked.set_trace``, which redirects
+in- and output to ``/dev/stdin`` & ``/dev/stdout``::
+
+    PYTHONBREAKPOINT=pudb.forked.set_trace python script.py
+
 
 Usage with pytest
 ^^^^^^^^^^^^^^^^^
