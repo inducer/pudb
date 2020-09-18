@@ -81,7 +81,7 @@ connection::
     pudb:6899: Waiting for client...
 
 Using the debugger after forking
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In a forked process no tty is attached usually, which leads to
 ``TypeError: ord() expected a character, but string of length 0 found``
