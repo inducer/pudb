@@ -101,8 +101,7 @@ Running it with standard pudb breaks::
     PYTHONBREAKPOINT=pudb.set_trace python script.py
 
 However, on Unix system, e.g. Linux & MacOS, debugging a forked
-process is supported using ``pudb.forked.set_trace``, which redirects
-in- and output to ``/dev/stdin`` & ``/dev/stdout``::
+process is supported using ``pudb.forked.set_trace``::
 
     PYTHONBREAKPOINT=pudb.forked.set_trace python script.py
 
