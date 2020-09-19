@@ -83,8 +83,7 @@ connection::
 Using the debugger after forking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In a forked process no tty is attached usually, which leads to
-``TypeError: ord() expected a character, but string of length 0 found``
+In a forked process no TTY is usually attached to stdin/stdout, which leads to errors
 when debugging with standard pudb. E.g. consider this ``script.py``::
 
     from multiprocessing import Process
