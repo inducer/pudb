@@ -80,6 +80,32 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
+Using the debugger after forking
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In a forked process, no TTY is usually attached to stdin/stdout, which leads to errors
+when debugging with standard pudb. E.g. consider this ``script.py``::
+
+    from multiprocessing import Process
+    def f(name):
+        # breakpoint was introduced in Python 3.7
+        breakpoint()
+        print('hello', name)
+    
+    p = Process(target=f, args=('bob',))
+    p.start()
+    p.join()
+
+Running it with standard pudb breaks::
+
+    PYTHONBREAKPOINT=pudb.set_trace python script.py
+
+However, on Unix systems, e.g. Linux & MacOS, debugging a forked
+process is supported using ``pudb.forked.set_trace``::
+
+    PYTHONBREAKPOINT=pudb.forked.set_trace python script.py
+
+
 Usage with pytest
 ^^^^^^^^^^^^^^^^^
 
