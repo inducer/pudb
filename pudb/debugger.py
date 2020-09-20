@@ -1595,6 +1595,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.cmdline_list.set_focus_valign("bottom")
             self.cmdline_list.set_focus(len(self.cmdline_contents) - 1,
                     coming_from="above")
+        self.add_cmdline_content = add_cmdline_content
 
         def cmdline_tab_complete(w, size, key):
             try:

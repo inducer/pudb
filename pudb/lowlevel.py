@@ -26,38 +26,72 @@ THE SOFTWARE.
 """
 
 
+import logging
+from datetime import datetime
 from pudb.py3compat import PY3, text_type
 
-import logging
+logfile = [None]
 
 
-class SafeStreamHandler(logging.StreamHandler):
+def getLogfile():
+    return logfile[0]
+
+
+def setLogfile(destfile):
+    logfile[0] = destfile
+    with open(destfile, 'a') as openfile:
+        openfile.write(
+            '\n*** Pudb session error log started at {date} ***\n'.format(
+                date=datetime.now()
+            ))
+
+
+class TerminalOrStreamHandler(logging.StreamHandler):
     """
-    Logging stream handler that clears up the UI when it's done, if needed.
+    Logging handler that sends errors either to the terminal window or to
+    stderr, depending on whether the debugger is active.
     """
     def emit(self, record):
         from pudb import _have_debugger, _get_debugger
-        super(SafeStreamHandler, self).emit(record)
-        if _have_debugger():
-            dbg = _get_debugger()
-            dbg.ui.screen.clear()
+        logfile = getLogfile()
+
+        self.acquire()
+        try:
+            if logfile is not None:
+                message = self.format(record)
+                with open(logfile, 'a') as openfile:
+                    openfile.write('\n%s\n' % message)
+            elif _have_debugger():
+                dbg = _get_debugger()
+                message = self.format(record)
+                dbg.ui.add_cmdline_content(message, "command line error")
+            else:
+                super(TerminalOrStreamHandler, self).emit(record)
+        finally:
+            self.release()
 
 
-ui_formatter = logging.Formatter(
-    fmt='\n*** Pudb UI Exception Encountered: %(message)s ***\n'
-)
-ui_handler = SafeStreamHandler()
-ui_handler.setFormatter(ui_formatter)
-ui_log = logging.getLogger('ui')
-ui_log.addHandler(ui_handler)
+def _init_loggers():
+    ui_handler = TerminalOrStreamHandler()
+    ui_formatter = logging.Formatter(
+        fmt='*** Pudb UI Exception Encountered: %(message)s ***\n'
+    )
+    ui_handler.setFormatter(ui_formatter)
+    ui_log = logging.getLogger('ui')
+    ui_log.addHandler(ui_handler)
 
-settings_formatter = logging.Formatter(
-    fmt='\n*** Pudb Settings Exception Encountered: %(message)s ***\n'
-)
-settings_handler = SafeStreamHandler()
-settings_handler.setFormatter(settings_formatter)
-settings_log = logging.getLogger('settings')
-settings_log.addHandler(settings_handler)
+    settings_handler = TerminalOrStreamHandler()
+    settings_formatter = logging.Formatter(
+        fmt='*** Pudb Settings Exception Encountered: %(message)s ***\n'
+    )
+    settings_handler.setFormatter(settings_formatter)
+    settings_log = logging.getLogger('settings')
+    settings_log.addHandler(settings_handler)
+
+    return ui_log, settings_log
+
+
+ui_log, settings_log = _init_loggers()
 
 
 # {{{ breakpoint validity

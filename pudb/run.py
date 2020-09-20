@@ -17,6 +17,8 @@ def main():
     parser.add_argument("-m", "--module", action='store_true',
                         help="Debug as module or package instead of as a script")
 
+    parser.add_argument("-le", "--log-errors", nargs=1, metavar='FILE',
+                        help="Log internal errors to the given file")
     parser.add_argument("--pre-run", metavar="COMMAND",
                         help="Run command before each program run",
                         default="")
@@ -25,6 +27,10 @@ def main():
 
     options = parser.parse_args()
     args = options.script_args
+
+    if options.log_errors:
+        from pudb.lowlevel import setLogfile
+        setLogfile(options.log_errors[0])
 
     options_kwargs = {
         'pre_run': options.pre_run,
