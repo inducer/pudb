@@ -83,7 +83,7 @@ connection::
 Using the debugger after forking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In a forked process no TTY is usually attached to stdin/stdout, which leads to errors
+In a forked process, no TTY is usually attached to stdin/stdout, which leads to errors
 when debugging with standard pudb. E.g. consider this ``script.py``::
 
     from multiprocessing import Process
@@ -100,7 +100,7 @@ Running it with standard pudb breaks::
 
     PYTHONBREAKPOINT=pudb.set_trace python script.py
 
-However, on Unix system, e.g. Linux & MacOS, debugging a forked
+However, on Unix systems, e.g. Linux & MacOS, debugging a forked
 process is supported using ``pudb.forked.set_trace``::
 
     PYTHONBREAKPOINT=pudb.forked.set_trace python script.py
