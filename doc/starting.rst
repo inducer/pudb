@@ -66,6 +66,15 @@ Now instead of using the current terminal, pudb will use this tty for its UI.
 You may want to use the internal shell in pudb, as others will still use the
 original terminal.
 
+Logging Internal Errors
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Some kinds of internal exceptions encountered by pudb will be logged to the
+terminal window when the debugger is active. To send these messages to a file
+instead, use the ``--log-errors`` flag::
+
+    python -m pudb --log-errors pudberrors.log
+
 Remote debugging
 ^^^^^^^^^^^^^^^^
 
