@@ -29,8 +29,8 @@ def main():
     args = options.script_args
 
     if options.log_errors:
-        from pudb.lowlevel import setLogfile
-        setLogfile(options.log_errors[0])
+        from pudb.lowlevel import setlogfile
+        setlogfile(options.log_errors[0])
 
     options_kwargs = {
         'pre_run': options.pre_run,

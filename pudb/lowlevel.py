@@ -33,11 +33,11 @@ from pudb.py3compat import PY3, text_type
 logfile = [None]
 
 
-def getLogfile():
+def getlogfile():
     return logfile[0]
 
 
-def setLogfile(destfile):
+def setlogfile(destfile):
     logfile[0] = destfile
     with open(destfile, 'a') as openfile:
         openfile.write(
@@ -53,7 +53,7 @@ class TerminalOrStreamHandler(logging.StreamHandler):
     """
     def emit(self, record):
         from pudb import _have_debugger, _get_debugger
-        logfile = getLogfile()
+        logfile = getlogfile()
 
         self.acquire()
         try:
