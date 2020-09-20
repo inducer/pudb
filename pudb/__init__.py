@@ -26,15 +26,13 @@ THE SOFTWARE.
 """
 
 
+from pudb.py3compat import raw_input, PY3
+from pudb.settings import load_config
+
+
 NUM_VERSION = (2020, 1)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
-
-from pudb.py3compat import raw_input, PY3
-
-from pudb.settings import load_config, save_config
-CONFIG = load_config()
-save_config(CONFIG)
 
 
 class PudbShortcuts(object):
@@ -184,7 +182,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
             import urwid
             pre_run_edit = urwid.Edit("", pre_run)
 
-            if not CONFIG["prompt_on_quit"]:
+            if not load_config()["prompt_on_quit"]:
                 return
 
             result = dbg.ui.call_with_ui(dbg.ui.dialog,

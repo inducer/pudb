@@ -71,7 +71,14 @@ SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
 BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
 
 
+_config_ = [None]
+
+
 def load_config():
+    # Only ever do this once
+    if _config_[0] is not None:
+        return _config_[0]
+
     from os.path import join, isdir
 
     cparser = ConfigParser()
@@ -128,6 +135,7 @@ def load_config():
     normalize_bool_inplace("prompt_on_quit")
     normalize_bool_inplace("hide_cmdline_win")
 
+    _config_[0] = conf_dict
     return conf_dict
 
 
