@@ -1707,7 +1707,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.cmdline_edit.set_edit_text("")
             finally:
                 if sys.stdout.getvalue():
-                    self.add_cmdline_content(sys.stdout.getvalue(), "command line output")
+                    self.add_cmdline_content(sys.stdout.getvalue(),
+                                             "command line output")
 
                 sys.stdin = prev_sys_stdin
                 sys.stdout = prev_sys_stdout
