@@ -287,7 +287,9 @@ def type_stringifier(value):
         try:
             return text_type(value)
         except Exception:
-            ui_log.exception('string safe type stringifier failed')
+            message = 'string safe type stringifier failed'
+            ui_log.exception(message)
+            return '!! %s !!' % message
 
     elif hasattr(type(value), "safely_stringify_for_pudb"):
         try:
@@ -295,10 +297,12 @@ def type_stringifier(value):
             # and return nonsense.
             result = value.safely_stringify_for_pudb()
         except Exception:
-            ui_log.exception('safely_stringify_for_pudb call failed')
-        else:
-            if isinstance(result, string_types):
-                return text_type(result)
+            message = 'safely_stringify_for_pudb call failed'
+            ui_log.exception(message)
+            result = '!! %s !!' % message
+
+        if isinstance(result, string_types):
+            return text_type(result)
 
     elif type(value) in [set, frozenset, list, tuple, dict]:
         return text_type("%s (%s)") % (type(value).__name__, len(value))

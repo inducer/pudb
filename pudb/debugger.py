@@ -2613,7 +2613,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     class_name = frame.f_locals["self"].__class__.__name__
                 except Exception:
                     from pudb.lowlevel import ui_log
-                    ui_log.exception('Failed to determine class name')
+                    message = 'Failed to determine class name'
+                    ui_log.exception(message)
+                    class_name = '!! %s !!' % message
 
             return StackFrame(frame is self.debugger.curframe,
                     code.co_name, class_name,
