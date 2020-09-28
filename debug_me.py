@@ -4,9 +4,6 @@ class MyClass(object):
         self.b = b
         self._b = [b]
 
-    def safely_stringify_for_pudb(self):
-        1/0
-
 mc = MyClass(15, MyClass(12, None))
 
 
