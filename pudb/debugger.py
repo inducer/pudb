@@ -2072,6 +2072,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_list.set_focus(len(self.cmdline_contents) - 1,
                 coming_from="above")
 
+        # Force the commandline to be visible
+        self.set_cmdline_state(True)
+
     def reset_cmdline_size(self):
         self.lhs_col.item_types[-1] = "weight", \
                 self.cmdline_weight if self.cmdline_on else 0
