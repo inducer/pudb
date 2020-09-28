@@ -25,12 +25,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-
 import os
 import sys
 
 from pudb.py3compat import ConfigParser
-from pudb.lowlevel import lookup_module, get_breakpoint_invalid_reason
+from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
+                           settings_log)
 
 # minor LGPL violation: stolen from python-xdg
 
@@ -71,7 +71,14 @@ SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
 BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
 
 
+_config_ = [None]
+
+
 def load_config():
+    # Only ever do this once
+    if _config_[0] is not None:
+        return _config_[0]
+
     from os.path import join, isdir
 
     cparser = ConfigParser()
@@ -85,11 +92,11 @@ def load_config():
         if cparser.has_section(CONF_SECTION):
             conf_dict.update(dict(cparser.items(CONF_SECTION)))
     except Exception:
-        pass
+        settings_log.exception('Failed to load config')
 
     conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
-    conf_dict.setdefault("line_numbers", False)
+    conf_dict.setdefault("line_numbers", "False")
     conf_dict.setdefault("seen_welcome", "a")
 
     conf_dict.setdefault("sidebar_width", 0.5)
@@ -105,14 +112,14 @@ def load_config():
     conf_dict.setdefault("custom_stringifier", "")
     conf_dict.setdefault("custom_shell", "")
 
-    conf_dict.setdefault("wrap_variables", True)
+    conf_dict.setdefault("wrap_variables", "True")
     conf_dict.setdefault("default_variables_access_level", "public")
 
     conf_dict.setdefault("display", "auto")
 
-    conf_dict.setdefault("prompt_on_quit", True)
+    conf_dict.setdefault("prompt_on_quit", "True")
 
-    conf_dict.setdefault("hide_cmdline_win", False)
+    conf_dict.setdefault("hide_cmdline_win", "False")
 
     def normalize_bool_inplace(name):
         try:
@@ -121,13 +128,14 @@ def load_config():
             else:
                 conf_dict[name] = True
         except Exception:
-            pass
+            settings_log.exception('Failed to process config')
 
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
     normalize_bool_inplace("prompt_on_quit")
     normalize_bool_inplace("hide_cmdline_win")
 
+    _config_[0] = conf_dict
     return conf_dict
 
 
@@ -148,7 +156,7 @@ def save_config(conf_dict):
         cparser.write(outf)
         outf.close()
     except Exception:
-        pass
+        settings_log.exception('Failed to save config')
 
 
 def edit_config(ui, conf_dict):

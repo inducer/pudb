@@ -33,6 +33,8 @@ THE SOFTWARE.
 import urwid
 import inspect
 
+from pudb.lowlevel import ui_log
+
 try:
     import numpy
     HAVE_NUMPY = 1
@@ -285,7 +287,9 @@ def type_stringifier(value):
         try:
             return text_type(value)
         except Exception:
-            pass
+            message = 'string safe type stringifier failed'
+            ui_log.exception(message)
+            return '!! %s !!' % message
 
     elif hasattr(type(value), "safely_stringify_for_pudb"):
         try:
@@ -293,10 +297,12 @@ def type_stringifier(value):
             # and return nonsense.
             result = value.safely_stringify_for_pudb()
         except Exception:
-            pass
-        else:
-            if isinstance(result, string_types):
-                return text_type(result)
+            message = 'safely_stringify_for_pudb call failed'
+            ui_log.exception(message)
+            result = '!! %s !!' % message
+
+        if isinstance(result, string_types):
+            return text_type(result)
 
     elif type(value) in [set, frozenset, list, tuple, dict]:
         return text_type("%s (%s)") % (type(value).__name__, len(value))
@@ -371,6 +377,7 @@ class ValueWalker:
                 # repr() on a random object.
                 displayed_value = type_stringifier(value) \
                                 + " (!! %s error !!)" % iinfo.display_type
+                ui_log.exception('stringifier failed')
 
             if iinfo.show_detail:
                 if iinfo.access_level == "public":
@@ -414,21 +421,27 @@ class ValueWalker:
                     key_it = value.keys()
                 else:
                     key_it = value.iterkeys()
-            except Exception:
+            except AttributeError:
+                # keys or iterkeys doesn't exist, not worth mentioning!
                 pass
+            except Exception:
+                ui_log.exception('Failed to obtain key iterator')
 
             if key_it is None:
                 try:
                     len_value = len(value)
-                except Exception:
+                except TypeError:
+                    # no __len__ defined on the value, not worth mentioning!
                     pass
+                except Exception:
+                    ui_log.exception('Failed to determine container length')
                 else:
                     try:
                         value[0]
                     except IndexError:
                         key_it = []
                     except Exception:
-                        pass
+                        ui_log.exception('Item is not iterable')
                     else:
                         key_it = xrange(len_value)
 
@@ -456,7 +469,7 @@ class ValueWalker:
             try:
                 key_its.append(dir(value))
             except Exception:
-                pass
+                ui_log.exception('Failed to look up attributes')
 
             keys = [key
                     for ki in key_its
