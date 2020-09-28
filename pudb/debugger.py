@@ -1583,25 +1583,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     [curframe.f_locals, curframe.f_globals],
                     curframe.f_locals)
 
-        def add_cmdline_content(s, attr):
-            s = s.rstrip("\n")
-
-            from pudb.ui_tools import SelectableText
-            self.cmdline_contents.append(
-                    urwid.AttrMap(SelectableText(s),
-                        attr, "focused "+attr))
-
-            # scroll to end of last entry
-            self.cmdline_list.set_focus_valign("bottom")
-            self.cmdline_list.set_focus(len(self.cmdline_contents) - 1,
-                    coming_from="above")
-        self.add_cmdline_content = add_cmdline_content
-
         def cmdline_tab_complete(w, size, key):
             try:
                 from jedi import Interpreter
             except ImportError:
-                add_cmdline_content(
+                self.add_cmdline_content(
                         "Tab completion requires jedi to be installed. ",
                         "command line error")
                 return
@@ -1609,7 +1595,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             import jedi
             from distutils.version import LooseVersion
             if LooseVersion(jedi.__version__) < LooseVersion("0.16.0"):
-                add_cmdline_content(
+                self.add_cmdline_content(
                         "jedi 0.16.0 is required for Tab completion",
                         "command line error")
 
@@ -1625,7 +1611,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         [cmdline_get_namespace()]).complete()
             except Exception as e:
                 # Jedi sometimes produces errors. Ignore them.
-                add_cmdline_content(
+                self.add_cmdline_content(
                         "Could not tab complete (Jedi error: '%s')" % e,
                         "command line error")
                 return
@@ -1656,7 +1642,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             if (
                     len(completed_chopped_text) == 0
                     and len(completions) > 1):
-                add_cmdline_content(
+                self.add_cmdline_content(
                         "   ".join(full_completions),
                         "command line output")
                 return
@@ -1676,7 +1662,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 # blank command -> refuse service
                 return
 
-            add_cmdline_content(">>> " + cmd, "command line input")
+            self.add_cmdline_content(">>> " + cmd, "command line input")
 
             if not self.cmdline_history or cmd != self.cmdline_history[-1]:
                 self.cmdline_history.append(cmd)
@@ -1716,12 +1702,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     tb_lines.insert(0, "Traceback (most recent call last):\n")
                 tb_lines[len(tb_lines):] = traceback.format_exception_only(tp, val)
 
-                add_cmdline_content("".join(tb_lines), "command line error")
+                self.add_cmdline_content("".join(tb_lines), "command line error")
             else:
                 self.cmdline_edit.set_edit_text("")
             finally:
                 if sys.stdout.getvalue():
-                    add_cmdline_content(sys.stdout.getvalue(), "command line output")
+                    self.add_cmdline_content(sys.stdout.getvalue(), "command line output")
 
                 sys.stdin = prev_sys_stdin
                 sys.stdout = prev_sys_stdout
@@ -2074,6 +2060,18 @@ class DebuggerUI(FrameVarInfoKeeper):
     # }}}
 
     # {{{ UI helpers
+    def add_cmdline_content(self, s, attr):
+        s = s.rstrip("\n")
+
+        from pudb.ui_tools import SelectableText
+        self.cmdline_contents.append(
+                urwid.AttrMap(SelectableText(s), attr, "focused "+attr))
+
+        # scroll to end of last entry
+        self.cmdline_list.set_focus_valign("bottom")
+        self.cmdline_list.set_focus(len(self.cmdline_contents) - 1,
+                coming_from="above")
+
     def reset_cmdline_size(self):
         self.lhs_col.item_types[-1] = "weight", \
                 self.cmdline_weight if self.cmdline_on else 0
