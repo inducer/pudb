@@ -14,15 +14,15 @@ def main():
     # and makes it possible without much fuss to support cases like:
     #    python -m pudb -m http.server -h
     # where the -h will be passed to the http.server module
-    parser.add_argument("-m", "--module", action='store_true',
+    parser.add_argument("-m", "--module", action="store_true",
                         help="Debug as module or package instead of as a script")
 
-    parser.add_argument("-le", "--log-errors", nargs=1, metavar='FILE',
+    parser.add_argument("-le", "--log-errors", nargs=1, metavar="FILE",
                         help="Log internal errors to the given file")
     parser.add_argument("--pre-run", metavar="COMMAND",
                         help="Run command before each program run",
                         default="")
-    parser.add_argument('script_args', nargs=argparse.REMAINDER,
+    parser.add_argument("script_args", nargs=argparse.REMAINDER,
                         help="Arguments to pass to script or module")
 
     options = parser.parse_args()
@@ -33,8 +33,8 @@ def main():
         setlogfile(options.log_errors[0])
 
     options_kwargs = {
-        'pre_run': options.pre_run,
-        'steal_output': options.steal_output,
+        "pre_run": options.pre_run,
+        "steal_output": options.steal_output,
     }
 
     if len(args) < 1:
@@ -50,12 +50,12 @@ def main():
     else:
         from os.path import exists
         if not exists(mainpyfile):
-            print('Error: %s does not exist' % mainpyfile, file=sys.stderr)
+            print("Error: %s does not exist" % mainpyfile, file=sys.stderr)
             sys.exit(1)
 
         from pudb import runscript
         runscript(mainpyfile, **options_kwargs)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

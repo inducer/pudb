@@ -1024,9 +1024,9 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         # Convert hNNN syntax to equivalent #RGB value
         # (https://github.com/wardi/urwid/issues/24)
-        if fg_color.startswith('h') or bg_color.startswith('h'):
+        if fg_color.startswith("h") or bg_color.startswith("h"):
             attr = urwid.AttrSpec(fg_color, bg_color, colors=256)
-            palette_list.append((setting_name, 'default', 'default', 'default',
+            palette_list.append((setting_name, "default", "default", "default",
                 attr.foreground,
                 attr.background))
         else:

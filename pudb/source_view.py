@@ -33,7 +33,7 @@ TABSTOP = 8
 
 
 class SourceLine(urwid.FlowWidget):
-    def __init__(self, dbg_ui, text, line_nr='', attr=None, has_breakpoint=False):
+    def __init__(self, dbg_ui, text, line_nr="", attr=None, has_breakpoint=False):
         self.dbg_ui = dbg_ui
         self.text = text
         self.attr = attr
@@ -67,7 +67,7 @@ class SourceLine(urwid.FlowWidget):
         maxcol = size[0]
         hscroll = self.dbg_ui.source_hscroll_start
 
-        # attrs is a list of words like 'focused' and 'breakpoint'
+        # attrs is a list of words like "focused" and "breakpoint"
         attrs = []
 
         if self.is_current:
@@ -195,7 +195,7 @@ def format_source(debugger_ui, lines, breakpoints):
                 t.Keyword.Namespace: "namespace",
                 t.Token.Argument: "argument",
                 t.Token.Dunder: "dunder",
-                t.Token.Keyword2: 'keyword2',
+                t.Token.Keyword2: "keyword2",
                 t.Keyword: "keyword",
                 t.Literal: "literal",
                 t.Name.Exception: "exception",
@@ -219,20 +219,20 @@ def format_source(debugger_ui, lines, breakpoints):
         # associated strings to new token types.
         ATTR_TRANSLATE = {  # noqa: N806
                 t.Keyword: {
-                    'class': t.Token.Keyword2,
-                    'def': t.Token.Keyword2,
-                    'exec': t.Token.Keyword2,
-                    'lambda': t.Token.Keyword2,
-                    'print': t.Token.Keyword2,
+                    "class": t.Token.Keyword2,
+                    "def": t.Token.Keyword2,
+                    "exec": t.Token.Keyword2,
+                    "lambda": t.Token.Keyword2,
+                    "print": t.Token.Keyword2,
                     },
                 t.Operator: {
-                    '.': t.Token,
+                    ".": t.Token,
                     },
                 t.Name.Builtin.Pseudo: {
-                    'self': t.Token,
+                    "self": t.Token,
                     },
                 t.Name.Builtin: {
-                    'object': t.Name.Class,
+                    "object": t.Name.Class,
                     },
                 }
 
@@ -262,7 +262,7 @@ def format_source(debugger_ui, lines, breakpoints):
                     # Translate dunder method tokens
                     if ttype == (
                             t.Name.Function
-                            and s.startswith('__') and s.endswith('__')
+                            and s.startswith("__") and s.endswith("__")
                             ):
                         ttype = t.Token.Dunder
 
@@ -310,14 +310,14 @@ def format_source(debugger_ui, lines, breakpoints):
 
 
 class ParseState(object):
-    '''States for the ArgumentParser class'''
+    """States for the ArgumentParser class"""
     idle = 1
     found_function = 2
     found_open_paren = 3
 
 
 class ArgumentParser(object):
-    '''Parse source code tokens and identify function arguments.
+    """Parse source code tokens and identify function arguments.
 
     This parser implements a state machine which accepts
     Pygments tokens, delivered sequentially from the beginning
@@ -329,7 +329,7 @@ class ArgumentParser(object):
     argument, it returns the correct token type for that
     item (the caller should then replace the associated item's
     token type with the returned type)
-    '''
+    """
 
     def __init__(self, pygments_token):
         self.t = pygments_token
@@ -337,22 +337,22 @@ class ArgumentParser(object):
         self.paren_level = 0
 
     def parse_token(self, token, s):
-        '''Parse token. Return None or replacement token type'''
+        """Parse token. Return None or replacement token type"""
         if self.state == ParseState.idle:
             if token is self.t.Name.Function:
                 self.state = ParseState.found_function
                 self.paren_level = 0
         elif self.state == ParseState.found_function:
-            if token is self.t.Punctuation and s == '(':
+            if token is self.t.Punctuation and s == "(":
                 self.state = ParseState.found_open_paren
                 self.paren_level = 1
         else:
             if ((token is self.t.Name)
-                    or (token is self.t.Name.Builtin.Pseudo and s == 'self')):
+                    or (token is self.t.Name.Builtin.Pseudo and s == "self")):
                 return self.t.Token.Argument
-            elif token is self.t.Punctuation and s == ')':
+            elif token is self.t.Punctuation and s == ")":
                 self.paren_level -= 1
-            elif token is self.t.Punctuation and s == '(':
+            elif token is self.t.Punctuation and s == "(":
                 self.paren_level += 1
             if self.paren_level == 0:
                 self.state = ParseState.idle

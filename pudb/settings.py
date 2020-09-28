@@ -34,18 +34,18 @@ from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
 
 # minor LGPL violation: stolen from python-xdg
 
-_home = os.environ.get('HOME', None)
-xdg_data_home = os.environ.get('XDG_DATA_HOME',
-            os.path.join(_home, '.local', 'share') if _home else None)
+_home = os.environ.get("HOME", None)
+xdg_data_home = os.environ.get("XDG_DATA_HOME",
+            os.path.join(_home, ".local", "share") if _home else None)
 
 
-XDG_CONFIG_HOME = os.environ.get('XDG_CONFIG_HOME',
-                                 os.path.join(_home, '.config') if _home else None)
+XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME",
+                                 os.path.join(_home, ".config") if _home else None)
 
 if XDG_CONFIG_HOME:
     XDG_CONFIG_DIRS = [XDG_CONFIG_HOME]
 else:
-    XDG_CONFIG_DIRS = os.environ.get('XDG_CONFIG_DIRS', '/etc/xdg').split(':')
+    XDG_CONFIG_DIRS = os.environ.get("XDG_CONFIG_DIRS", "/etc/xdg").split(":")
 
 
 def get_save_config_path(*resource):
@@ -54,7 +54,7 @@ def get_save_config_path(*resource):
     if not resource:
         resource = [XDG_CONF_RESOURCE]
     resource = os.path.join(*resource)
-    assert not resource.startswith('/')
+    assert not resource.startswith("/")
     path = os.path.join(XDG_CONFIG_HOME, resource)
     if not os.path.isdir(path):
         os.makedirs(path, 448)  # 0o700
@@ -92,7 +92,7 @@ def load_config():
         if cparser.has_section(CONF_SECTION):
             conf_dict.update(dict(cparser.items(CONF_SECTION)))
     except Exception:
-        settings_log.exception('Failed to load config')
+        settings_log.exception("Failed to load config")
 
     conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
@@ -128,7 +128,7 @@ def load_config():
             else:
                 conf_dict[name] = True
         except Exception:
-            settings_log.exception('Failed to process config')
+            settings_log.exception("Failed to process config")
 
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
@@ -156,7 +156,7 @@ def save_config(conf_dict):
         cparser.write(outf)
         outf.close()
     except Exception:
-        settings_log.exception('Failed to save config')
+        settings_log.exception("Failed to save config")
 
 
 def edit_config(ui, conf_dict):
@@ -521,14 +521,14 @@ def parse_breakpoints(lines):
         filename = None
         lineno = None
         cond = None
-        comma = arg.find(',')
+        comma = arg.find(",")
 
         if comma > 0:
             # parse stuff after comma: "condition"
             cond = arg[comma+1:].lstrip()
             arg = arg[:comma].rstrip()
 
-        colon = arg.rfind(':')
+        colon = arg.rfind(":")
         funcname = None
 
         if colon > 0:
@@ -597,7 +597,7 @@ def save_breakpoints(bp_list):
     if not save_path:
         return
 
-    histfile = open(get_breakpoints_file_name(), 'w')
+    histfile = open(get_breakpoints_file_name(), "w")
     bp_list = set([(bp.file, bp.line, bp.cond) for bp in bp_list])
     for bp in bp_list:
         line = "b %s:%d" % (bp[0], bp[1])

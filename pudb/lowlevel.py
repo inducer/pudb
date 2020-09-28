@@ -39,9 +39,9 @@ def getlogfile():
 
 def setlogfile(destfile):
     logfile[0] = destfile
-    with open(destfile, 'a') as openfile:
+    with open(destfile, "a") as openfile:
         openfile.write(
-            '\n*** Pudb session error log started at {date} ***\n'.format(
+            "\n*** Pudb session error log started at {date} ***\n".format(
                 date=datetime.now()
             ))
 
@@ -59,8 +59,8 @@ class TerminalOrStreamHandler(logging.StreamHandler):
         try:
             if logfile is not None:
                 message = self.format(record)
-                with open(logfile, 'a') as openfile:
-                    openfile.write('\n%s\n' % message)
+                with open(logfile, "a") as openfile:
+                    openfile.write("\n%s\n" % message)
             elif _have_debugger():
                 dbg = _get_debugger()
                 message = self.format(record)
@@ -74,18 +74,18 @@ class TerminalOrStreamHandler(logging.StreamHandler):
 def _init_loggers():
     ui_handler = TerminalOrStreamHandler()
     ui_formatter = logging.Formatter(
-        fmt='*** Pudb UI Exception Encountered: %(message)s ***\n'
+        fmt="*** Pudb UI Exception Encountered: %(message)s ***\n"
     )
     ui_handler.setFormatter(ui_formatter)
-    ui_log = logging.getLogger('ui')
+    ui_log = logging.getLogger("ui")
     ui_log.addHandler(ui_handler)
 
     settings_handler = TerminalOrStreamHandler()
     settings_formatter = logging.Formatter(
-        fmt='*** Pudb Settings Exception Encountered: %(message)s ***\n'
+        fmt="*** Pudb Settings Exception Encountered: %(message)s ***\n"
     )
     settings_handler.setFormatter(settings_formatter)
-    settings_log = logging.getLogger('settings')
+    settings_log = logging.getLogger("settings")
     settings_log.addHandler(settings_handler)
 
     return ui_log, settings_log
@@ -178,8 +178,8 @@ def lookup_module(filename):
     if os.path.exists(f):  # and self.canonic(f) == self.mainpyfile:
         return f
     root, ext = os.path.splitext(filename)
-    if ext == '':
-        filename = filename + '.py'
+    if ext == "":
+        filename = filename + ".py"
     if os.path.isabs(filename):
         return filename
     for dirname in sys.path:
@@ -224,14 +224,14 @@ def detect_encoding(line_iter):
         try:
             return next(line_iter)
         except StopIteration:
-            return ''
+            return ""
 
     def find_cookie(line):
         try:
             if PY3:
                 line_string = line
             else:
-                line_string = line.decode('ascii')
+                line_string = line.decode("ascii")
         except UnicodeDecodeError:
             return None
 
@@ -245,9 +245,9 @@ def detect_encoding(line_iter):
             # This behaviour mimics the Python interpreter
             raise SyntaxError("unknown encoding: " + encoding)
 
-        if bom_found and codec.name != 'utf-8':
+        if bom_found and codec.name != "utf-8":
             # This behaviour mimics the Python interpreter
-            raise SyntaxError('encoding problem: utf-8')
+            raise SyntaxError("encoding problem: utf-8")
         return encoding
 
     first = read_or_stop()
@@ -258,7 +258,7 @@ def detect_encoding(line_iter):
         bom_found = True
         first = first[3:]
     if not first:
-        return 'utf-8', []
+        return "utf-8", []
 
     encoding = find_cookie(first)
     if encoding:
@@ -266,13 +266,13 @@ def detect_encoding(line_iter):
 
     second = read_or_stop()
     if not second:
-        return 'utf-8', [first]
+        return "utf-8", [first]
 
     encoding = find_cookie(second)
     if encoding:
         return encoding, [first, second]
 
-    return 'utf-8', [first, second]
+    return "utf-8", [first, second]
 
 
 def decode_lines(lines):

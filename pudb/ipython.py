@@ -45,8 +45,8 @@ def debugger(self, force=False):
     if not (force or self.call_pdb):
         return
 
-    if not hasattr(sys, 'last_traceback'):
-        error('No traceback has been produced, nothing to debug.')
+    if not hasattr(sys, "last_traceback"):
+        error("No traceback has been produced, nothing to debug.")
         return
 
     from pudb import pm
