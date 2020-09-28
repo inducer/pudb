@@ -70,7 +70,7 @@ CURRENT_DEBUGGER = []
 
 def _tty_override():
     import os
-    return os.environ.get('PUDB_TTY')
+    return os.environ.get("PUDB_TTY")
 
 
 def _open_tty(tty_path):
@@ -81,15 +81,15 @@ def _open_tty(tty_path):
         import fcntl
         import termios
         import struct
-        tty_file = open(tty_path, 'r+b', buffering=0)
+        tty_file = open(tty_path, "r+b", buffering=0)
         try:
-            s = struct.unpack('hh', fcntl.ioctl(
-                tty_file.fileno(), termios.TIOCGWINSZ, '1234'))
+            s = struct.unpack("hh", fcntl.ioctl(
+                tty_file.fileno(), termios.TIOCGWINSZ, "1234"))
             term_size = (s[1], s[0])
         except Exception:
             term_size = None
     else:
-        tty_file = io.TextIOWrapper(open(tty_path, 'r+b', buffering=0))
+        tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))
         term_size = os.get_terminal_size(tty_file.fileno())
 
     return tty_file, term_size
@@ -98,11 +98,11 @@ def _open_tty(tty_path):
 def _get_debugger(**kwargs):
     if not CURRENT_DEBUGGER:
         tty_path = _tty_override()
-        if tty_path and ('stdin' not in kwargs or 'stdout' not in kwargs):
+        if tty_path and ("stdin" not in kwargs or "stdout" not in kwargs):
             tty_file, term_size = _open_tty(tty_path)
-            kwargs.setdefault('stdin', tty_file)
-            kwargs.setdefault('stdout', tty_file)
-            kwargs.setdefault('term_size', term_size)
+            kwargs.setdefault("stdin", tty_file)
+            kwargs.setdefault("stdout", tty_file)
+            kwargs.setdefault("term_size", term_size)
 
         from pudb.debugger import Debugger
         dbg = Debugger(**kwargs)
@@ -123,7 +123,7 @@ del signal
 
 
 def runmodule(*args, **kwargs):
-    kwargs['run_as_module'] = True
+    kwargs["run_as_module"] = True
     runscript(*args, **kwargs)
 
 
@@ -299,7 +299,7 @@ def set_interrupt_handler(interrupt_signal=None):
         from warnings import warn
         if old_handler is None:
             # This is the documented meaning of getsignal()->None.
-            old_handler = 'not installed from python'
+            old_handler = "not installed from python"
         return warn("A non-default handler for signal %d is already installed (%s). "
                 "Skipping pudb interrupt support."
                 % (interrupt_signal, old_handler))

@@ -10,7 +10,7 @@ if PY3:
     text_type = str
 
     def execfile(fname, globs, locs=None):
-        exec(compile(open(fname).read(), fname, 'exec'), globs, locs or globs)
+        exec(compile(open(fname).read(), fname, "exec"), globs, locs or globs)
 else:
     raw_input = raw_input
     xrange = xrange

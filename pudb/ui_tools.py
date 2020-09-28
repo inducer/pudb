@@ -195,7 +195,7 @@ class BreakpointFrame(urwid.FlowWidget):
         else:
             apfx = ""
 
-        bp_pfx = ''
+        bp_pfx = ""
         if not self.enabled:
             apfx += "disabled "
             bp_pfx += "X"
@@ -204,7 +204,7 @@ class BreakpointFrame(urwid.FlowWidget):
             bp_pfx += ">>"
         bp_pfx = bp_pfx.ljust(3)
 
-        hits_label = 'hits' if self.hits != 1 else 'hit'
+        hits_label = "hits" if self.hits != 1 else "hit"
         loc = " %s:%d (%s %s)" % (self.filename, self.line, self.hits, hits_label)
         text = bp_pfx+loc
         attr = [(apfx+"breakpoint", len(loc))]

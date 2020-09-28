@@ -294,7 +294,7 @@ class Debugger(bdb.Bdb):
 
     def setup_state(self):
         self.bottom_frame = None
-        self.mainpyfile = ''
+        self.mainpyfile = ""
         self._wait_for_mainpyfile = False
         self.current_bp = None
         self.post_mortem = False
@@ -412,7 +412,7 @@ class Debugger(bdb.Bdb):
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
         if "__exc_tuple__" in frame.f_locals:
-            del frame.f_locals['__exc_tuple__']
+            del frame.f_locals["__exc_tuple__"]
 
         if self._wait_for_mainpyfile:
             if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
@@ -432,8 +432,8 @@ class Debugger(bdb.Bdb):
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
-        if frame.f_code.co_name != '<module>':
-            frame.f_locals['__return__'] = return_value
+        if frame.f_code.co_name != "<module>":
+            frame.f_locals["__return__"] = return_value
 
         if self._wait_for_mainpyfile:
             if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
@@ -448,7 +448,7 @@ class Debugger(bdb.Bdb):
     def user_exception(self, frame, exc_tuple):
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
-        frame.f_locals['__exc_tuple__'] = exc_tuple
+        frame.f_locals["__exc_tuple__"] = exc_tuple
 
         if not self._wait_for_mainpyfile:
             self.interaction(frame, exc_tuple)
@@ -546,17 +546,17 @@ except ImportError:
 
 
 class ThreadsafeScreenMixin(object):
-    "A Screen subclass that doesn't crash when running from a non-main thread."
+    """A Screen subclass that doesn't crash when running from a non-main thread."""
 
     def signal_init(self):
-        "Initialize signal handler, ignoring errors silently."
+        """Initialize signal handler, ignoring errors silently."""
         try:
             super(ThreadsafeScreenMixin, self).signal_init()
         except ValueError:
             pass
 
     def signal_restore(self):
-        "Restore default signal handler, ignoring errors silently."
+        """Restore default signal handler, ignoring errors silently."""
         try:
             super(ThreadsafeScreenMixin, self).signal_restore()
         except ValueError:
@@ -905,7 +905,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             iinfo = get_inspect_info(var.id_path)
             focus_index = None
 
-            if key == "enter" or key == "\\" or key == ' ':
+            if key == "enter" or key == "\\" or key == " ":
                 iinfo.show_detail = not iinfo.show_detail
             elif key == "h":
                 focus_index = collapse_current(var, pos, iinfo)
@@ -1078,8 +1078,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
 
-        self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
-        self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
+        self.var_list.listen("[", partial(change_rhs_box, "variables", 0, -1))
+        self.var_list.listen("]", partial(change_rhs_box, "variables", 0, 1))
 
         # }}}
 
@@ -1104,8 +1104,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_list.listen("u", move_stack_up)
         self.stack_list.listen("d", move_stack_down)
 
-        self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
-        self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
+        self.stack_list.listen("[", partial(change_rhs_box, "stack", 1, -1))
+        self.stack_list.listen("]", partial(change_rhs_box, "stack", 1, 1))
 
         # }}}
 
@@ -1237,8 +1237,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.bp_list.listen("b", enable_disable_breakpoint)
         self.bp_list.listen("H", move_stack_top)
 
-        self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
-        self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
+        self.bp_list.listen("[", partial(change_rhs_box, "breakpoints", 2, -1))
+        self.bp_list.listen("]", partial(change_rhs_box, "breakpoints", 2, 1))
 
         # }}}
 
@@ -1684,10 +1684,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                 # Don't use cmdline_get_namespace() here in Python 2, as it
                 # breaks things (issue #166).
                 if PY3:
-                    eval(compile(cmd, "<pudb command line>", 'single'),
+                    eval(compile(cmd, "<pudb command line>", "single"),
                          cmdline_get_namespace())
                 else:
-                    eval(compile(cmd, "<pudb command line>", 'single'),
+                    eval(compile(cmd, "<pudb command line>", "single"),
                          self.debugger.curframe.f_globals,
                          self.debugger.curframe.f_locals)
             except Exception:
@@ -1947,7 +1947,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         print("Falling back to classic shell")
                         runner = shell.run_classic_shell
                     else:
-                        runner = shell.custom_shell_dict['pudb_shell']
+                        runner = shell.custom_shell_dict["pudb_shell"]
 
             runner(curframe.f_globals, curframe.f_locals)
 
@@ -2042,7 +2042,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 # https://github.com/inducer/pudb/issues/78
                 pass
             else:
-                color_support = curses.tigetnum('colors')
+                color_support = curses.tigetnum("colors")
 
                 if color_support == 256 and isinstance(self.screen, RawScreen):
                     self.screen.set_terminal_properties(256)
@@ -2181,8 +2181,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         w = urwid.Overlay(w, self.top,
                 align="center",
                 valign="middle",
-                width=('relative', 75),
-                height=('relative', 75),
+                width=("relative", 75),
+                height=("relative", 75),
                 )
         w = Attr(w, "background")
 
@@ -2617,9 +2617,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                     class_name = frame.f_locals["self"].__class__.__name__
                 except Exception:
                     from pudb.lowlevel import ui_log
-                    message = 'Failed to determine class name'
+                    message = "Failed to determine class name"
                     ui_log.exception(message)
-                    class_name = '!! %s !!' % message
+                    class_name = "!! %s !!" % message
 
             return StackFrame(frame is self.debugger.curframe,
                     code.co_name, class_name,

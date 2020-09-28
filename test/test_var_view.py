@@ -21,8 +21,8 @@ def test_get_stringifier():
         numpy_values = [np.float32(5), np.zeros(5)]
 
     for value in [
-            A, A2, A(), A2(), u"lól".encode('utf8'), u"lól",
-            1233123, [u"lól".encode('utf8'), u"lól"],
+            A, A2, A(), A2(), u"lól".encode("utf8"), u"lól",
+            1233123, [u"lól".encode("utf8"), u"lól"],
             ] + numpy_values:
         for display_type in ["type", "repr", "str"]:
             iinfo = InspectInfo()

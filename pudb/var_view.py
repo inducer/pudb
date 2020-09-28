@@ -41,12 +41,10 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
-from pudb.py3compat import PY3, execfile, raw_input, xrange, \
+from pudb.py3compat import execfile, raw_input, xrange, \
         integer_types, string_types, text_type
-if PY3:
-    ELLIPSIS = '…'
-else:
-    ELLIPSIS = unicode('…', 'utf-8')  # noqa: F821
+
+ELLIPSIS = "…"
 
 from pudb.ui_tools import text_width
 
@@ -137,7 +135,7 @@ class VariableWidget(urwid.FlowWidget):
             self.wrap = iinfo.wrap
 
     def __str__(self):
-        return ('VariableWidget: {value_str}, level {nesting_level}, at {id_path}'
+        return ("VariableWidget: {value_str}, level {nesting_level}, at {id_path}"
                 .format(
                     value_str=self.value_str,
                     nesting_level=self.nesting_level,
@@ -151,8 +149,8 @@ class VariableWidget(urwid.FlowWidget):
 
     def _get_text(self, size):
         maxcol = size[0] - len(self.prefix)  # self.prefix is a padding
-        var_label = self.var_label or ''
-        value_str = self.value_str or ''
+        var_label = self.var_label or ""
+        value_str = self.value_str or ""
         alltext = var_label + ": " + value_str
         # The first line is not indented
         firstline = self.prefix + alltext[:maxcol]
@@ -183,7 +181,7 @@ class VariableWidget(urwid.FlowWidget):
         else:
             apfx = self.attr_prefix+" "
 
-        var_label = self.var_label or ''
+        var_label = self.var_label or ""
 
         if self.wrap:
             text = self._get_text(size)
@@ -287,9 +285,9 @@ def type_stringifier(value):
         try:
             return text_type(value)
         except Exception:
-            message = 'string safe type stringifier failed'
+            message = "string safe type stringifier failed"
             ui_log.exception(message)
-            return '!! %s !!' % message
+            return "!! %s !!" % message
 
     elif hasattr(type(value), "safely_stringify_for_pudb"):
         try:
@@ -297,9 +295,9 @@ def type_stringifier(value):
             # and return nonsense.
             result = value.safely_stringify_for_pudb()
         except Exception:
-            message = 'safely_stringify_for_pudb call failed'
+            message = "safely_stringify_for_pudb call failed"
             ui_log.exception(message)
-            result = '!! %s !!' % message
+            result = "!! %s !!" % message
 
         if isinstance(result, string_types):
             return text_type(result)
@@ -316,17 +314,9 @@ def get_stringifier(iinfo):
     if iinfo.display_type == "type":
         return type_stringifier
     elif iinfo.display_type == "repr":
-        if PY3:
-            return repr
-        else:
-            return lambda value: repr(value).decode("utf-8")
+        return repr
     elif iinfo.display_type == "str":
-        if PY3:
-            return str
-        else:
-            return lambda value: (
-                    value.decode("utf-8") if isinstance(value, bytes)
-                    else text_type(value))
+        return str
     else:
         try:
             if not custom_stringifier_dict:  # Only execfile once
@@ -377,7 +367,7 @@ class ValueWalker:
                 # repr() on a random object.
                 displayed_value = type_stringifier(value) \
                                 + " (!! %s error !!)" % iinfo.display_type
-                ui_log.exception('stringifier failed')
+                ui_log.exception("stringifier failed")
 
             if iinfo.show_detail:
                 if iinfo.access_level == "public":
@@ -417,15 +407,12 @@ class ValueWalker:
             key_it = None
 
             try:
-                if PY3:
-                    key_it = value.keys()
-                else:
-                    key_it = value.iterkeys()
+                key_it = value.keys()
             except AttributeError:
                 # keys or iterkeys doesn't exist, not worth mentioning!
                 pass
             except Exception:
-                ui_log.exception('Failed to obtain key iterator')
+                ui_log.exception("Failed to obtain key iterator")
 
             if key_it is None:
                 try:
@@ -434,14 +421,14 @@ class ValueWalker:
                     # no __len__ defined on the value, not worth mentioning!
                     pass
                 except Exception:
-                    ui_log.exception('Failed to determine container length')
+                    ui_log.exception("Failed to determine container length")
                 else:
                     try:
                         value[0]
                     except IndexError:
                         key_it = []
                     except Exception:
-                        ui_log.exception('Item is not iterable')
+                        ui_log.exception("Item is not iterable")
                     else:
                         key_it = xrange(len_value)
 
@@ -469,7 +456,7 @@ class ValueWalker:
             try:
                 key_its.append(dir(value))
             except Exception:
-                ui_log.exception('Failed to look up attributes')
+                ui_log.exception("Failed to look up attributes")
 
             keys = [key
                     for ki in key_its
@@ -608,7 +595,7 @@ def make_var_view(frame_var_info, locals, globals):
                 attr_prefix="return")
 
     for var in vars:
-        if not (var.startswith('__') and var.endswith('__')):
+        if not (var.startswith("__") and var.endswith("__")):
             tmv_walker.walk_value(None, var, locals[var])
 
     result = tmv_walker.main_widget_list

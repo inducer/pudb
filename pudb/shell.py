@@ -145,7 +145,7 @@ def ipython_version():
 
 
 def run_ipython_shell_v10(globals, locals, first_time=[True]):
-    '''IPython shell from IPython version 0.10'''
+    """IPython shell from IPython version 0.10"""
     if first_time:
         banner = "Hit Ctrl-D to return to PuDB."
         first_time.pop()
@@ -161,7 +161,7 @@ def run_ipython_shell_v10(globals, locals, first_time=[True]):
 
 
 def _update_ipython_ns(shell, globals, locals):
-    '''Update the IPython 0.11 namespace at every visit'''
+    """Update the IPython 0.11 namespace at every visit"""
 
     shell.user_ns = locals.copy()
 
@@ -169,7 +169,7 @@ def _update_ipython_ns(shell, globals, locals):
         shell.user_global_ns = globals
     except AttributeError:
         class DummyMod(object):
-            "A dummy module used for IPython's interactive namespace."
+            """A dummy module used for IPython's interactive namespace."""
             pass
 
         user_module = DummyMod()
@@ -181,7 +181,7 @@ def _update_ipython_ns(shell, globals, locals):
 
 
 def run_ipython_shell_v11(globals, locals, first_time=[True]):
-    '''IPython shell from IPython version 0.11'''
+    """IPython shell from IPython version 0.11"""
     if first_time:
         banner = "Hit Ctrl-D to return to PuDB."
         first_time.pop()
@@ -226,7 +226,7 @@ def run_ipython_shell_v11(globals, locals, first_time=[True]):
 
 def run_ipython_shell(globals, locals):
     import IPython
-    if have_ipython() and hasattr(IPython, 'Shell'):
+    if have_ipython() and hasattr(IPython, "Shell"):
         return run_ipython_shell_v10(globals, locals)
     else:
         return run_ipython_shell_v11(globals, locals)
@@ -237,7 +237,7 @@ def run_ipython_shell(globals, locals):
 def run_ptpython_shell(globals, locals):
     # Use the default ptpython history
     import os
-    history_filename = os.path.expanduser('~/.ptpython/history')
+    history_filename = os.path.expanduser("~/.ptpython/history")
     ptpython_embed(globals=globals.copy(), locals=locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)
@@ -247,7 +247,7 @@ def run_ptipython_shell(globals, locals):
     # Use the default ptpython history
     import os
 
-    history_filename = os.path.expanduser('~/.ptpython/history')
+    history_filename = os.path.expanduser("~/.ptpython/history")
     ptipython_embed(globals=globals.copy(), locals=locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)

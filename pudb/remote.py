@@ -41,18 +41,18 @@ import struct
 
 from pudb.debugger import Debugger
 
-__all__ = ['PUDB_RDB_HOST', 'PUDB_RDB_PORT', 'default_port',
-           'debugger', 'set_trace']
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port",
+           "debugger", "set_trace"]
 
 default_port = 6899
 
-PUDB_RDB_HOST = os.environ.get('PUDB_RDB_HOST') or '127.0.0.1'
-PUDB_RDB_PORT = int(os.environ.get('PUDB_RDB_PORT') or default_port)
+PUDB_RDB_HOST = os.environ.get("PUDB_RDB_HOST") or "127.0.0.1"
+PUDB_RDB_PORT = int(os.environ.get("PUDB_RDB_PORT") or default_port)
 
 #: Holds the currently active debugger.
 _current = [None]
 
-_frame = getattr(sys, '_getframe')
+_frame = getattr(sys, "_getframe")
 
 NO_AVAILABLE_PORT = """\
 {self.ident}: Couldn't find an available port.
@@ -65,12 +65,12 @@ BANNER = """\
 {self.ident}: Waiting for client...
 """
 
-SESSION_STARTED = '{self.ident}: Now in session with {self.remote_addr}.'
-SESSION_ENDED = '{self.ident}: Session with {self.remote_addr} ended.'
+SESSION_STARTED = "{self.ident}: Now in session with {self.remote_addr}."
+SESSION_ENDED = "{self.ident}: Session with {self.remote_addr} ended."
 
 
 class RemoteDebugger(Debugger):
-    me = 'pudb'
+    me = "pudb"
     _prev_outs = None
     _sock = None
 
@@ -85,14 +85,14 @@ class RemoteDebugger(Debugger):
             host, port, port_search_limit)
         self._sock.setblocking(1)
         self._sock.listen(1)
-        self.ident = '{0}:{1}'.format(self.me, this_port)
+        self.ident = "{0}:{1}".format(self.me, this_port)
         self.host = host
         self.port = this_port
         self.say(BANNER.format(self=self))
 
         self._client, address = self._sock.accept()
         self._client.setblocking(1)
-        self.remote_addr = ':'.join(str(v) for v in address)
+        self.remote_addr = ":".join(str(v) for v in address)
         self.say(SESSION_STARTED.format(self=self))
 
         # makefile ignores encoding if there's no buffering.
@@ -187,7 +187,7 @@ def set_trace(frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT
     if term_size is None:
         try:
             # Getting terminal size
-            s = struct.unpack('hh', fcntl.ioctl(1, termios.TIOCGWINSZ, '1234'))
+            s = struct.unpack("hh", fcntl.ioctl(1, termios.TIOCGWINSZ, "1234"))
             term_size = (s[1], s[0])
         except Exception:
             term_size = (80, 24)

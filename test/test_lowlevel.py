@@ -4,34 +4,34 @@ from pudb.py3compat import PY3
 
 
 def test_detect_encoding_nocookie():
-    lines = [u'Test Проверка']
-    lines = [line.encode('utf-8') for line in lines]
+    lines = [u"Test Проверка"]
+    lines = [line.encode("utf-8") for line in lines]
     encoding, _ = detect_encoding(iter(lines))
-    assert encoding == 'utf-8'
+    assert encoding == "utf-8"
 
 
 def test_detect_encoding_cookie():
     lines = [
-        u'# coding=utf-8',
-        u'Test',
-        u'Проверка'
+        u"# coding=utf-8",
+        u"Test",
+        u"Проверка"
     ]
-    lines = [line.encode('utf-8') for line in lines]
+    lines = [line.encode("utf-8") for line in lines]
     encoding, _ = detect_encoding(iter(lines))
-    assert encoding == 'utf-8'
+    assert encoding == "utf-8"
 
 
 def test_decode_lines():
     unicode_lines = [
-        u'# coding=utf-8',
-        u'Test',
-        u'Проверка',
+        u"# coding=utf-8",
+        u"Test",
+        u"Проверка",
     ]
-    lines = [line.encode('utf-8') for line in unicode_lines]
+    lines = [line.encode("utf-8") for line in unicode_lines]
     if PY3:
         assert unicode_lines == list(decode_lines(iter(lines)))
     else:
-        assert [line.decode('utf-8')
+        assert [line.decode("utf-8")
                 for line in lines] == list(decode_lines(iter(lines)))
 
 

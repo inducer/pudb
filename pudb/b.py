@@ -5,14 +5,14 @@ from pudb import _get_debugger, set_interrupt_handler
 
 
 def __myimport__(name, *args, **kwargs):  # noqa: N807
-    if name == 'pudb.b':
+    if name == "pudb.b":
         set_trace()
     return __origimport__(name, *args, **kwargs)  # noqa: F821
 
 
 # Will only be run on first import
-__builtins__['__origimport__'] = __import__
-__builtins__['__import__'] = __myimport__
+__builtins__["__origimport__"] = __import__
+__builtins__["__import__"] = __myimport__
 
 
 def set_trace():
