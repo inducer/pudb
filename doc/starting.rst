@@ -89,6 +89,24 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
+Reverse remote debugging is supported too.
+
+Fisrt open the port and listening using the Netcat. Netcat is not a
+telnet client, so it can behave diffrently than a telnet client.
+By using stty with no echo and no buffering input options can make simillar::
+
+    stty -echo -icanon && nc -lcv 9999
+    
+Specify host and port in set_trace and set reverse parameter as True::
+
+    from pudb.remote import set_trace
+    set_trace(term_size=(80, 24), host='localhost', port=9999, reverse=True)
+
+Then debugger connect to netcat::
+
+    pudb:9999: Now in session with 127.0.0.1:9999.
+
+
 Using the debugger after forking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
