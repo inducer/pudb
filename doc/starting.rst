@@ -89,20 +89,24 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
-Reverse remote debugging is supported too.
+"Reverse" remote debugging
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Fisrt open the port and listening using the Netcat. Netcat is not a
-telnet client, so it can behave diffrently than a telnet client.
-By using stty with no echo and no buffering input options can make simillar::
+In "reverse" remote debugging, pudb connects to a socket, rather than listening to one.
+
+First open the socket and listen using the netcat(``nc``), as below.
+Netcat of couse is not a telnet client, so it can behave diffrently than a telnet client.
+By using the ```stty``` with "no echo: and "no buffering" input options, we
+can make a socket that nonetheless behaves simillarly::
 
     stty -echo -icanon && nc -lcv 9999
     
-Specify host and port in set_trace and set reverse parameter as True::
+Specify host and port in set_trace and set the *reverse* parameter to *True*::
 
     from pudb.remote import set_trace
     set_trace(term_size=(80, 24), host='localhost', port=9999, reverse=True)
 
-Then debugger connect to netcat::
+Then watch the debugger connect to netcat::
 
     pudb:9999: Now in session with 127.0.0.1:9999.
 
