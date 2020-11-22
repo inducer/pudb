@@ -69,7 +69,7 @@ SESSION_STARTED = "{self.ident}: Now in session with {self.remote_addr}."
 SESSION_ENDED = "{self.ident}: Session with {self.remote_addr} ended."
 
 CONN_REFUSED = """\
-Cannot conntect to the reverse telnet client {self.remote_addr}.
+Cannot conntect to the reverse telnet client {self.host} {self.port}.
 
 Try to open reverse client like "stty -echo -icanon && nc -lcv 9999"
 
@@ -139,8 +139,8 @@ class RemoteDebugger(Debugger):
 
     def get_client(self, host, port, search_limit=100, reverse=False):
         if reverse:
+            self.host, self.port = host, port
             client, address = self.get_reverse_socket_client(host, port)
-            self.host, self.port = address
             self.ident = "{0}:{1}".format(self.me, self.port)
         else:
             self._sock, conn_info = self.get_socket_client(
@@ -160,7 +160,7 @@ class RemoteDebugger(Debugger):
             _sock.setblocking(1)
         except socket.error as exc:
             if exc.errno == errno.ECONNREFUSED:
-                raise Exception(CONN_REFUSED.format(self=self))
+                raise ValueError(CONN_REFUSED.format(self=self))
             raise exc
         return _sock, _sock.getpeername()
 
