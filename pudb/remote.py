@@ -69,7 +69,7 @@ SESSION_STARTED = "{self.ident}: Now in session with {self.remote_addr}."
 SESSION_ENDED = "{self.ident}: Session with {self.remote_addr} ended."
 
 CONN_REFUSED = """\
-Cannot conntect to the reverse telnet client {self.host} {self.port}.
+Cannot connect to the reverse telnet client {self.host} {self.port}.
 
 Try to open reverse client like "stty -echo -icanon && nc -lcv 9999"
 
