@@ -97,7 +97,7 @@ In "reverse" remote debugging, pudb connects to a socket, rather than listening 
 First open the socket and listen using the netcat(``nc``), as below.
 Netcat of couse is not a telnet client, so it can behave diffrently than a telnet client.
 By using the ```stty``` with "no echo: and "no buffering" input options, we
-can make a socket that nonetheless behaves simillarly::
+can make a socket that nonetheless behave simillarly::
 
     stty -echo -icanon && nc -lcv 9999
     
