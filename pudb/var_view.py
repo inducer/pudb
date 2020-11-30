@@ -432,7 +432,7 @@ class ValueWalker:
                     else:
                         key_it = xrange(len_value)
 
-            if key_it is not None:
+            if key_it is not None and hasattr(value, '__getitem__'):
                 cnt = 0
                 for key in key_it:
                     if cnt % 10 == 0 and cnt:
