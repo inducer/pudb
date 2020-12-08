@@ -99,16 +99,20 @@ Netcat of couse is not a telnet client, so it can behave diffrently than a telne
 By using the ```stty``` with "no echo: and "no buffering" input options, we
 can make a socket that nonetheless behave simillarly::
 
-    stty -echo -icanon && nc -lcv 9999
+    stty -echo -icanon && nc -l -p 6898
+    
+When using the BSD version netcat that ships with MacOS, a server can be started like this::
+
+    stty -echo -icanon && nc -l 6899
     
 Specify host and port in set_trace and set the *reverse* parameter to *True*::
 
     from pudb.remote import set_trace
-    set_trace(term_size=(80, 24), host='localhost', port=9999, reverse=True)
+    set_trace(reverse=True)
 
 Then watch the debugger connect to netcat::
 
-    pudb:9999: Now in session with 127.0.0.1:9999.
+    pudb:9999: Now in session with 127.0.0.1:6899.
 
 
 Using the debugger after forking

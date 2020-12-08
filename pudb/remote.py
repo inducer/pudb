@@ -71,7 +71,7 @@ SESSION_ENDED = "{self.ident}: Session with {self.remote_addr} ended."
 CONN_REFUSED = """\
 Cannot connect to the reverse telnet client {self.host} {self.port}.
 
-Try to open reverse client like "stty -echo -icanon && nc -lcv 9999"
+Try to open reverse client like "stty -echo -icanon && nc -l -p 6899"
 
 Please specify one using the PUDB_RDB_PORT environment variable.
 """
