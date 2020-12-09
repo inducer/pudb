@@ -5,6 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
+Copyright (C) 2020-2020 Son Geon
 """
 
 __license__ = """
@@ -41,8 +42,7 @@ import struct
 
 from pudb.debugger import Debugger
 
-__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port",
-           "debugger", "set_trace"]
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace"]
 
 default_port = 6899
 
@@ -68,31 +68,40 @@ BANNER = """\
 SESSION_STARTED = "{self.ident}: Now in session with {self.remote_addr}."
 SESSION_ENDED = "{self.ident}: Session with {self.remote_addr} ended."
 
+CONN_REFUSED = """\
+Cannot connect to the reverse telnet client {self.host} {self.port}.
+
+Try to open reverse client by running
+stty -echo -icanon && nc -l -p 6899  # Linux
+stty -echo -icanon && nc -l 6899  # BSD/MacOS
+
+Please specify one using the PUDB_RDB_PORT environment variable.
+"""
+
 
 class RemoteDebugger(Debugger):
     me = "pudb"
     _prev_outs = None
     _sock = None
 
-    def __init__(self, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT,
-                 port_search_limit=100, out=sys.stdout, term_size=None):
+    def __init__(
+        self,
+        host=PUDB_RDB_HOST,
+        port=PUDB_RDB_PORT,
+        port_search_limit=100,
+        out=sys.stdout,
+        term_size=None,
+        reverse=False,
+    ):
         self.active = True
         self.out = out
 
         self._prev_handles = sys.stdin, sys.stdout
-
-        self._sock, this_port = self.get_avail_port(
-            host, port, port_search_limit)
-        self._sock.setblocking(1)
-        self._sock.listen(1)
-        self.ident = "{0}:{1}".format(self.me, this_port)
-        self.host = host
-        self.port = this_port
-        self.say(BANNER.format(self=self))
-
-        self._client, address = self._sock.accept()
-        self._client.setblocking(1)
+        self._client, (address, port) = self.get_client(
+            host=host, port=port, search_limit=port_search_limit, reverse=reverse
+        )
         self.remote_addr = ":".join(str(v) for v in address)
+
         self.say(SESSION_STARTED.format(self=self))
 
         # makefile ignores encoding if there's no buffering.
@@ -105,27 +114,63 @@ class RemoteDebugger(Debugger):
                 codecs.getencoder("utf-8"),
                 codecs.getdecoder("utf-8"),
                 codecs.getreader("utf-8"),
-                codecs.getwriter("utf-8"))
+                codecs.getwriter("utf-8"),
+            )
         else:
             sock_file = codecs.StreamReaderWriter(
-                raw_sock_file,
-                codecs.getreader("utf-8"),
-                codecs.getwriter("utf-8"))
+                raw_sock_file, codecs.getreader("utf-8"), codecs.getwriter("utf-8")
+            )
 
         self._handle = sys.stdin = sys.stdout = sock_file
 
-        import telnetlib as tn
+        # nc negotiation doesn't support telnet options
+        if not reverse:
+            import telnetlib as tn
 
-        raw_sock_file.write(tn.IAC + tn.WILL + tn.SGA)
-        resp = raw_sock_file.read(3)
-        assert resp == tn.IAC + tn.DO + tn.SGA
+            raw_sock_file.write(tn.IAC + tn.WILL + tn.SGA)
+            resp = raw_sock_file.read(3)
+            assert resp == tn.IAC + tn.DO + tn.SGA
 
-        raw_sock_file.write(tn.IAC + tn.WILL + tn.ECHO)
-        resp = raw_sock_file.read(3)
-        assert resp == tn.IAC + tn.DO + tn.ECHO
+            raw_sock_file.write(tn.IAC + tn.WILL + tn.ECHO)
+            resp = raw_sock_file.read(3)
+            assert resp == tn.IAC + tn.DO + tn.ECHO
 
-        Debugger.__init__(self, stdin=self._handle, stdout=self._handle,
-                term_size=term_size)
+        Debugger.__init__(
+            self, stdin=self._handle, stdout=self._handle, term_size=term_size
+        )
+
+    def get_client(self, host, port, search_limit=100, reverse=False):
+        if reverse:
+            self.host, self.port = host, port
+            client, address = self.get_reverse_socket_client(host, port)
+            self.ident = "{0}:{1}".format(self.me, self.port)
+        else:
+            self._sock, conn_info = self.get_socket_client(
+                host, port, search_limit=search_limit,
+            )
+            self.host, self.port = conn_info
+            self.ident = "{0}:{1}".format(self.me, self.port)
+            self.say(BANNER.format(self=self))
+            client, address = self._sock.accept()
+        client.setblocking(1)
+        return client, (address, self.port)
+
+    def get_reverse_socket_client(self, host, port):
+        _sock = socket.socket()
+        try:
+            _sock.connect((host, port))
+            _sock.setblocking(1)
+        except socket.error as exc:
+            if exc.errno == errno.ECONNREFUSED:
+                raise ValueError(CONN_REFUSED.format(self=self))
+            raise exc
+        return _sock, _sock.getpeername()
+
+    def get_socket_client(self, host, port, search_limit):
+        _sock, this_port = self.get_avail_port(host, port, search_limit)
+        _sock.setblocking(1)
+        _sock.listen(1)
+        return _sock, (host, this_port)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
         this_port = None
@@ -159,6 +204,7 @@ class RemoteDebugger(Debugger):
         self._close_session()
         self.set_continue()
         return 1
+
     do_c = do_cont = do_continue
 
     def do_quit(self, arg):
@@ -171,16 +217,20 @@ class RemoteDebugger(Debugger):
         sys.settrace(None)
 
 
-def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT):
+def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False):
     """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
     if rdb is None or not rdb.active:
-        rdb = _current[0] = RemoteDebugger(host=host, port=port, term_size=term_size)
+        rdb = _current[0] = RemoteDebugger(
+            host=host, port=port, term_size=term_size, reverse=reverse
+        )
     return rdb
 
 
-def set_trace(frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT):
+def set_trace(
+    frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False
+):
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:
         frame = _frame().f_back
@@ -192,4 +242,6 @@ def set_trace(frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT
         except Exception:
             term_size = (80, 24)
 
-    return debugger(term_size=term_size, host=host, port=port).set_trace(frame)
+    return debugger(
+        term_size=term_size, host=host, port=port, reverse=reverse
+    ).set_trace(frame)

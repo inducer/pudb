@@ -89,6 +89,32 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
+"Reverse" remote debugging
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In "reverse" remote debugging, pudb connects to a socket, rather than listening to one.
+
+First open the socket and listen using the netcat(``nc``), as below.
+Netcat of couse is not a telnet client, so it can behave diffrently than a telnet client.
+By using the ```stty``` with "no echo: and "no buffering" input options, we
+can make a socket that nonetheless behave simillarly::
+
+    stty -echo -icanon && nc -l -p 6899
+    
+When using the BSD version netcat that ships with MacOS, a server can be started like this::
+
+    stty -echo -icanon && nc -l 6899
+    
+Specify host and port in set_trace and set the *reverse* parameter to *True*::
+
+    from pudb.remote import set_trace
+    set_trace(reverse=True)
+
+Then watch the debugger connect to netcat::
+
+    pudb:9999: Now in session with 127.0.0.1:6899.
+
+
 Using the debugger after forking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
