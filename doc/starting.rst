@@ -99,7 +99,7 @@ Netcat of couse is not a telnet client, so it can behave diffrently than a telne
 By using the ```stty``` with "no echo: and "no buffering" input options, we
 can make a socket that nonetheless behave simillarly::
 
-    stty -echo -icanon && nc -l -p 6898
+    stty -echo -icanon && nc -l -p 6899
     
 When using the BSD version netcat that ships with MacOS, a server can be started like this::
 
