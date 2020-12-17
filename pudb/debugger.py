@@ -1920,6 +1920,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             import pudb.shell as shell
             if CONFIG["shell"] == "ipython" and shell.have_ipython():
                 runner = shell.run_ipython_shell
+            if CONFIG["shell"] == "ipython-kernel" and shell.have_ipython():
+                runner = shell.run_ipython_kernel
             elif CONFIG["shell"] == "bpython" and shell.HAVE_BPYTHON:
                 runner = shell.run_bpython_shell
             elif CONFIG["shell"] == "ptpython" and shell.HAVE_PTPYTHON:
