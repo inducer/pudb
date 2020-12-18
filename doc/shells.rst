@@ -54,10 +54,10 @@ PuDB supports the following external shells.
 - `IPython <https://ipython.org/>`_
    The `IPython` shell can also be used in a server-client fasion, which is
    enabled by selecting the shell `ipython_kernel` in the settings. When set,
-   the ``!`` key will start an `IPython` kernel and wait for connection from
-   `qtconsole`. Like other shells, `ipython_kernel` blocks the debugger UI
-   while it is active. Type `quit` or `exit` from a client to exit the kernel
-   and return to the debugger.
+   the ``!`` key will start an `IPython` kernel and wait for connection from,
+   e.g., `qtconsole`. Like other shells, `ipython_kernel` blocks the debugger
+   UI while it is active. Type `quit` or `exit` from a client to exit the
+   kernel and return to the debugger.
 - `bpython <https://bpython-interpreter.org/>`_
 - `ptpython <https://github.com/jonathanslenders/ptpython>`_
 
