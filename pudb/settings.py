@@ -272,7 +272,7 @@ def edit_config(ui, conf_dict):
 
     shell_info = urwid.Text("This is the shell that will be "
             "used when you hit '!'.\n")
-    shells = ["internal", "classic", "ipython", "ipython-kernel", "bpython",
+    shells = ["internal", "classic", "ipython", "ipython_kernel", "bpython",
               "ptpython", "ptipython"]
     known_shell = conf_dict["shell"] in shells
     shell_edit = urwid.Edit(edit_text=conf_dict["custom_shell"])
