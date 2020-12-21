@@ -4,3 +4,10 @@ include example-theme.py
 include example-stringifier.py
 include README.rst
 include LICENSE
+
+include doc/*.rst
+include doc/Makefile
+include doc/*.py
+include doc/conf.py
+
+include manual-tests/*.py
