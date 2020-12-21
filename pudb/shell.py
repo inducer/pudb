@@ -231,6 +231,17 @@ def run_ipython_shell(globals, locals):
     else:
         return run_ipython_shell_v11(globals, locals)
 
+
+def run_ipython_kernel(globals, locals):
+    from IPython import embed_kernel
+
+    class DummyMod(object):
+        pass
+
+    user_module = DummyMod()
+    user_module.__dict__ = globals
+    embed_kernel(module=user_module, local_ns=locals)
+
 # }}}
 
 
