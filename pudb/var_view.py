@@ -432,7 +432,7 @@ class ValueWalker:
                     else:
                         key_it = xrange(len_value)
 
-            if key_it is not None and hasattr(value, '__getitem__'):
+            if key_it is not None:
                 cnt = 0
                 for key in key_it:
                     if cnt % 10 == 0 and cnt:
@@ -443,7 +443,14 @@ class ValueWalker:
                                 new_parent_item, "...", None, cont_id_path)
                             break
 
-                    self.walk_value(new_parent_item, repr(key), value[key],
+                    try:
+                        next_value = value[key]
+                    except TypeError:
+                        ui_log.exception("Failed to iterate an item that "
+                            "appeared to be iterable.")
+                        break
+
+                    self.walk_value(new_parent_item, repr(key), next_value,
                         "%s[%r]" % (id_path, key))
                     cnt += 1
                 if not cnt:
