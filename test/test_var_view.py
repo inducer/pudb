@@ -63,21 +63,21 @@ class Reasonable(object):
 
     @property
     def red(self):
-        return 'red'
+        return "red"
 
     @classmethod
     def blue(cls):
-        return 'blue'
+        return "blue"
 
     @staticmethod
     def green():
-        return 'green'
+        return "green"
 
     def _private(self):
-        return 'shh'
+        return "shh"
 
     def __magicsomething__(self):
-        return 'amazing'
+        return "amazing"
 
 
 class SetWithOverridenBool(set):
@@ -91,17 +91,17 @@ class SetWithOverridenBool(set):
 
 def containerlike_class_generator():
     methods = set([
-        '__contains__',
-        '__getitem__',
-        '__iter__',
-        '__len__',
-        '__reversed__',
-        'count',
-        'get',
-        'index',
-        'items',
-        'keys',
-        'values',
+        "__contains__",
+        "__getitem__",
+        "__iter__",
+        "__len__",
+        "__reversed__",
+        "count",
+        "get",
+        "index",
+        "items",
+        "keys",
+        "values",
     ])
 
     # Deliberately starting from 0
@@ -115,8 +115,8 @@ def containerlike_class_generator():
 
                 @classmethod
                 def name(cls):
-                    return 'ContainerlikeClass:{}'.format(
-                        ':'.join(selected_methods))
+                    return "ContainerlikeClass:{}".format(
+                        ":".join(selected_methods))
 
             # for method in always_define.union(selected_methods):
             for method in selected_methods:
@@ -134,14 +134,14 @@ def method_factory(method_name):
         except KeyError:
             # Classes without __iter__ are expected to raise IndexError in this
             # sort of case. Frustrating, I know.
-            if (method_name == '__getitem__'
+            if (method_name == "__getitem__"
                     and args and isinstance(args[0], integer_types)):
                 raise IndexError
             raise
     return method
 
 
-class Base_ValueWalkerTestCase(unittest.TestCase):
+class BaseValueWalkerTestCase(unittest.TestCase):
     BASIC_TYPES = []
     BASIC_TYPES.append(type(None))
     BASIC_TYPES.extend(integer_types)
@@ -157,7 +157,7 @@ class Base_ValueWalkerTestCase(unittest.TestCase):
     @contextlib.contextmanager
     def patched_logging(self):
         def fake_exception_log(*args, **kwargs):
-            self.fail('ui_log.exception was unexpectedly called')
+            self.fail("ui_log.exception was unexpectedly called")
 
         old_logger = ui_log.exception
         ui_log.exception = fake_exception_log
@@ -172,7 +172,7 @@ class Base_ValueWalkerTestCase(unittest.TestCase):
 
     def attrs(self, obj):
         return [_label for _label in sorted(dir(obj))
-                if not _label.startswith('__')]
+                if not _label.startswith("__")]
 
     def find_expected_attrs(self, obj):
         """
@@ -182,20 +182,20 @@ class Base_ValueWalkerTestCase(unittest.TestCase):
         """
         found = []
         for _label in self.attrs(obj):
-            found.append(('.' + str(_label),
+            found.append(("." + str(_label),
                           self.value_string(getattr(obj, _label))))
             found.extend(self.find_expected_attrs(getattr(obj, _label)))
         return found
 
     @classmethod
     def setUpClass(cls):
-        cls.mod_str = ' [pri+()]'
+        cls.mod_str = " [pri+()]"
 
 
-class ValueWalker_test(Base_ValueWalkerTestCase):
+class ValueWalkerTest(BaseValueWalkerTestCase):
     @classmethod
     def setUpClass(cls):
-        cls.mod_str = ' [pri+()]'
+        cls.mod_str = " [pri+()]"
 
     def setUp(self):
         self.walker = BasicValueWalker(FrameVarInfoForTesting())
@@ -211,15 +211,15 @@ class ValueWalker_test(Base_ValueWalkerTestCase):
             1,
             -1234567890412345243,
             float(4.2),
-            float('inf'),
+            float("inf"),
             complex(1.3, -1),
 
             # strings
-            '',
-            'a',
-            'foo bar',
-            '  lots\tof\nspaces\r ',
-            '♫',
+            "",
+            "a",
+            "foo bar",
+            "  lots\tof\nspaces\r ",
+            "♫",
 
             # other
             False,
@@ -235,8 +235,8 @@ class ValueWalker_test(Base_ValueWalkerTestCase):
         self.assertListEqual(expected, received)
 
     def test_set(self):
-        label = 'xs'
-        value = set([42, 'foo', None, False])
+        label = "xs"
+        value = set([42, "foo", None, False])
         with self.patched_logging():
             self.walker.walk_value(parent=None, label=label, value=value)
 
@@ -246,8 +246,8 @@ class ValueWalker_test(Base_ValueWalkerTestCase):
         self.assertSetEqual(expected, received)
 
     def test_frozenset(self):
-        label = 'xs'
-        value = frozenset([42, 'foo', None, False])
+        label = "xs"
+        value = frozenset([42, "foo", None, False])
         with self.patched_logging():
             self.walker.walk_value(parent=None, label=label, value=value)
 
@@ -257,13 +257,13 @@ class ValueWalker_test(Base_ValueWalkerTestCase):
         self.assertSetEqual(expected, received)
 
     def test_dict(self):
-        label = 'xs'
+        label = "xs"
         value = {
             0:                   42,
-            'a':                 'foo',
-            '':                  None,
+            "a":                 "foo",
+            "":                  None,
             True:                False,
-            frozenset(range(3)): 'abc',
+            frozenset(range(3)): "abc",
         }
         with self.patched_logging():
             self.walker.walk_value(parent=None, label=label, value=value)
@@ -274,8 +274,8 @@ class ValueWalker_test(Base_ValueWalkerTestCase):
         self.assertSetEqual(expected, received)
 
     def test_list(self):
-        label = 'xs'
-        value = [42, 'foo', None, False]
+        label = "xs"
+        value = [42, "foo", None, False]
         with self.patched_logging():
             self.walker.walk_value(parent=None, label=label, value=value)
 
@@ -286,9 +286,9 @@ class ValueWalker_test(Base_ValueWalkerTestCase):
         self.assertListEqual(expected, received)
 
     def test_containerlike_classes(self):
-        for ContainerlikeClass in containerlike_class_generator():
-            label = ContainerlikeClass.name()
-            value = ContainerlikeClass(zip(string.ascii_lowercase, range(7)))
+        for containerlike_class in containerlike_class_generator():
+            label = containerlike_class.name()
+            value = containerlike_class(zip(string.ascii_lowercase, range(7)))
             self.walker = BasicValueWalker(FrameVarInfoForTesting())
 
             with self.patched_logging():
@@ -319,9 +319,9 @@ class ValueWalker_test(Base_ValueWalkerTestCase):
                 self.assertListEqual(expected, received)
 
 
-class ValueWalker_classes_test(Base_ValueWalkerTestCase):
+class ValueWalkerClassesTest(BaseValueWalkerTestCase):
     def test_reasonable_class(self):
-        label = 'Reasonable'
+        label = "Reasonable"
         value = Reasonable
         self.walker = BasicValueWalker(FrameVarInfoForTesting())
 
@@ -335,15 +335,15 @@ class ValueWalker_classes_test(Base_ValueWalkerTestCase):
         self.assertListEqual(expected, received)
 
     def test_maybe_unreasonable_classes(self):
-        for ContainerlikeClass in containerlike_class_generator():
-            label = ContainerlikeClass.name()
-            value = ContainerlikeClass
+        for containerlike_class in containerlike_class_generator():
+            label = containerlike_class.name()
+            value = containerlike_class
             self.walker = BasicValueWalker(FrameVarInfoForTesting())
 
             with self.patched_logging():
                 self.walker.walk_value(parent=None, label=label, value=value)
 
             expected = [(label, repr(value) + self.mod_str)]
-            expected.extend(self.find_expected_attrs(ContainerlikeClass))
+            expected.extend(self.find_expected_attrs(containerlike_class))
             received = self.walked_values()
             self.assertListEqual(expected, received)
