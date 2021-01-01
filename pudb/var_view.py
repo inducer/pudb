@@ -417,7 +417,7 @@ class ValueWalker:
             if key_it is None:
                 try:
                     len_value = len(value)
-                except TypeError:
+                except (AttributeError, TypeError):
                     # no __len__ defined on the value, not worth mentioning!
                     pass
                 except Exception:
@@ -425,7 +425,7 @@ class ValueWalker:
                 else:
                     try:
                         value[0]
-                    except IndexError:
+                    except (LookupError, TypeError):
                         key_it = []
                     except Exception:
                         ui_log.exception("Item is not iterable")
@@ -443,7 +443,14 @@ class ValueWalker:
                                 new_parent_item, "...", None, cont_id_path)
                             break
 
-                    self.walk_value(new_parent_item, repr(key), value[key],
+                    try:
+                        next_value = value[key]
+                    except (LookupError, TypeError):
+                        ui_log.exception("Failed to iterate an item that "
+                            "appeared to be iterable.")
+                        break
+
+                    self.walk_value(new_parent_item, repr(key), next_value,
                         "%s[%r]" % (id_path, key))
                     cnt += 1
                 if not cnt:
