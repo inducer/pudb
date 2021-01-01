@@ -34,6 +34,7 @@ import urwid
 import inspect
 
 from pudb.lowlevel import ui_log
+from pudb.py3compat import PudbCollection, PudbMapping, PudbSequence
 
 try:
     import numpy
@@ -347,6 +348,90 @@ class ValueWalker:
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
+    def add_continuation_item(self, parent, id_path, count):
+        """
+        :param VariableWidget or None parent
+        :param str id_path:
+        :param int count:
+        :returns: True if a continuation item ("...") was added, else False
+        :rtype: bool
+        """
+        cont_id_path = "%s.cont-%d" % (id_path, count)
+        if not self.frame_var_info.get_inspect_info(
+                cont_id_path, read_only=True).show_detail:
+            self.add_item(parent, "...", None, cont_id_path)
+            return True
+        return False
+
+    def walk_mapping(self, parent, label, value, id_path=None):
+        """
+        :param VariableWidget or None parent
+        :param str label:
+        :param PudbMapping value:
+        :param str id_path:
+        """
+        for count, key in enumerate(value):
+            if ((count > 0 and count % 10 == 0) and
+                    self.add_continuation_item(parent, id_path, count)):
+                return True
+
+            try:
+                entry = value[key]
+            except TypeError:
+                # Some kind of implementation error
+                ui_log.error("Object '%s' appears to be a mapping, but does "
+                             "not behave like one." % label)
+                return False
+
+            self.walk_value(parent, repr(key), entry,
+                "%s[%r]" % (id_path, key))
+
+        if not value:
+            self.add_item(parent, "<empty>", None)
+
+        return True
+
+    def walk_sequence(self, parent, label, value, id_path=None):
+        """
+        :param VariableWidget or None parent
+        :param str label:
+        :param PudbSequence value:
+        :param str id_path:
+        """
+        for count, entry in enumerate(value):
+            if ((count > 0 and count % 10 == 0) and
+                    self.add_continuation_item(parent, id_path, count)):
+                return True
+
+            self.walk_value(parent, repr(count), entry,
+                "%s[%r]" % (id_path, count))
+
+        if not value:
+            self.add_item(parent, "<empty>", None)
+
+        return True
+
+
+    def walk_collection(self, parent, label, value, id_path=None):
+        """
+        :param VariableWidget or None parent
+        :param str label:
+        :param PudbCollection value:
+        :param str id_path:
+        """
+        for count, entry in enumerate(value):
+            if ((count > 0 and count % 10 == 0) and
+                    self.add_continuation_item(parent, id_path, count)):
+                return True
+
+            self.walk_value(parent, None, entry,
+                "%s[%d]" % (id_path, count))
+
+        if not value:
+            self.add_item(parent, "<empty>", None)
+
+        return True
+
     def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
         if id_path is None:
             id_path = label
@@ -386,84 +471,25 @@ class ValueWalker:
             if not iinfo.show_detail:
                 return
 
-            # set ---------------------------------------------------------
-            if isinstance(value, (set, frozenset)):
-                for i, entry in enumerate(value):
-                    if i % 10 == 0 and i:
-                        cont_id_path = "%s.cont-%d" % (id_path, i)
-                        if not self.frame_var_info.get_inspect_info(
-                                cont_id_path, read_only=True).show_detail:
-                            self.add_item(new_parent_item, "...", None,
-                                cont_id_path)
-                            break
-
-                    self.walk_value(new_parent_item, None, entry,
-                        "%s[%d]" % (id_path, i))
-                if not value:
-                    self.add_item(new_parent_item, "<empty>", None)
-                return
-
             # containers --------------------------------------------------
-            key_it = None
-
-            try:
-                key_it = value.keys()
-            except AttributeError:
-                # keys or iterkeys doesn't exist, not worth mentioning!
-                pass
-            except Exception:
-                ui_log.exception("Failed to obtain key iterator")
-
-            if key_it is None:
-                try:
-                    len_value = len(value)
-                except (AttributeError, TypeError):
-                    # no __len__ defined on the value, not worth mentioning!
-                    pass
-                except Exception:
-                    ui_log.exception("Failed to determine container length")
-                else:
-                    try:
-                        value[0]
-                    except (LookupError, TypeError):
-                        key_it = []
-                    except Exception:
-                        ui_log.exception("Item is not iterable")
-                    else:
-                        key_it = xrange(len_value)
-
-            if key_it is not None:
-                cnt = 0
-                for key in key_it:
-                    if cnt % 10 == 0 and cnt:
-                        cont_id_path = "%s.cont-%d" % (id_path, cnt)
-                        if not self.frame_var_info.get_inspect_info(
-                                cont_id_path, read_only=True).show_detail:
-                            self.add_item(
-                                new_parent_item, "...", None, cont_id_path)
-                            break
-
-                    try:
-                        next_value = value[key]
-                    except (LookupError, TypeError):
-                        ui_log.exception("Failed to iterate an item that "
-                            "appeared to be iterable.")
-                        break
-
-                    self.walk_value(new_parent_item, repr(key), next_value,
-                        "%s[%r]" % (id_path, key))
-                    cnt += 1
-                if not cnt:
-                    self.add_item(new_parent_item, "<empty>", None)
+            if isinstance(value, PudbMapping):
+                self.walk_mapping(new_parent_item, label, value, id_path)
+                return
+            elif isinstance(value, PudbSequence):
+                self.walk_sequence(new_parent_item, label, value, id_path)
+                return
+            elif isinstance(value, PudbCollection):
+                self.walk_collection(new_parent_item, label, value, id_path)
                 return
 
-            # class types -------------------------------------------------
+            # other types -------------------------------------------------
             key_its = []
 
             try:
                 key_its.append(dir(value))
             except Exception:
-                ui_log.exception("Failed to look up attributes")
+                ui_log.exception("Failed to look up attributes on {}"
+                                 .format(label))
 
             keys = [key
                     for ki in key_its
