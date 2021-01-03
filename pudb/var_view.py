@@ -365,6 +365,7 @@ class ValueWalker:
 
     def walk_mapping(self, parent: VariableWidget, label: str,
                      value: PudbMapping, id_path: str=None):
+        count = 0
         for count, key in enumerate(value):
             if ((count > 0 and count % 10 == 0)
                     and self.add_continuation_item(parent, id_path, count)):
@@ -381,13 +382,14 @@ class ValueWalker:
             self.walk_value(parent, repr(key), entry,
                 "%s[%r]" % (id_path, key))
 
-        if not value:
+        if count == 0:
             self.add_item(parent, "<empty>", None)
 
         return True
 
     def walk_sequence(self, parent: VariableWidget, label: str,
                       value: PudbSequence, id_path: str=None):
+        count = 0
         for count, entry in enumerate(value):
             if ((count > 0 and count % 10 == 0)
                     and self.add_continuation_item(parent, id_path, count)):
@@ -396,13 +398,14 @@ class ValueWalker:
             self.walk_value(parent, repr(count), entry,
                 "%s[%r]" % (id_path, count))
 
-        if not value:
+        if count == 0:
             self.add_item(parent, "<empty>", None)
 
         return True
 
     def walk_collection(self, parent: VariableWidget, label: str,
                         value: PudbCollection, id_path: str=None):
+        count = 0
         for count, entry in enumerate(value):
             if ((count > 0 and count % 10 == 0)
                     and self.add_continuation_item(parent, id_path, count)):
@@ -411,7 +414,7 @@ class ValueWalker:
             self.walk_value(parent, None, entry,
                 "%s[%d]" % (id_path, count))
 
-        if not value:
+        if count == 0:
             self.add_item(parent, "<empty>", None)
 
         return True

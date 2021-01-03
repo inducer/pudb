@@ -80,15 +80,6 @@ class Reasonable(object):
         return "amazing"
 
 
-class SetWithOverridenBool(set):
-    def __init__(self, iterable, truthy=True):
-        super(SetWithOverridenBool, self).__init__(iterable)
-        self.truthy = truthy
-
-    def __bool__(self):
-        return self.truthy
-
-
 def method_factory(method_name):
     def method(self, *args, **kwargs):
         func = getattr(self.__internal_dict__, method_name)
@@ -133,7 +124,6 @@ def generate_containerlike_class():
                     return "ContainerlikeClass:{}".format(
                         ":".join(selected_methods))
 
-            # for method in always_define.union(selected_methods):
             for method in selected_methods:
                 func = method_factory(method)
                 setattr(ContainerlikeClass, method, func)
@@ -245,6 +235,16 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         received = set(self.walked_values())
         self.assertSetEqual(expected, received)
 
+    def test_empty_set(self):
+        label = "xs"
+        value = set()
+        with self.patched_logging():
+            self.walker.walk_value(parent=None, label=label, value=value)
+
+        expected = [(label, repr(value) + self.mod_str), ("<empty>", None)]
+        received = self.walked_values()
+        self.assertListEqual(expected, received)
+
     def test_frozenset(self):
         label = "xs"
         value = frozenset([42, "foo", None, False])
@@ -255,6 +255,16 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         expected.add((label, repr(value) + self.mod_str))
         received = frozenset(self.walked_values())
         self.assertSetEqual(expected, received)
+
+    def test_empty_frozenset(self):
+        label = "xs"
+        value = frozenset()
+        with self.patched_logging():
+            self.walker.walk_value(parent=None, label=label, value=value)
+
+        expected = [(label, repr(value) + self.mod_str), ("<empty>", None)]
+        received = self.walked_values()
+        self.assertListEqual(expected, received)
 
     def test_dict(self):
         label = "xs"
@@ -273,6 +283,16 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         received = set(self.walked_values())
         self.assertSetEqual(expected, received)
 
+    def test_empty_dict(self):
+        label = "xs"
+        value = {}
+        with self.patched_logging():
+            self.walker.walk_value(parent=None, label=label, value=value)
+
+        expected = [(label, repr(value) + self.mod_str), ("<empty>", None)]
+        received = self.walked_values()
+        self.assertListEqual(expected, received)
+
     def test_list(self):
         label = "xs"
         value = [42, "foo", None, False]
@@ -282,6 +302,16 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         expected = [(label, repr(value) + self.mod_str)]
         expected.extend([(repr(_label), repr(x))
                          for _label, x in enumerate(value)])
+        received = self.walked_values()
+        self.assertListEqual(expected, received)
+
+    def test_empty_list(self):
+        label = "xs"
+        value = []
+        with self.patched_logging():
+            self.walker.walk_value(parent=None, label=label, value=value)
+
+        expected = [(label, repr(value) + self.mod_str), ("<empty>", None)]
         received = self.walked_values()
         self.assertListEqual(expected, received)
 
