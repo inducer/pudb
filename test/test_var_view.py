@@ -104,7 +104,7 @@ def method_factory(method_name):
     return method
 
 
-def containerlike_class_generator():
+def generate_containerlike_class():
     methods = set([
         "__contains__",
         "__getitem__",
@@ -286,7 +286,7 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         self.assertListEqual(expected, received)
 
     def test_containerlike_classes(self):
-        for containerlike_class in containerlike_class_generator():
+        for containerlike_class in generate_containerlike_class():
             label = containerlike_class.name()
             value = containerlike_class(zip(string.ascii_lowercase, range(7)))
             self.walker = BasicValueWalker(FrameVarInfoForTesting())
@@ -335,7 +335,7 @@ class ValueWalkerClassesTest(BaseValueWalkerTestCase):
         self.assertListEqual(expected, received)
 
     def test_maybe_unreasonable_classes(self):
-        for containerlike_class in containerlike_class_generator():
+        for containerlike_class in generate_containerlike_class():
             label = containerlike_class.name()
             value = containerlike_class
             self.walker = BasicValueWalker(FrameVarInfoForTesting())
