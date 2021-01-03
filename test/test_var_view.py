@@ -4,11 +4,11 @@ import itertools
 import string
 import unittest
 
-from pudb.py3compat import (
-    text_type, integer_types, string_types,
+from pudb.py3compat import text_type, integer_types, string_types
+from pudb.var_view import (
+    FrameVarInfo, BasicValueWalker, ui_log,
     PudbCollection, PudbMapping, PudbSequence,
 )
-from pudb.var_view import FrameVarInfo, BasicValueWalker, ui_log
 
 
 class A:

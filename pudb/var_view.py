@@ -34,7 +34,6 @@ import urwid
 import inspect
 
 from pudb.lowlevel import ui_log
-from pudb.py3compat import PudbCollection, PudbMapping, PudbSequence
 
 try:
     import numpy
@@ -49,6 +48,43 @@ ELLIPSIS = "…"
 
 from pudb.ui_tools import text_width
 
+# }}}
+
+
+# {{{ container metaclasses
+
+from abc import ABC
+
+class PudbCollection(ABC):
+    @classmethod
+    def __subclasshook__(cls, c):
+        if cls is PudbCollection:
+            return all([
+                any("__contains__" in b.__dict__ for b in c.__mro__),
+                any("__iter__" in b.__dict__ for b in c.__mro__),
+            ])
+        return NotImplemented
+
+class PudbSequence(ABC):
+    @classmethod
+    def __subclasshook__(cls, c):
+        if cls is PudbSequence:
+            return all([
+                any("__getitem__" in b.__dict__ for b in c.__mro__),
+                any("__iter__" in b.__dict__ for b in c.__mro__),
+            ])
+        return NotImplemented
+
+class PudbMapping(ABC):
+    @classmethod
+    def __subclasshook__(cls, c):
+        if cls is PudbMapping:
+            return all([
+                any("__getitem__" in b.__dict__ for b in c.__mro__),
+                any("__iter__" in b.__dict__ for b in c.__mro__),
+                any("keys" in b.__dict__ for b in c.__mro__),
+            ])
+        return NotImplemented
 # }}}
 
 
