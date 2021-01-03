@@ -89,6 +89,21 @@ class SetWithOverridenBool(set):
         return self.truthy
 
 
+def method_factory(method_name):
+    def method(self, *args, **kwargs):
+        func = getattr(self.__internal_dict__, method_name)
+        try:
+            return func(*args, **kwargs)
+        except KeyError:
+            # Classes without __iter__ are expected to raise IndexError in this
+            # sort of case. Frustrating, I know.
+            if (method_name == "__getitem__"
+                    and args and isinstance(args[0], integer_types)):
+                raise IndexError
+            raise
+    return method
+
+
 def containerlike_class_generator():
     methods = set([
         "__contains__",
@@ -124,21 +139,6 @@ def containerlike_class_generator():
                 setattr(ContainerlikeClass, method, func)
 
             yield ContainerlikeClass
-
-
-def method_factory(method_name):
-    def method(self, *args, **kwargs):
-        func = getattr(self.__internal_dict__, method_name)
-        try:
-            return func(*args, **kwargs)
-        except KeyError:
-            # Classes without __iter__ are expected to raise IndexError in this
-            # sort of case. Frustrating, I know.
-            if (method_name == "__getitem__"
-                    and args and isinstance(args[0], integer_types)):
-                raise IndexError
-            raise
-    return method
 
 
 class BaseValueWalkerTestCase(unittest.TestCase):
