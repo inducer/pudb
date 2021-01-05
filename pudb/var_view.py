@@ -504,15 +504,22 @@ class ValueWalker:
             return
 
         # containers --------------------------------------------------
-        if isinstance(value, PudbMapping):
-            self.walk_mapping(new_parent_item, label, value, id_path)
-            return
-        elif isinstance(value, PudbSequence):
-            self.walk_sequence(new_parent_item, label, value, id_path)
-            return
-        elif isinstance(value, PudbCollection):
-            self.walk_collection(new_parent_item, label, value, id_path)
-            return
+        if isinstance(value, (PudbCollection, PudbMapping, PudbSequence)):
+            metaitem_id_path = "%s<contents>" % id_path
+            show_contents = self.frame_var_info.get_inspect_info(
+                metaitem_id_path, read_only=True).show_detail
+            contents_metaitem = self.add_item(
+                parent=new_parent_item,
+                var_label="<contents>",
+                value_str="" if show_contents else "(hidden)",
+                id_path=metaitem_id_path)
+            if show_contents:
+                if isinstance(value, PudbMapping):
+                        self.walk_mapping(contents_metaitem, label, value, id_path)
+                elif isinstance(value, PudbSequence):
+                    self.walk_sequence(contents_metaitem, label, value, id_path)
+                elif isinstance(value, PudbCollection):
+                    self.walk_collection(contents_metaitem, label, value, id_path)
 
         # general attributes ------------------------------------------
         key_its = []
