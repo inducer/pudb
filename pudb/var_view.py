@@ -515,7 +515,7 @@ class ValueWalker:
                 id_path=metaitem_id_path)
             if show_contents:
                 if isinstance(value, PudbMapping):
-                        self.walk_mapping(contents_metaitem, label, value, id_path)
+                    self.walk_mapping(contents_metaitem, label, value, id_path)
                 elif isinstance(value, PudbSequence):
                     self.walk_sequence(contents_metaitem, label, value, id_path)
                 elif isinstance(value, PudbCollection):
