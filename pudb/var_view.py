@@ -384,6 +384,13 @@ def get_stringifier(iinfo):
 # {{{ tree walking
 
 class ValueWalker:
+    BASIC_TYPES = []
+    BASIC_TYPES.append(type(None))
+    BASIC_TYPES.extend(integer_types)
+    BASIC_TYPES.extend(string_types)
+    BASIC_TYPES.extend((float, complex))
+    BASIC_TYPES = tuple(BASIC_TYPES)
+
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
@@ -467,12 +474,8 @@ class ValueWalker:
 
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
 
-        if isinstance(value, integer_types + (float, complex)):
-            self.add_item(parent, label, repr(value), id_path, attr_prefix)
-        elif isinstance(value, string_types):
-            self.add_item(parent, label, repr(value), id_path, attr_prefix)
-        elif value is None:
-            self.add_item(parent, label, repr(value), id_path, attr_prefix)
+        if isinstance(value, self.BASIC_TYPES):
+            displayed_value = repr(value)
         else:
             try:
                 displayed_value = get_stringifier(iinfo)(value)
@@ -483,83 +486,83 @@ class ValueWalker:
                                 + " (!! %s error !!)" % iinfo.display_type
                 ui_log.exception("stringifier failed")
 
-            if iinfo.show_detail:
-                if iinfo.access_level == "public":
-                    marker = "pub"
-                elif iinfo.access_level == "private":
-                    marker = "pri"
-                else:
-                    marker = "all"
-                if iinfo.show_methods:
-                    marker += "+()"
-                displayed_value += " [%s]" % marker
+        if iinfo.show_detail:
+            if iinfo.access_level == "public":
+                marker = "pub"
+            elif iinfo.access_level == "private":
+                marker = "pri"
+            else:
+                marker = "all"
+            if iinfo.show_methods:
+                marker += "+()"
+            displayed_value += " [%s]" % marker
 
-            new_parent_item = self.add_item(parent, label, displayed_value,
-                id_path, attr_prefix)
+        new_parent_item = self.add_item(parent, label, displayed_value,
+            id_path, attr_prefix)
 
-            if not iinfo.show_detail:
-                return
+        if not iinfo.show_detail:
+            return
 
-            # containers --------------------------------------------------
-            if isinstance(value, PudbMapping):
-                self.walk_mapping(new_parent_item, label, value, id_path)
-                return
-            elif isinstance(value, PudbSequence):
-                self.walk_sequence(new_parent_item, label, value, id_path)
-                return
-            elif isinstance(value, PudbCollection):
-                self.walk_collection(new_parent_item, label, value, id_path)
-                return
+        # containers --------------------------------------------------
+        if isinstance(value, PudbMapping):
+            self.walk_mapping(new_parent_item, label, value, id_path)
+            return
+        elif isinstance(value, PudbSequence):
+            self.walk_sequence(new_parent_item, label, value, id_path)
+            return
+        elif isinstance(value, PudbCollection):
+            self.walk_collection(new_parent_item, label, value, id_path)
+            return
 
-            # other types -------------------------------------------------
-            key_its = []
+        # general attributes ------------------------------------------
+        key_its = []
+
+        try:
+            key_its.append(dir(value))
+        except Exception:
+            ui_log.exception("Failed to look up attributes on {}"
+                                .format(label))
+
+        keys = [key
+                for ki in key_its
+                for key in ki]
+        keys.sort()
+
+        cnt_omitted_private = cnt_omitted_methods = 0
+
+        for key in keys:
+            if iinfo.access_level == "public":
+                if key.startswith("_"):
+                    cnt_omitted_private += 1
+                    continue
+            elif iinfo.access_level == "private":
+                if key.startswith("__") and key.endswith("__"):
+                    cnt_omitted_private += 1
+                    continue
 
             try:
-                key_its.append(dir(value))
+                attr_value = getattr(value, key)
+                if inspect.isroutine(attr_value) and not iinfo.show_methods:
+                    cnt_omitted_methods += 1
+                    continue
             except Exception:
-                ui_log.exception("Failed to look up attributes on {}"
-                                 .format(label))
+                attr_value = WatchEvalError()
 
-            keys = [key
-                    for ki in key_its
-                    for key in ki]
-            keys.sort()
+            self.walk_value(new_parent_item,
+                    ".%s" % key, attr_value,
+                    "%s.%s" % (id_path, key))
 
-            cnt_omitted_private = cnt_omitted_methods = 0
+        if not keys:
+            if cnt_omitted_private:
+                label = "<omitted private attributes>"
+            elif cnt_omitted_methods:
+                label = "<omitted methods>"
+            else:
+                label = "<empty>"
+            self.add_item(new_parent_item, label, None)
 
-            for key in keys:
-                if iinfo.access_level == "public":
-                    if key.startswith("_"):
-                        cnt_omitted_private += 1
-                        continue
-                elif iinfo.access_level == "private":
-                    if key.startswith("__") and key.endswith("__"):
-                        cnt_omitted_private += 1
-                        continue
-
-                try:
-                    attr_value = getattr(value, key)
-                    if inspect.isroutine(attr_value) and not iinfo.show_methods:
-                        cnt_omitted_methods += 1
-                        continue
-                except Exception:
-                    attr_value = WatchEvalError()
-
-                self.walk_value(new_parent_item,
-                        ".%s" % key, attr_value,
-                        "%s.%s" % (id_path, key))
-
-            if not keys:
-                if cnt_omitted_private:
-                    label = "<omitted private attributes>"
-                elif cnt_omitted_methods:
-                    label = "<omitted methods>"
-                else:
-                    label = "<empty>"
-                self.add_item(new_parent_item, label, None)
-
-            if not key_its:
-                self.add_item(new_parent_item, "<?>", None)
+        if not key_its:
+            self.add_item(new_parent_item, "<?>", None)
 
 
 class BasicValueWalker(ValueWalker):

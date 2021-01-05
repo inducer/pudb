@@ -132,15 +132,8 @@ def generate_containerlike_class():
 
 
 class BaseValueWalkerTestCase(unittest.TestCase):
-    BASIC_TYPES = []
-    BASIC_TYPES.append(type(None))
-    BASIC_TYPES.extend(integer_types)
-    BASIC_TYPES.extend(string_types)
-    BASIC_TYPES.extend((float, complex))
-    BASIC_TYPES = tuple(BASIC_TYPES)
-
     def value_string(self, obj):
-        if isinstance(obj, self.BASIC_TYPES):
+        if isinstance(obj, BasicValueWalker.BASIC_TYPES):
             return repr(obj)
         return repr(obj) + self.mod_str
 
