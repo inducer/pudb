@@ -2507,7 +2507,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                         try:
                             toplevel.keypress(self.size, k)
                         except Exception:
-                            ui_log.exception("Encountered unexpected exception in the debugger UI.")
+                            ui_log.exception("Encountered unexpected exception "
+                                             "in the debugger UI.")
 
             return self.quit_event_loop
         finally:
