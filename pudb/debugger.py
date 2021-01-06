@@ -37,7 +37,7 @@ import sys
 from functools import partial
 from types import TracebackType
 
-from pudb.lowlevel import decode_lines
+from pudb.lowlevel import decode_lines, ui_log
 from pudb.settings import load_config, save_config
 from pudb.py3compat import PY3, raw_input, execfile
 
@@ -2504,7 +2504,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     if k == "window resize":
                         self.size = self.screen.get_cols_rows()
                     else:
-                        toplevel.keypress(self.size, k)
+                        try:
+                            toplevel.keypress(self.size, k)
+                        except Exception:
+                            ui_log.exception("Encountered unexpected exception "
+                                             "in the debugger UI.")
 
             return self.quit_event_loop
         finally:
