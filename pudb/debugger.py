@@ -34,6 +34,8 @@ import bdb
 import gc
 import os
 import sys
+
+from itertools import count
 from functools import partial
 from types import TracebackType
 
@@ -2201,57 +2203,91 @@ class DebuggerUI(FrameVarInfoKeeper):
     def show_exception_dialog(self, exc_tuple):
         from pudb.lowlevel import format_exception
 
+        desc = (
+            "The program has terminated abnormally because of an exception.\n\n"
+            "A full traceback is below. You may recall this traceback at any "
+            "time using the 'e' key. The debugger has entered post-mortem mode "
+            "and will prevent further state changes."
+        )
         tb_txt = "".join(format_exception(exc_tuple))
-        while True:
-            res = self.dialog(
-                    urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
-                        "The program has terminated abnormally because of "
-                        "an exception.\n\n"
-                        "A full traceback is below. You may recall this "
-                        "traceback at any time using the 'e' key. "
-                        "The debugger has entered post-mortem mode and will "
-                        "prevent further state changes.\n\n"
-                        + tb_txt)])),
-                    title="Program Terminated for Uncaught Exception",
-                    buttons_and_results=[
-                        ("OK", True),
-                        ("Save traceback", "save"),
-                        ])
+        self._show_exception_dialog(
+            description=desc,
+            error_info=tb_txt,
+            title="Program Terminated for Uncaught Exception",
+            exit_loop_on_ok=True,
+        )
 
-            if res in [True, False]:
-                break
+    def show_internal_exc_dlg(self, exc_tuple):
+        try:
+            self._show_internal_exc_dlg(exc_tuple)
+        except Exception:
+            ui_log.exception("Error while showing error dialog")
 
-            if res == "save":
-                try:
-                    n = 0
-                    from os.path import exists
-                    while True:
-                        if n:
-                            fn = "traceback-%d.txt" % n
-                        else:
-                            fn = "traceback.txt"
+    def _show_internal_exc_dlg(self, exc_tuple):
+        from pudb.lowlevel import format_exception
+        from pudb import VERSION
 
-                        if not exists(fn):
-                            outf = open(fn, "w")
-                            try:
-                                outf.write(tb_txt)
-                            finally:
-                                outf.close()
+        desc = (
+            "Pudb has encountered and safely caught an internal exception.\n\n"
+            "The full traceback and some other information can be found "
+            "below. Please report this information, along with details on "
+            "what you were doing at the time the exception occurred, at: "
+            "https://github.com/inducer/pudb/issues"
+        )
+        error_info = (
+            "python version: {python}\n"
+            "pudb version: {pudb}\n"
+            "urwid version: {urwid}\n"
+            "{tb}\n"
+        ).format(
+            python=sys.version.replace("\n", " "),
+            pudb=VERSION,
+            urwid=".".join(map(str, urwid.version.VERSION)),
+            tb="".join(format_exception(exc_tuple))
+        )
 
-                            self.message("Traceback saved as %s." % fn,
-                                    title="Success")
+        self._show_exception_dialog(
+            description=desc,
+            error_info=error_info,
+            title="Pudb Internal Exception Encountered",
+        )
 
-                            break
+    def _show_exception_dialog(self, description, error_info, title,
+                               exit_loop_on_ok=False):
+        res = self.dialog(
+            urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
+                "\n\n".join([description, error_info])
+            )])),
+            title=title,
+            buttons_and_results=[
+                ("OK", exit_loop_on_ok),
+                ("Save traceback", "save"),
+            ],
+        )
+        if res == "save":
+            self._save_traceback(error_info)
 
-                        n += 1
+    def _save_traceback(self, error_info):
+        try:
+            from os.path import exists
+            filename = next(
+                fname for n in count()
+                for fname in ["traceback-%d.txt" % n if n else "traceback.txt"]
+                if not exists(fname)
+            )
 
-                except Exception:
-                    io_tb_txt = "".join(format_exception(sys.exc_info()))
-                    self.message(
-                            "An error occurred while trying to write "
-                            "the traceback:\n\n" + io_tb_txt,
-                            title="I/O error")
+            with open(filename, "w") as outf:
+                outf.write(error_info)
 
+            self.message("Traceback saved as %s." % filename, title="Success")
+
+        except Exception:
+            from pudb.lowlevel import format_exception
+            io_tb_txt = "".join(format_exception(sys.exc_info()))
+            self.message(
+                    "An error occurred while trying to write "
+                    "the traceback:\n\n" + io_tb_txt,
+                    title="I/O error")
     # }}}
 
     # {{{ UI enter/exit
@@ -2507,8 +2543,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         try:
                             toplevel.keypress(self.size, k)
                         except Exception:
-                            ui_log.exception("Encountered unexpected exception "
-                                             "in the debugger UI.")
+                            self.show_internal_exc_dlg(sys.exc_info())
 
             return self.quit_event_loop
         finally:
