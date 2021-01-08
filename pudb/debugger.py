@@ -428,9 +428,12 @@ class Debugger(bdb.Bdb):
                     self.canonic(frame.f_code.co_filename), frame.f_lineno)
         else:
             self.current_bp = None
-        self.ui.update_breakpoints()
 
-        self.interaction(frame)
+        try:
+            self.ui.update_breakpoints()
+            self.interaction(frame)
+        except Exception:
+            self.ui.show_internal_exc_dlg(sys.exc_info())
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
