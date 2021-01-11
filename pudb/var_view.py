@@ -391,6 +391,9 @@ class ValueWalker:
     BASIC_TYPES.extend((float, complex))
     BASIC_TYPES = tuple(BASIC_TYPES)
 
+    NUM_PREVIEW_ITEMS = 3
+
+
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
@@ -468,35 +471,31 @@ class ValueWalker:
 
         return True
 
-    @staticmethod
-    def preview_contents(container):
+    @classmethod
+    def preview_contents(cls, container):
         """
-        Generates a short preview string made up of the first NUM_PREVIEW_ITEMS items in the container.
+        Generates a short preview string made up of the first NUM_PREVIEW_ITEMS
+        items in the container.
         """
-        NUM_PREVIEW_ITEMS = 3
-        counter = range(NUM_PREVIEW_ITEMS)
+        # Use this counter along with zip() to limit comprehensions to 3 items.
+        counter = range(cls.NUM_PREVIEW_ITEMS)
 
-        # Order is important here- A mapping without keys could be viewed as a sequence, and they're both
-        # containers.
+        # Order is important here- A mapping without keys could be viewed as a
+        # sequence, and they're both containers.
         if isinstance(container, PudbMapping):
-            items = []
-            for count, key in zip(counter, container):
-                items.append("{k}: {v}".format(k=key, v=container[key]))
+            items = ["{k}: {v}".format(k=key, v=container[key])
+                     for _, key in zip(counter, container)]
             surrounds = ("{", "}")
         elif isinstance(container, PudbSequence):
-            items = []
-            for count, entry in zip(counter, container):
-                items.append(str(entry))
+            items = [str(entry) for _, entry in zip(counter, container)]
             surrounds = ("[", "]")
         elif isinstance(container, PudbCollection):
-            items = []
-            for count, entry in zip(counter, container):
-                items.append(str(entry))
+            items = [str(entry) for _, entry in zip(counter, container)]
             surrounds = ("{", "}")
 
         preview = "{open}{items}{cont}{close}".format(
             items=", ".join(items),
-            cont=", ..." if len(items) == NUM_PREVIEW_ITEMS else "",
+            cont=", ..." if len(items) == cls.NUM_PREVIEW_ITEMS else "",
             open=surrounds[0],
             close=surrounds[1],
         )
@@ -559,8 +558,8 @@ class ValueWalker:
                 value_str=value_str,
                 id_path=metaitem_id_path)
             if show_contents:
-                # Order is important here- A mapping without keys could be viewed as a sequence, and they're both
-                # containers.
+                # Order is important here- A mapping without keys could be viewed
+                # as a sequence, and they're both containers.
                 if isinstance(value, PudbMapping):
                     self.walk_mapping(contents_metaitem, label, value, id_path)
                 elif isinstance(value, PudbSequence):
