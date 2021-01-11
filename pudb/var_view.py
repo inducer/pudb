@@ -468,6 +468,41 @@ class ValueWalker:
 
         return True
 
+    @staticmethod
+    def preview_contents(container):
+        """
+        Generates a short preview string made up of the first NUM_PREVIEW_ITEMS items in the container.
+        """
+        NUM_PREVIEW_ITEMS = 3
+        counter = range(NUM_PREVIEW_ITEMS)
+
+        # Order is important here- A mapping without keys could be viewed as a sequence, and they're both
+        # containers.
+        if isinstance(container, PudbMapping):
+            items = []
+            for count, key in zip(counter, container):
+                items.append("{k}: {v}".format(k=key, v=container[key]))
+            surrounds = ("{", "}")
+        elif isinstance(container, PudbSequence):
+            items = []
+            for count, entry in zip(counter, container):
+                items.append(str(entry))
+            surrounds = ("[", "]")
+        elif isinstance(container, PudbCollection):
+            items = []
+            for count, entry in zip(counter, container):
+                items.append(str(entry))
+            surrounds = ("{", "}")
+
+        preview = "{open}{items}{cont}{close}".format(
+            items=", ".join(items),
+            cont=", ..." if len(items) == NUM_PREVIEW_ITEMS else "",
+            open=surrounds[0],
+            close=surrounds[1],
+        )
+
+        return preview
+
     def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
         if id_path is None:
             id_path = label
@@ -508,12 +543,24 @@ class ValueWalker:
             metaitem_id_path = "%s<contents>" % id_path
             show_contents = self.frame_var_info.get_inspect_info(
                 metaitem_id_path, read_only=True).show_detail
+
+            if show_contents:
+                value_str = ""
+            else:
+                try:
+                    value_str = self.preview_contents(value)
+                except Exception:
+                    ui_log.exception("Container preview failed for {}".format(label))
+                    value_str = "<error generating preview>"
+
             contents_metaitem = self.add_item(
                 parent=new_parent_item,
                 var_label="<contents>",
-                value_str="" if show_contents else "(hidden)",
+                value_str=value_str,
                 id_path=metaitem_id_path)
             if show_contents:
+                # Order is important here- A mapping without keys could be viewed as a sequence, and they're both
+                # containers.
                 if isinstance(value, PudbMapping):
                     self.walk_mapping(contents_metaitem, label, value, id_path)
                 elif isinstance(value, PudbSequence):
