@@ -393,7 +393,6 @@ class ValueWalker:
 
     NUM_PREVIEW_ITEMS = 3
 
-
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
