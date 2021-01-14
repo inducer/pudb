@@ -60,10 +60,13 @@ class PudbCollection(ABC):
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbCollection:
-            return all([
-                any("__contains__" in b.__dict__ for b in c.__mro__),
-                any("__iter__" in b.__dict__ for b in c.__mro__),
-            ])
+            try:
+                return all([
+                    any("__contains__" in b.__dict__ for b in c.__mro__),
+                    any("__iter__" in b.__dict__ for b in c.__mro__),
+                ])
+            except Exception:
+                pass
         return NotImplemented
 
 
@@ -71,10 +74,13 @@ class PudbSequence(ABC):
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbSequence:
-            return all([
-                any("__getitem__" in b.__dict__ for b in c.__mro__),
-                any("__iter__" in b.__dict__ for b in c.__mro__),
-            ])
+            try:
+                return all([
+                    any("__getitem__" in b.__dict__ for b in c.__mro__),
+                    any("__iter__" in b.__dict__ for b in c.__mro__),
+                ])
+            except Exception:
+                pass
         return NotImplemented
 
 
@@ -82,11 +88,14 @@ class PudbMapping(ABC):
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbMapping:
-            return all([
-                any("__getitem__" in b.__dict__ for b in c.__mro__),
-                any("__iter__" in b.__dict__ for b in c.__mro__),
-                any("keys" in b.__dict__ for b in c.__mro__),
-            ])
+            try:
+                return all([
+                    any("__getitem__" in b.__dict__ for b in c.__mro__),
+                    any("__iter__" in b.__dict__ for b in c.__mro__),
+                    any("keys" in b.__dict__ for b in c.__mro__),
+                ])
+            except Exception:
+                pass
         return NotImplemented
 # }}}
 
