@@ -32,6 +32,7 @@ THE SOFTWARE.
 
 import urwid
 import inspect
+import warnings
 
 from pudb.lowlevel import ui_log
 
@@ -556,9 +557,11 @@ class ValueWalker:
             else:
                 try:
                     value_str = self.preview_contents(value)
-                except Exception:
-                    ui_log.exception("Container preview failed for {}".format(label))
-                    value_str = "<error generating preview>"
+                except Exception as error:
+                    # This almost certainly means that we failed to call str()
+                    # on a user's object somewhere. Let's not be too noisy about
+                    # that, the lack/failure of a str() method may be intentional
+                    value_str = "<error generating preview: {}>".format(error)
 
             contents_metaitem = self.add_item(
                 parent=new_parent_item,
@@ -602,7 +605,9 @@ class ValueWalker:
                     continue
 
             try:
-                attr_value = getattr(value, key)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    attr_value = getattr(value, key)
                 if inspect.isroutine(attr_value) and not iinfo.show_methods:
                     cnt_omitted_methods += 1
                     continue
