@@ -423,7 +423,7 @@ class ValueWalker:
     def walk_mapping(self, parent: VariableWidget, label: str,
                      value: PudbMapping, id_path: str = None):
         is_empty = True
-        for count, key in enumerate(value):
+        for count, key in enumerate(value.keys()):
             is_empty = False
             if ((count > 0 and count % 10 == 0)
                     and self.add_continuation_item(parent, id_path, count)):
@@ -492,7 +492,7 @@ class ValueWalker:
         # sequence, and they're both containers.
         if isinstance(container, PudbMapping):
             items = ["{k}: {v}".format(k=key, v=container[key])
-                     for _, key in zip(counter, container)]
+                     for _, key in zip(counter, container.keys())]
             surrounds = ("{", "}")
         elif isinstance(container, PudbSequence):
             items = [str(entry) for _, entry in zip(counter, container)]
