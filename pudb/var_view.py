@@ -166,8 +166,9 @@ STR_SAFE_TYPES = get_str_safe_types()
 class VariableWidget(urwid.FlowWidget):
     PREFIX = "| "
 
-    def __init__(self, parent, var_label, value_str, id_path=None,
+    def __init__(self, parent, var_label, value_str, id_path,
             attr_prefix=None, watch_expr=None, iinfo=None):
+        assert isinstance(id_path, str)
         self.parent = parent
         self.nesting_level = 0 if parent is None else parent.nesting_level + 1
         self.prefix = self.PREFIX * self.nesting_level
@@ -417,7 +418,7 @@ class ValueWalker:
         cont_id_path = "%s.cont-%d" % (id_path, count)
         if not self.frame_var_info.get_inspect_info(
                 cont_id_path, read_only=True).show_detail:
-            self.add_item(parent, "...", None, cont_id_path)
+            self.add_item(parent, "...", None, id_path=cont_id_path)
             return True
         return False
 
@@ -442,7 +443,7 @@ class ValueWalker:
                 "%s[%r]" % (id_path, key))
 
         if is_empty:
-            self.add_item(parent, "<empty>", None)
+            self.add_item(parent, "<empty>", None, id_path="%s<empty>" % id_path)
 
         return True
 
@@ -459,7 +460,7 @@ class ValueWalker:
                 "%s[%r]" % (id_path, count))
 
         if is_empty:
-            self.add_item(parent, "<empty>", None)
+            self.add_item(parent, "<empty>", None, id_path="%s<empty>" % id_path)
 
         return True
 
@@ -476,7 +477,7 @@ class ValueWalker:
                 "%s[%d]" % (id_path, count))
 
         if is_empty:
-            self.add_item(parent, "<empty>", None)
+            self.add_item(parent, "<empty>", None, id_path="%s<empty>" % id_path)
 
         return True
 
@@ -515,6 +516,7 @@ class ValueWalker:
         if id_path is None:
             id_path = label
 
+        assert isinstance(id_path, str)
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
 
         if isinstance(value, self.BASIC_TYPES):
@@ -625,10 +627,10 @@ class ValueWalker:
                 label = "<omitted methods>"
             else:
                 label = "<empty>"
-            self.add_item(new_parent_item, label, None)
+            self.add_item(new_parent_item, label, id_path="%s<empty>" % id_path)
 
         if not key_its:
-            self.add_item(new_parent_item, "<?>", None)
+            self.add_item(new_parent_item, "<?>", id_path="%s<empty>" % id_path)
 
 
 class BasicValueWalker(ValueWalker):
@@ -637,7 +639,7 @@ class BasicValueWalker(ValueWalker):
 
         self.widget_list = []
 
-    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
@@ -654,7 +656,7 @@ class WatchValueWalker(ValueWalker):
         self.widget_list = widget_list
         self.watch_expr = watch_expr
 
-    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
@@ -674,7 +676,7 @@ class TopAndMainVariableWalker(ValueWalker):
 
         self.top_id_path_prefixes = []
 
-    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
