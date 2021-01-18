@@ -188,10 +188,8 @@ class BaseValueWalkerTestCase(unittest.TestCase):
     @contextlib.contextmanager
     def patched_logging(self):
         """
-        To use:
-            >>> with self.patched_logging():
-            >>>     # Test fails if `foo` logs something to ui_log.exception
-            >>>     foo()
+        Context manager that patches ui_log.exception such that the test will
+        fail if it is called.
         """
         def fake_exception_log(*args, **kwargs):
             self.fail("ui_log.exception was unexpectedly called")
