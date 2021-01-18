@@ -555,7 +555,7 @@ class ValueWalker:
                 metaitem_id_path, read_only=True).show_detail
 
             if show_contents:
-                value_str = ""
+                value_str = None
             else:
                 try:
                     value_str = self.preview_contents(value)
