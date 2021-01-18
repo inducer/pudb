@@ -203,7 +203,7 @@ class BaseValueWalkerTestCase(unittest.TestCase):
         finally:
             ui_log.exception = old_logger
 
-    def assertWalksContents(self, container, label="xs"):
+    def assert_walks_contents(self, container, label="xs"):
         expand_paths = {label, self.contents_path(label)}
         self.values_to_expand = [container]
         self.walker = BasicValueWalker(FrameVarInfoForTesting(expand_paths))
@@ -212,15 +212,18 @@ class BaseValueWalkerTestCase(unittest.TestCase):
         expected = [(label, self.value_string(container)), self.CONTENTS_ITEM]
         if isinstance(container, PudbMapping):
             expected.extend([(repr(key), repr(container[key]))
-                             for key in container.keys()])
+                             for key in container.keys()]
+                            or [self.EMPTY_ITEM])
             self.class_counts["mappings"] += 1
         elif isinstance(container, PudbSequence):
             expected.extend([(repr(index), repr(entry))
-                             for index, entry in enumerate(container)])
+                             for index, entry in enumerate(container)]
+                            or [self.EMPTY_ITEM])
             self.class_counts["sequences"] += 1
         elif isinstance(container, PudbCollection):
             expected.extend([(None, repr(entry))
-                             for entry in container])
+                             for entry in container]
+                            or [self.EMPTY_ITEM])
             self.class_counts["collections"] += 1
         else:
             # remove the contents item, not recognized as a container
@@ -234,23 +237,7 @@ class BaseValueWalkerTestCase(unittest.TestCase):
         received = self.walked_values()
         self.assertListEqual(expected, received)
 
-    def assertWalksEmpty(self, container, label="xs"):
-        expand_paths = {label, self.contents_path(label)}
-        self.values_to_expand = [container]
-        self.walker = BasicValueWalker(FrameVarInfoForTesting(expand_paths))
-
-        expected = [(label, self.value_string(container)),
-                    self.CONTENTS_ITEM,
-                    self.EMPTY_ITEM]
-        expected.extend(self.expected_attrs(container))
-
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=container)
-
-        received = self.walked_values()
-        self.assertListEqual(expected, received)
-
-    def assertClassCountsEqual(self, seen=None):
+    def assert_class_counts_equal(self, seen=None):
         """
         This is kinda weird since at first it looks like its testing the test
         code, but really it's testing the `isinstance` checks. But it is also
@@ -318,7 +305,7 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
             complex(1.3, -1),
 
             # strings
-            # "",  # Not the empty string, that looks like an empty container
+            "",
             "a",
             "foo bar",
             # "  lots\tof\nspaces\r ",  # long, hits continuation item
@@ -330,29 +317,29 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
             None,
         ]
         for value in values:
-            self.assertWalksContents(value)
+            self.assert_walks_contents(value)
 
     def test_set(self):
-        self.assertWalksContents(set([42, "foo", None, False]))
-        self.assertClassCountsEqual({"collections": 1})
+        self.assert_walks_contents(set([42, "foo", None, False]))
+        self.assert_class_counts_equal({"collections": 1})
 
     def test_frozenset(self):
-        self.assertWalksContents(frozenset([42, "foo", None, False]))
-        self.assertClassCountsEqual({"collections": 1})
+        self.assert_walks_contents(frozenset([42, "foo", None, False]))
+        self.assert_class_counts_equal({"collections": 1})
 
     def test_dict(self):
-        self.assertWalksContents({
+        self.assert_walks_contents({
             0:                   42,
             "a":                 "foo",
             "":                  None,
             True:                False,
             frozenset(range(3)): "abc",
         })
-        self.assertClassCountsEqual({"mappings": 1})
+        self.assert_class_counts_equal({"mappings": 1})
 
     def test_list(self):
-        self.assertWalksContents([42, "foo", None, False])
-        self.assertClassCountsEqual({"sequences": 1})
+        self.assert_walks_contents([42, "foo", None, False])
+        self.assert_class_counts_equal({"sequences": 1})
 
     def test_containerlike_classes(self):
         for class_count, containerlike_class in enumerate(
@@ -360,41 +347,41 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
             label = containerlike_class.name()
             value = containerlike_class(zip(string.ascii_lowercase,
                                             range(3, 10)))
-            self.assertWalksContents(container=value, label=label)
+            self.assert_walks_contents(container=value, label=label)
 
-        self.assertClassCountsEqual({
+        self.assert_class_counts_equal({
             "mappings": 256,
             "sequences": 256,
             "collections": 256,
             "other": 1280,
         })
 
-        walked_total = (self.class_counts["mappings"] +
-                        self.class_counts["sequences"] +
-                        self.class_counts["collections"] +
-                        self.class_counts["other"])
+        walked_total = (self.class_counts["mappings"]
+                        + self.class_counts["sequences"]
+                        + self.class_counts["collections"]
+                        + self.class_counts["other"])
 
         # +1 here because enumerate starts from 0, not 1
         self.assertEqual(class_count + 1, walked_total)
 
     def test_empty_frozenset(self):
-        self.assertWalksEmpty(frozenset())
+        self.assert_walks_contents(frozenset())
 
     def test_empty_set(self):
-        self.assertWalksEmpty(set())
+        self.assert_walks_contents(set())
 
     def test_empty_dict(self):
-        self.assertWalksEmpty(dict())
+        self.assert_walks_contents(dict())
 
     def test_empty_list(self):
-        self.assertWalksEmpty(list())
+        self.assert_walks_contents(list())
 
     def test_reasonable_class(self):
         """
         Are the class objects themselves expandable?
         """
-        self.assertWalksContents(Reasonable, label="Reasonable")
-        self.assertClassCountsEqual({"other": 1})
+        self.assert_walks_contents(Reasonable, label="Reasonable")
+        self.assert_class_counts_equal({"other": 1})
 
     def test_maybe_unreasonable_classes(self):
         """
@@ -402,11 +389,11 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         careful, reasonably expandable?
         """
         for containerlike_class in generate_containerlike_class():
-            self.assertWalksContents(
+            self.assert_walks_contents(
                 container=containerlike_class,
                 label=containerlike_class.name()
             )
 
         # This effectively makes sure that class definitions aren't considered
         # containers.
-        self.assertClassCountsEqual({"other": 2048})
+        self.assert_class_counts_equal({"other": 2048})
