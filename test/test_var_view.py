@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import contextlib
 import itertools
 import string
@@ -6,8 +7,13 @@ import unittest
 
 from pudb.py3compat import text_type, integer_types
 from pudb.var_view import (
-    FrameVarInfo, BasicValueWalker, ui_log,
-    PudbCollection, PudbMapping, PudbSequence,
+    BasicValueWalker,
+    FrameVarInfo,
+    PudbCollection,
+    PudbMapping,
+    PudbSequence,
+    ValueWalker,
+    ui_log,
 )
 
 
@@ -44,13 +50,21 @@ def test_get_stringifier():
 
 
 class FrameVarInfoForTesting(FrameVarInfo):
+    def __init__(self, paths_to_expand=None):
+        super(FrameVarInfoForTesting, self).__init__()
+        if paths_to_expand is None:
+            paths_to_expand = set()
+        self.paths_to_expand = paths_to_expand
+
     def get_inspect_info(self, id_path, read_only):
         iinfo = super(FrameVarInfoForTesting, self).get_inspect_info(
             id_path, read_only)
-        iinfo.access_level = "private"
+        iinfo.access_level = "all"
         iinfo.display_type = "repr"
-        iinfo.show_detail = True
         iinfo.show_methods = True
+
+        if id_path in self.paths_to_expand:
+            iinfo.show_detail = True
         return iinfo
 
 
@@ -132,13 +146,53 @@ def generate_containerlike_class():
 
 
 class BaseValueWalkerTestCase(unittest.TestCase):
-    def value_string(self, obj):
-        if isinstance(obj, BasicValueWalker.BASIC_TYPES):
-            return repr(obj)
-        return repr(obj) + self.mod_str
+    """
+    There are no actual tests defined in this class, it provides utitlities
+    useful for testing the variable view in variaous ways.
+    """
+    CONTENTS_ITEM = (ValueWalker.CONTENTS_LABEL, None)
+    EMPTY_ITEM = (ValueWalker.EMPTY_LABEL, None)
+    MOD_STR = " [all+()]"
+
+    def setUp(self):
+        self.values_to_expand = []
+        self.class_counts = {
+            "mappings": 0,
+            "sequences": 0,
+            "collections": 0,
+            "other": 0,
+        }
+
+    def contents_path(self, path):
+        return "%s%s" % (path, ValueWalker.CONTENTS_LABEL)
+
+    def value_string(self, obj, expand=True):
+        if expand and obj in self.values_to_expand:
+            return repr(obj) + self.MOD_STR
+        return repr(obj)
+
+    def walked_values(self):
+        return [(w.var_label, w.value_str)
+                for w in self.walker.widget_list]
+
+    def expected_attrs(self, obj):
+        """
+        `dir()` the object and return (label, value string) pairs for each
+        attribute. Should match the order that these attributes would appear in
+        the var_view.
+        """
+        return [("." + str(label),
+                 self.value_string(getattr(obj, label), expand=False))
+                for label in sorted(dir(obj))]
 
     @contextlib.contextmanager
     def patched_logging(self):
+        """
+        To use:
+            >>> with self.patched_logging():
+            >>>     # Test fails if `foo` logs something to ui_log.exception
+            >>>     foo()
+        """
         def fake_exception_log(*args, **kwargs):
             self.fail("ui_log.exception was unexpectedly called")
 
@@ -149,45 +203,73 @@ class BaseValueWalkerTestCase(unittest.TestCase):
         finally:
             ui_log.exception = old_logger
 
-    def walked_values(self):
-        return [(w.var_label, w.value_str)
-                for w in self.walker.widget_list]
+    def assertWalksContents(self, container, label="xs"):
+        expand_paths = {label, self.contents_path(label)}
+        self.values_to_expand = [container]
+        self.walker = BasicValueWalker(FrameVarInfoForTesting(expand_paths))
 
-    def attrs(self, obj):
-        return [_label for _label in sorted(dir(obj))
-                if not _label.startswith("__")]
+        # Build out list of extected view contents according to container type.
+        expected = [(label, self.value_string(container)), self.CONTENTS_ITEM]
+        if isinstance(container, PudbMapping):
+            expected.extend([(repr(key), repr(container[key]))
+                             for key in container.keys()])
+            self.class_counts["mappings"] += 1
+        elif isinstance(container, PudbSequence):
+            expected.extend([(repr(index), repr(entry))
+                             for index, entry in enumerate(container)])
+            self.class_counts["sequences"] += 1
+        elif isinstance(container, PudbCollection):
+            expected.extend([(None, repr(entry))
+                             for entry in container])
+            self.class_counts["collections"] += 1
+        else:
+            # remove the contents item, not recognized as a container
+            expected.pop(-1)
+            self.class_counts["other"] += 1
+        expected.extend(self.expected_attrs(container))
 
-    def find_expected_attrs(self, obj):
+        with self.patched_logging():
+            self.walker.walk_value(parent=None, label=label, value=container)
+
+        received = self.walked_values()
+        self.assertListEqual(expected, received)
+
+    def assertWalksEmpty(self, container, label="xs"):
+        expand_paths = {label, self.contents_path(label)}
+        self.values_to_expand = [container]
+        self.walker = BasicValueWalker(FrameVarInfoForTesting(expand_paths))
+
+        expected = [(label, self.value_string(container)),
+                    self.CONTENTS_ITEM,
+                    self.EMPTY_ITEM]
+        expected.extend(self.expected_attrs(container))
+
+        with self.patched_logging():
+            self.walker.walk_value(parent=None, label=label, value=container)
+
+        received = self.walked_values()
+        self.assertListEqual(expected, received)
+
+    def assertClassCountsEqual(self, seen=None):
         """
-        Recursively `dir()` the object and return (label, value string) pairs
-        for each attribute that doesn't start with "__". Should match the
-        order that these attributes would appear in the var_view.
+        This is kinda weird since at first it looks like its testing the test
+        code, but really it's testing the `isinstance` checks. But it is also
+        true that it tests the test code, kind of like a sanity check.
         """
-        found = []
-        for _label in self.attrs(obj):
-            found.append(("." + str(_label),
-                          self.value_string(getattr(obj, _label))))
-            found.extend(self.find_expected_attrs(getattr(obj, _label)))
-        return found
-
-    @classmethod
-    def setUpClass(cls):
-        cls.mod_str = " [pri+()]"
+        expected = {
+            "mappings": 0,
+            "sequences": 0,
+            "collections": 0,
+            "other": 0,
+        }
+        if seen is not None:
+            expected.update(seen)
+        self.assertDictEqual(expected, self.class_counts)
 
 
 class ValueWalkerTest(BaseValueWalkerTestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.mod_str = " [pri+()]"
-
-    def setUp(self):
-        self.walker = BasicValueWalker(FrameVarInfoForTesting())
-
-    def walked_values(self):
-        return [(w.var_label, w.value_str)
-                for w in self.walker.widget_list]
-
     def test_simple_values(self):
+        self.walker = BasicValueWalker(FrameVarInfoForTesting())
         values = [
             # numbers
             0,
@@ -211,162 +293,120 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         ]
         for label, value in enumerate(values):
             with self.patched_logging():
-                self.walker.walk_value(parent=None, label=label, value=value)
+                self.walker.walk_value(parent=None,
+                                       label=str(label),
+                                       value=value)
 
-        expected = [(_label, repr(x)) for _label, x in enumerate(values)]
+        expected = [(str(_label), repr(x)) for _label, x in enumerate(values)]
         received = self.walked_values()
         self.assertListEqual(expected, received)
+
+    def test_simple_values_expandable(self):
+        """
+        Simple values like numbers and strings are now expandable so we can
+        peak under the hood and take a look at their attributes. Make sure
+        that's working properly.
+        """
+        self.maxDiff = None
+        values = [
+            # numbers
+            0,
+            1,
+            -1234567890412345243,
+            float(4.2),
+            float("inf"),
+            complex(1.3, -1),
+
+            # strings
+            # "",  # Not the empty string, that looks like an empty container
+            "a",
+            "foo bar",
+            # "  lots\tof\nspaces\r ",  # long, hits continuation item
+            "♫",
+
+            # other
+            False,
+            True,
+            None,
+        ]
+        for value in values:
+            self.assertWalksContents(value)
 
     def test_set(self):
-        label = "xs"
-        value = set([42, "foo", None, False])
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = {(None, repr(x)) for x in value}
-        expected.add((label, repr(value) + self.mod_str))
-        received = set(self.walked_values())
-        self.assertSetEqual(expected, received)
-
-    def test_empty_set(self):
-        label = "xs"
-        value = set()
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = [(label, repr(value) + self.mod_str), ("<empty>", None)]
-        received = self.walked_values()
-        self.assertListEqual(expected, received)
+        self.assertWalksContents(set([42, "foo", None, False]))
+        self.assertClassCountsEqual({"collections": 1})
 
     def test_frozenset(self):
-        label = "xs"
-        value = frozenset([42, "foo", None, False])
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = {(None, repr(x)) for x in value}
-        expected.add((label, repr(value) + self.mod_str))
-        received = frozenset(self.walked_values())
-        self.assertSetEqual(expected, received)
-
-    def test_empty_frozenset(self):
-        label = "xs"
-        value = frozenset()
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = [(label, repr(value) + self.mod_str), ("<empty>", None)]
-        received = self.walked_values()
-        self.assertListEqual(expected, received)
+        self.assertWalksContents(frozenset([42, "foo", None, False]))
+        self.assertClassCountsEqual({"collections": 1})
 
     def test_dict(self):
-        label = "xs"
-        value = {
+        self.assertWalksContents({
             0:                   42,
             "a":                 "foo",
             "":                  None,
             True:                False,
             frozenset(range(3)): "abc",
-        }
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = set((repr(k), repr(v)) for k, v in value.items())
-        expected.add((label, repr(value) + self.mod_str))
-        received = set(self.walked_values())
-        self.assertSetEqual(expected, received)
-
-    def test_empty_dict(self):
-        label = "xs"
-        value = {}
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = [(label, repr(value) + self.mod_str), ("<empty>", None)]
-        received = self.walked_values()
-        self.assertListEqual(expected, received)
+        })
+        self.assertClassCountsEqual({"mappings": 1})
 
     def test_list(self):
-        label = "xs"
-        value = [42, "foo", None, False]
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = [(label, repr(value) + self.mod_str)]
-        expected.extend([(repr(_label), repr(x))
-                         for _label, x in enumerate(value)])
-        received = self.walked_values()
-        self.assertListEqual(expected, received)
-
-    def test_empty_list(self):
-        label = "xs"
-        value = []
-        with self.patched_logging():
-            self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = [(label, repr(value) + self.mod_str), ("<empty>", None)]
-        received = self.walked_values()
-        self.assertListEqual(expected, received)
+        self.assertWalksContents([42, "foo", None, False])
+        self.assertClassCountsEqual({"sequences": 1})
 
     def test_containerlike_classes(self):
-        for containerlike_class in generate_containerlike_class():
+        for class_count, containerlike_class in enumerate(
+                generate_containerlike_class()):
             label = containerlike_class.name()
-            value = containerlike_class(zip(string.ascii_lowercase, range(7)))
-            self.walker = BasicValueWalker(FrameVarInfoForTesting())
+            value = containerlike_class(zip(string.ascii_lowercase,
+                                            range(3, 10)))
+            self.assertWalksContents(container=value, label=label)
 
-            with self.patched_logging():
-                self.walker.walk_value(parent=None, label=label, value=value)
+        self.assertClassCountsEqual({
+            "mappings": 256,
+            "sequences": 256,
+            "collections": 256,
+            "other": 1280,
+        })
 
-            if isinstance(value, PudbMapping):
-                expected = {(label, repr(value) + self.mod_str)}
-                expected.update([(repr(_label), repr(value[_label]))
-                                 for _label in value])
-                received = set(self.walked_values())
-                self.assertSetEqual(expected, received)
-            elif isinstance(value, PudbSequence):
-                expected = [(label, repr(value) + self.mod_str)]
-                expected.extend([(repr(index), repr(entry))
-                                 for index, entry in enumerate(value)])
-                received = self.walked_values()
-                self.assertListEqual(expected, received)
-            elif isinstance(value, PudbCollection):
-                expected = [(label, repr(value) + self.mod_str)]
-                expected.extend([(None, repr(entry))
-                                 for entry in value])
-                received = self.walked_values()
-                self.assertListEqual(expected, received)
-            else:
-                expected = [(label, repr(value) + self.mod_str)]
-                expected.extend(self.find_expected_attrs(value))
-                received = self.walked_values()
-                self.assertListEqual(expected, received)
+        walked_total = (self.class_counts["mappings"] +
+                        self.class_counts["sequences"] +
+                        self.class_counts["collections"] +
+                        self.class_counts["other"])
 
+        # +1 here because enumerate starts from 0, not 1
+        self.assertEqual(class_count + 1, walked_total)
 
-class ValueWalkerClassesTest(BaseValueWalkerTestCase):
+    def test_empty_frozenset(self):
+        self.assertWalksEmpty(frozenset())
+
+    def test_empty_set(self):
+        self.assertWalksEmpty(set())
+
+    def test_empty_dict(self):
+        self.assertWalksEmpty(dict())
+
+    def test_empty_list(self):
+        self.assertWalksEmpty(list())
+
     def test_reasonable_class(self):
-        label = "Reasonable"
-        value = Reasonable
-        self.walker = BasicValueWalker(FrameVarInfoForTesting())
-
-        with self.patched_logging():
-            with self.patched_logging():
-                self.walker.walk_value(parent=None, label=label, value=value)
-
-        expected = [(label, repr(value) + self.mod_str)]
-        expected.extend(self.find_expected_attrs(Reasonable))
-        received = self.walked_values()
-        self.assertListEqual(expected, received)
+        """
+        Are the class objects themselves expandable?
+        """
+        self.assertWalksContents(Reasonable, label="Reasonable")
+        self.assertClassCountsEqual({"other": 1})
 
     def test_maybe_unreasonable_classes(self):
+        """
+        Are class objects, that might look like containers if we're not
+        careful, reasonably expandable?
+        """
         for containerlike_class in generate_containerlike_class():
-            label = containerlike_class.name()
-            value = containerlike_class
-            self.walker = BasicValueWalker(FrameVarInfoForTesting())
+            self.assertWalksContents(
+                container=containerlike_class,
+                label=containerlike_class.name()
+            )
 
-            with self.patched_logging():
-                self.walker.walk_value(parent=None, label=label, value=value)
-
-            expected = [(label, repr(value) + self.mod_str)]
-            expected.extend(self.find_expected_attrs(containerlike_class))
-            received = self.walked_values()
-            self.assertListEqual(expected, received)
+        # This effectively makes sure that class definitions aren't considered
+        # containers.
+        self.assertClassCountsEqual({"other": 2048})
