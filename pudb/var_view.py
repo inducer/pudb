@@ -404,6 +404,9 @@ class ValueWalker:
 
     NUM_PREVIEW_ITEMS = 3
 
+    CONTENTS_LABEL = "<contents>"
+    EMPTY_LABEL = "<empty>"
+
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
@@ -443,7 +446,8 @@ class ValueWalker:
                 "%s[%r]" % (id_path, key))
 
         if is_empty:
-            self.add_item(parent, "<empty>", None, id_path="%s<empty>" % id_path)
+            self.add_item(parent, self.EMPTY_LABEL, None,
+                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
 
         return True
 
@@ -460,7 +464,8 @@ class ValueWalker:
                 "%s[%r]" % (id_path, count))
 
         if is_empty:
-            self.add_item(parent, "<empty>", None, id_path="%s<empty>" % id_path)
+            self.add_item(parent, self.EMPTY_LABEL, None,
+                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
 
         return True
 
@@ -477,7 +482,8 @@ class ValueWalker:
                 "%s[%d]" % (id_path, count))
 
         if is_empty:
-            self.add_item(parent, "<empty>", None, id_path="%s<empty>" % id_path)
+            self.add_item(parent, self.EMPTY_LABEL, None,
+                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
 
         return True
 
@@ -550,7 +556,7 @@ class ValueWalker:
 
         # containers --------------------------------------------------
         if isinstance(value, (PudbCollection, PudbMapping, PudbSequence)):
-            metaitem_id_path = "%s<contents>" % id_path
+            metaitem_id_path = "%s%s" % (id_path, self.CONTENTS_LABEL)
             show_contents = self.frame_var_info.get_inspect_info(
                 metaitem_id_path, read_only=True).show_detail
 
@@ -567,7 +573,7 @@ class ValueWalker:
 
             contents_metaitem = self.add_item(
                 parent=new_parent_item,
-                var_label="<contents>",
+                var_label=self.CONTENTS_LABEL,
                 value_str=value_str,
                 id_path=metaitem_id_path)
             if show_contents:
@@ -626,11 +632,13 @@ class ValueWalker:
             elif cnt_omitted_methods:
                 label = "<omitted methods>"
             else:
-                label = "<empty>"
-            self.add_item(new_parent_item, label, id_path="%s<empty>" % id_path)
+                label = self.EMPTY_LABEL
+            self.add_item(new_parent_item, label,
+                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
 
         if not key_its:
-            self.add_item(new_parent_item, "<?>", id_path="%s<empty>" % id_path)
+            self.add_item(new_parent_item, "<?>",
+                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
 
 
 class BasicValueWalker(ValueWalker):
