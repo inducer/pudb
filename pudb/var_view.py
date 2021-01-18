@@ -614,7 +614,7 @@ class ValueWalker:
 
             try:
                 with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
+                    warnings.simplefilter("ignore")
                     attr_value = getattr(value, key)
                 if inspect.isroutine(attr_value) and not iinfo.show_methods:
                     cnt_omitted_methods += 1
