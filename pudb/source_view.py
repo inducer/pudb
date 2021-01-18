@@ -105,7 +105,8 @@ class SourceLine(urwid.FlowWidget):
             line_prefix = self.line_nr
 
         line_prefix = crnt+bp+line_prefix
-        line_prefix_attr = [("source", 1), ("breakpoint marker", 1)] \
+        line_prefix_attr = [("line marker", 1),
+                            ("breakpoint marker", 1)] \
                 + line_prefix_attr
 
         # assume rendered width is same as len
