@@ -145,9 +145,11 @@ class VariableWidget(urwid.FlowWidget):
     def selectable(self):
         return True
 
-    SIZE_LIMIT = 20
-
-    def _get_text(self, size):
+    def _get_wrapped_lines(self, size):
+        """
+        :return: list of string lines, including prefixes, wrapped to fit in
+        the available space,
+        """
         maxcol = size[0] - len(self.prefix)  # self.prefix is a padding
         var_label = self.var_label or ""
         value_str = self.value_str or ""
@@ -163,11 +165,9 @@ class VariableWidget(urwid.FlowWidget):
 
     def rows(self, size, focus=False):
         if self.wrap:
-            return len(self._get_text(size))
+            return len(self._get_wrapped_lines(size))
 
-        if (self.value_str is not None
-                and self.var_label is not None
-                and len(self.prefix) + text_width(self.var_label) > self.SIZE_LIMIT):
+        if len(self._get_wrapped_lines(size)) > 1:
             return 2
         else:
             return 1
@@ -184,7 +184,7 @@ class VariableWidget(urwid.FlowWidget):
         var_label = self.var_label or ""
 
         if self.wrap:
-            text = self._get_text(size)
+            text = self._get_wrapped_lines(size)
 
             extralabel_full, extralabel_rem = divmod(
                     text_width(var_label[maxcol:]), maxcol)
@@ -214,7 +214,7 @@ class VariableWidget(urwid.FlowWidget):
 
         if self.value_str is not None:
             if self.var_label is not None:
-                if len(self.prefix) + text_width(self.var_label) > self.SIZE_LIMIT:
+                if len(self._get_wrapped_lines(size)) > 1:
                     # label too long? generate separate value line
                     text = [self.prefix + self.var_label + ":",
                             self.prefix+"  " + self.value_str]
