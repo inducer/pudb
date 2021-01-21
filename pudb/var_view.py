@@ -216,11 +216,11 @@ class VariableWidget(urwid.FlowWidget):
             if self.var_label is not None:
                 if len(self.prefix) + text_width(self.var_label) > self.SIZE_LIMIT:
                     # label too long? generate separate value line
-                    text = [self.prefix + self.var_label,
+                    text = [self.prefix + self.var_label + ":",
                             self.prefix+"  " + self.value_str]
 
                     attr = [
-                        [(apfx+"label", lprefix+text_width(self.var_label))],
+                        [(apfx+"label", lprefix+text_width(self.var_label) + 1)],
                         [(apfx+"value", lprefix+2+text_width(self.value_str))]
                         ]
                 else:
