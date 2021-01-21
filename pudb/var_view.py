@@ -159,7 +159,7 @@ class VariableWidget(urwid.FlowWidget):
         fulllines, rest = divmod(text_width(alltext) - maxcol, maxcol - 2)
         restlines = [alltext[(maxcol - 2)*i + maxcol:(maxcol - 2)*i + 2*maxcol - 2]
             for i in xrange(fulllines + bool(rest))]
-        return [firstline] + ["  " + self.prefix + i for i in restlines]
+        return [firstline] + [self.prefix + "  " + i for i in restlines]
 
     def rows(self, size, focus=False):
         if self.wrap:
