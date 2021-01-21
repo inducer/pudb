@@ -562,10 +562,10 @@ class TopAndMainVariableWalker(ValueWalker):
 
         # Perhaps it's a child of the top-level path
         before, sep, after = id_path.partition(tipp)
-        return (before == "" and
-                sep == tipp and
-                len(after) > 0 and
-                after[0] in ".<[")
+        return (before == ""
+                and sep == tipp
+                and len(after) > 0
+                and after[0] in ".<[")
 
     def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
