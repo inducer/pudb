@@ -79,14 +79,21 @@ class PudbCollection(ABC):
         collection.
         """
         assert isinstance(collection, cls)
-        for count, entry in enumerate(collection):
-            yield None, entry, "[%d]" % count
+        try:
+            for count, entry in enumerate(collection):
+                yield None, entry, "[%d]" % count
+        except TypeError:
+            ui_log.error("Object '%r' appears to be a collection, but does "
+                         "not behave like one." % collection)
 
     @classmethod
     def previews(cls, collection):
         assert isinstance(collection, cls)
-        for entry in collection:
-            yield str(entry)
+        try:
+            for entry in collection:
+                yield str(entry)
+        except TypeError:
+            pass
 
 
 class PudbSequence(ABC):
@@ -100,7 +107,7 @@ class PudbSequence(ABC):
                     any("__getitem__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:
+            except TypeError:
                 pass
         return NotImplemented
 
@@ -111,14 +118,21 @@ class PudbSequence(ABC):
         sequence.
         """
         assert isinstance(sequence, cls)
-        for count, entry in enumerate(sequence):
-            yield str(count), entry, "[%d]" % count
+        try:
+            for count, entry in enumerate(sequence):
+                yield str(count), entry, "[%d]" % count
+        except TypeError:
+            ui_log.error("Object '%r' appears to be a sequence, but does "
+                         "not behave like one." % sequence)
 
     @classmethod
     def previews(cls, sequence):
         assert isinstance(sequence, cls)
-        for entry in sequence:
-            yield str(entry)
+        try:
+            for entry in sequence:
+                yield str(entry)
+        except TypeError:
+            pass
 
 
 class PudbMapping(ABC):
@@ -133,7 +147,7 @@ class PudbMapping(ABC):
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                     any("keys" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:
+            except TypeError:
                 pass
         return NotImplemented
 
@@ -144,26 +158,21 @@ class PudbMapping(ABC):
         mapping.
         """
         assert isinstance(mapping, cls)
-        for key in mapping.keys():
-            try:
-                entry = mapping[key]
-            except TypeError:
-                # Some kind of implementation error
-                ui_log.error("Object '%r' appears to be a mapping, but does "
-                             "not behave like one." % mapping)
-            else:
-                yield repr(key), entry, "[%r]" % key
+        try:
+            for key in mapping.keys():
+                yield repr(key), mapping[key], "[%r]" % key
+        except TypeError:
+            ui_log.error("Object '%r' appears to be a mapping, but does "
+                         "not behave like one." % mapping)
 
     @classmethod
     def previews(cls, mapping):
         assert isinstance(mapping, cls)
-        for key in mapping.keys():
-            try:
-                entry = mapping[key]
-            except TypeError:
-                break
-            else:
-                yield "{k}: {v}".format(k=key, v=entry)
+        try:
+            for key in mapping.keys():
+                yield "{k}: {v}".format(k=key, v=mapping[key])
+        except TypeError:
+            pass
 
 
 # Order is important here- A mapping without keys could be viewed as a
