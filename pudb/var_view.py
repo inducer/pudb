@@ -70,6 +70,16 @@ class PudbCollection(ABC):
                 pass
         return NotImplemented
 
+    @classmethod
+    def entries(cls, collection):
+        """
+        :yield: (label, entry, id_path_ext) tuples for each entry in the
+        collection.
+        """
+        assert isinstance(collection, cls)
+        for count, entry in enumerate(collection):
+            yield None, entry, "[%d]" % count
+
 
 class PudbSequence(ABC):
     @classmethod
@@ -83,6 +93,16 @@ class PudbSequence(ABC):
             except Exception:
                 pass
         return NotImplemented
+
+    @classmethod
+    def entries(cls, sequence):
+        """
+        :yield: (label, entry, id_path_ext) tuples for each entry in the
+        sequence.
+        """
+        assert isinstance(sequence, cls)
+        for count, entry in enumerate(sequence):
+            yield str(count), entry, "[%d]" % count
 
 
 class PudbMapping(ABC):
@@ -98,6 +118,33 @@ class PudbMapping(ABC):
             except Exception:
                 pass
         return NotImplemented
+
+    @classmethod
+    def entries(cls, mapping):
+        """
+        :yield: (label, entry, id_path_ext) tuples for each entry in the
+        mapping.
+        """
+        assert isinstance(mapping, cls)
+        for key in mapping.keys():
+            try:
+                entry = mapping[key]
+            except TypeError:
+                # Some kind of implementation error
+                ui_log.error("Object '%r' appears to be a mapping, but does "
+                             "not behave like one." % mapping)
+            else:
+                yield repr(key), entry, "[%r]" % key
+
+
+# Order is important here- A mapping without keys could be viewed as a
+# sequence, and they're both collections.
+CONTAINER_CLASSES = [
+    PudbMapping,
+    PudbSequence,
+    PudbCollection,
+]
+
 # }}}
 
 
@@ -403,6 +450,7 @@ class ValueWalker:
     BASIC_TYPES = tuple(BASIC_TYPES)
 
     NUM_PREVIEW_ITEMS = 3
+    MAX_PREVIEW_ITEM_LEN = 16
 
     CONTENTS_LABEL = "<contents>"
     EMPTY_LABEL = "<empty>"
@@ -425,25 +473,25 @@ class ValueWalker:
             return True
         return False
 
-    def walk_mapping(self, parent: VariableWidget, label: str,
-                     value: PudbMapping, id_path: str = None):
+    def walk_container(self, parent: VariableWidget, label: str,
+                       value, id_path: str = None):
+        try:
+            container_cls = next(cls for cls in CONTAINER_CLASSES
+                                 if isinstance(value, cls))
+        except StopIteration:
+            # Not recognized as a container
+            return False
+
         is_empty = True
-        for count, key in enumerate(value.keys()):
+        for count, (entry_label, entry, id_path_ext) in enumerate(
+                container_cls.entries(value)):
             is_empty = False
             if ((count > 0 and count % 10 == 0)
                     and self.add_continuation_item(parent, id_path, count)):
                 return True
 
-            try:
-                entry = value[key]
-            except TypeError:
-                # Some kind of implementation error
-                ui_log.error("Object '%s' appears to be a mapping, but does "
-                             "not behave like one." % label)
-                return False
-
-            self.walk_value(parent, repr(key), entry,
-                "%s[%r]" % (id_path, key))
+            entry_id_path = "%s%s" % (id_path, id_path_ext)
+            self.walk_value(parent, entry_label, entry, entry_id_path)
 
         if is_empty:
             self.add_item(parent, self.EMPTY_LABEL, None,
@@ -451,41 +499,11 @@ class ValueWalker:
 
         return True
 
-    def walk_sequence(self, parent: VariableWidget, label: str,
-                      value: PudbSequence, id_path: str = None):
-        is_empty = True
-        for count, entry in enumerate(value):
-            is_empty = False
-            if ((count > 0 and count % 10 == 0)
-                    and self.add_continuation_item(parent, id_path, count)):
-                return True
-
-            self.walk_value(parent, repr(count), entry,
-                "%s[%r]" % (id_path, count))
-
-        if is_empty:
-            self.add_item(parent, self.EMPTY_LABEL, None,
-                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
-
-        return True
-
-    def walk_collection(self, parent: VariableWidget, label: str,
-                        value: PudbCollection, id_path: str = None):
-        is_empty = True
-        for count, entry in enumerate(value):
-            is_empty = False
-            if ((count > 0 and count % 10 == 0)
-                    and self.add_continuation_item(parent, id_path, count)):
-                return True
-
-            self.walk_value(parent, None, entry,
-                "%s[%d]" % (id_path, count))
-
-        if is_empty:
-            self.add_item(parent, self.EMPTY_LABEL, None,
-                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
-
-        return True
+    @classmethod
+    def _preview_entry(cls, entry):
+        if len(entry) > cls.MAX_PREVIEW_ITEM_LEN:
+            return entry[:cls.MAX_PREVIEW_ITEM_LEN - 3] + "..."
+        return entry
 
     @classmethod
     def preview_contents(cls, container):
@@ -577,14 +595,7 @@ class ValueWalker:
                 value_str=value_str,
                 id_path=metaitem_id_path)
             if show_contents:
-                # Order is important here- A mapping without keys could be viewed
-                # as a sequence, and they're both containers.
-                if isinstance(value, PudbMapping):
-                    self.walk_mapping(contents_metaitem, label, value, id_path)
-                elif isinstance(value, PudbSequence):
-                    self.walk_sequence(contents_metaitem, label, value, id_path)
-                elif isinstance(value, PudbCollection):
-                    self.walk_collection(contents_metaitem, label, value, id_path)
+                self.walk_container(contents_metaitem, label, value, id_path)
 
         # general attributes ------------------------------------------
         key_its = []
