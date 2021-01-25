@@ -69,16 +69,17 @@ def get_palette(may_use_fancy_formats, theme="classic"):
     # ------------------------------------------------------------------------------
 
     inheritance_map = (
-        # Style       Inherits from
-        # ----------  ----------
-        ("namespace", "keyword"),
-        ("operator",  "source"),
-        ("argument",  "source"),
-        ("builtin",   "source"),
-        ("pseudo",    "source"),
-        ("dunder",    "name"),
-        ("exception", "source"),
-        ("keyword2",  "keyword")
+        # Style                 Inherits from
+        # ----------            ----------
+        ("namespace",           "keyword"),
+        ("operator",            "source"),
+        ("argument",            "source"),
+        ("builtin",             "source"),
+        ("pseudo",              "source"),
+        ("dunder",              "name"),
+        ("exception",           "source"),
+        ("keyword2",            "keyword"),
+        ("current line marker", "source"),
     )
 
     palette_dict = {
@@ -166,6 +167,8 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         # {{{ highlighting
 
+        "current line marker": ("dark red", "dark blue"),
+        "breakpoint marker": ("dark red", "dark blue"),
         "line number": ("light gray", "dark blue"),
         "keyword": (add_setting("white", "bold"), "dark blue"),
         "name": ("light cyan", "dark blue"),
@@ -184,8 +187,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         # }}}
 
         # {{{ breakpoints
-
-        "breakpoint marker": ("dark red", "dark blue"),
 
         "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
         "breakpoint focused source": ("black", "dark red"),
@@ -261,6 +262,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "classname": ("dark cyan", "default"),
             "name": ("dark cyan", "default"),
             "line number": ("dark gray", "default"),
+            "current line marker": ("dark red", "default"),
             "breakpoint marker": ("dark red", "default"),
 
             # {{{ shell
@@ -378,6 +380,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             # {{{ source view
 
+            "current line marker": ("dark red", "black"),
             "breakpoint marker": ("dark red", "black"),
 
             "breakpoint source": ("light gray", "dark red"),
@@ -499,6 +502,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "classname": ("dark cyan", "default"),
             "funcname": ("white", "default"),
 
+            "current line marker": ("dark red", "default"),
             "breakpoint marker": ("dark red", "default"),
 
             # {{{ shell
@@ -582,6 +586,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "current breakpoint source": ("black", "light green"),
             "breakpoint focused source": ("dark gray", "dark blue"),
             "current breakpoint focused source": ("black", "light green"),
+            "current line marker": ("dark red", "default"),
             "breakpoint marker": ("dark red", "default"),
 
             "search box": ("default", "default"),
@@ -709,6 +714,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             # }}}
 
             # {{{ source view
+            "current line marker": ("h160", "h235"),
             "breakpoint marker": ("h160", "h235"),
 
             "breakpoint source": ("h252", "h124"),
@@ -831,6 +837,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "classname": ("dark cyan", "default"),
             "funcname": ("white", "default"),
 
+            "current line marker": ("dark red", "default"),
             "breakpoint marker": ("dark red", "default"),
 
             # {{{ shell
@@ -938,6 +945,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             # }}}
 
             # {{{ source view
+            "current line marker": ("h160", "h235"),
             "breakpoint marker": ("h160", "h235"),
 
             "breakpoint source": ("h252", "h124"),
