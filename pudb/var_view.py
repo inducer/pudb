@@ -731,6 +731,23 @@ class TopAndMainVariableWalker(ValueWalker):
 
         self.top_id_path_prefixes = []
 
+    @staticmethod
+    def _should_repeat_at_top(id_path, tipp) -> bool:
+        """
+        :return: True if the id_path is a child path of tipp
+        """
+        if id_path is None:
+            return False
+        if id_path == tipp:
+            return True
+
+        # Perhaps it's a child of the top-level path
+        before, sep, after = id_path.partition(tipp)
+        return (before == ""
+                and sep == tipp
+                and len(after) > 0
+                and after[0] in ".<[")
+
     def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
@@ -741,7 +758,7 @@ class TopAndMainVariableWalker(ValueWalker):
             self.top_id_path_prefixes.append(id_path)
 
         for tipp in self.top_id_path_prefixes:
-            if id_path is not None and id_path.startswith(tipp):
+            if self._should_repeat_at_top(id_path, tipp):
                 repeated_at_top = True
 
         if repeated_at_top:
