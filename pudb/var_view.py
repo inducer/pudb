@@ -148,9 +148,9 @@ class VariableWidget(urwid.FlowWidget):
     def _get_wrapped_lines(self, size):
         """
         :return: list of string lines, including prefixes, wrapped to fit in
-        the available space,
+            the available space,
         """
-        maxcol = size[0] - len(self.prefix)  # self.prefix is a padding
+        maxcol = size[0] - len(self.prefix)  # self.prefix is padding
         var_label = self.var_label or ""
         value_str = self.value_str or ""
         alltext = var_label + ": " + value_str
