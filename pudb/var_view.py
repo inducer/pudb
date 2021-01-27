@@ -33,6 +33,7 @@ THE SOFTWARE.
 import urwid
 import inspect
 
+from typing import Tuple, List
 from pudb.lowlevel import ui_log
 
 try:
@@ -145,10 +146,11 @@ class VariableWidget(urwid.FlowWidget):
     def selectable(self):
         return True
 
-    def _get_wrapped_lines(self, maxcol):
+    def _get_wrapped_lines(self, maxcol: int) -> List[str]:
         """
+        :param maxcol: the number of columns available to this widget
         :return: list of string lines, including prefixes, wrapped to fit in
-            the available space,
+            the available space
         """
         maxcol -= len(self.prefix)  # self.prefix is padding
         var_label = self.var_label or ""
@@ -163,7 +165,12 @@ class VariableWidget(urwid.FlowWidget):
             for i in xrange(fulllines + bool(rest))]
         return [firstline] + [self.prefix + "  " + i for i in restlines]
 
-    def rows(self, size, focus=False):
+    def rows(self, size: Tuple[int], focus: bool = False) -> int:
+        """
+        :param size: (maxcol,) the number of columns available to this widget
+        :param focus: True if this widget or one of its children is in focus
+        :return: The number of rows required for this widget
+        """
         if self.wrap:
             return len(self._get_wrapped_lines(size[0]))
 
@@ -172,7 +179,13 @@ class VariableWidget(urwid.FlowWidget):
         else:
             return 1
 
-    def render(self, size, focus=False):
+    def render(self, size: Tuple[int], focus: bool = False) -> urwid.Canvas:
+        """
+        :param size: (maxcol,) the number of columns available to this widget
+        :param focus: True if this widget or one of its children is in focus
+        :return: A Canvas subclass instance containing the rendered content of
+            this widget
+        """
         from pudb.ui_tools import make_canvas
 
         maxcol = size[0]
