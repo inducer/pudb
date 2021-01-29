@@ -73,7 +73,7 @@ class PudbCollection(ABC):
         return NotImplemented
 
     @classmethod
-    def entries(cls, collection):
+    def entries(cls, collection, label: str):
         """
         :yield: (label, entry, id_path_ext) tuples for each entry in the
         collection.
@@ -83,8 +83,8 @@ class PudbCollection(ABC):
             for count, entry in enumerate(collection):
                 yield None, entry, "[%d]" % count
         except TypeError:
-            ui_log.error("Object '%r' appears to be a collection, but does "
-                         "not behave like one." % collection)
+            ui_log.error("Object %r appears to be a collection, but does "
+                         "not behave like one." % label)
 
     @classmethod
     def previews(cls, collection):
@@ -112,7 +112,7 @@ class PudbSequence(ABC):
         return NotImplemented
 
     @classmethod
-    def entries(cls, sequence):
+    def entries(cls, sequence, label: str):
         """
         :yield: (label, entry, id_path_ext) tuples for each entry in the
         sequence.
@@ -122,8 +122,8 @@ class PudbSequence(ABC):
             for count, entry in enumerate(sequence):
                 yield str(count), entry, "[%d]" % count
         except TypeError:
-            ui_log.error("Object '%r' appears to be a sequence, but does "
-                         "not behave like one." % sequence)
+            ui_log.error("Object %r appears to be a sequence, but does "
+                         "not behave like one." % label)
 
     @classmethod
     def previews(cls, sequence):
@@ -152,7 +152,7 @@ class PudbMapping(ABC):
         return NotImplemented
 
     @classmethod
-    def entries(cls, mapping):
+    def entries(cls, mapping, label: str):
         """
         :yield: (label, entry, id_path_ext) tuples for each entry in the
         mapping.
@@ -162,8 +162,8 @@ class PudbMapping(ABC):
             for key in mapping.keys():
                 yield repr(key), mapping[key], "[%r]" % key
         except TypeError:
-            ui_log.error("Object '%r' appears to be a mapping, but does "
-                         "not behave like one." % mapping)
+            ui_log.error("Object %r appears to be a mapping, but does "
+                         "not behave like one." % label)
 
     @classmethod
     def previews(cls, mapping):
@@ -522,7 +522,7 @@ class ValueWalker:
 
         is_empty = True
         for count, (entry_label, entry, id_path_ext) in enumerate(
-                container_cls.entries(value)):
+                container_cls.entries(value, label)):
             is_empty = False
             if ((count > 0 and count % 10 == 0)
                     and self.add_continuation_item(parent, id_path, count)):
