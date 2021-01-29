@@ -81,10 +81,10 @@ class PudbCollection(ABC):
         assert isinstance(collection, cls)
         try:
             for count, entry in enumerate(collection):
-                yield None, entry, "[%d]" % count
+                yield None, entry, "[{k:d}]".format(k=count)
         except TypeError:
-            ui_log.error("Object %r appears to be a collection, but does "
-                         "not behave like one." % label)
+            ui_log.error("Object {l!r} appears to be a collection, but does "
+                         "not behave like one.".format(l=label))
 
     @classmethod
     def previews(cls, collection):
@@ -120,10 +120,10 @@ class PudbSequence(ABC):
         assert isinstance(sequence, cls)
         try:
             for count, entry in enumerate(sequence):
-                yield str(count), entry, "[%d]" % count
+                yield str(count), entry, "[{k:d}]".format(k=count)
         except TypeError:
-            ui_log.error("Object %r appears to be a sequence, but does "
-                         "not behave like one." % label)
+            ui_log.error("Object {l!r} appears to be a sequence, but does "
+                         "not behave like one.".format(l=label))
 
     @classmethod
     def previews(cls, sequence):
@@ -160,10 +160,10 @@ class PudbMapping(ABC):
         assert isinstance(mapping, cls)
         try:
             for key in mapping.keys():
-                yield repr(key), mapping[key], "[%r]" % key
+                yield repr(key), mapping[key], "[{k!r}]".format(k=key)
         except TypeError:
-            ui_log.error("Object %r appears to be a mapping, but does "
-                         "not behave like one." % label)
+            ui_log.error("Object {l!r} appears to be a mapping, but does "
+                         "not behave like one.".format(l=label))
 
     @classmethod
     def previews(cls, mapping):
