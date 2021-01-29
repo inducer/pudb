@@ -318,11 +318,15 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
             self.assert_walks_contents(value)
 
     def test_set(self):
-        self.assert_walks_contents(set([42, "foo", None, False]))
+        self.assert_walks_contents(set([
+            42, "foo", None, False, (), ("a", "tuple")
+        ]))
         self.assert_class_counts_equal({"collections": 1})
 
     def test_frozenset(self):
-        self.assert_walks_contents(frozenset([42, "foo", None, False]))
+        self.assert_walks_contents(frozenset([
+            42, "foo", None, False, (), ("a", "tuple")
+        ]))
         self.assert_class_counts_equal({"collections": 1})
 
     def test_dict(self):
@@ -332,11 +336,21 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
             "":                  None,
             True:                False,
             frozenset(range(3)): "abc",
+            ():                  "empty tuple",
+            (1, 2, "c", ()):     "tuple",
         })
         self.assert_class_counts_equal({"mappings": 1})
 
     def test_list(self):
-        self.assert_walks_contents([42, "foo", None, False])
+        self.assert_walks_contents([
+            42, "foo", None, False, (), ("a", "tuple")
+        ])
+        self.assert_class_counts_equal({"sequences": 1})
+
+    def test_tuple(self):
+        self.assert_walks_contents((
+            42, "foo", None, False, (), ("a", "tuple")
+        ))
         self.assert_class_counts_equal({"sequences": 1})
 
     def test_containerlike_classes(self):
