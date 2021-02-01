@@ -112,7 +112,7 @@ Keys in variables list:
     \/enter/space - expand/collapse
     h - collapse
     l - expand
-    t/r/s/c - show type/repr/str/custom for this variable
+    t/r/s/i/c - show type/repr/str/id/custom for this variable
     H - toggle highlighting
     @ - toggle repetition at top
     * - cycle attribute visibility: public/_private/__dunder__
@@ -922,6 +922,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.display_type = "repr"
             elif key == "s":
                 iinfo.display_type = "str"
+            elif key == "i":
+                iinfo.display_type = "id"
             elif key == "c":
                 iinfo.display_type = CONFIG["custom_stringifier"]
             elif key == "H":
@@ -976,6 +978,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type == "repr")
             rb_show_str = urwid.RadioButton(rb_grp_show, "Show str()",
                     iinfo.display_type == "str")
+            rb_show_id = urwid.RadioButton(rb_grp_show, "Show id()",
+                    iinfo.display_type == "id")
             rb_show_custom = urwid.RadioButton(
                     rb_grp_show, "Show custom (set in prefs)",
                     iinfo.display_type == CONFIG["custom_stringifier"])
@@ -1025,6 +1029,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.display_type = "repr"
                 elif rb_show_str.get_state():
                     iinfo.display_type = "str"
+                elif rb_show_id.get_state():
+                    iinfo.display_type = "id"
                 elif rb_show_custom.get_state():
                     iinfo.display_type = CONFIG["custom_stringifier"]
 
@@ -1072,6 +1078,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
+        self.var_list.listen("i", change_var_state)
         self.var_list.listen("c", change_var_state)
         self.var_list.listen("H", change_var_state)
         self.var_list.listen("@", change_var_state)
