@@ -322,7 +322,7 @@ def type_stringifier(value):
 
 
 def id_stringifier(obj):
-    return '{id:#x}'.format(id=id(obj))
+    return "{id:#x}".format(id=id(obj))
 
 
 def error_stringifier(_):
