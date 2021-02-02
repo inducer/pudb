@@ -342,7 +342,7 @@ def edit_config(ui, conf_dict):
 
     # {{{ stringifier
 
-    stringifier_opts = ["type", "str", "repr"]
+    stringifier_opts = ["type", "str", "repr", "id"]
     known_stringifier = conf_dict["stringifier"] in stringifier_opts
     stringifier_rb_group = []
     stringifier_edit = urwid.Edit(edit_text=conf_dict["custom_stringifier"])

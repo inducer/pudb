@@ -321,6 +321,14 @@ def type_stringifier(value):
     return text_type(type(value).__name__)
 
 
+def id_stringifier(obj):
+    return "{id:#x}".format(id=id(obj))
+
+
+def error_stringifier(_):
+    return "ERROR: Invalid custom stringifier file."
+
+
 def get_stringifier(iinfo):
     """Return a function that turns an object into a Unicode text object."""
 
@@ -330,17 +338,16 @@ def get_stringifier(iinfo):
         return repr
     elif iinfo.display_type == "str":
         return str
+    elif iinfo.display_type == "id":
+        return id_stringifier
     else:
         try:
             if not custom_stringifier_dict:  # Only execfile once
                 from os.path import expanduser
                 execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
         except Exception:
-            print("Error when importing custom stringifier:")
-            from traceback import print_exc
-            print_exc()
-            raw_input("Hit enter:")
-            return lambda value: text_type("ERROR: Invalid custom stringifier file.")
+            ui_log.exception("Error when importing custom stringifier")
+            return error_stringifier
         else:
             if "pudb_stringifier" not in custom_stringifier_dict:
                 print("%s does not contain a function named pudb_stringifier at "
