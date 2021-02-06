@@ -292,7 +292,6 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         peak under the hood and take a look at their attributes. Make sure
         that's working properly.
         """
-        self.maxDiff = None
         values = [
             # numbers
             0,
