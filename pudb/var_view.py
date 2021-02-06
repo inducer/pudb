@@ -68,7 +68,7 @@ class PudbCollection(ABC):
                     any("__contains__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:
+            except (AttributeError, TypeError):
                 pass
         return NotImplemented
 
@@ -82,7 +82,7 @@ class PudbCollection(ABC):
         try:
             for count, entry in enumerate(collection):
                 yield None, entry, "[{k:d}]".format(k=count)
-        except TypeError:
+        except (AttributeError, TypeError):
             ui_log.error("Object {l!r} appears to be a collection, but does "
                          "not behave like one.".format(l=label))
 
@@ -92,7 +92,7 @@ class PudbCollection(ABC):
         try:
             for entry in collection:
                 yield str(entry)
-        except TypeError:
+        except (AttributeError, TypeError):
             pass
 
 
@@ -107,7 +107,7 @@ class PudbSequence(ABC):
                     any("__getitem__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except TypeError:
+            except (AttributeError, TypeError):
                 pass
         return NotImplemented
 
@@ -121,7 +121,7 @@ class PudbSequence(ABC):
         try:
             for count, entry in enumerate(sequence):
                 yield str(count), entry, "[{k:d}]".format(k=count)
-        except TypeError:
+        except (AttributeError, TypeError):
             ui_log.error("Object {l!r} appears to be a sequence, but does "
                          "not behave like one.".format(l=label))
 
@@ -131,7 +131,7 @@ class PudbSequence(ABC):
         try:
             for entry in sequence:
                 yield str(entry)
-        except TypeError:
+        except (AttributeError, TypeError):
             pass
 
 
@@ -147,7 +147,7 @@ class PudbMapping(ABC):
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                     any("keys" in b.__dict__ for b in c.__mro__),
                 ])
-            except TypeError:
+            except (AttributeError, TypeError):
                 pass
         return NotImplemented
 
@@ -161,7 +161,7 @@ class PudbMapping(ABC):
         try:
             for key in mapping.keys():
                 yield repr(key), mapping[key], "[{k!r}]".format(k=key)
-        except TypeError:
+        except (AttributeError, TypeError):
             ui_log.error("Object {l!r} appears to be a mapping, but does "
                          "not behave like one.".format(l=label))
 
@@ -171,7 +171,7 @@ class PudbMapping(ABC):
         try:
             for key in mapping.keys():
                 yield "{k}: {v}".format(k=key, v=mapping[key])
-        except TypeError:
+        except (AttributeError, TypeError):
             pass
 
 
