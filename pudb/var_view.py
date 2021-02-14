@@ -34,6 +34,7 @@ import urwid
 import inspect
 import warnings
 
+from typing import Tuple, List
 from pudb.lowlevel import ui_log
 
 try:
@@ -281,10 +282,13 @@ class VariableWidget(urwid.FlowWidget):
     def selectable(self):
         return True
 
-    SIZE_LIMIT = 20
-
-    def _get_text(self, size):
-        maxcol = size[0] - len(self.prefix)  # self.prefix is a padding
+    def _get_wrapped_lines(self, maxcol: int) -> List[str]:
+        """
+        :param maxcol: the number of columns available to this widget
+        :return: list of string lines, including prefixes, wrapped to fit in
+            the available space
+        """
+        maxcol -= len(self.prefix)  # self.prefix is padding
         var_label = self.var_label or ""
         value_str = self.value_str or ""
         alltext = var_label + ": " + value_str
@@ -295,20 +299,29 @@ class VariableWidget(urwid.FlowWidget):
         fulllines, rest = divmod(text_width(alltext) - maxcol, maxcol - 2)
         restlines = [alltext[(maxcol - 2)*i + maxcol:(maxcol - 2)*i + 2*maxcol - 2]
             for i in xrange(fulllines + bool(rest))]
-        return [firstline] + ["  " + self.prefix + i for i in restlines]
+        return [firstline] + [self.prefix + "  " + i for i in restlines]
 
-    def rows(self, size, focus=False):
+    def rows(self, size: Tuple[int], focus: bool = False) -> int:
+        """
+        :param size: (maxcol,) the number of columns available to this widget
+        :param focus: True if this widget or one of its children is in focus
+        :return: The number of rows required for this widget
+        """
         if self.wrap:
-            return len(self._get_text(size))
+            return len(self._get_wrapped_lines(size[0]))
 
-        if (self.value_str is not None
-                and self.var_label is not None
-                and len(self.prefix) + text_width(self.var_label) > self.SIZE_LIMIT):
+        if len(self._get_wrapped_lines(size[0])) > 1:
             return 2
         else:
             return 1
 
-    def render(self, size, focus=False):
+    def render(self, size: Tuple[int], focus: bool = False) -> urwid.Canvas:
+        """
+        :param size: (maxcol,) the number of columns available to this widget
+        :param focus: True if this widget or one of its children is in focus
+        :return: A Canvas subclass instance containing the rendered content of
+            this widget
+        """
         from pudb.ui_tools import make_canvas
 
         maxcol = size[0]
@@ -320,7 +333,7 @@ class VariableWidget(urwid.FlowWidget):
         var_label = self.var_label or ""
 
         if self.wrap:
-            text = self._get_text(size)
+            text = self._get_wrapped_lines(maxcol)
 
             extralabel_full, extralabel_rem = divmod(
                     text_width(var_label[maxcol:]), maxcol)
@@ -350,13 +363,13 @@ class VariableWidget(urwid.FlowWidget):
 
         if self.value_str is not None:
             if self.var_label is not None:
-                if len(self.prefix) + text_width(self.var_label) > self.SIZE_LIMIT:
+                if len(self._get_wrapped_lines(maxcol)) > 1:
                     # label too long? generate separate value line
-                    text = [self.prefix + self.var_label,
+                    text = [self.prefix + self.var_label + ":",
                             self.prefix+"  " + self.value_str]
 
                     attr = [
-                        [(apfx+"label", lprefix+text_width(self.var_label))],
+                        [(apfx+"label", lprefix+text_width(self.var_label) + 1)],
                         [(apfx+"value", lprefix+2+text_width(self.value_str))]
                         ]
                 else:
@@ -444,6 +457,14 @@ def type_stringifier(value):
     return text_type(type(value).__name__)
 
 
+def id_stringifier(obj):
+    return "{id:#x}".format(id=id(obj))
+
+
+def error_stringifier(_):
+    return "ERROR: Invalid custom stringifier file."
+
+
 def get_stringifier(iinfo):
     """Return a function that turns an object into a Unicode text object."""
 
@@ -453,17 +474,16 @@ def get_stringifier(iinfo):
         return repr
     elif iinfo.display_type == "str":
         return str
+    elif iinfo.display_type == "id":
+        return id_stringifier
     else:
         try:
             if not custom_stringifier_dict:  # Only execfile once
                 from os.path import expanduser
                 execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
         except Exception:
-            print("Error when importing custom stringifier:")
-            from traceback import print_exc
-            print_exc()
-            raw_input("Hit enter:")
-            return lambda value: text_type("ERROR: Invalid custom stringifier file.")
+            ui_log.exception("Error when importing custom stringifier")
+            return error_stringifier
         else:
             if "pudb_stringifier" not in custom_stringifier_dict:
                 print("%s does not contain a function named pudb_stringifier at "

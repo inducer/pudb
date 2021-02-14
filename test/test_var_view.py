@@ -39,7 +39,7 @@ def test_get_stringifier():
             A, A2, A(), A2(), u"lól".encode("utf8"), u"lól",
             1233123, [u"lól".encode("utf8"), u"lól"],
             ] + numpy_values:
-        for display_type in ["type", "repr", "str"]:
+        for display_type in ["type", "repr", "str", "id"]:
             iinfo = InspectInfo()
             iinfo.display_type = display_type
 
