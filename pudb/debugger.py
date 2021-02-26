@@ -342,6 +342,22 @@ class Debugger(bdb.Bdb):
 
         self.ui.stack_list._w.set_focus(self.ui.translate_ui_stack_index(index))
 
+    def open_file_to_edit(self, index):
+        self.curframe, line_number = self.stack[index]
+        filename = self.curframe.f_code.co_filename
+
+        editor = os.environ.get("EDITOR", "nano")
+        editor = editor.lower()
+
+        editor_command = f"{editor}"
+        if editor in {"vi", "vim", "nvim"}:
+            editor_command = f"{editor} +{line_number}"
+        elif editor == "nano":
+            editor_command = f"{editor} -l {line_number}"
+
+        command_to_run = f"{editor_command} {filename}"
+        os.system(command=command_to_run)
+
     def move_up_frame(self):
         if self.curindex > 0:
             self.set_frame_index(self.curindex-1)
@@ -1102,6 +1118,13 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.stack_list.listen("enter", examine_frame)
+
+        def open_editor_on_frame(w, size, key):
+            _, pos = self.stack_list._w.get_focus()
+            self.debugger.open_file_to_edit(self.translate_ui_stack_index(pos))
+            redraw_screen(w, size, key)
+
+        self.stack_list.listen("ctrl e", open_editor_on_frame)
 
         def move_stack_top(w, size, key):
             self.debugger.set_frame_index(len(self.debugger.stack)-1)
