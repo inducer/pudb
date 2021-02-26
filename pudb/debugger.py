@@ -350,7 +350,7 @@ class Debugger(bdb.Bdb):
         editor = editor.lower()
 
         editor_command = f"{editor}"
-        if editor in {"vi", "vim", "nvim"}:
+        if editor in {"vi", "vim", "nvim", "emacs"}:
             editor_command = f"{editor} +{line_number}"
         elif editor == "nano":
             editor_command = f"{editor} -l {line_number}"
