@@ -551,6 +551,34 @@ class ValueWalker:
 
         return True
 
+    def walk_attributes(self, parent, label, value, id_path, iinfo):
+        try:
+            keys = dir(value)
+        except Exception:
+            ui_log.exception(f"Failed to look up attributes on {label}")
+            return
+
+        for key in sorted(keys):
+            if iinfo.access_level == "public":
+                if key.startswith("_"):
+                    continue
+            elif iinfo.access_level == "private":
+                if key.startswith("__") and key.endswith("__"):
+                    continue
+
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    attr_value = getattr(value, key)
+                if inspect.isroutine(attr_value) and not iinfo.show_methods:
+                    continue
+            except Exception:
+                attr_value = WatchEvalError()
+
+            self.walk_value(parent,
+                    ".%s" % key, attr_value,
+                    "%s.%s" % (id_path, key))
+
     def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
         if id_path is None:
             id_path = label
@@ -579,40 +607,10 @@ class ValueWalker:
         new_parent_item = self.add_item(parent, label, displayed_value,
             id_path, attr_prefix)
 
-        if not iinfo.show_detail:
-            return
-
-        # containers --------------------------------------------------
-        if isinstance(value, CONTAINER_CLASSES):
-            self.walk_container(new_parent_item, label, value, id_path)
-
-        # general attributes ------------------------------------------
-        try:
-            keys = dir(value)
-        except Exception:
-            ui_log.exception(f"Failed to look up attributes on {label}")
-            return
-
-        for key in sorted(keys):
-            if iinfo.access_level == "public":
-                if key.startswith("_"):
-                    continue
-            elif iinfo.access_level == "private":
-                if key.startswith("__") and key.endswith("__"):
-                    continue
-
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    attr_value = getattr(value, key)
-                if inspect.isroutine(attr_value) and not iinfo.show_methods:
-                    continue
-            except Exception:
-                attr_value = WatchEvalError()
-
-            self.walk_value(new_parent_item,
-                    ".%s" % key, attr_value,
-                    "%s.%s" % (id_path, key))
+        if iinfo.show_detail:
+            if isinstance(value, CONTAINER_CLASSES):
+                self.walk_container(new_parent_item, label, value, id_path)
+            self.walk_attributes(new_parent_item, label, value, id_path, iinfo)
 
 
 class BasicValueWalker(ValueWalker):
