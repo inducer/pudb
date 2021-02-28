@@ -621,12 +621,7 @@ class ValueWalker:
                 ui_log.exception("stringifier failed")
 
         if iinfo.show_detail:
-            if iinfo.access_level == "public":
-                marker = "pub"
-            elif iinfo.access_level == "private":
-                marker = "pri"
-            else:
-                marker = "all"
+            marker = iinfo.access_level[:3]
             if iinfo.show_methods:
                 marker += "+()"
             displayed_value += " [%s]" % marker
