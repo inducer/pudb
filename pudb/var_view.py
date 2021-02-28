@@ -87,15 +87,6 @@ class PudbCollection(ABC):
             ui_log.error("Object {l!r} appears to be a collection, but does "
                          "not behave like one.".format(l=label))
 
-    @classmethod
-    def previews(cls, collection):
-        assert isinstance(collection, cls)
-        try:
-            for entry in collection:
-                yield str(entry)
-        except (AttributeError, TypeError):
-            pass
-
 
 class PudbSequence(ABC):
     SURROUNDS = ("[", "]")
@@ -125,15 +116,6 @@ class PudbSequence(ABC):
         except (AttributeError, TypeError):
             ui_log.error("Object {l!r} appears to be a sequence, but does "
                          "not behave like one.".format(l=label))
-
-    @classmethod
-    def previews(cls, sequence):
-        assert isinstance(sequence, cls)
-        try:
-            for entry in sequence:
-                yield str(entry)
-        except (AttributeError, TypeError):
-            pass
 
 
 class PudbMapping(ABC):
@@ -173,15 +155,6 @@ class PudbMapping(ABC):
         except (AttributeError, TypeError):
             ui_log.error("Object {l!r} appears to be a mapping, but does "
                          "not behave like one.".format(l=label))
-
-    @classmethod
-    def previews(cls, mapping):
-        assert isinstance(mapping, cls)
-        try:
-            for key in mapping.keys():
-                yield "{k}: {v}".format(k=key, v=mapping[key])
-        except (AttributeError, TypeError):
-            pass
 
 
 # Order is important here- A mapping without keys could be viewed as a
@@ -520,15 +493,15 @@ class ValueWalker:
 
     CONTENTS_LABEL = "<contents>"
     EMPTY_LABEL = "<empty>"
-    CONTINUATION_LABEL = "..."
+    CONTINUATION_LABEL = "[...]"
 
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
 
     def add_continuation_item(self, parent: VariableWidget, id_path: str,
-                              count: int) -> bool:
+                              count: int, length: int) -> bool:
         """
-        :returns: True if a continuation item ("...") was added, else False.
+        :returns: True if a continuation item ("[...]") was added, else False.
         If a continuation item was added, no further entries in the container
         should be added. If no continuation item was added, continue adding
         entries from the container.
@@ -536,7 +509,13 @@ class ValueWalker:
         cont_id_path = "%s.cont-%d" % (id_path, count)
         if not self.frame_var_info.get_inspect_info(
                 cont_id_path, read_only=True).show_detail:
-            self.add_item(parent, self.CONTINUATION_LABEL, None, id_path=cont_id_path)
+            if length > 0:
+                omitted = f"{length - count}"
+            else:
+                omitted = "some"
+            self.add_item(parent, self.CONTINUATION_LABEL,
+                          f"<{omitted} items omitted, expand to see more>",
+                          id_path=cont_id_path)
             return True
         return False
 
@@ -553,53 +532,24 @@ class ValueWalker:
         for count, (entry_label, entry, id_path_ext) in enumerate(
                 container_cls.entries(value, label)):
             is_empty = False
-            if ((count > 0 and count % 10 == 0)
-                    and self.add_continuation_item(parent, id_path, count)):
-                return True
+            if count > 0 and count % 10 == 0:
+                try:
+                    length = len(value)
+                except Exception:
+                    length = -1
+                if self.add_continuation_item(parent, id_path, count, length):
+                    return True
 
             entry_id_path = "%s%s" % (id_path, id_path_ext)
-            self.walk_value(parent, entry_label, entry, entry_id_path)
+            self.walk_value(parent,
+                            '[{}]'.format(entry_label if entry_label else ''),
+                            entry, entry_id_path)
 
         if is_empty:
             self.add_item(parent, self.EMPTY_LABEL, None,
                           id_path="%s%s" % (id_path, self.EMPTY_LABEL))
 
         return True
-
-    @classmethod
-    def _preview_entry(cls, entry):
-        if len(entry) > cls.MAX_PREVIEW_ITEM_LEN:
-            return entry[:cls.MAX_PREVIEW_ITEM_LEN - 3] + "..."
-        return entry
-
-    @classmethod
-    def preview_contents(cls, container):
-        """
-        Generates a short preview string made up of the first NUM_PREVIEW_ITEMS
-        items in the container.
-        """
-        try:
-            container_cls = next(cls for cls in CONTAINER_CLASSES
-                                 if isinstance(container, cls))
-        except StopIteration:
-            # Not recognized as a container
-            return ""
-
-        # Use this counter along with zip() to limit comprehension to 3 items.
-        counter = range(cls.NUM_PREVIEW_ITEMS)
-
-        items = [cls._preview_entry(preview)
-                 for _, preview
-                 in zip(counter, container_cls.previews(container))]
-
-        preview = "{open}{items}{cont}{close}".format(
-            items=", ".join(items),
-            cont=", ..." if len(items) == cls.NUM_PREVIEW_ITEMS else "",
-            open=container_cls.SURROUNDS[0],
-            close=container_cls.SURROUNDS[1],
-        )
-
-        return preview
 
     def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
         if id_path is None:
@@ -634,28 +584,7 @@ class ValueWalker:
 
         # containers --------------------------------------------------
         if isinstance(value, CONTAINER_CLASSES):
-            metaitem_id_path = "%s%s" % (id_path, self.CONTENTS_LABEL)
-            show_contents = self.frame_var_info.get_inspect_info(
-                metaitem_id_path, read_only=True).show_detail
-
-            if show_contents:
-                value_str = None
-            else:
-                try:
-                    value_str = self.preview_contents(value)
-                except Exception as error:
-                    # This almost certainly means that we failed to call str()
-                    # on a user's object somewhere. Let's not be too noisy about
-                    # that, the lack/failure of a str() method may be intentional
-                    value_str = "<error generating preview: {}>".format(error)
-
-            contents_metaitem = self.add_item(
-                parent=new_parent_item,
-                var_label=self.CONTENTS_LABEL,
-                value_str=value_str,
-                id_path=metaitem_id_path)
-            if show_contents:
-                self.walk_container(contents_metaitem, label, value, id_path)
+            self.walk_container(new_parent_item, label, value, id_path)
 
         # general attributes ------------------------------------------
         try:
