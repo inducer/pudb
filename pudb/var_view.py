@@ -520,6 +520,7 @@ class ValueWalker:
 
     CONTENTS_LABEL = "<contents>"
     EMPTY_LABEL = "<empty>"
+    CONTINUATION_LABEL = "..."
 
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
@@ -535,7 +536,7 @@ class ValueWalker:
         cont_id_path = "%s.cont-%d" % (id_path, count)
         if not self.frame_var_info.get_inspect_info(
                 cont_id_path, read_only=True).show_detail:
-            self.add_item(parent, "...", None, id_path=cont_id_path)
+            self.add_item(parent, self.CONTINUATION_LABEL, None, id_path=cont_id_path)
             return True
         return False
 
