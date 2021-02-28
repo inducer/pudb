@@ -663,29 +663,18 @@ class ValueWalker:
                 self.walk_container(contents_metaitem, label, value, id_path)
 
         # general attributes ------------------------------------------
-        key_its = []
-
         try:
-            key_its.append(dir(value))
+            keys = dir(value)
         except Exception:
-            ui_log.exception("Failed to look up attributes on {}"
-                                .format(label))
+            ui_log.exception(f"Failed to look up attributes on {label}")
+            return
 
-        keys = [key
-                for ki in key_its
-                for key in ki]
-        keys.sort()
-
-        cnt_omitted_private = cnt_omitted_methods = 0
-
-        for key in keys:
+        for key in sorted(keys):
             if iinfo.access_level == "public":
                 if key.startswith("_"):
-                    cnt_omitted_private += 1
                     continue
             elif iinfo.access_level == "private":
                 if key.startswith("__") and key.endswith("__"):
-                    cnt_omitted_private += 1
                     continue
 
             try:
@@ -693,7 +682,6 @@ class ValueWalker:
                     warnings.simplefilter("ignore")
                     attr_value = getattr(value, key)
                 if inspect.isroutine(attr_value) and not iinfo.show_methods:
-                    cnt_omitted_methods += 1
                     continue
             except Exception:
                 attr_value = WatchEvalError()
@@ -701,20 +689,6 @@ class ValueWalker:
             self.walk_value(new_parent_item,
                     ".%s" % key, attr_value,
                     "%s.%s" % (id_path, key))
-
-        if not keys:
-            if cnt_omitted_private:
-                label = "<omitted private attributes>"
-            elif cnt_omitted_methods:
-                label = "<omitted methods>"
-            else:
-                label = self.EMPTY_LABEL
-            self.add_item(new_parent_item, label,
-                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
-
-        if not key_its:
-            self.add_item(new_parent_item, "<?>",
-                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
 
 
 class BasicValueWalker(ValueWalker):
