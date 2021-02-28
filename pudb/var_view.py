@@ -178,11 +178,11 @@ class PudbMapping(ABC):
 
 # Order is important here- A mapping without keys could be viewed as a
 # sequence, and they're both collections.
-CONTAINER_CLASSES = [
+CONTAINER_CLASSES = (
     PudbMapping,
     PudbSequence,
     PudbCollection,
-]
+)
 
 # }}}
 
@@ -629,7 +629,7 @@ class ValueWalker:
             return
 
         # containers --------------------------------------------------
-        if isinstance(value, (PudbCollection, PudbMapping, PudbSequence)):
+        if isinstance(value, CONTAINER_CLASSES):
             metaitem_id_path = "%s%s" % (id_path, self.CONTENTS_LABEL)
             show_contents = self.frame_var_info.get_inspect_info(
                 metaitem_id_path, read_only=True).show_detail
