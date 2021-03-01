@@ -542,7 +542,7 @@ class ValueWalker:
 
             entry_id_path = "%s%s" % (id_path, id_path_ext)
             self.walk_value(parent,
-                            '[{}]'.format(entry_label if entry_label else ''),
+                            "[{}]".format(entry_label if entry_label else ""),
                             entry, entry_id_path)
 
         if is_empty:
