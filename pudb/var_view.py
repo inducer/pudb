@@ -491,7 +491,6 @@ class ValueWalker:
     NUM_PREVIEW_ITEMS = 3
     MAX_PREVIEW_ITEM_LEN = 16
 
-    CONTENTS_LABEL = "<contents>"
     EMPTY_LABEL = "<empty>"
     CONTINUATION_LABEL = "[...]"
 

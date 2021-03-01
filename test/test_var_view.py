@@ -150,7 +150,6 @@ class BaseValueWalkerTestCase(unittest.TestCase):
     There are no actual tests defined in this class, it provides utitlities
     useful for testing the variable view in variaous ways.
     """
-    CONTENTS_ITEM = (ValueWalker.CONTENTS_LABEL, None)
     EMPTY_ITEM = (ValueWalker.EMPTY_LABEL, None)
     MOD_STR = " [all+()]"
 
@@ -162,9 +161,6 @@ class BaseValueWalkerTestCase(unittest.TestCase):
             "collections": 0,
             "other": 0,
         }
-
-    def contents_path(self, path):
-        return "%s%s" % (path, ValueWalker.CONTENTS_LABEL)
 
     def value_string(self, obj, expand=True):
         if expand and obj in self.values_to_expand:
@@ -202,30 +198,28 @@ class BaseValueWalkerTestCase(unittest.TestCase):
             ui_log.exception = old_logger
 
     def assert_walks_contents(self, container, label="xs"):
-        expand_paths = {label, self.contents_path(label)}
+        expand_paths = {label}
         self.values_to_expand = [container]
         self.walker = BasicValueWalker(FrameVarInfoForTesting(expand_paths))
 
         # Build out list of extected view contents according to container type.
-        expected = [(label, self.value_string(container)), self.CONTENTS_ITEM]
+        expected = [(label, self.value_string(container))]
         if isinstance(container, PudbMapping):
-            expected.extend([(repr(key), repr(container[key]))
+            expected.extend([(f"[{repr(key)}]", repr(container[key]))
                              for key in container.keys()]
                             or [self.EMPTY_ITEM])
             self.class_counts["mappings"] += 1
         elif isinstance(container, PudbSequence):
-            expected.extend([(repr(index), repr(entry))
+            expected.extend([(f"[{repr(index)}]", repr(entry))
                              for index, entry in enumerate(container)]
                             or [self.EMPTY_ITEM])
             self.class_counts["sequences"] += 1
         elif isinstance(container, PudbCollection):
-            expected.extend([(None, repr(entry))
+            expected.extend([("[]", repr(entry))
                              for entry in container]
                             or [self.EMPTY_ITEM])
             self.class_counts["collections"] += 1
         else:
-            # remove the contents item, not recognized as a container
-            expected.pop(-1)
             self.class_counts["other"] += 1
         expected.extend(self.expected_attrs(container))
 
