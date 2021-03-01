@@ -501,9 +501,9 @@ class ValueWalker:
                               count: int, length: int) -> bool:
         """
         :returns: True if a continuation item ("[...]") was added, else False.
-        If a continuation item was added, no further entries in the container
-        should be added. If no continuation item was added, continue adding
-        entries from the container.
+            If a continuation item was added, no further entries in the
+            container should be added. If no continuation item was added,
+            continue adding entries from the container.
         """
         cont_id_path = "%s.cont-%d" % (id_path, count)
         if not self.frame_var_info.get_inspect_info(
