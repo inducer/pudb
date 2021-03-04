@@ -32,7 +32,6 @@ setup(
     test_requires=[
         "pytest>=2",
     ],
-    url="https://github.com/inducer/pudb",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
