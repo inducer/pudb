@@ -28,11 +28,11 @@ setup(
     install_requires=[
         "urwid>=1.1.1",
         "pygments>=1.0",
+        "jedi>=0.18,<1"
     ],
     test_requires=[
         "pytest>=2",
     ],
-    url="https://github.com/inducer/pudb",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
