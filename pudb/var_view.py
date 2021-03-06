@@ -81,9 +81,10 @@ class PudbCollection(ABC):
         try:
             for count, entry in enumerate(collection):
                 yield None, entry, "[{k:d}]".format(k=count)
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as error:
             ui_log.error("Object {l!r} appears to be a collection, but does "
-                         "not behave like one.".format(l=label))
+                         "not behave like one: {m}".format(
+                             l=label, m=error))
 
 
 class PudbSequence(ABC):
@@ -109,9 +110,10 @@ class PudbSequence(ABC):
         try:
             for count, entry in enumerate(sequence):
                 yield str(count), entry, "[{k:d}]".format(k=count)
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as error:
             ui_log.error("Object {l!r} appears to be a sequence, but does "
-                         "not behave like one.".format(l=label))
+                         "not behave like one: {m}".format(
+                             l=label, m=error))
 
 
 class PudbMapping(ABC):
@@ -146,9 +148,10 @@ class PudbMapping(ABC):
             for key in mapping.keys():
                 key_repr = cls._safe_key_repr(key)
                 yield (key_repr, mapping[key], f"[{key_repr}]")
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError) as error:
             ui_log.error("Object {l!r} appears to be a mapping, but does "
-                         "not behave like one.".format(l=label))
+                         "not behave like one: {m}".format(
+                             l=label, m=error))
 
 
 # Order is important here- A mapping without keys could be viewed as a
