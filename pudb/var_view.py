@@ -59,8 +59,6 @@ from abc import ABC
 
 
 class PudbCollection(ABC):
-    SURROUNDS = ("{", "}")
-
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbCollection:
@@ -89,8 +87,6 @@ class PudbCollection(ABC):
 
 
 class PudbSequence(ABC):
-    SURROUNDS = ("[", "]")
-
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbSequence:
@@ -119,8 +115,6 @@ class PudbSequence(ABC):
 
 
 class PudbMapping(ABC):
-    SURROUNDS = ("{", "}")
-
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbMapping:
