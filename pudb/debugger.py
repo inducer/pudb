@@ -123,6 +123,7 @@ Keys in variables list:
 
 Keys in stack list:
     enter - jump to frame
+    Ctrl-e - open file at line to edit with $EDITOR
 
 Keys in breakpoints list:
     enter - jump to breakpoint
