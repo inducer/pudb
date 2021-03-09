@@ -356,8 +356,9 @@ class Debugger(bdb.Bdb):
             line_number = 1
 
         editor = os.environ.get("EDITOR", "nano")
-        command_to_run = f"{editor} +{line_number} {filename}"
-        os.system(command=command_to_run)
+
+        import subprocess
+        subprocess.call([editor, f"+{line_number}", filename], shell=False)
 
     def move_up_frame(self):
         if self.curindex > 0:
