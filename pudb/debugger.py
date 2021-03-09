@@ -346,6 +346,12 @@ class Debugger(bdb.Bdb):
         self.curframe, line_number = self.stack[index]
         filename = self.curframe.f_code.co_filename
 
+        if not filename:
+            raise ValueError(f"Could not get filename as it was None")
+
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(f"Could not find the file with name: {filename}")
+
         if not line_number:
             line_number = 1
 
@@ -1116,7 +1122,16 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def open_editor_on_frame(w, size, key):
             _, pos = self.stack_list._w.get_focus()
-            self.debugger.open_file_to_edit(self.translate_ui_stack_index(pos))
+            index = self.translate_ui_stack_index(pos)
+
+            try:
+                self.debugger.open_file_to_edit(index)
+            except Exception:
+                from pudb.lowlevel import format_exception
+                self.message("Exception happened when trying to edit the file: \n\n%s" % (
+                    "".join(format_exception(sys.exc_info()))),
+                    title="File Edit Error")
+
             redraw_screen(w, size, key)
 
         self.stack_list.listen("ctrl e", open_editor_on_frame)
