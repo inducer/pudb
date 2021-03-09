@@ -348,7 +348,7 @@ class Debugger(bdb.Bdb):
         filename = self.curframe.f_code.co_filename
 
         if not filename:
-            raise ValueError(f"Could not get filename as it was None")
+            raise ValueError("Could not get filename as it was None")
 
         if not os.path.isfile(filename):
             raise FileNotFoundError(f"Could not find the file with name: {filename}")
@@ -1132,13 +1132,15 @@ class DebuggerUI(FrameVarInfoKeeper):
                 filename_edited = self.debugger.open_file_to_edit(index)
             except Exception:
                 from pudb.lowlevel import format_exception
-                self.message("Exception happened when trying to edit the file: \n\n%s" % (
+                self.message("Exception happened when trying to edit the file:"
+                             "\n\n%s" % (
                     "".join(format_exception(sys.exc_info()))),
                     title="File Edit Error")
                 return
 
-            self.message("File is changed, but the execution is continued with the 'old' codebase.\n"
-                         f"Changed file: {filename_edited}\n"
+            self.message("File is changed, but the execution is continued with"
+                         " the 'old' codebase.\n"
+                         f"Changed file: {filename_edited}\n\n"
                          "Please quit and restart to see changes",
                          title="File is changed")
             redraw_screen(w, size, key)
