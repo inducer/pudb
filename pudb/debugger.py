@@ -1133,8 +1133,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             except Exception:
                 from pudb.lowlevel import format_exception
                 self.message("Exception happened when trying to edit the file:"
-                             "\n\n%s" % (
-                    "".join(format_exception(sys.exc_info()))),
+                             "\n\n%s" % ("".join(format_exception(sys.exc_info()))),
                     title="File Edit Error")
                 return
 
