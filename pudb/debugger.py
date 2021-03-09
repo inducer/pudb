@@ -360,6 +360,8 @@ class Debugger(bdb.Bdb):
         import subprocess
         subprocess.call([editor, f"+{line_number}", filename], shell=False)
 
+        return filename
+
     def move_up_frame(self):
         if self.curindex > 0:
             self.set_frame_index(self.curindex-1)
@@ -1126,13 +1128,18 @@ class DebuggerUI(FrameVarInfoKeeper):
             index = self.translate_ui_stack_index(pos)
 
             try:
-                self.debugger.open_file_to_edit(index)
+                filename_edited = self.debugger.open_file_to_edit(index)
             except Exception:
                 from pudb.lowlevel import format_exception
                 self.message("Exception happened when trying to edit the file: \n\n%s" % (
                     "".join(format_exception(sys.exc_info()))),
                     title="File Edit Error")
+                return
 
+            self.message("File is changed, but the execution is continued with the 'old' codebase.\n"
+                         f"Changed file: {filename_edited}\n"
+                         "Please quit and restart to see changes",
+                         title="File is changed")
             redraw_screen(w, size, key)
 
         self.stack_list.listen("ctrl e", open_editor_on_frame)
