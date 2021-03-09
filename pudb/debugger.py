@@ -346,16 +346,11 @@ class Debugger(bdb.Bdb):
         self.curframe, line_number = self.stack[index]
         filename = self.curframe.f_code.co_filename
 
+        if not line_number:
+            line_number = 1
+
         editor = os.environ.get("EDITOR", "nano")
-        editor = editor.lower()
-
-        editor_command = f"{editor}"
-        if editor in {"vi", "vim", "nvim", "emacs"}:
-            editor_command = f"{editor} +{line_number}"
-        elif editor == "nano":
-            editor_command = f"{editor} -l {line_number}"
-
-        command_to_run = f"{editor_command} {filename}"
+        command_to_run = f"{editor} +{line_number} {filename}"
         os.system(command=command_to_run)
 
     def move_up_frame(self):
