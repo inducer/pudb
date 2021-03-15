@@ -11,6 +11,7 @@ if PY3:
 
     def execfile(fname, globs, locs=None):
         exec(compile(open(fname).read(), fname, "exec"), globs, locs or globs)
+
 else:
     raw_input = raw_input
     xrange = xrange
@@ -18,7 +19,6 @@ else:
     string_types = (basestring,)  # noqa: F821
     text_type = unicode  # noqa: F821
     execfile = execfile
-
 
 try:
     import builtins
