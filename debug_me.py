@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-Colour = namedtuple('Colour', ['red', 'green', 'blue', 'alpha'])
+Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
 
 
 class MyClass(object):
@@ -24,7 +24,7 @@ def simple_func(x):
     y = dict((i, i**2) for i in s)
 
     k = set(range(5, 99))
-    c = Colour(137, 214, 56, 88)
+    c = Color(137, 214, 56, 88)
 
     try:
         x.invalid
