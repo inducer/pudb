@@ -497,6 +497,7 @@ class ValueWalker:
     def add_continuation_item(self, parent: VariableWidget, id_path: str,
                               count: int, length: int) -> bool:
         """
+        :arg length: the total length of the container. Negative if not known.
         :returns: True if a continuation item ("[...]") was added, else False.
             If a continuation item was added, no further entries in the
             container should be added. If no continuation item was added,
