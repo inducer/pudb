@@ -61,6 +61,7 @@ Keys:
     t - run to cursor
     e - show traceback [post-mortem or in exception state]
     b - set/clear breakpoint
+    Ctrl-e - open file at current line to edit with $EDITOR
 
     H - move to current line (bottom of stack)
     u - move up one stack frame
@@ -343,9 +344,7 @@ class Debugger(bdb.Bdb):
 
         self.ui.stack_list._w.set_focus(self.ui.translate_ui_stack_index(index))
 
-    def open_file_to_edit(self, index):
-        self.curframe, line_number = self.stack[index]
-        filename = self.curframe.f_code.co_filename
+    def open_file_to_edit(self, filename, line_number):
 
         if not filename:
             raise ValueError("Could not get filename as it was None")
@@ -1124,12 +1123,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.stack_list.listen("enter", examine_frame)
 
-        def open_editor_on_frame(w, size, key):
-            _, pos = self.stack_list._w.get_focus()
-            index = self.translate_ui_stack_index(pos)
-
+        def open_file_editor(file_name, line_number):
             try:
-                filename_edited = self.debugger.open_file_to_edit(index)
+                filename_edited = self.debugger.open_file_to_edit(file_name, line_number)
             except Exception:
                 from pudb.lowlevel import format_exception
                 self.message("Exception happened when trying to edit the file:"
@@ -1142,9 +1138,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                          f"Changed file: {filename_edited}\n\n"
                          "Please quit and restart to see changes",
                          title="File is changed")
+
+        def open_editor_on_stack_frame(w, size, key):
+            _, pos = self.stack_list._w.get_focus()
+            index = self.translate_ui_stack_index(pos)
+
+            curframe, line_number = self.debugger.stack[index]
+            file_name = curframe.f_code.co_filename
+
+            open_file_editor(file_name, line_number)
             redraw_screen(w, size, key)
 
-        self.stack_list.listen("ctrl e", open_editor_on_frame)
+        self.stack_list.listen("ctrl e", open_editor_on_stack_frame)
 
         def move_stack_top(w, size, key):
             self.debugger.set_frame_index(len(self.debugger.stack)-1)
@@ -2043,6 +2048,12 @@ class DebuggerUI(FrameVarInfoKeeper):
         def help(pages):
             self.message(pages, title="PuDB - The Python Urwid Debugger")
 
+        def edit_current_frame(w, size, key):
+            file_name = self.debugger.curframe.f_code.co_filename
+            line_number = self.debugger.curframe.f_lineno
+            open_file_editor(file_name, line_number)
+            redraw_screen(w, size, key)
+
         self.top.listen("o", show_output)
         self.top.listen("ctrl r", reload_breakpoints)
         self.top.listen("!", run_cmdline)
@@ -2056,6 +2067,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
         self.top.listen("ctrl l", redraw_screen)
+
+        self.top.listen("ctrl e", edit_current_frame)
 
         # }}}
 
