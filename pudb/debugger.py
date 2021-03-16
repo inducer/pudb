@@ -1125,7 +1125,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def open_file_editor(file_name, line_number):
             try:
-                filename_edited = self.debugger.open_file_to_edit(file_name, line_number)
+                filename_edited = self.debugger.open_file_to_edit(file_name,
+                                                                  line_number)
             except Exception:
                 from pudb.lowlevel import format_exception
                 self.message("Exception happened when trying to edit the file:"
