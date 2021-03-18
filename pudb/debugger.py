@@ -346,10 +346,6 @@ class Debugger(bdb.Bdb):
 
     @staticmethod
     def open_file_to_edit(filename, line_number):
-
-        if not filename:
-            raise ValueError("Could not get filename as it was None")
-
         if not os.path.isfile(filename):
             raise FileNotFoundError(f"Could not find the file with name: {filename}")
 
