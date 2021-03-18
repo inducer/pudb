@@ -1145,7 +1145,6 @@ class DebuggerUI(FrameVarInfoKeeper):
             file_name = curframe.f_code.co_filename
 
             open_file_editor(file_name, line_number)
-            redraw_screen(w, size, key)
 
         self.stack_list.listen("ctrl e", open_editor_on_stack_frame)
 
