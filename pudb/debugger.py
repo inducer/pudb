@@ -347,7 +347,7 @@ class Debugger(bdb.Bdb):
     @staticmethod
     def open_file_to_edit(filename, line_number):
         if not os.path.isfile(filename):
-            raise FileNotFoundError(f"Could not find the file with name: {filename}")
+            raise FileNotFoundError(f"'{filename}' not found or is not a file.")
 
         if not line_number:
             line_number = 1
