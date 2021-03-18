@@ -344,7 +344,8 @@ class Debugger(bdb.Bdb):
 
         self.ui.stack_list._w.set_focus(self.ui.translate_ui_stack_index(index))
 
-    def open_file_to_edit(self, filename, line_number):
+    @staticmethod
+    def open_file_to_edit(filename, line_number):
 
         if not filename:
             raise ValueError("Could not get filename as it was None")
