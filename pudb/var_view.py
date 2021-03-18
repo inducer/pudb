@@ -32,6 +32,7 @@ THE SOFTWARE.
 
 import urwid
 import inspect
+import warnings
 
 from typing import Tuple, List
 from pudb.lowlevel import ui_log
@@ -48,6 +49,118 @@ from pudb.py3compat import execfile, raw_input, xrange, \
 ELLIPSIS = "…"
 
 from pudb.ui_tools import text_width
+
+# }}}
+
+
+# {{{ abstract base classes for containers
+
+from abc import ABC
+
+
+class PudbCollection(ABC):
+    @classmethod
+    def __subclasshook__(cls, c):
+        if cls is PudbCollection:
+            try:
+                return all([
+                    any("__contains__" in b.__dict__ for b in c.__mro__),
+                    any("__iter__" in b.__dict__ for b in c.__mro__),
+                ])
+            except (AttributeError, TypeError):
+                pass
+        return NotImplemented
+
+    @classmethod
+    def entries(cls, collection, label: str):
+        """
+        :yield: ``(label, entry, id_path_ext)`` tuples for each entry in the
+        collection.
+        """
+        assert isinstance(collection, cls)
+        try:
+            for count, entry in enumerate(collection):
+                yield None, entry, "[{k:d}]".format(k=count)
+        except (AttributeError, TypeError) as error:
+            ui_log.error("Object {l!r} appears to be a collection, but does "
+                         "not behave like one: {m}".format(
+                             l=label, m=error))
+
+
+class PudbSequence(ABC):
+    @classmethod
+    def __subclasshook__(cls, c):
+        if cls is PudbSequence:
+            try:
+                return all([
+                    any("__getitem__" in b.__dict__ for b in c.__mro__),
+                    any("__iter__" in b.__dict__ for b in c.__mro__),
+                ])
+            except (AttributeError, TypeError):
+                pass
+        return NotImplemented
+
+    @classmethod
+    def entries(cls, sequence, label: str):
+        """
+        :yield: ``(label, entry, id_path_ext)`` tuples for each entry in the
+        sequence.
+        """
+        assert isinstance(sequence, cls)
+        try:
+            for count, entry in enumerate(sequence):
+                yield str(count), entry, "[{k:d}]".format(k=count)
+        except (AttributeError, TypeError) as error:
+            ui_log.error("Object {l!r} appears to be a sequence, but does "
+                         "not behave like one: {m}".format(
+                             l=label, m=error))
+
+
+class PudbMapping(ABC):
+    @classmethod
+    def __subclasshook__(cls, c):
+        if cls is PudbMapping:
+            try:
+                return all([
+                    any("__getitem__" in b.__dict__ for b in c.__mro__),
+                    any("__iter__" in b.__dict__ for b in c.__mro__),
+                    any("keys" in b.__dict__ for b in c.__mro__),
+                ])
+            except (AttributeError, TypeError):
+                pass
+        return NotImplemented
+
+    @classmethod
+    def _safe_key_repr(cls, key):
+        try:
+            return repr(key)
+        except Exception:
+            return f"!! repr error on key with id: {id(key):#x} !!"
+
+    @classmethod
+    def entries(cls, mapping, label: str):
+        """
+        :yield: ``(label, entry, id_path_ext)`` tuples for each entry in the
+        mapping.
+        """
+        assert isinstance(mapping, cls)
+        try:
+            for key in mapping.keys():
+                key_repr = cls._safe_key_repr(key)
+                yield (key_repr, mapping[key], f"[{key_repr}]")
+        except (AttributeError, TypeError) as error:
+            ui_log.error("Object {l!r} appears to be a mapping, but does "
+                         "not behave like one: {m}".format(
+                             l=label, m=error))
+
+
+# Order is important here- A mapping without keys could be viewed as a
+# sequence, and they're both collections.
+CONTAINER_CLASSES = (
+    PudbMapping,
+    PudbSequence,
+    PudbCollection,
+)
 
 # }}}
 
@@ -117,8 +230,9 @@ STR_SAFE_TYPES = get_str_safe_types()
 class VariableWidget(urwid.FlowWidget):
     PREFIX = "| "
 
-    def __init__(self, parent, var_label, value_str, id_path=None,
+    def __init__(self, parent, var_label, value_str, id_path,
             attr_prefix=None, watch_expr=None, iinfo=None):
+        assert isinstance(id_path, str)
         self.parent = parent
         self.nesting_level = 0 if parent is None else parent.nesting_level + 1
         self.prefix = self.PREFIX * self.nesting_level
@@ -364,21 +478,113 @@ def get_stringifier(iinfo):
 # {{{ tree walking
 
 class ValueWalker:
+    BASIC_TYPES = []
+    BASIC_TYPES.append(type(None))
+    BASIC_TYPES.extend(integer_types)
+    BASIC_TYPES.extend(string_types)
+    BASIC_TYPES.extend((float, complex))
+    BASIC_TYPES = tuple(BASIC_TYPES)
+
+    NUM_PREVIEW_ITEMS = 3
+    MAX_PREVIEW_ITEM_LEN = 16
+
+    EMPTY_LABEL = "<empty>"
+    CONTINUATION_LABEL = "[...]"
+
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
+
+    def add_continuation_item(self, parent: VariableWidget, id_path: str,
+                              count: int, length: int) -> bool:
+        """
+        :arg length: the total length of the container. Negative if not known.
+        :returns: True if a continuation item ("[...]") was added, else False.
+            If a continuation item was added, no further entries in the
+            container should be added. If no continuation item was added,
+            continue adding entries from the container.
+        """
+        cont_id_path = "%s.cont-%d" % (id_path, count)
+        if not self.frame_var_info.get_inspect_info(
+                cont_id_path, read_only=True).show_detail:
+            if length > 0:
+                omitted = f"{length - count}"
+            else:
+                omitted = "some"
+            self.add_item(parent, self.CONTINUATION_LABEL,
+                          f"<{omitted} items omitted, expand to see more>",
+                          id_path=cont_id_path)
+            return True
+        return False
+
+    def walk_container(self, parent: VariableWidget, label: str,
+                       value, id_path: str = None):
+        try:
+            container_cls = next(cls for cls in CONTAINER_CLASSES
+                                 if isinstance(value, cls))
+        except StopIteration:
+            # Not recognized as a container
+            return False
+
+        is_empty = True
+        for count, (entry_label, entry, id_path_ext) in enumerate(
+                container_cls.entries(value, label)):
+            is_empty = False
+            if count > 0 and count % 10 == 0:
+                try:
+                    length = len(value)
+                except Exception:
+                    length = -1
+                if self.add_continuation_item(parent, id_path, count, length):
+                    return True
+
+            entry_id_path = "%s%s" % (id_path, id_path_ext)
+            self.walk_value(parent,
+                            "[{}]".format(entry_label if entry_label else ""),
+                            entry, entry_id_path)
+
+        if is_empty:
+            self.add_item(parent, self.EMPTY_LABEL, None,
+                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
+
+        return True
+
+    def walk_attributes(self, parent, label, value, id_path, iinfo):
+        try:
+            keys = dir(value)
+        except Exception:
+            ui_log.exception(f"Failed to look up attributes on {label}")
+            return
+
+        for key in sorted(keys):
+            if iinfo.access_level == "public":
+                if key.startswith("_"):
+                    continue
+            elif iinfo.access_level == "private":
+                if key.startswith("__") and key.endswith("__"):
+                    continue
+
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    attr_value = getattr(value, key)
+                if inspect.isroutine(attr_value) and not iinfo.show_methods:
+                    continue
+            except Exception:
+                attr_value = WatchEvalError()
+
+            self.walk_value(parent,
+                    ".%s" % key, attr_value,
+                    "%s.%s" % (id_path, key))
 
     def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
         if id_path is None:
             id_path = label
 
+        assert isinstance(id_path, str)
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
 
-        if isinstance(value, integer_types + (float, complex)):
-            self.add_item(parent, label, repr(value), id_path, attr_prefix)
-        elif isinstance(value, string_types):
-            self.add_item(parent, label, repr(value), id_path, attr_prefix)
-        elif value is None:
-            self.add_item(parent, label, repr(value), id_path, attr_prefix)
+        if isinstance(value, self.BASIC_TYPES):
+            displayed_value = repr(value)
         else:
             try:
                 displayed_value = get_stringifier(iinfo)(value)
@@ -389,142 +595,19 @@ class ValueWalker:
                                 + " (!! %s error !!)" % iinfo.display_type
                 ui_log.exception("stringifier failed")
 
-            if iinfo.show_detail:
-                if iinfo.access_level == "public":
-                    marker = "pub"
-                elif iinfo.access_level == "private":
-                    marker = "pri"
-                else:
-                    marker = "all"
-                if iinfo.show_methods:
-                    marker += "+()"
-                displayed_value += " [%s]" % marker
+        if iinfo.show_detail:
+            marker = iinfo.access_level[:3]
+            if iinfo.show_methods:
+                marker += "+()"
+            displayed_value += " [%s]" % marker
 
-            new_parent_item = self.add_item(parent, label, displayed_value,
-                id_path, attr_prefix)
+        new_parent_item = self.add_item(parent, label, displayed_value,
+            id_path, attr_prefix)
 
-            if not iinfo.show_detail:
-                return
-
-            # set ---------------------------------------------------------
-            if isinstance(value, (set, frozenset)):
-                for i, entry in enumerate(value):
-                    if i % 10 == 0 and i:
-                        cont_id_path = "%s.cont-%d" % (id_path, i)
-                        if not self.frame_var_info.get_inspect_info(
-                                cont_id_path, read_only=True).show_detail:
-                            self.add_item(new_parent_item, "...", None,
-                                cont_id_path)
-                            break
-
-                    self.walk_value(new_parent_item, None, entry,
-                        "%s[%d]" % (id_path, i))
-                if not value:
-                    self.add_item(new_parent_item, "<empty>", None)
-                return
-
-            # containers --------------------------------------------------
-            key_it = None
-
-            try:
-                key_it = value.keys()
-            except AttributeError:
-                # keys or iterkeys doesn't exist, not worth mentioning!
-                pass
-            except Exception:
-                ui_log.exception("Failed to obtain key iterator")
-
-            if key_it is None:
-                try:
-                    len_value = len(value)
-                except (AttributeError, TypeError):
-                    # no __len__ defined on the value, not worth mentioning!
-                    pass
-                except Exception:
-                    ui_log.exception("Failed to determine container length")
-                else:
-                    try:
-                        value[0]
-                    except (LookupError, TypeError):
-                        key_it = []
-                    except Exception:
-                        ui_log.exception("Item is not iterable")
-                    else:
-                        key_it = xrange(len_value)
-
-            if key_it is not None:
-                cnt = 0
-                for key in key_it:
-                    if cnt % 10 == 0 and cnt:
-                        cont_id_path = "%s.cont-%d" % (id_path, cnt)
-                        if not self.frame_var_info.get_inspect_info(
-                                cont_id_path, read_only=True).show_detail:
-                            self.add_item(
-                                new_parent_item, "...", None, cont_id_path)
-                            break
-
-                    try:
-                        next_value = value[key]
-                    except (LookupError, TypeError):
-                        ui_log.exception("Failed to iterate an item that "
-                            "appeared to be iterable.")
-                        break
-
-                    self.walk_value(new_parent_item, repr(key), next_value,
-                        "%s[%r]" % (id_path, key))
-                    cnt += 1
-                if not cnt:
-                    self.add_item(new_parent_item, "<empty>", None)
-                return
-
-            # class types -------------------------------------------------
-            key_its = []
-
-            try:
-                key_its.append(dir(value))
-            except Exception:
-                ui_log.exception("Failed to look up attributes")
-
-            keys = [key
-                    for ki in key_its
-                    for key in ki]
-            keys.sort()
-
-            cnt_omitted_private = cnt_omitted_methods = 0
-
-            for key in keys:
-                if iinfo.access_level == "public":
-                    if key.startswith("_"):
-                        cnt_omitted_private += 1
-                        continue
-                elif iinfo.access_level == "private":
-                    if key.startswith("__") and key.endswith("__"):
-                        cnt_omitted_private += 1
-                        continue
-
-                try:
-                    attr_value = getattr(value, key)
-                    if inspect.isroutine(attr_value) and not iinfo.show_methods:
-                        cnt_omitted_methods += 1
-                        continue
-                except Exception:
-                    attr_value = WatchEvalError()
-
-                self.walk_value(new_parent_item,
-                        ".%s" % key, attr_value,
-                        "%s.%s" % (id_path, key))
-
-            if not keys:
-                if cnt_omitted_private:
-                    label = "<omitted private attributes>"
-                elif cnt_omitted_methods:
-                    label = "<omitted methods>"
-                else:
-                    label = "<empty>"
-                self.add_item(new_parent_item, label, None)
-
-            if not key_its:
-                self.add_item(new_parent_item, "<?>", None)
+        if iinfo.show_detail:
+            if isinstance(value, CONTAINER_CLASSES):
+                self.walk_container(new_parent_item, label, value, id_path)
+            self.walk_attributes(new_parent_item, label, value, id_path, iinfo)
 
 
 class BasicValueWalker(ValueWalker):
@@ -533,7 +616,7 @@ class BasicValueWalker(ValueWalker):
 
         self.widget_list = []
 
-    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
@@ -550,7 +633,7 @@ class WatchValueWalker(ValueWalker):
         self.widget_list = widget_list
         self.watch_expr = watch_expr
 
-    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"
@@ -587,7 +670,7 @@ class TopAndMainVariableWalker(ValueWalker):
                 and len(after) > 0
                 and after[0] in ".<[")
 
-    def add_item(self, parent, var_label, value_str, id_path=None, attr_prefix=None):
+    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
         if iinfo.highlighted:
             attr_prefix = "highlighted var"

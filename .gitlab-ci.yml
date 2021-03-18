@@ -1,7 +1,7 @@
 Python 3:
   script:
   - py_version=3
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - export EXTRA_INSTALL="numpy"
   - export REQUIREMENTS_TXT=requirements.dev.txt
   - ". ./build-and-test-py-project.sh"
@@ -16,7 +16,7 @@ Python 3:
 
 Flake8:
   script:
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
   - ". ./prepare-and-run-flake8.sh pudb test"
   tags:
   - python3
@@ -26,7 +26,7 @@ Flake8:
 Documentation:
   script:
   - EXTRA_INSTALL="numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-docs.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-docs.sh
   - ". ./build-docs.sh"
   tags:
   - python3
