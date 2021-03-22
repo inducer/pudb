@@ -1121,9 +1121,16 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_list.listen("enter", examine_frame)
 
         def open_file_editor(file_name, line_number):
+            file_changed = False
+
             try:
+                original_modification_time = os.path.getmtime(file_name)
+                self.screen.stop()
                 filename_edited = self.debugger.open_file_to_edit(file_name,
                                                                   line_number)
+                self.screen.start()
+                new_modification_time = os.path.getmtime(file_name)
+                file_changed = new_modification_time - original_modification_time > 0
             except Exception:
                 from pudb.lowlevel import format_exception
                 self.message("Exception happened when trying to edit the file:"
@@ -1131,11 +1138,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     title="File Edit Error")
                 return
 
-            self.message("File is changed, but the execution is continued with"
-                         " the 'old' codebase.\n"
-                         f"Changed file: {filename_edited}\n\n"
-                         "Please quit and restart to see changes",
-                         title="File is changed")
+            if file_changed:
+                self.message("File is changed, but the execution is continued with"
+                             " the 'old' codebase.\n"
+                             f"Changed file: {filename_edited}\n\n"
+                             "Please quit and restart to see changes",
+                             title="File is changed")
 
         def open_editor_on_stack_frame(w, size, key):
             _, pos = self.stack_list._w.get_focus()
