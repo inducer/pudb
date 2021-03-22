@@ -2049,7 +2049,6 @@ class DebuggerUI(FrameVarInfoKeeper):
             file_name = self.debugger.curframe.f_code.co_filename
             line_number = self.debugger.curframe.f_lineno
             open_file_editor(file_name, line_number)
-            redraw_screen(w, size, key)
 
         self.top.listen("o", show_output)
         self.top.listen("ctrl r", reload_breakpoints)
