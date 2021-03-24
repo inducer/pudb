@@ -2,3 +2,4 @@
   val:
   - bpython
   - IPython
+  - py
