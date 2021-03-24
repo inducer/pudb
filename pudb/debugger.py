@@ -622,7 +622,7 @@ class NullSourceCodeProvider(SourceCodeProvider):
     def identifier(self):
         return "<no source code>"
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return None
 
     def clear_cache(self):
@@ -658,7 +658,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
     def identifier(self):
         return self.file_name
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return self.file_name
 
     def clear_cache(self):
@@ -705,7 +705,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
     def identifier(self):
         return "<source code of function %s>" % self.function_name
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return None
 
     def clear_cache(self):
@@ -1181,7 +1181,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def delete_breakpoint(w, size, key):
             bp_source_identifier = \
-                    self.source_code_provider.get_breakpoint_source_identifier()
+                    self.source_code_provider.get_source_identifier()
 
             if bp_source_identifier is None:
                 self.message(
@@ -1270,7 +1270,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.columns.set_focus(0)
             elif result == "del":
                 bp_source_identifier = \
-                        self.source_code_provider.get_breakpoint_source_identifier()
+                        self.source_code_provider.get_source_identifier()
 
                 if bp_source_identifier is None:
                     self.message(
@@ -1349,7 +1349,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 lineno = pos+1
 
                 bp_source_identifier = \
-                        self.source_code_provider.get_breakpoint_source_identifier()
+                        self.source_code_provider.get_source_identifier()
 
                 if bp_source_identifier is None:
                     self.message(
@@ -1419,7 +1419,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def toggle_breakpoint(w, size, key):
             bp_source_identifier = \
-                    self.source_code_provider.get_breakpoint_source_identifier()
+                    self.source_code_provider.get_source_identifier()
 
             if bp_source_identifier:
                 sline, pos = self.source.get_focus()
@@ -2059,9 +2059,16 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.message(pages, title="PuDB - The Python Urwid Debugger")
 
         def edit_current_frame(w, size, key):
-            file_name = self.debugger.curframe.f_code.co_filename
-            line_number = self.debugger.curframe.f_lineno
-            open_file_editor(file_name, line_number)
+            _, pos = self.source.get_focus()
+            source_identifier = \
+                    self.source_code_provider.get_source_identifier()
+
+            if source_identifier is None:
+                self.message(
+                    "Cannot edit the current file--"
+                    "source code does not correspond to a file location. "
+                    "(perhaps this is generated code)")
+            open_file_editor(source_identifier, pos+1)
 
         self.top.listen("o", show_output)
         self.top.listen("ctrl r", reload_breakpoints)
