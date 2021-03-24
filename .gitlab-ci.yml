@@ -30,3 +30,13 @@ Documentation:
   - ". ./build-docs.sh"
   tags:
   - python3
+
+Pylint:
+  script: |
+    export PY_EXE=python3
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+    . ./prepare-and-run-pylint.sh "$CI_PROJECT_NAME" test/test_*.py
+  tags:
+  - python3
+  except:
+  - tags
