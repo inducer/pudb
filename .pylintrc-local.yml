@@ -1,0 +1,4 @@
+- arg: ignored-modules
+  val:
+  - bpython
+  - IPython
