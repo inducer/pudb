@@ -61,6 +61,7 @@ Keys:
     t - run to cursor
     e - show traceback [post-mortem or in exception state]
     b - set/clear breakpoint
+    Ctrl-e - open file at current line to edit with $EDITOR
 
     H - move to current line (bottom of stack)
     u - move up one stack frame
@@ -123,6 +124,7 @@ Keys in variables list:
 
 Keys in stack list:
     enter - jump to frame
+    Ctrl-e - open file at line to edit with $EDITOR
 
 Keys in breakpoints list:
     enter - jump to breakpoint
@@ -341,6 +343,21 @@ class Debugger(bdb.Bdb):
         self.ui.update_stack()
 
         self.ui.stack_list._w.set_focus(self.ui.translate_ui_stack_index(index))
+
+    @staticmethod
+    def open_file_to_edit(filename, line_number):
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(f"'{filename}' not found or is not a file.")
+
+        if not line_number:
+            line_number = 1
+
+        editor = os.environ.get("EDITOR", "nano")
+
+        import subprocess
+        subprocess.call([editor, f"+{line_number}", filename], shell=False)
+
+        return filename
 
     def move_up_frame(self):
         if self.curindex > 0:
@@ -605,7 +622,7 @@ class NullSourceCodeProvider(SourceCodeProvider):
     def identifier(self):
         return "<no source code>"
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return None
 
     def clear_cache(self):
@@ -641,7 +658,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
     def identifier(self):
         return self.file_name
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return self.file_name
 
     def clear_cache(self):
@@ -688,7 +705,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
     def identifier(self):
         return "<source code of function %s>" % self.function_name
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return None
 
     def clear_cache(self):
@@ -1103,6 +1120,42 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.stack_list.listen("enter", examine_frame)
 
+        def open_file_editor(file_name, line_number):
+            file_changed = False
+
+            try:
+                original_modification_time = os.path.getmtime(file_name)
+                self.screen.stop()
+                filename_edited = self.debugger.open_file_to_edit(file_name,
+                                                                  line_number)
+                self.screen.start()
+                new_modification_time = os.path.getmtime(file_name)
+                file_changed = new_modification_time - original_modification_time > 0
+            except Exception:
+                from pudb.lowlevel import format_exception
+                self.message("Exception happened when trying to edit the file:"
+                             "\n\n%s" % ("".join(format_exception(sys.exc_info()))),
+                    title="File Edit Error")
+                return
+
+            if file_changed:
+                self.message("File is changed, but the execution is continued with"
+                             " the 'old' codebase.\n"
+                             f"Changed file: {filename_edited}\n\n"
+                             "Please quit and restart to see changes",
+                             title="File is changed")
+
+        def open_editor_on_stack_frame(w, size, key):
+            _, pos = self.stack_list._w.get_focus()
+            index = self.translate_ui_stack_index(pos)
+
+            curframe, line_number = self.debugger.stack[index]
+            file_name = curframe.f_code.co_filename
+
+            open_file_editor(file_name, line_number)
+
+        self.stack_list.listen("ctrl e", open_editor_on_stack_frame)
+
         def move_stack_top(w, size, key):
             self.debugger.set_frame_index(len(self.debugger.stack)-1)
 
@@ -1128,7 +1181,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def delete_breakpoint(w, size, key):
             bp_source_identifier = \
-                    self.source_code_provider.get_breakpoint_source_identifier()
+                    self.source_code_provider.get_source_identifier()
 
             if bp_source_identifier is None:
                 self.message(
@@ -1217,7 +1270,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.columns.set_focus(0)
             elif result == "del":
                 bp_source_identifier = \
-                        self.source_code_provider.get_breakpoint_source_identifier()
+                        self.source_code_provider.get_source_identifier()
 
                 if bp_source_identifier is None:
                     self.message(
@@ -1296,7 +1349,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 lineno = pos+1
 
                 bp_source_identifier = \
-                        self.source_code_provider.get_breakpoint_source_identifier()
+                        self.source_code_provider.get_source_identifier()
 
                 if bp_source_identifier is None:
                     self.message(
@@ -1366,7 +1419,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def toggle_breakpoint(w, size, key):
             bp_source_identifier = \
-                    self.source_code_provider.get_breakpoint_source_identifier()
+                    self.source_code_provider.get_source_identifier()
 
             if bp_source_identifier:
                 sline, pos = self.source.get_focus()
@@ -2005,6 +2058,18 @@ class DebuggerUI(FrameVarInfoKeeper):
         def help(pages):
             self.message(pages, title="PuDB - The Python Urwid Debugger")
 
+        def edit_current_frame(w, size, key):
+            _, pos = self.source.get_focus()
+            source_identifier = \
+                    self.source_code_provider.get_source_identifier()
+
+            if source_identifier is None:
+                self.message(
+                    "Cannot edit the current file--"
+                    "source code does not correspond to a file location. "
+                    "(perhaps this is generated code)")
+            open_file_editor(source_identifier, pos+1)
+
         self.top.listen("o", show_output)
         self.top.listen("ctrl r", reload_breakpoints)
         self.top.listen("!", run_cmdline)
@@ -2018,6 +2083,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
         self.top.listen("ctrl l", redraw_screen)
+
+        self.top.listen("ctrl e", edit_current_frame)
 
         # }}}
 
@@ -2339,7 +2406,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e037"  # noqa
+        WELCOME_LEVEL = "e039"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2355,6 +2422,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2021.1:\n\n"
+                    "- Add shortcut to edit files in source and stack view "
+                    "(Gábor Vecsei)\n"
+                    "- Major improvements to the variable view "
+                    "(Michael van der Kamp)\n"
+                    "- Better internal error reporting (Michael van der Kamp)\n"
 
                     "\nChanges in version 2020.1:\n\n"
                     "- Add vi keys for the sidebar (Asbjørn Apeland)\n"
