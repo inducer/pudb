@@ -57,9 +57,6 @@ from pudb.ui_tools import text_width
 
 # {{{ abstract base classes for containers
 
-from abc import ABC
-
-
 class PudbCollection(ABC):
     @classmethod
     def __subclasshook__(cls, c):

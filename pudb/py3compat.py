@@ -16,3 +16,6 @@ def execfile(fname, globs, locs=None):
 
 import builtins
 from configparser import ConfigParser
+
+__all__ = ("raw_input", "xrange", "integer_types", "string_types", "text_type",
+        "execfile", "builtins", "ConfigParser")

@@ -26,7 +26,7 @@ THE SOFTWARE.
 """
 
 
-from pudb.py3compat import raw_input, PY3
+from pudb.py3compat import raw_input
 from pudb.settings import load_config
 
 
