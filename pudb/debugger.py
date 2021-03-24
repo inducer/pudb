@@ -1633,6 +1633,11 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
 
+        # left/right scrolling have to be handled specially, normal vi keys
+        # don't cut it
+        self.source_sigwrap.listen("h", scroll_left)
+        self.source_sigwrap.listen("l", scroll_right)
+
         add_vi_nav_keys(self.source_sigwrap)
         add_help_keys(self.source_sigwrap, helpmain)
 
