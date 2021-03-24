@@ -2193,10 +2193,10 @@ class DebuggerUI(FrameVarInfoKeeper):
             title=None, bind_enter_esc=True, focus_buttons=False,
             extra_bindings=[]):
         class ResultSetter:
-            def __init__(subself, res):  # noqa # pylint: disable=no-self-argument
+            def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 subself.res = res
 
-            def __call__(subself, btn):  # noqa # pylint: disable=no-self-argument
+            def __call__(subself, btn):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 self.quit_event_loop = [subself.res]
 
         Attr = urwid.AttrMap  # noqa
@@ -2239,10 +2239,17 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ("fixed", 1, urwid.SolidFill()),
                 w])
 
+        class ResultSettingEventHandler:
+            def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
+                subself.res = res
+
+            def __call__(subself, w, size, key):  # noqa: N805, E501 # pylint: disable=no-self-argument
+                self.quit_event_loop = [subself.res]
+
         w = SignalWrap(w)
         for key, binding in extra_bindings:
             if isinstance(binding, str):
-                w.listen(key, ResultSetter(binding))
+                w.listen(key, ResultSettingEventHandler(binding))
             else:
                 w.listen(key, binding)
 
