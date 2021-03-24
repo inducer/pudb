@@ -2,4 +2,5 @@
   val:
   - bpython
   - IPython
-  - py
+  - py.test
+  - pytest
