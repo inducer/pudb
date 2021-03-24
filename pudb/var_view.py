@@ -28,6 +28,8 @@ THE SOFTWARE.
 """
 
 
+from abc import ABC, abstractmethod
+
 # {{{ constants and imports
 
 import urwid
@@ -372,22 +374,9 @@ class VariableWidget(urwid.FlowWidget):
         # Ellipses to show text was cut off
         #encoding = urwid.util.detected_encoding
 
-        if False:  # encoding[:3] == "UTF":
-            # Unicode is supported, use single character ellipsis
-            for i in xrange(len(text)):
-                if len(text[i]) > maxcol:
-                    text[i] = (unicode(text[i][:maxcol-1])  # noqa: F821
-                            + ELLIPSIS + unicode(text[i][maxcol:]))  # noqa: F821
-                    # XXX: This doesn't work.  It just gives a ?
-                    # Strangely, the following does work (it gives the …
-                    # three characters from the right):
-                    #
-                    # text[i] = (unicode(text[i][:maxcol-3])
-                    # + unicode(u'…')) + unicode(text[i][maxcol-2:])
-        else:
-            for i in xrange(len(text)):
-                if text_width(text[i]) > maxcol:
-                    text[i] = text[i][:maxcol-3] + "..."
+        for i in xrange(len(text)):
+            if text_width(text[i]) > maxcol:
+                text[i] = text[i][:maxcol-3] + "..."
 
         return make_canvas(text, attr, maxcol, apfx+"value")
 
@@ -477,7 +466,7 @@ def get_stringifier(iinfo):
 
 # {{{ tree walking
 
-class ValueWalker:
+class ValueWalker(ABC):
     BASIC_TYPES = []
     BASIC_TYPES.append(type(None))
     BASIC_TYPES.extend(integer_types)
@@ -493,6 +482,10 @@ class ValueWalker:
 
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
+
+    @abstractmethod
+    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
+        pass
 
     def add_continuation_item(self, parent: VariableWidget, id_path: str,
                               count: int, length: int) -> bool:
@@ -745,7 +738,8 @@ class FrameVarInfoKeeper(object):
 
     def get_frame_var_info(self, read_only, ssid=None):
         if ssid is None:
-            ssid = self.debugger.get_stack_situation_id()
+            # self.debugger set by subclass
+            ssid = self.debugger.get_stack_situation_id()  # noqa: E501 # pylint: disable=no-member
         if read_only:
             return self.frame_var_info.get(ssid, FrameVarInfo())
         else:

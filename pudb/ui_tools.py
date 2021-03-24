@@ -308,15 +308,6 @@ class SearchBox(urwid.Edit):
         urwid.Edit.__init__(self, [("label", "Search: ")], "")
         self.controller = controller
 
-    def restart_search(self):
-        from time import time
-        now = time()
-
-        if self.search_start_time > 5:
-            self.set_edit_text("")
-
-        self.search_time = now
-
     def keypress(self, size, key):
         result = urwid.Edit.keypress(self, size, key)
         txt = self.get_edit_text()

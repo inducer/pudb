@@ -53,7 +53,10 @@ def get_save_config_path(*resource):
         return None
     if not resource:
         resource = [XDG_CONF_RESOURCE]
-    resource = os.path.join(*resource)
+
+    # no idea what pylint's problem is here
+    resource = os.path.join(*resource)  # pylint: disable=no-value-for-parameter
+
     assert not resource.startswith("/")
     path = os.path.join(XDG_CONFIG_HOME, resource)
     if not os.path.isdir(path):

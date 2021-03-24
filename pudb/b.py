@@ -7,7 +7,7 @@ from pudb import _get_debugger, set_interrupt_handler
 def __myimport__(name, *args, **kwargs):  # noqa: N807
     if name == "pudb.b":
         set_trace()
-    return __origimport__(name, *args, **kwargs)  # noqa: F821
+    return __origimport__(name, *args, **kwargs)  # noqa: F821, E501 # pylint: disable=undefined-variable
 
 
 # Will only be run on first import

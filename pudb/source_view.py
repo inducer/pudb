@@ -238,13 +238,13 @@ def format_source(debugger_ui, lines, breakpoints):
                 }
 
         class UrwidFormatter(Formatter):
-            def __init__(subself, **options):  # noqa: N805
+            def __init__(subself, **options):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 Formatter.__init__(subself, **options)
                 subself.current_line = ""
                 subself.current_attr = []
                 subself.lineno = 1
 
-            def format(subself, tokensource, outfile):  # noqa: N805
+            def format(subself, tokensource, outfile):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 def add_snippet(ttype, s):
                     if not s:
                         return

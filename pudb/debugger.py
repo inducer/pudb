@@ -195,10 +195,7 @@ class Debugger(bdb.Bdb):
 
         if steal_output:
             raise NotImplementedError("output stealing")
-            if PY3:
-                from io import StringIO
-            else:
-                from cStringIO import StringIO
+            from io import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("")  # avoid spurious hangs
 
@@ -1593,11 +1590,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     if widget is not new_mod_entry:
                         mod_name = widget.base_widget.get_text()[0]
                         mod = sys.modules[mod_name]
-                        if PY3:
-                            import importlib
-                            importlib.reload(mod)
-                        else:
-                            reload(mod)  # noqa (undef on Py3)
+                        import importlib
+                        importlib.reload(mod)
 
                         self.message("'%s' was successfully reloaded." % mod_name)
 
@@ -1743,10 +1737,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             prev_sys_stdout = sys.stdout
             prev_sys_stderr = sys.stderr
 
-            if PY3:
-                from io import StringIO
-            else:
-                from cStringIO import StringIO
+            from io import StringIO
 
             sys.stdin = None
             sys.stderr = sys.stdout = StringIO()
@@ -2041,7 +2032,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             def __init__(self, idx):
                 self.idx = idx
 
-            def __call__(subself, w, size, key):  # noqa
+            def __call__(subself, w, size, key):  # noqa # pylint: disable=no-self-argument
                 self.columns.set_focus(self.rhs_col_sigwrap)
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
@@ -2202,10 +2193,10 @@ class DebuggerUI(FrameVarInfoKeeper):
             title=None, bind_enter_esc=True, focus_buttons=False,
             extra_bindings=[]):
         class ResultSetter:
-            def __init__(subself, res):  # noqa
+            def __init__(subself, res):  # noqa # pylint: disable=no-self-argument
                 subself.res = res
 
-            def __call__(subself, btn):  # noqa
+            def __call__(subself, btn):  # noqa # pylint: disable=no-self-argument
                 self.quit_event_loop = [subself.res]
 
         Attr = urwid.AttrMap  # noqa
@@ -2247,13 +2238,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "dialog title")),
                 ("fixed", 1, urwid.SolidFill()),
                 w])
-
-        class ResultSetter:
-            def __init__(subself, res):  # noqa
-                subself.res = res
-
-            def __call__(subself, w, size, key):  # noqa
-                self.quit_event_loop = [subself.res]
 
         w = SignalWrap(w)
         for key, binding in extra_bindings:
