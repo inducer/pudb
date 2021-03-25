@@ -1,10 +1,8 @@
-# - encoding: utf-8 -
-
 from pudb.ui_tools import make_canvas
 
 
 def test_simple():
-    text = u"aaaaaa"
+    text = "aaaaaa"
     canvas = make_canvas(
         txt=[text],
         attr=[[("var value", len(text))]],
@@ -18,7 +16,7 @@ def test_simple():
 
 def test_multiple():
     canvas = make_canvas(
-        txt=[u"Return: None"],
+        txt=["Return: None"],
         attr=[[("return label", 8), ("return value", 4)]],
         maxcol=100
     )
@@ -31,7 +29,7 @@ def test_multiple():
 
 
 def test_boundary():
-    text = u"aaaaaa"
+    text = "aaaaaa"
     canvas = make_canvas(
         txt=[text],
         attr=[[("var value", len(text))]],
@@ -41,7 +39,7 @@ def test_boundary():
 
 
 def test_byte_boundary():
-    text = u"aaaaaaé"
+    text = "aaaaaaé"
     canvas = make_canvas(
         txt=[text],
         attr=[[("var value", len(text))]],
@@ -51,7 +49,7 @@ def test_byte_boundary():
 
 
 def test_wide_chars():
-    text = u"data: '中文'"
+    text = "data: '中文'"
     canvas = make_canvas(
         txt=[text],
         attr=[[("var label", 6), ("var value", 4)]],
@@ -59,7 +57,7 @@ def test_wide_chars():
     )
     assert list(canvas.content()) == [[
         ("var label", None, b"data: "),
-        ("var value", None, u"'中文'".encode("utf-8")),
+        ("var value", None, "'中文'".encode()),
         (None, None, b" "*(47 - 12)),  # 10 chars, 2 of which are double width
         ]]
 

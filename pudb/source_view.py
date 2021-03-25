@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -310,14 +308,14 @@ def format_source(debugger_ui, lines, breakpoints):
         return result
 
 
-class ParseState(object):
+class ParseState:
     """States for the ArgumentParser class"""
     idle = 1
     found_function = 2
     found_open_paren = 3
 
 
-class ArgumentParser(object):
+class ArgumentParser:
     """Parse source code tokens and identify function arguments.
 
     This parser implements a state machine which accepts

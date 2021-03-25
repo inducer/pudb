@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 try:
     import bpython  # noqa
     # Access a property to verify module exists in case
@@ -94,7 +92,7 @@ def run_classic_shell(globals, locals, first_time=[True]):
         readline.clear_history()
         try:
             readline.read_history_file(hist_file)
-        except IOError:
+        except OSError:
             pass
 
     from code import InteractiveConsole
@@ -168,7 +166,7 @@ def _update_ipython_ns(shell, globals, locals):
     try:
         shell.user_global_ns = globals
     except AttributeError:
-        class DummyMod(object):
+        class DummyMod:
             """A dummy module used for IPython's interactive namespace."""
             pass
 
@@ -235,7 +233,7 @@ def run_ipython_shell(globals, locals):
 def run_ipython_kernel(globals, locals):
     from IPython import embed_kernel
 
-    class DummyMod(object):
+    class DummyMod:
         pass
 
     user_module = DummyMod()

@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -76,7 +72,7 @@ class PudbCollection(ABC):
         assert isinstance(collection, cls)
         try:
             for count, entry in enumerate(collection):
-                yield None, entry, "[{k:d}]".format(k=count)
+                yield None, entry, f"[{count:d}]"
         except (AttributeError, TypeError) as error:
             ui_log.error("Object {l!r} appears to be a collection, but does "
                          "not behave like one: {m}".format(
@@ -105,7 +101,7 @@ class PudbSequence(ABC):
         assert isinstance(sequence, cls)
         try:
             for count, entry in enumerate(sequence):
-                yield str(count), entry, "[{k:d}]".format(k=count)
+                yield str(count), entry, f"[{count:d}]"
         except (AttributeError, TypeError) as error:
             ui_log.error("Object {l!r} appears to be a sequence, but does "
                          "not behave like one: {m}".format(
@@ -163,7 +159,7 @@ CONTAINER_CLASSES = (
 
 # {{{ data
 
-class FrameVarInfo(object):
+class FrameVarInfo:
     def __init__(self):
         self.id_path_to_iinfo = {}
         self.watches = []
@@ -177,7 +173,7 @@ class FrameVarInfo(object):
                     id_path, InspectInfo())
 
 
-class InspectInfo(object):
+class InspectInfo:
     def __init__(self):
         # Do not globalize: cyclic import
         from pudb.debugger import CONFIG
@@ -191,12 +187,12 @@ class InspectInfo(object):
         self.wrap = CONFIG["wrap_variables"]
 
 
-class WatchExpression(object):
+class WatchExpression:
     def __init__(self, expression):
         self.expression = expression
 
 
-class WatchEvalError(object):
+class WatchEvalError:
     def __str__(self):
         return "<error>"
 
@@ -385,11 +381,11 @@ custom_stringifier_dict = {}
 
 def type_stringifier(value):
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-        return str("%s(%s) %s") % (
+        return "%s(%s) %s" % (
                 type(value).__name__, value.dtype, value.shape)
 
     elif HAVE_NUMPY and isinstance(value, numpy.number):
-        return str("%s (%s)" % (value, value.dtype))
+        return str(f"{value} ({value.dtype})")
 
     elif isinstance(value, STR_SAFE_TYPES):
         try:
@@ -413,7 +409,7 @@ def type_stringifier(value):
             return str(result)
 
     elif type(value) in [set, frozenset, list, tuple, dict]:
-        return str("%s (%s)") % (type(value).__name__, len(value))
+        return "%s (%s)" % (type(value).__name__, len(value))
 
     return str(type(value).__name__)
 
@@ -528,14 +524,14 @@ class ValueWalker(ABC):
                 if self.add_continuation_item(parent, id_path, count, length):
                     return True
 
-            entry_id_path = "%s%s" % (id_path, id_path_ext)
+            entry_id_path = f"{id_path}{id_path_ext}"
             self.walk_value(parent,
                             "[{}]".format(entry_label if entry_label else ""),
                             entry, entry_id_path)
 
         if is_empty:
             self.add_item(parent, self.EMPTY_LABEL, None,
-                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
+                          id_path=f"{id_path}{self.EMPTY_LABEL}")
 
         return True
 
@@ -565,7 +561,7 @@ class ValueWalker(ABC):
 
             self.walk_value(parent,
                     ".%s" % key, attr_value,
-                    "%s.%s" % (id_path, key))
+                    f"{id_path}.{key}")
 
     def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
         if id_path is None:
@@ -730,7 +726,7 @@ def make_var_view(frame_var_info, locals, globals):
     return result
 
 
-class FrameVarInfoKeeper(object):
+class FrameVarInfoKeeper:
     def __init__(self):
         self.frame_var_info = {}
 

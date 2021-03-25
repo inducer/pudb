@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -492,7 +488,7 @@ class Debugger(bdb.Bdb):
         # user_call for details).
         self._wait_for_mainpyfile = 1
         self.mainpyfile = self.canonic(filename)
-        statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (
+        statement = 'exec(compile(open("{}").read(), "{}", "exec"))'.format(
                 filename, filename)
 
         # Set up an interrupt handler
@@ -558,20 +554,20 @@ except ImportError:
     CursesScreen = None
 
 
-class ThreadsafeScreenMixin(object):
+class ThreadsafeScreenMixin:
     """A Screen subclass that doesn't crash when running from a non-main thread."""
 
     def signal_init(self):
         """Initialize signal handler, ignoring errors silently."""
         try:
-            super(ThreadsafeScreenMixin, self).signal_init()
+            super().signal_init()
         except ValueError:
             pass
 
     def signal_restore(self):
         """Restore default signal handler, ignoring errors silently."""
         try:
-            super(ThreadsafeScreenMixin, self).signal_restore()
+            super().signal_restore()
         except ValueError:
             pass
 
@@ -583,7 +579,7 @@ class ThreadsafeRawScreen(ThreadsafeScreenMixin, RawScreen):
 class ThreadsafeFixedSizeRawScreen(ThreadsafeScreenMixin, RawScreen):
     def __init__(self, **kwargs):
         self._term_size = kwargs.pop("term_size", None)
-        super(ThreadsafeFixedSizeRawScreen, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def get_cols_rows(self):
         if self._term_size is not None:
@@ -601,7 +597,7 @@ if curses is not None:
 
 # {{{ source code providers
 
-class SourceCodeProvider(object):
+class SourceCodeProvider:
     def __ne__(self, other):
         return not (self == other)
 
@@ -675,7 +671,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
                     debugger_ui, list(decode_lines(lines)), set(breakpoints))
         except Exception:
             from pudb.lowlevel import format_exception
-            debugger_ui.message("Could not load source file '%s':\n\n%s" % (
+            debugger_ui.message("Could not load source file '{}':\n\n{}".format(
                 self.file_name, "".join(format_exception(sys.exc_info()))),
                 title="Source Code Load Error")
             return [SourceLine(debugger_ui,
@@ -1567,7 +1563,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         except Exception:
                             from pudb.lowlevel import format_exception
 
-                            self.message("Could not import module '%s':\n\n%s" % (
+                            self.message("Could not import module '{}':\n\n{}".format(
                                 new_mod_name, "".join(
                                     format_exception(sys.exc_info()))),
                                 title="Import Error")

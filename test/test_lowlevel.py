@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 from pudb.lowlevel import detect_encoding, decode_lines
 
 
 def test_detect_encoding_nocookie():
-    lines = [u"Test Проверка"]
+    lines = ["Test Проверка"]
     lines = [line.encode("utf-8") for line in lines]
     encoding, _ = detect_encoding(iter(lines))
     assert encoding == "utf-8"
@@ -11,9 +10,9 @@ def test_detect_encoding_nocookie():
 
 def test_detect_encoding_cookie():
     lines = [
-        u"# coding=utf-8",
-        u"Test",
-        u"Проверка"
+        "# coding=utf-8",
+        "Test",
+        "Проверка"
     ]
     lines = [line.encode("utf-8") for line in lines]
     encoding, _ = detect_encoding(iter(lines))
@@ -22,9 +21,9 @@ def test_detect_encoding_cookie():
 
 def test_decode_lines():
     unicode_lines = [
-        u"# coding=utf-8",
-        u"Test",
-        u"Проверка",
+        "# coding=utf-8",
+        "Test",
+        "Проверка",
     ]
     lines = [line.encode("utf-8") for line in unicode_lines]
     assert unicode_lines == list(decode_lines(iter(lines)))
@@ -78,15 +77,15 @@ def test_executable_lines():
         main()
         """
 
-    assert get_exec_lines(test_code) == set([1, 2, 3, 4, 6, 8])
+    assert get_exec_lines(test_code) == {1, 2, 3, 4, 6, 8}
 
     test_code = "a = 3*5\n" + 333 * "\n" + "b = 15"
-    assert get_exec_lines(test_code) == set([
+    assert get_exec_lines(test_code) == {
         1,
         128,  # bogus,
         255,  # bogus,
         335
-        ])
+        }
 
 
 if __name__ == "__main__":

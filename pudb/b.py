@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, print_function
 import sys
 
 from pudb import _get_debugger, set_interrupt_handler

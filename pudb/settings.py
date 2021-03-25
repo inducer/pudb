@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -583,8 +581,8 @@ def load_breakpoints():
     lines = []
     for fname in file_names:
         try:
-            rc_file = open(fname, "rt")
-        except IOError:
+            rc_file = open(fname)
+        except OSError:
             pass
         else:
             lines.extend([line.strip() for line in rc_file.readlines()])
@@ -602,7 +600,7 @@ def save_breakpoints(bp_list):
         return
 
     histfile = open(get_breakpoints_file_name(), "w")
-    bp_list = set([(bp.file, bp.line, bp.cond) for bp in bp_list])
+    bp_list = {(bp.file, bp.line, bp.cond) for bp in bp_list}
     for bp in bp_list:
         line = "b %s:%d" % (bp[0], bp[1])
         if bp[2]:

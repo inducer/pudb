@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -34,7 +32,7 @@ VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
 
-class PudbShortcuts(object):
+class PudbShortcuts:
     @property
     def db(self):
         import sys
