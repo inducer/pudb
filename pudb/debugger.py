@@ -1563,10 +1563,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                         except Exception:
                             from pudb.lowlevel import format_exception
 
-                            self.message("Could not import module '{}':\n\n{}".format(
-                                new_mod_name, "".join(
-                                    format_exception(sys.exc_info()))),
-                                title="Import Error")
+                            self.message(
+                                    "Could not import module '{}':\n\n{}".format(
+                                        new_mod_name, "".join(
+                                            format_exception(sys.exc_info()))),
+                                    title="Import Error")
                         else:
                             show_mod(__import__(str(new_mod_name)))
                             break
