@@ -1972,7 +1972,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.source[bp_line-1].set_breakpoint(True)
             for bp_line in old_bps - new_bps:  # de-highlight deleted bps
                 self.source[bp_line-1].set_breakpoint(False)
-            
+
         def reload_breakpoints(w, size, key):
             self.debugger.clear_all_breaks()
             from pudb.settings import load_breakpoints
