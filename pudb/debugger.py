@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
@@ -41,7 +40,6 @@ from types import TracebackType
 
 from pudb.lowlevel import decode_lines, ui_log
 from pudb.settings import load_config, save_config
-from pudb.py3compat import PY3, raw_input, execfile
 
 CONFIG = load_config()
 save_config(CONFIG)
@@ -494,11 +492,8 @@ class Debugger(bdb.Bdb):
         # user_call for details).
         self._wait_for_mainpyfile = 1
         self.mainpyfile = self.canonic(filename)
-        if PY3:
-            statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (
-                    filename, filename)
-        else:
-            statement = 'execfile( "%s")' % filename
+        statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (
+                filename, filename)
 
         # Set up an interrupt handler
         from pudb import set_interrupt_handler
@@ -528,11 +523,10 @@ class Debugger(bdb.Bdb):
             "__builtins__": __builtins__,
         })
 
-        if PY3:
-            __main__.__dict__.update({
-                "__package__": mod_spec.parent,
-                "__loader__": mod_spec.loader,
-            })
+        __main__.__dict__.update({
+            "__package__": mod_spec.parent,
+            "__loader__": mod_spec.loader,
+        })
 
         self._wait_for_mainpyfile = True
 
@@ -1744,13 +1738,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             try:
                 # Don't use cmdline_get_namespace() here in Python 2, as it
                 # breaks things (issue #166).
-                if PY3:
-                    eval(compile(cmd, "<pudb command line>", "single"),
-                         cmdline_get_namespace())
-                else:
-                    eval(compile(cmd, "<pudb command line>", "single"),
-                         self.debugger.curframe.f_globals,
-                         self.debugger.curframe.f_locals)
+                eval(compile(cmd, "<pudb command line>", "single"),
+                     cmdline_get_namespace())
             except Exception:
                 tp, val, tb = sys.exc_info()
 
@@ -1942,7 +1931,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def show_output(w, size, key):
             self.screen.stop()
-            raw_input("Hit Enter to return:")
+            input("Hit Enter to return:")
             self.screen.start()
 
         def reload_breakpoints(w, size, key):
@@ -1995,8 +1984,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                 try:
                     if not shell.custom_shell_dict:  # Only execfile once
                         from os.path import expanduser
-                        execfile(
-                                expanduser(CONFIG["shell"]), shell.custom_shell_dict)
+                        cshell_fname = expanduser(CONFIG["shell"])
+                        with open(cshell_fname) as inf:
+                            exec(compile(inf.read(), cshell_fname, "exec"),
+                                    shell.custom_shell_dict,
+                                    shell.custom_shell_dict)
                 except Exception:
                     print("Error when importing custom shell:")
                     from traceback import print_exc

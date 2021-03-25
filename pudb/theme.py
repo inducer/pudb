@@ -37,7 +37,6 @@ THEMES = [
         "monokai-256"
         ]
 
-from pudb.py3compat import execfile, raw_input
 import urwid
 
 
@@ -1013,12 +1012,14 @@ def get_palette(may_use_fancy_formats, theme="classic"):
                     }
 
             from os.path import expanduser, expandvars
-            execfile(expanduser(expandvars(theme)), symbols)
+            fname = expanduser(expandvars(theme))
+            with open(fname) as inf:
+                exec(compile(inf.read(), fname, "exec"), symbols)
         except Exception:
             print("Error when importing theme:")
             from traceback import print_exc
             print_exc()
-            raw_input("Hit enter:")
+            input("Hit enter:")
 
     # Apply style inheritance
     for child, parent in inheritance_map:

@@ -28,7 +28,7 @@ THE SOFTWARE.
 import os
 import sys
 
-from pudb.py3compat import ConfigParser
+from configparser import ConfigParser
 from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
                            settings_log)
 

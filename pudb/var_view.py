@@ -45,9 +45,6 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
-from pudb.py3compat import execfile, raw_input, xrange, \
-        integer_types, string_types, text_type
-
 ELLIPSIS = "…"
 
 from pudb.ui_tools import text_width
@@ -275,7 +272,7 @@ class VariableWidget(urwid.FlowWidget):
             return [firstline]
         fulllines, rest = divmod(text_width(alltext) - maxcol, maxcol - 2)
         restlines = [alltext[(maxcol - 2)*i + maxcol:(maxcol - 2)*i + 2*maxcol - 2]
-            for i in xrange(fulllines + bool(rest))]
+            for i in range(fulllines + bool(rest))]
         return [firstline] + [self.prefix + "  " + i for i in restlines]
 
     def rows(self, size: Tuple[int], focus: bool = False) -> int:
@@ -332,7 +329,7 @@ class VariableWidget(urwid.FlowWidget):
             fullcols, rem = divmod(totallen, maxcol)
 
             attr = [rle_subseg(_attr, i*maxcol, (i + 1)*maxcol)
-                for i in xrange(fullcols + bool(rem))]
+                for i in range(fullcols + bool(rem))]
 
             return make_canvas(text, attr, maxcol, apfx+"value")
 
@@ -371,7 +368,7 @@ class VariableWidget(urwid.FlowWidget):
         # Ellipses to show text was cut off
         #encoding = urwid.util.detected_encoding
 
-        for i in xrange(len(text)):
+        for i in range(len(text)):
             if text_width(text[i]) > maxcol:
                 text[i] = text[i][:maxcol-3] + "..."
 
@@ -388,15 +385,15 @@ custom_stringifier_dict = {}
 
 def type_stringifier(value):
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-        return text_type("%s(%s) %s") % (
+        return str("%s(%s) %s") % (
                 type(value).__name__, value.dtype, value.shape)
 
     elif HAVE_NUMPY and isinstance(value, numpy.number):
-        return text_type("%s (%s)" % (value, value.dtype))
+        return str("%s (%s)" % (value, value.dtype))
 
     elif isinstance(value, STR_SAFE_TYPES):
         try:
-            return text_type(value)
+            return str(value)
         except Exception:
             message = "string safe type stringifier failed"
             ui_log.exception(message)
@@ -412,13 +409,13 @@ def type_stringifier(value):
             ui_log.exception(message)
             result = "!! %s !!" % message
 
-        if isinstance(result, string_types):
-            return text_type(result)
+        if isinstance(result, str):
+            return str(result)
 
     elif type(value) in [set, frozenset, list, tuple, dict]:
-        return text_type("%s (%s)") % (type(value).__name__, len(value))
+        return str("%s (%s)") % (type(value).__name__, len(value))
 
-    return text_type(type(value).__name__)
+    return str(type(value).__name__)
 
 
 def id_stringifier(obj):
@@ -444,7 +441,11 @@ def get_stringifier(iinfo):
         try:
             if not custom_stringifier_dict:  # Only execfile once
                 from os.path import expanduser
-                execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
+                custom_stringifier_fname = expanduser(iinfo.display_type)
+                with open(custom_stringifier_fname) as inf:
+                    exec(compile(inf.read(), custom_stringifier_fname, "exec"),
+                            custom_stringifier_dict,
+                            custom_stringifier_dict)
         except Exception:
             ui_log.exception("Error when importing custom stringifier")
             return error_stringifier
@@ -452,13 +453,13 @@ def get_stringifier(iinfo):
             if "pudb_stringifier" not in custom_stringifier_dict:
                 print("%s does not contain a function named pudb_stringifier at "
                       "the module level." % iinfo.display_type)
-                raw_input("Hit enter:")
-                return lambda value: text_type(
+                input("Hit enter:")
+                return lambda value: str(
                         "ERROR: Invalid custom stringifier file: "
                         "pudb_stringifer not defined.")
             else:
                 return (lambda value:
-                    text_type(custom_stringifier_dict["pudb_stringifier"](value)))
+                    str(custom_stringifier_dict["pudb_stringifier"](value)))
 
 
 # {{{ tree walking
@@ -466,8 +467,8 @@ def get_stringifier(iinfo):
 class ValueWalker(ABC):
     BASIC_TYPES = []
     BASIC_TYPES.append(type(None))
-    BASIC_TYPES.extend(integer_types)
-    BASIC_TYPES.extend(string_types)
+    BASIC_TYPES.append(int)
+    BASIC_TYPES.append(str)
     BASIC_TYPES.extend((float, complex))
     BASIC_TYPES = tuple(BASIC_TYPES)
 

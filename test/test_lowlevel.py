@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from pudb.lowlevel import detect_encoding, decode_lines
-from pudb.py3compat import PY3
 
 
 def test_detect_encoding_nocookie():
@@ -28,11 +27,7 @@ def test_decode_lines():
         u"Проверка",
     ]
     lines = [line.encode("utf-8") for line in unicode_lines]
-    if PY3:
-        assert unicode_lines == list(decode_lines(iter(lines)))
-    else:
-        assert [line.decode("utf-8")
-                for line in lines] == list(decode_lines(iter(lines)))
+    assert unicode_lines == list(decode_lines(iter(lines)))
 
 
 # {{{ remove common indentation
@@ -86,19 +81,12 @@ def test_executable_lines():
     assert get_exec_lines(test_code) == set([1, 2, 3, 4, 6, 8])
 
     test_code = "a = 3*5\n" + 333 * "\n" + "b = 15"
-    if PY3:
-        assert get_exec_lines(test_code) == set([
-            1,
-            128,  # bogus,
-            255,  # bogus,
-            335
-            ])
-    else:
-        assert get_exec_lines(test_code) == set([
-            1,
-            256,  # bogus,
-            335
-            ])
+    assert get_exec_lines(test_code) == set([
+        1,
+        128,  # bogus,
+        255,  # bogus,
+        335
+        ])
 
 
 if __name__ == "__main__":

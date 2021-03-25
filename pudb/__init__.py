@@ -26,7 +26,6 @@ THE SOFTWARE.
 """
 
 
-from pudb.py3compat import raw_input
 from pudb.settings import load_config
 
 
@@ -152,7 +151,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
             retcode = call(pre_run, close_fds=True, shell=True)
             if retcode:
                 print("*** WARNING: pre-run process exited with code %d." % retcode)
-                raw_input("[Hit Enter]")
+                input("[Hit Enter]")
 
         status_msg = ""
 

@@ -5,7 +5,6 @@ import itertools
 import string
 import unittest
 
-from pudb.py3compat import text_type, integer_types
 from pudb.var_view import (
     BasicValueWalker,
     FrameVarInfo,
@@ -46,7 +45,7 @@ def test_get_stringifier():
             strifier = get_stringifier(iinfo)
 
             s = strifier(value)
-            assert isinstance(s, text_type)
+            assert isinstance(s, str)
 
 
 class FrameVarInfoForTesting(FrameVarInfo):
@@ -103,7 +102,7 @@ def method_factory(method_name):
             # Classes without __iter__ are expected to raise IndexError in this
             # sort of case. Frustrating, I know.
             if (method_name == "__getitem__"
-                    and args and isinstance(args[0], integer_types)):
+                    and args and isinstance(args[0], int)):
                 raise IndexError
             raise
     return method
