@@ -99,7 +99,7 @@ def generate_executable_lines_for_code(code):
     # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
 
     for line_incr in code.co_lnotab[1::2]:
-        # This showed up between the v3.5 and v3.6 cycles:
+        # NB: This code is specific to Python 3.6 and higher
         # https://github.com/python/cpython/blob/v3.6.0/Objects/lnotab_notes.txt
         if line_incr >= 0x80:
             line_incr -= 0x100
