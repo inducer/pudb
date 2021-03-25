@@ -88,6 +88,7 @@ Keys:
     F1/? - show this help screen
     q - quit
 
+    Ctrl-r - reload breakpoints from saved-breakpoints file
     Ctrl-c - when in continue mode, break back to PuDB
     Ctrl-l - redraw screen
 
