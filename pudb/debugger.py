@@ -1119,9 +1119,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 new_modification_time = os.path.getmtime(file_name)
                 file_changed = new_modification_time - original_modification_time > 0
             except Exception:
-                from pudb.lowlevel import format_exception
+                from traceback import format_exception
                 self.message("Exception happened when trying to edit the file:"
-                             "\n\n%s" % ("".join(format_exception(sys.exc_info()))),
+                             "\n\n%s" % ("".join(format_exception(*sys.exc_info()))),
                     title="File Edit Error")
                 return
 
@@ -1561,12 +1561,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                         try:
                             __import__(str(new_mod_name))
                         except Exception:
-                            from pudb.lowlevel import format_exception
+                            from traceback import format_exception
 
                             self.message(
                                     "Could not import module '{}':\n\n{}".format(
                                         new_mod_name, "".join(
-                                            format_exception(sys.exc_info()))),
+                                            format_exception(*sys.exc_info()))),
                                     title="Import Error")
                         else:
                             show_mod(__import__(str(new_mod_name)))
@@ -1940,11 +1940,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def show_traceback(w, size, key):
             if self.current_exc_tuple is not None:
-                from pudb.lowlevel import format_exception
+                from traceback import format_exception
 
                 result = self.dialog(
                         urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
-                            "".join(format_exception(self.current_exc_tuple)))])),
+                            "".join(format_exception(*self.current_exc_tuple)))])),
                         [
                             ("Close", "close"),
                             ("Location", "location")
@@ -2263,7 +2263,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 get_palette(may_use_fancy_formats, CONFIG["theme"]))
 
     def show_exception_dialog(self, exc_tuple):
-        from pudb.lowlevel import format_exception
+        from traceback import format_exception
 
         desc = (
             "The program has terminated abnormally because of an exception.\n\n"
@@ -2271,7 +2271,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             "time using the 'e' key. The debugger has entered post-mortem mode "
             "and will prevent further state changes."
         )
-        tb_txt = "".join(format_exception(exc_tuple))
+        tb_txt = "".join(format_exception(*exc_tuple))
         self._show_exception_dialog(
             description=desc,
             error_info=tb_txt,
@@ -2286,7 +2286,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             ui_log.exception("Error while showing error dialog")
 
     def _show_internal_exc_dlg(self, exc_tuple):
-        from pudb.lowlevel import format_exception
+        from traceback import format_exception
         from pudb import VERSION
 
         desc = (
@@ -2305,7 +2305,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             python=sys.version.replace("\n", " "),
             pudb=VERSION,
             urwid=".".join(map(str, urwid.version.VERSION)),
-            tb="".join(format_exception(exc_tuple))
+            tb="".join(format_exception(*exc_tuple))
         )
 
         self._show_exception_dialog(
@@ -2344,8 +2344,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.message("Traceback saved as %s." % filename, title="Success")
 
         except Exception:
-            from pudb.lowlevel import format_exception
-            io_tb_txt = "".join(format_exception(sys.exc_info()))
+            from traceback import format_exception
+            io_tb_txt = "".join(format_exception(*sys.exc_info()))
             self.message(
                     "An error occurred while trying to write "
                     "the traceback:\n\n" + io_tb_txt,

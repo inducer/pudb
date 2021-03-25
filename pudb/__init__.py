@@ -307,11 +307,11 @@ def set_interrupt_handler(interrupt_signal=None):
     try:
         signal.signal(interrupt_signal, _interrupt_handler)
     except ValueError:
-        from pudb.lowlevel import format_exception
+        from traceback import format_exception
         import sys
         from warnings import warn
         warn("setting interrupt handler on signal %d failed: %s"
-                % (interrupt_signal, "".join(format_exception(sys.exc_info()))))
+                % (interrupt_signal, "".join(format_exception(*sys.exc_info()))))
 
 
 def post_mortem(tb=None, e_type=None, e_value=None):

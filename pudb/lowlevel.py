@@ -274,35 +274,4 @@ def decode_lines(lines):
 
 # }}}
 
-
-# {{{ traceback formatting
-
-class StringExceptionValueWrapper:
-    def __init__(self, string_val):
-        self.string_val = string_val
-
-    def __str__(self):
-        return self.string_val
-
-    __context__ = None
-    __cause__ = None
-
-
-def format_exception(exc_tuple):
-    # Work around http://bugs.python.org/issue17413
-    # See also https://github.com/inducer/pudb/issues/61
-
-    from traceback import format_exception
-    exc_type, exc_value, exc_tb = exc_tuple
-
-    if isinstance(exc_value, str):
-        exc_value = StringExceptionValueWrapper(exc_value)
-        exc_tuple = exc_type, exc_value, exc_tb
-
-    return format_exception(
-            *exc_tuple,
-            **dict(chain=hasattr(exc_value, "__context__")))
-
-# }}}
-
 # vim: foldmethod=marker
