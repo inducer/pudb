@@ -1955,26 +1955,12 @@ class DebuggerUI(FrameVarInfoKeeper):
             raw_input("Hit Enter to return:")
             self.screen.start()
 
-        def reload_breakpoints_and_redisplay(w, size, key):
-            bp_source_identifier = \
-                self.source_code_provider.get_source_identifier()
+        def reload_breakpoints_and_redisplay():
+            reload_breakpoints()
+            self.set_source_code_provider(self.source_code_provider,
+                                          force_update=True)
 
-            def set_of_line_nums_from_bp_list(bp_list):
-                result = set()
-                for bp in bp_list:
-                    if bp_source_identifier == bp.file and \
-                       bp.line-1 < len(self.source) and bp.enabled:
-                        result.add(bp.line)
-                return result
-            old_bps = set_of_line_nums_from_bp_list(self._get_bp_list())
-            reload_breakpoints(w, size, key)
-            new_bps = set_of_line_nums_from_bp_list(self._get_bp_list())
-            for bp_line in new_bps - old_bps:  # highlight newly added bps
-                self.source[bp_line-1].set_breakpoint(True)
-            for bp_line in old_bps - new_bps:  # de-highlight deleted bps
-                self.source[bp_line-1].set_breakpoint(False)
-
-        def reload_breakpoints(w, size, key):
+        def reload_breakpoints():
             self.debugger.clear_all_breaks()
             from pudb.settings import load_breakpoints
             for bpoint_descr in load_breakpoints():
@@ -2091,7 +2077,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             open_file_editor(source_identifier, pos+1)
 
         self.top.listen("o", show_output)
-        self.top.listen("ctrl r", reload_breakpoints_and_redisplay)
+        self.top.listen("ctrl r",
+                        lambda a, b, c: reload_breakpoints_and_redisplay())
         self.top.listen("!", run_cmdline)
         self.top.listen("e", show_traceback)
 
