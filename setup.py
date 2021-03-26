@@ -5,12 +5,6 @@ from pudb import VERSION
 
 import sys
 
-py_version_major = sys.version_info[0]
-if py_version_major == 3:
-    PY_VERSION = str(py_version_major)
-else:
-    PY_VERSION = ""
-
 try:
     readme = open("README.rst")
     long_description = str(readme.read())
@@ -54,7 +48,10 @@ setup(
     ],
     packages=["pudb"],
     entry_points={
-        "console_scripts": ["pudb" + PY_VERSION + " = pudb.run:main"],
+        "console_scripts": [
+            # Deprecated. Should really use python -m pudb.
+            "pudb3 = pudb.run:main",
+            ],
         "gui_script": [],
     },
 )

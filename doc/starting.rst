@@ -27,15 +27,7 @@ to start pudb.
 Insert one of these snippets into the piece of code you want to debug, or
 run the entire script with::
 
-    pudb my-script.py
-
-or, in Python 3::
-
-    pudb3 my-script.py
-
-This is equivalent to::
-
-    python -m pudb.run my-script.py
+    python -m pudb my-script.py
 
 which is useful if you want to run PuDB in a version of Python other than the
 one you most recently installed PuDB with.
@@ -100,11 +92,11 @@ By using the ```stty``` with "no echo: and "no buffering" input options, we
 can make a socket that nonetheless behave simillarly::
 
     stty -echo -icanon && nc -l -p 6899
-    
+
 When using the BSD version netcat that ships with MacOS, a server can be started like this::
 
     stty -echo -icanon && nc -l 6899
-    
+
 Specify host and port in set_trace and set the *reverse* parameter to *True*::
 
     from pudb.remote import set_trace
@@ -126,7 +118,7 @@ when debugging with standard pudb. E.g. consider this ``script.py``::
         # breakpoint was introduced in Python 3.7
         breakpoint()
         print('hello', name)
-    
+
     p = Process(target=f, args=('bob',))
     p.start()
     p.join()
