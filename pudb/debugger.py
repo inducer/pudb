@@ -2082,7 +2082,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.top.listen("o", show_output)
         self.top.listen("ctrl r",
-                        lambda a, b, c: reload_breakpoints_and_redisplay())
+                        lambda w, size, key: reload_breakpoints_and_redisplay())
         self.top.listen("!", run_cmdline)
         self.top.listen("e", show_traceback)
 
