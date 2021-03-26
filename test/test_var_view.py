@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-
 import contextlib
 import itertools
 import string
 import unittest
 
-from pudb.py3compat import text_type, integer_types
 from pudb.var_view import (
     BasicValueWalker,
     FrameVarInfo,
@@ -21,7 +18,7 @@ class A:
     pass
 
 
-class A2(object):
+class A2:
     pass
 
 
@@ -36,8 +33,8 @@ def test_get_stringifier():
         numpy_values = [np.float32(5), np.zeros(5)]
 
     for value in [
-            A, A2, A(), A2(), u"lól".encode("utf8"), u"lól",
-            1233123, [u"lól".encode("utf8"), u"lól"],
+            A, A2, A(), A2(), "lól".encode(), "lól",
+            1233123, ["lól".encode(), "lól"],
             ] + numpy_values:
         for display_type in ["type", "repr", "str", "id"]:
             iinfo = InspectInfo()
@@ -46,18 +43,18 @@ def test_get_stringifier():
             strifier = get_stringifier(iinfo)
 
             s = strifier(value)
-            assert isinstance(s, text_type)
+            assert isinstance(s, str)
 
 
 class FrameVarInfoForTesting(FrameVarInfo):
     def __init__(self, paths_to_expand=None):
-        super(FrameVarInfoForTesting, self).__init__()
+        super().__init__()
         if paths_to_expand is None:
             paths_to_expand = set()
         self.paths_to_expand = paths_to_expand
 
     def get_inspect_info(self, id_path, read_only):
-        iinfo = super(FrameVarInfoForTesting, self).get_inspect_info(
+        iinfo = super().get_inspect_info(
             id_path, read_only)
         iinfo.access_level = "all"
         iinfo.display_type = "repr"
@@ -68,7 +65,7 @@ class FrameVarInfoForTesting(FrameVarInfo):
         return iinfo
 
 
-class Reasonable(object):
+class Reasonable:
     def __init__(self):
         self.x = 42
 
@@ -103,14 +100,14 @@ def method_factory(method_name):
             # Classes without __iter__ are expected to raise IndexError in this
             # sort of case. Frustrating, I know.
             if (method_name == "__getitem__"
-                    and args and isinstance(args[0], integer_types)):
+                    and args and isinstance(args[0], int)):
                 raise IndexError
             raise
     return method
 
 
 def generate_containerlike_class():
-    methods = set([
+    methods = {
         "__contains__",
         "__getitem__",
         "__iter__",
@@ -122,14 +119,14 @@ def generate_containerlike_class():
         "items",
         "keys",
         "values",
-    ])
+    }
 
     # Deliberately starting from 0
     for r in range(0, len(methods) + 1):
         for selected_methods in sorted(
                 map(sorted, itertools.combinations(methods, r))):
 
-            class ContainerlikeClass(object):
+            class ContainerlikeClass:
                 def __init__(self, iterable):
                     self.__internal_dict__ = dict(iterable)
 
@@ -311,9 +308,9 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
             self.assert_walks_contents(value)
 
     def test_set(self):
-        self.assert_walks_contents(set([
+        self.assert_walks_contents({
             42, "foo", None, False, (), ("a", "tuple")
-        ]))
+        })
         self.assert_class_counts_equal({"collections": 1})
 
     def test_frozenset(self):

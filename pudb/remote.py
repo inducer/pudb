@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, print_function, unicode_literals
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -108,18 +104,8 @@ class RemoteDebugger(Debugger):
         raw_sock_file = self._client.makefile("rwb", 0)
         import codecs
 
-        if sys.version_info[0] < 3:
-            sock_file = codecs.StreamRecoder(
-                raw_sock_file,
-                codecs.getencoder("utf-8"),
-                codecs.getdecoder("utf-8"),
-                codecs.getreader("utf-8"),
-                codecs.getwriter("utf-8"),
-            )
-        else:
-            sock_file = codecs.StreamReaderWriter(
-                raw_sock_file, codecs.getreader("utf-8"), codecs.getwriter("utf-8")
-            )
+        sock_file = codecs.StreamReaderWriter(
+            raw_sock_file, codecs.getreader("utf-8"), codecs.getwriter("utf-8"))
 
         self._handle = sys.stdin = sys.stdout = sock_file
 
@@ -143,13 +129,13 @@ class RemoteDebugger(Debugger):
         if reverse:
             self.host, self.port = host, port
             client, address = self.get_reverse_socket_client(host, port)
-            self.ident = "{0}:{1}".format(self.me, self.port)
+            self.ident = f"{self.me}:{self.port}"
         else:
             self._sock, conn_info = self.get_socket_client(
                 host, port, search_limit=search_limit,
             )
             self.host, self.port = conn_info
-            self.ident = "{0}:{1}".format(self.me, self.port)
+            self.ident = f"{self.me}:{self.port}"
             self.say(BANNER.format(self=self))
             client, address = self._sock.accept()
         client.setblocking(1)
@@ -160,7 +146,7 @@ class RemoteDebugger(Debugger):
         try:
             _sock.connect((host, port))
             _sock.setblocking(1)
-        except socket.error as exc:
+        except OSError as exc:
             if exc.errno == errno.ECONNREFUSED:
                 raise ValueError(CONN_REFUSED.format(self=self))
             raise exc
@@ -180,7 +166,7 @@ class RemoteDebugger(Debugger):
             this_port = port + i
             try:
                 _sock.bind((host, this_port))
-            except socket.error as exc:
+            except OSError as exc:
                 if exc.errno in [errno.EADDRINUSE, errno.EINVAL]:
                     continue
                 raise

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -28,7 +26,7 @@ THE SOFTWARE.
 import os
 import sys
 
-from pudb.py3compat import ConfigParser
+from configparser import ConfigParser
 from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
                            settings_log)
 
@@ -53,7 +51,10 @@ def get_save_config_path(*resource):
         return None
     if not resource:
         resource = [XDG_CONF_RESOURCE]
-    resource = os.path.join(*resource)
+
+    # no idea what pylint's problem is here
+    resource = os.path.join(*resource)  # pylint: disable=no-value-for-parameter
+
     assert not resource.startswith("/")
     path = os.path.join(XDG_CONFIG_HOME, resource)
     if not os.path.isdir(path):
@@ -580,8 +581,8 @@ def load_breakpoints():
     lines = []
     for fname in file_names:
         try:
-            rc_file = open(fname, "rt")
-        except IOError:
+            rc_file = open(fname)
+        except OSError:
             pass
         else:
             lines.extend([line.strip() for line in rc_file.readlines()])
@@ -599,7 +600,7 @@ def save_breakpoints(bp_list):
         return
 
     histfile = open(get_breakpoints_file_name(), "w")
-    bp_list = set([(bp.file, bp.line, bp.cond) for bp in bp_list])
+    bp_list = {(bp.file, bp.line, bp.cond) for bp in bp_list}
     for bp in bp_list:
         line = "b %s:%d" % (bp[0], bp[1])
         if bp[2]:

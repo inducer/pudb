@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -26,7 +24,6 @@ THE SOFTWARE.
 """
 
 
-from pudb.py3compat import raw_input, PY3
 from pudb.settings import load_config
 
 
@@ -35,7 +32,7 @@ VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
 
-class PudbShortcuts(object):
+class PudbShortcuts:
     @property
     def db(self):
         import sys
@@ -57,12 +54,8 @@ class PudbShortcuts(object):
         dbg.set_trace(sys._getframe().f_back, paused=False)
 
 
-if PY3:
-    import builtins
-    builtins.__dict__["pu"] = PudbShortcuts()
-else:
-    import __builtin__
-    __builtin__.__dict__["pu"] = PudbShortcuts()
+import builtins
+builtins.__dict__["pu"] = PudbShortcuts()
 
 
 CURRENT_DEBUGGER = []
@@ -76,21 +69,8 @@ def _tty_override():
 def _open_tty(tty_path):
     import io
     import os
-    import sys
-    if sys.version_info[0] == 2:
-        import fcntl
-        import termios
-        import struct
-        tty_file = open(tty_path, "r+b", buffering=0)
-        try:
-            s = struct.unpack("hh", fcntl.ioctl(
-                tty_file.fileno(), termios.TIOCGWINSZ, "1234"))
-            term_size = (s[1], s[0])
-        except Exception:
-            term_size = None
-    else:
-        tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))
-        term_size = os.get_terminal_size(tty_file.fileno())
+    tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))
+    term_size = os.get_terminal_size(tty_file.fileno())
 
     return tty_file, term_size
 
@@ -156,7 +136,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
             retcode = call(pre_run, close_fds=True, shell=True)
             if retcode:
                 print("*** WARNING: pre-run process exited with code %d." % retcode)
-                raw_input("[Hit Enter]")
+                input("[Hit Enter]")
 
         status_msg = ""
 
@@ -314,11 +294,11 @@ def set_interrupt_handler(interrupt_signal=None):
     try:
         signal.signal(interrupt_signal, _interrupt_handler)
     except ValueError:
-        from pudb.lowlevel import format_exception
+        from traceback import format_exception
         import sys
         from warnings import warn
         warn("setting interrupt handler on signal %d failed: %s"
-                % (interrupt_signal, "".join(format_exception(sys.exc_info()))))
+                % (interrupt_signal, "".join(format_exception(*sys.exc_info()))))
 
 
 def post_mortem(tb=None, e_type=None, e_value=None):

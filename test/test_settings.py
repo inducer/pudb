@@ -1,8 +1,8 @@
 import collections
+import builtins
 
 import pytest  # noqa: F401
 
-from pudb.py3compat import builtins
 from pudb.settings import load_breakpoints, save_breakpoints
 
 

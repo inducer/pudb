@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, print_function
 import urwid
 from urwid.util import calc_width, calc_text_pos
 
@@ -24,7 +23,7 @@ def encode_like_urwid(s):
     # Consistent with
     # https://github.com/urwid/urwid/blob/2cc54891965283faf9113da72202f5d405f90fa3/urwid/util.py#L126-L128
 
-    s = s.replace(escape.SI+escape.SO, u"")  # remove redundant shifts
+    s = s.replace(escape.SI+escape.SO, "")  # remove redundant shifts
     s = s.encode(_target_encoding, "replace")
     return s
 
@@ -215,7 +214,7 @@ class BreakpointFrame(urwid.FlowWidget):
         return key
 
 
-class SearchController(object):
+class SearchController:
     def __init__(self, ui):
         self.ui = ui
         self.highlight_line = None
@@ -307,15 +306,6 @@ class SearchBox(urwid.Edit):
     def __init__(self, controller):
         urwid.Edit.__init__(self, [("label", "Search: ")], "")
         self.controller = controller
-
-    def restart_search(self):
-        from time import time
-        now = time()
-
-        if self.search_start_time > 5:
-            self.set_edit_text("")
-
-        self.search_time = now
 
     def keypress(self, size, key):
         result = urwid.Edit.keypress(self, size, key)

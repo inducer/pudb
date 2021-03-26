@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -28,6 +24,8 @@ THE SOFTWARE.
 """
 
 
+from abc import ABC, abstractmethod
+
 # {{{ constants and imports
 
 import urwid
@@ -43,9 +41,6 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
-from pudb.py3compat import execfile, raw_input, xrange, \
-        integer_types, string_types, text_type
-
 ELLIPSIS = "…"
 
 from pudb.ui_tools import text_width
@@ -54,9 +49,6 @@ from pudb.ui_tools import text_width
 
 
 # {{{ abstract base classes for containers
-
-from abc import ABC
-
 
 class PudbCollection(ABC):
     @classmethod
@@ -80,7 +72,7 @@ class PudbCollection(ABC):
         assert isinstance(collection, cls)
         try:
             for count, entry in enumerate(collection):
-                yield None, entry, "[{k:d}]".format(k=count)
+                yield None, entry, f"[{count:d}]"
         except (AttributeError, TypeError) as error:
             ui_log.error("Object {l!r} appears to be a collection, but does "
                          "not behave like one: {m}".format(
@@ -109,7 +101,7 @@ class PudbSequence(ABC):
         assert isinstance(sequence, cls)
         try:
             for count, entry in enumerate(sequence):
-                yield str(count), entry, "[{k:d}]".format(k=count)
+                yield str(count), entry, f"[{count:d}]"
         except (AttributeError, TypeError) as error:
             ui_log.error("Object {l!r} appears to be a sequence, but does "
                          "not behave like one: {m}".format(
@@ -167,7 +159,7 @@ CONTAINER_CLASSES = (
 
 # {{{ data
 
-class FrameVarInfo(object):
+class FrameVarInfo:
     def __init__(self):
         self.id_path_to_iinfo = {}
         self.watches = []
@@ -181,7 +173,7 @@ class FrameVarInfo(object):
                     id_path, InspectInfo())
 
 
-class InspectInfo(object):
+class InspectInfo:
     def __init__(self):
         # Do not globalize: cyclic import
         from pudb.debugger import CONFIG
@@ -195,12 +187,12 @@ class InspectInfo(object):
         self.wrap = CONFIG["wrap_variables"]
 
 
-class WatchExpression(object):
+class WatchExpression:
     def __init__(self, expression):
         self.expression = expression
 
 
-class WatchEvalError(object):
+class WatchEvalError:
     def __str__(self):
         return "<error>"
 
@@ -276,7 +268,7 @@ class VariableWidget(urwid.FlowWidget):
             return [firstline]
         fulllines, rest = divmod(text_width(alltext) - maxcol, maxcol - 2)
         restlines = [alltext[(maxcol - 2)*i + maxcol:(maxcol - 2)*i + 2*maxcol - 2]
-            for i in xrange(fulllines + bool(rest))]
+            for i in range(fulllines + bool(rest))]
         return [firstline] + [self.prefix + "  " + i for i in restlines]
 
     def rows(self, size: Tuple[int], focus: bool = False) -> int:
@@ -333,7 +325,7 @@ class VariableWidget(urwid.FlowWidget):
             fullcols, rem = divmod(totallen, maxcol)
 
             attr = [rle_subseg(_attr, i*maxcol, (i + 1)*maxcol)
-                for i in xrange(fullcols + bool(rem))]
+                for i in range(fullcols + bool(rem))]
 
             return make_canvas(text, attr, maxcol, apfx+"value")
 
@@ -372,22 +364,9 @@ class VariableWidget(urwid.FlowWidget):
         # Ellipses to show text was cut off
         #encoding = urwid.util.detected_encoding
 
-        if False:  # encoding[:3] == "UTF":
-            # Unicode is supported, use single character ellipsis
-            for i in xrange(len(text)):
-                if len(text[i]) > maxcol:
-                    text[i] = (unicode(text[i][:maxcol-1])  # noqa: F821
-                            + ELLIPSIS + unicode(text[i][maxcol:]))  # noqa: F821
-                    # XXX: This doesn't work.  It just gives a ?
-                    # Strangely, the following does work (it gives the …
-                    # three characters from the right):
-                    #
-                    # text[i] = (unicode(text[i][:maxcol-3])
-                    # + unicode(u'…')) + unicode(text[i][maxcol-2:])
-        else:
-            for i in xrange(len(text)):
-                if text_width(text[i]) > maxcol:
-                    text[i] = text[i][:maxcol-3] + "..."
+        for i in range(len(text)):
+            if text_width(text[i]) > maxcol:
+                text[i] = text[i][:maxcol-3] + "..."
 
         return make_canvas(text, attr, maxcol, apfx+"value")
 
@@ -402,15 +381,15 @@ custom_stringifier_dict = {}
 
 def type_stringifier(value):
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
-        return text_type("%s(%s) %s") % (
+        return "%s(%s) %s" % (
                 type(value).__name__, value.dtype, value.shape)
 
     elif HAVE_NUMPY and isinstance(value, numpy.number):
-        return text_type("%s (%s)" % (value, value.dtype))
+        return str(f"{value} ({value.dtype})")
 
     elif isinstance(value, STR_SAFE_TYPES):
         try:
-            return text_type(value)
+            return str(value)
         except Exception:
             message = "string safe type stringifier failed"
             ui_log.exception(message)
@@ -426,13 +405,13 @@ def type_stringifier(value):
             ui_log.exception(message)
             result = "!! %s !!" % message
 
-        if isinstance(result, string_types):
-            return text_type(result)
+        if isinstance(result, str):
+            return str(result)
 
     elif type(value) in [set, frozenset, list, tuple, dict]:
-        return text_type("%s (%s)") % (type(value).__name__, len(value))
+        return "%s (%s)" % (type(value).__name__, len(value))
 
-    return text_type(type(value).__name__)
+    return str(type(value).__name__)
 
 
 def id_stringifier(obj):
@@ -458,7 +437,11 @@ def get_stringifier(iinfo):
         try:
             if not custom_stringifier_dict:  # Only execfile once
                 from os.path import expanduser
-                execfile(expanduser(iinfo.display_type), custom_stringifier_dict)
+                custom_stringifier_fname = expanduser(iinfo.display_type)
+                with open(custom_stringifier_fname) as inf:
+                    exec(compile(inf.read(), custom_stringifier_fname, "exec"),
+                            custom_stringifier_dict,
+                            custom_stringifier_dict)
         except Exception:
             ui_log.exception("Error when importing custom stringifier")
             return error_stringifier
@@ -466,22 +449,22 @@ def get_stringifier(iinfo):
             if "pudb_stringifier" not in custom_stringifier_dict:
                 print("%s does not contain a function named pudb_stringifier at "
                       "the module level." % iinfo.display_type)
-                raw_input("Hit enter:")
-                return lambda value: text_type(
+                input("Hit enter:")
+                return lambda value: str(
                         "ERROR: Invalid custom stringifier file: "
                         "pudb_stringifer not defined.")
             else:
                 return (lambda value:
-                    text_type(custom_stringifier_dict["pudb_stringifier"](value)))
+                    str(custom_stringifier_dict["pudb_stringifier"](value)))
 
 
 # {{{ tree walking
 
-class ValueWalker:
+class ValueWalker(ABC):
     BASIC_TYPES = []
     BASIC_TYPES.append(type(None))
-    BASIC_TYPES.extend(integer_types)
-    BASIC_TYPES.extend(string_types)
+    BASIC_TYPES.append(int)
+    BASIC_TYPES.append(str)
     BASIC_TYPES.extend((float, complex))
     BASIC_TYPES = tuple(BASIC_TYPES)
 
@@ -493,6 +476,10 @@ class ValueWalker:
 
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
+
+    @abstractmethod
+    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
+        pass
 
     def add_continuation_item(self, parent: VariableWidget, id_path: str,
                               count: int, length: int) -> bool:
@@ -537,14 +524,14 @@ class ValueWalker:
                 if self.add_continuation_item(parent, id_path, count, length):
                     return True
 
-            entry_id_path = "%s%s" % (id_path, id_path_ext)
+            entry_id_path = f"{id_path}{id_path_ext}"
             self.walk_value(parent,
                             "[{}]".format(entry_label if entry_label else ""),
                             entry, entry_id_path)
 
         if is_empty:
             self.add_item(parent, self.EMPTY_LABEL, None,
-                          id_path="%s%s" % (id_path, self.EMPTY_LABEL))
+                          id_path=f"{id_path}{self.EMPTY_LABEL}")
 
         return True
 
@@ -574,7 +561,7 @@ class ValueWalker:
 
             self.walk_value(parent,
                     ".%s" % key, attr_value,
-                    "%s.%s" % (id_path, key))
+                    f"{id_path}.{key}")
 
     def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
         if id_path is None:
@@ -739,13 +726,14 @@ def make_var_view(frame_var_info, locals, globals):
     return result
 
 
-class FrameVarInfoKeeper(object):
+class FrameVarInfoKeeper:
     def __init__(self):
         self.frame_var_info = {}
 
     def get_frame_var_info(self, read_only, ssid=None):
         if ssid is None:
-            ssid = self.debugger.get_stack_situation_id()
+            # self.debugger set by subclass
+            ssid = self.debugger.get_stack_situation_id()  # noqa: E501 # pylint: disable=no-member
         if read_only:
             return self.frame_var_info.get(ssid, FrameVarInfo())
         else:

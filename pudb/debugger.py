@@ -1,8 +1,3 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -41,7 +36,6 @@ from types import TracebackType
 
 from pudb.lowlevel import decode_lines, ui_log
 from pudb.settings import load_config, save_config
-from pudb.py3compat import PY3, raw_input, execfile
 
 CONFIG = load_config()
 save_config(CONFIG)
@@ -196,10 +190,7 @@ class Debugger(bdb.Bdb):
 
         if steal_output:
             raise NotImplementedError("output stealing")
-            if PY3:
-                from io import StringIO
-            else:
-                from cStringIO import StringIO
+            from io import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("")  # avoid spurious hangs
 
@@ -498,11 +489,8 @@ class Debugger(bdb.Bdb):
         # user_call for details).
         self._wait_for_mainpyfile = 1
         self.mainpyfile = self.canonic(filename)
-        if PY3:
-            statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (
-                    filename, filename)
-        else:
-            statement = 'execfile( "%s")' % filename
+        statement = 'exec(compile(open("{}").read(), "{}", "exec"))'.format(
+                filename, filename)
 
         # Set up an interrupt handler
         from pudb import set_interrupt_handler
@@ -513,14 +501,9 @@ class Debugger(bdb.Bdb):
 
     def _runmodule(self, module_name):
         # This is basically stolen from the pdb._runmodule from CPython 3.8
-        # and adapted to work also in Python 2
         # https://github.com/python/cpython/blob/a1d3be4623c8ec7069bd34ccdce336be9cdeb644/Lib/pdb.py#L1530
         import runpy
-
-        # here we unpack the module details manually, so that it works in PY2 as well
-        mod_details = runpy._get_module_details(module_name)
-        mod_spec = mod_details[1]
-        code = mod_details[2]
+        mod_name, mod_spec, code = runpy._get_module_details(module_name)
 
         self.mainpyfile = self.canonic(code.co_filename)
         import __main__
@@ -530,13 +513,9 @@ class Debugger(bdb.Bdb):
             "__file__": self.mainpyfile,
             "__spec__": mod_spec,
             "__builtins__": __builtins__,
+            "__package__": mod_spec.parent,
+            "__loader__": mod_spec.loader,
         })
-
-        if PY3:
-            __main__.__dict__.update({
-                "__package__": mod_spec.parent,
-                "__loader__": mod_spec.loader,
-            })
 
         self._wait_for_mainpyfile = True
 
@@ -568,20 +547,20 @@ except ImportError:
     CursesScreen = None
 
 
-class ThreadsafeScreenMixin(object):
+class ThreadsafeScreenMixin:
     """A Screen subclass that doesn't crash when running from a non-main thread."""
 
     def signal_init(self):
         """Initialize signal handler, ignoring errors silently."""
         try:
-            super(ThreadsafeScreenMixin, self).signal_init()
+            super().signal_init()
         except ValueError:
             pass
 
     def signal_restore(self):
         """Restore default signal handler, ignoring errors silently."""
         try:
-            super(ThreadsafeScreenMixin, self).signal_restore()
+            super().signal_restore()
         except ValueError:
             pass
 
@@ -593,7 +572,7 @@ class ThreadsafeRawScreen(ThreadsafeScreenMixin, RawScreen):
 class ThreadsafeFixedSizeRawScreen(ThreadsafeScreenMixin, RawScreen):
     def __init__(self, **kwargs):
         self._term_size = kwargs.pop("term_size", None)
-        super(ThreadsafeFixedSizeRawScreen, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def get_cols_rows(self):
         if self._term_size is not None:
@@ -611,7 +590,7 @@ if curses is not None:
 
 # {{{ source code providers
 
-class SourceCodeProvider(object):
+class SourceCodeProvider:
     def __ne__(self, other):
         return not (self == other)
 
@@ -685,7 +664,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
                     debugger_ui, list(decode_lines(lines)), set(breakpoints))
         except Exception:
             from pudb.lowlevel import format_exception
-            debugger_ui.message("Could not load source file '%s':\n\n%s" % (
+            debugger_ui.message("Could not load source file '{}':\n\n{}".format(
                 self.file_name, "".join(format_exception(sys.exc_info()))),
                 title="Source Code Load Error")
             return [SourceLine(debugger_ui,
@@ -1133,9 +1112,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 new_modification_time = os.path.getmtime(file_name)
                 file_changed = new_modification_time - original_modification_time > 0
             except Exception:
-                from pudb.lowlevel import format_exception
+                from traceback import format_exception
                 self.message("Exception happened when trying to edit the file:"
-                             "\n\n%s" % ("".join(format_exception(sys.exc_info()))),
+                             "\n\n%s" % ("".join(format_exception(*sys.exc_info()))),
                     title="File Edit Error")
                 return
 
@@ -1575,12 +1554,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                         try:
                             __import__(str(new_mod_name))
                         except Exception:
-                            from pudb.lowlevel import format_exception
+                            from traceback import format_exception
 
-                            self.message("Could not import module '%s':\n\n%s" % (
-                                new_mod_name, "".join(
-                                    format_exception(sys.exc_info()))),
-                                title="Import Error")
+                            self.message(
+                                    "Could not import module '{}':\n\n{}".format(
+                                        new_mod_name, "".join(
+                                            format_exception(*sys.exc_info()))),
+                                    title="Import Error")
                         else:
                             show_mod(__import__(str(new_mod_name)))
                             break
@@ -1594,11 +1574,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     if widget is not new_mod_entry:
                         mod_name = widget.base_widget.get_text()[0]
                         mod = sys.modules[mod_name]
-                        if PY3:
-                            import importlib
-                            importlib.reload(mod)
-                        else:
-                            reload(mod)  # noqa (undef on Py3)
+                        import importlib
+                        importlib.reload(mod)
 
                         self.message("'%s' was successfully reloaded." % mod_name)
 
@@ -1744,23 +1721,13 @@ class DebuggerUI(FrameVarInfoKeeper):
             prev_sys_stdout = sys.stdout
             prev_sys_stderr = sys.stderr
 
-            if PY3:
-                from io import StringIO
-            else:
-                from cStringIO import StringIO
+            from io import StringIO
 
             sys.stdin = None
             sys.stderr = sys.stdout = StringIO()
             try:
-                # Don't use cmdline_get_namespace() here in Python 2, as it
-                # breaks things (issue #166).
-                if PY3:
-                    eval(compile(cmd, "<pudb command line>", "single"),
-                         cmdline_get_namespace())
-                else:
-                    eval(compile(cmd, "<pudb command line>", "single"),
-                         self.debugger.curframe.f_globals,
-                         self.debugger.curframe.f_locals)
+                eval(compile(cmd, "<pudb command line>", "single"),
+                     cmdline_get_namespace())
             except Exception:
                 tp, val, tb = sys.exc_info()
 
@@ -1952,7 +1919,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def show_output(w, size, key):
             self.screen.stop()
-            raw_input("Hit Enter to return:")
+            input("Hit Enter to return:")
             self.screen.start()
 
         def reload_breakpoints_and_redisplay():
@@ -1973,11 +1940,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def show_traceback(w, size, key):
             if self.current_exc_tuple is not None:
-                from pudb.lowlevel import format_exception
+                from traceback import format_exception
 
                 result = self.dialog(
                         urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
-                            "".join(format_exception(self.current_exc_tuple)))])),
+                            "".join(format_exception(*self.current_exc_tuple)))])),
                         [
                             ("Close", "close"),
                             ("Location", "location")
@@ -2014,8 +1981,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                 try:
                     if not shell.custom_shell_dict:  # Only execfile once
                         from os.path import expanduser
-                        execfile(
-                                expanduser(CONFIG["shell"]), shell.custom_shell_dict)
+                        cshell_fname = expanduser(CONFIG["shell"])
+                        with open(cshell_fname) as inf:
+                            exec(compile(inf.read(), cshell_fname, "exec"),
+                                    shell.custom_shell_dict,
+                                    shell.custom_shell_dict)
                 except Exception:
                     print("Error when importing custom shell:")
                     from traceback import print_exc
@@ -2051,7 +2021,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             def __init__(self, idx):
                 self.idx = idx
 
-            def __call__(subself, w, size, key):  # noqa
+            def __call__(subself, w, size, key):  # noqa # pylint: disable=no-self-argument
                 self.columns.set_focus(self.rhs_col_sigwrap)
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
@@ -2213,10 +2183,10 @@ class DebuggerUI(FrameVarInfoKeeper):
             title=None, bind_enter_esc=True, focus_buttons=False,
             extra_bindings=[]):
         class ResultSetter:
-            def __init__(subself, res):  # noqa
+            def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 subself.res = res
 
-            def __call__(subself, btn):  # noqa
+            def __call__(subself, btn):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 self.quit_event_loop = [subself.res]
 
         Attr = urwid.AttrMap  # noqa
@@ -2259,17 +2229,17 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ("fixed", 1, urwid.SolidFill()),
                 w])
 
-        class ResultSetter:
-            def __init__(subself, res):  # noqa
+        class ResultSettingEventHandler:
+            def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 subself.res = res
 
-            def __call__(subself, w, size, key):  # noqa
+            def __call__(subself, w, size, key):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 self.quit_event_loop = [subself.res]
 
         w = SignalWrap(w)
         for key, binding in extra_bindings:
             if isinstance(binding, str):
-                w.listen(key, ResultSetter(binding))
+                w.listen(key, ResultSettingEventHandler(binding))
             else:
                 w.listen(key, binding)
 
@@ -2294,7 +2264,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 get_palette(may_use_fancy_formats, CONFIG["theme"]))
 
     def show_exception_dialog(self, exc_tuple):
-        from pudb.lowlevel import format_exception
+        from traceback import format_exception
 
         desc = (
             "The program has terminated abnormally because of an exception.\n\n"
@@ -2302,7 +2272,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             "time using the 'e' key. The debugger has entered post-mortem mode "
             "and will prevent further state changes."
         )
-        tb_txt = "".join(format_exception(exc_tuple))
+        tb_txt = "".join(format_exception(*exc_tuple))
         self._show_exception_dialog(
             description=desc,
             error_info=tb_txt,
@@ -2317,7 +2287,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             ui_log.exception("Error while showing error dialog")
 
     def _show_internal_exc_dlg(self, exc_tuple):
-        from pudb.lowlevel import format_exception
+        from traceback import format_exception
         from pudb import VERSION
 
         desc = (
@@ -2336,7 +2306,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             python=sys.version.replace("\n", " "),
             pudb=VERSION,
             urwid=".".join(map(str, urwid.version.VERSION)),
-            tb="".join(format_exception(exc_tuple))
+            tb="".join(format_exception(*exc_tuple))
         )
 
         self._show_exception_dialog(
@@ -2375,8 +2345,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.message("Traceback saved as %s." % filename, title="Success")
 
         except Exception:
-            from pudb.lowlevel import format_exception
-            io_tb_txt = "".join(format_exception(sys.exc_info()))
+            from traceback import format_exception
+            io_tb_txt = "".join(format_exception(*sys.exc_info()))
             self.message(
                     "An error occurred while trying to write "
                     "the traceback:\n\n" + io_tb_txt,

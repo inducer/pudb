@@ -24,12 +24,26 @@ jobs:
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
                 . ./prepare-and-run-flake8.sh ./pudb ./test
 
+    pylint:
+        name: Pylint
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -
+            uses: actions/setup-python@v1
+            with:
+                python-version: '3.x'
+        -   name: "Main Script"
+            run: |
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+                . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)" test/test_*.py
+
     pytest:
         name: Pytest on Py${{ matrix.python-version }}
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: [3.6, 3.7, 3.8, pypy3]
+                python-version: ["3.6", "3.7", "3.8", "3.9", pypy3]
         steps:
         -   uses: actions/checkout@v2
         -

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -28,7 +26,6 @@ THE SOFTWARE.
 
 import logging
 from datetime import datetime
-from pudb.py3compat import PY3, text_type
 
 logfile = [None]
 
@@ -66,7 +63,7 @@ class TerminalOrStreamHandler(logging.StreamHandler):
                 message = self.format(record)
                 dbg.ui.add_cmdline_content(message, "command line error")
             else:
-                super(TerminalOrStreamHandler, self).emit(record)
+                super().emit(record)
         finally:
             self.release()
 
@@ -99,24 +96,15 @@ ui_log, settings_log = _init_loggers()
 def generate_executable_lines_for_code(code):
     lineno = code.co_firstlineno
     yield lineno
-    if PY3:
-        # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
-        import sys
-        use_36_line_incr = sys.version_info >= (3, 6)
+    # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
 
-        for line_incr in code.co_lnotab[1::2]:
-            # This showed up between the v3.5 and v3.6 cycles:
-            # https://github.com/python/cpython/blob/v3.5.0/Objects/lnotab_notes.txt
-            # https://github.com/python/cpython/blob/v3.6.0/Objects/lnotab_notes.txt
-            # Gate the check on 3.6-or-newer.
-            if line_incr >= 0x80 and use_36_line_incr:
-                line_incr -= 0x100
-            lineno += line_incr
-            yield lineno
-    else:
-        for c in code.co_lnotab[1::2]:
-            lineno += ord(c)
-            yield lineno
+    for line_incr in code.co_lnotab[1::2]:
+        # NB: This code is specific to Python 3.6 and higher
+        # https://github.com/python/cpython/blob/v3.6.0/Objects/lnotab_notes.txt
+        if line_incr >= 0x80:
+            line_incr -= 0x100
+        lineno += line_incr
+        yield lineno
 
 
 def get_executable_lines_for_codes_recursive(codes):
@@ -228,10 +216,7 @@ def detect_encoding(line_iter):
 
     def find_cookie(line):
         try:
-            if PY3:
-                line_string = line
-            else:
-                line_string = line.decode("ascii")
+            line_string = line
         except UnicodeDecodeError:
             return None
 
@@ -251,7 +236,7 @@ def detect_encoding(line_iter):
         return encoding
 
     first = read_or_stop()
-    if isinstance(first, text_type):
+    if isinstance(first, str):
         return None, [first]
 
     if first.startswith(BOM_UTF8):
@@ -286,40 +271,6 @@ def decode_lines(lines):
             yield line.decode(source_enc)
         else:
             yield line
-
-# }}}
-
-
-# {{{ traceback formatting
-
-class StringExceptionValueWrapper:
-    def __init__(self, string_val):
-        self.string_val = string_val
-
-    def __str__(self):
-        return self.string_val
-
-    __context__ = None
-    __cause__ = None
-
-
-def format_exception(exc_tuple):
-    # Work around http://bugs.python.org/issue17413
-    # See also https://github.com/inducer/pudb/issues/61
-
-    from traceback import format_exception
-    if PY3:
-        exc_type, exc_value, exc_tb = exc_tuple
-
-        if isinstance(exc_value, str):
-            exc_value = StringExceptionValueWrapper(exc_value)
-            exc_tuple = exc_type, exc_value, exc_tb
-
-        return format_exception(
-                *exc_tuple,
-                **dict(chain=hasattr(exc_value, "__context__")))
-    else:
-        return format_exception(*exc_tuple)
 
 # }}}
 
