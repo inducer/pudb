@@ -82,6 +82,7 @@ Keys:
     F1/? - show this help screen
     q - quit
 
+    Ctrl-r - reload breakpoints from saved-breakpoints file
     Ctrl-c - when in continue mode, break back to PuDB
     Ctrl-l - redraw screen
 
@@ -1931,7 +1932,16 @@ class DebuggerUI(FrameVarInfoKeeper):
             input("Hit Enter to return:")
             self.screen.start()
 
-        def reload_breakpoints(w, size, key):
+        def reload_breakpoints_and_redisplay():
+            reload_breakpoints()
+            curr_line = self.current_line
+            self.set_source_code_provider(self.source_code_provider,
+                                          force_update=True)
+            if curr_line is not None:
+                self.current_line = self.source[int(curr_line.line_nr)-1]
+                self.current_line.set_current(True)
+
+        def reload_breakpoints():
             self.debugger.clear_all_breaks()
             from pudb.settings import load_breakpoints
             for bpoint_descr in load_breakpoints():
@@ -2051,7 +2061,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             open_file_editor(source_identifier, pos+1)
 
         self.top.listen("o", show_output)
-        self.top.listen("ctrl r", reload_breakpoints)
+        self.top.listen("ctrl r",
+                        lambda w, size, key: reload_breakpoints_and_redisplay())
         self.top.listen("!", run_cmdline)
         self.top.listen("e", show_traceback)
 
