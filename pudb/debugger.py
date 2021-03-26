@@ -1957,8 +1957,12 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def reload_breakpoints_and_redisplay():
             reload_breakpoints()
+            curr_line = self.current_line
             self.set_source_code_provider(self.source_code_provider,
                                           force_update=True)
+            if curr_line is not None:
+                self.current_line = self.source[int(curr_line.line_nr)-1]
+                self.current_line.set_current(True)
 
         def reload_breakpoints():
             self.debugger.clear_all_breaks()
