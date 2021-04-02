@@ -24,16 +24,17 @@ THE SOFTWARE.
 """
 
 
-from abc import ABC, abstractmethod
-
 # {{{ constants and imports
 
 import urwid
 import inspect
 import warnings
 
+from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import Tuple, List
 from pudb.lowlevel import ui_log
+from pudb.ui_tools import text_width
 
 try:
     import numpy
@@ -43,7 +44,12 @@ except ImportError:
 
 ELLIPSIS = "…"
 
-from pudb.ui_tools import text_width
+BASIC_TYPES = []
+BASIC_TYPES.append(type(None))
+BASIC_TYPES.append(int)
+BASIC_TYPES.append(str)
+BASIC_TYPES.extend((float, complex))
+BASIC_TYPES = tuple(BASIC_TYPES)
 
 # }}}
 
@@ -379,7 +385,10 @@ class VariableWidget(urwid.FlowWidget):
 custom_stringifier_dict = {}
 
 
-def type_stringifier(value):
+def default_stringifier(value):
+    if isinstance(value, BASIC_TYPES):
+        return repr(value)
+
     if HAVE_NUMPY and isinstance(value, numpy.ndarray):
         return "%s(%s) %s" % (
                 type(value).__name__, value.dtype, value.shape)
@@ -414,6 +423,10 @@ def type_stringifier(value):
     return str(type(value).__name__)
 
 
+def type_stringifier(value):
+    return str(type(value).__name__)
+
+
 def id_stringifier(obj):
     return "{id:#x}".format(id=id(obj))
 
@@ -422,18 +435,22 @@ def error_stringifier(_):
     return "ERROR: Invalid custom stringifier file."
 
 
-def get_stringifier(iinfo):
-    """Return a function that turns an object into a Unicode text object."""
+STRINGIFIERS = {
+    "default": default_stringifier,
+    "type": type_stringifier,
+    "repr": repr,
+    "str": str,
+    "id": id_stringifier,
+}
 
-    if iinfo.display_type == "type":
-        return type_stringifier
-    elif iinfo.display_type == "repr":
-        return repr
-    elif iinfo.display_type == "str":
-        return str
-    elif iinfo.display_type == "id":
-        return id_stringifier
-    else:
+
+def get_stringifier(iinfo: InspectInfo) -> Callable:
+    """
+    :return: a function that turns an object into a Unicode text object.
+    """
+    try:
+        return STRINGIFIERS[iinfo.display_type]
+    except KeyError:
         try:
             if not custom_stringifier_dict:  # Only execfile once
                 from os.path import expanduser
@@ -447,8 +464,8 @@ def get_stringifier(iinfo):
             return error_stringifier
         else:
             if "pudb_stringifier" not in custom_stringifier_dict:
-                print("%s does not contain a function named pudb_stringifier at "
-                      "the module level." % iinfo.display_type)
+                ui_log.error(f"{iinfo.display_type} does not contain a function "
+                             "named pudb_stringifier at the module level.")
                 input("Hit enter:")
                 return lambda value: str(
                         "ERROR: Invalid custom stringifier file: "
@@ -461,13 +478,6 @@ def get_stringifier(iinfo):
 # {{{ tree walking
 
 class ValueWalker(ABC):
-    BASIC_TYPES = []
-    BASIC_TYPES.append(type(None))
-    BASIC_TYPES.append(int)
-    BASIC_TYPES.append(str)
-    BASIC_TYPES.extend((float, complex))
-    BASIC_TYPES = tuple(BASIC_TYPES)
-
     NUM_PREVIEW_ITEMS = 3
     MAX_PREVIEW_ITEM_LEN = 16
 
@@ -570,17 +580,14 @@ class ValueWalker(ABC):
         assert isinstance(id_path, str)
         iinfo = self.frame_var_info.get_inspect_info(id_path, read_only=True)
 
-        if isinstance(value, self.BASIC_TYPES):
-            displayed_value = repr(value)
-        else:
-            try:
-                displayed_value = get_stringifier(iinfo)(value)
-            except Exception:
-                # Unfortunately, anything can happen when calling str() or
-                # repr() on a random object.
-                displayed_value = type_stringifier(value) \
-                                + " (!! %s error !!)" % iinfo.display_type
-                ui_log.exception("stringifier failed")
+        try:
+            displayed_value = get_stringifier(iinfo)(value)
+        except Exception:
+            # Unfortunately, anything can happen when calling str() or
+            # repr() on a random object.
+            displayed_value = type_stringifier(value) \
+                            + " (!! %s error !!)" % iinfo.display_type
+            ui_log.exception("stringifier failed")
 
         if iinfo.show_detail:
             marker = iinfo.access_level[:3]

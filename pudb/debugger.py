@@ -108,7 +108,7 @@ Keys in variables list:
     \/enter/space - expand/collapse
     h - collapse
     l - expand
-    t/r/s/i/c - show type/repr/str/id/custom for this variable
+    d/t/r/s/i/c - show default/type/repr/str/id/custom for this variable
     H - toggle highlighting
     @ - toggle repetition at top
     * - cycle attribute visibility: public/_private/__dunder__
@@ -913,6 +913,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 focus_index = collapse_current(var, pos, iinfo)
             elif key == "l":
                 iinfo.show_detail = True
+            elif key == "d":
+                iinfo.display_type = "default"
             elif key == "t":
                 iinfo.display_type = "type"
             elif key == "r":
@@ -969,7 +971,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 title = "Variable Inspection Options"
 
             rb_grp_show = []
-            rb_show_type = urwid.RadioButton(rb_grp_show, "Show Type",
+            rb_show_default = urwid.RadioButton(rb_grp_show, "Default",
+                    iinfo.display_type == "default")
+            rb_show_type = urwid.RadioButton(rb_grp_show, "Show type()",
                     iinfo.display_type == "type")
             rb_show_repr = urwid.RadioButton(rb_grp_show, "Show repr()",
                     iinfo.display_type == "repr")
@@ -1020,7 +1024,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_methods = show_methods_checkbox.get_state()
 
-                if rb_show_type.get_state():
+                if rb_show_default.get_state():
+                    iinfo.display_type = "default"
+                elif rb_show_type.get_state():
                     iinfo.display_type = "type"
                 elif rb_show_repr.get_state():
                     iinfo.display_type = "repr"
@@ -1072,6 +1078,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen(" ", change_var_state)
         self.var_list.listen("h", change_var_state)
         self.var_list.listen("l", change_var_state)
+        self.var_list.listen("d", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
