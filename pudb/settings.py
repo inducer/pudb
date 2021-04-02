@@ -347,11 +347,12 @@ def edit_config(ui, conf_dict):
     known_stringifier = conf_dict["stringifier"] in stringifier_opts
     stringifier_rb_group = []
     stringifier_edit = urwid.Edit(edit_text=conf_dict["custom_stringifier"])
-    stringifier_info = urwid.Text("This is the default function that will be "
-        "called on variables in the variables list.  Note that you can change "
-        "this on a per-variable basis by selecting a variable and hitting Enter "
-        "or by typing d/t/s/r/i.  Note that str and repr will be slower than type "
-        "and have the potential to crash PuDB.\n")
+    stringifier_info = urwid.Text(
+        "This is the default function that will be called on variables in the "
+        "variables list. You can also change this on a per-variable basis by "
+        "selecting a variable and typing 'e' to edit the variable's display "
+        "settings, or by typing one of d/t/s/r/i/c. Note that str and repr will "
+        "be slower than the default, type, or id stringifiers.\n")
     stringifier_edit_list_item = urwid.AttrMap(stringifier_edit, "value")
     stringifier_rbs = [
             urwid.RadioButton(stringifier_rb_group, name,
