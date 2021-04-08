@@ -21,7 +21,7 @@ setup(
     python_requires="~=3.6",
     install_requires=[
         "urwid>=1.1.1",
-        "pygments>=1.0",
+        "pygments>=2.7.4",
         "jedi>=0.18,<1"
     ],
     test_requires=[
