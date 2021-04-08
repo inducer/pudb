@@ -19,4 +19,8 @@ jobs:
             env:
                 GITLAB_AUTOPUSH_KEY: ${{ secrets.GITLAB_AUTOPUSH_KEY }}
 
+        -   uses: mxschmitt/action-tmate@v3
+            env:
+                GITLAB_AUTOPUSH_KEY: ${{ secrets.GITLAB_AUTOPUSH_KEY }}
+
 # vim: sw=4
