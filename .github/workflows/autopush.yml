@@ -13,7 +13,8 @@ jobs:
         -   run: |
                 mkdir ~/.ssh && echo -e "Host gitlab.tiker.net\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
                 eval $(ssh-agent) && echo "$GITLAB_AUTOPUSH_KEY" | ssh-add -
-                git push "git@gitlab.tiker.net:inducer/$(basename $GITHUB_REPOSITORY)"  main
+                git checkout main
+                git push "git@gitlab.tiker.net:inducer/$(basename $GITHUB_REPOSITORY).git"  main
             env:
                 GITLAB_AUTOPUSH_KEY: ${{ secrets.GITLAB_AUTOPUSH_KEY }}
 
