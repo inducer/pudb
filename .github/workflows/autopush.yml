@@ -13,5 +13,7 @@ jobs:
         -   run: |
                 eval $(ssh-agent) && echo "$GITLAB_AUTOPUSH_KEY" | ssh-add -
                 git push "git@gitlab.tiker.net:inducer/$(basename $GITHUB_REPOSITORY)"  main
+            env:
+                GITLAB_AUTOPUSH_KEY: ${{ secrets.GITLAB_AUTOPUSH_KEY }}
 
 # vim: sw=4
