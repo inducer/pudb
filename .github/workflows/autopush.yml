@@ -11,7 +11,7 @@ jobs:
         steps:
         -   uses: actions/checkout@v2
         -   run: |
-                echo -e "Host gitlab.tiker.net\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+                mkdir ~/.ssh && echo -e "Host gitlab.tiker.net\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
                 eval $(ssh-agent) && echo "$GITLAB_AUTOPUSH_KEY" | ssh-add -
                 git push "git@gitlab.tiker.net:inducer/$(basename $GITHUB_REPOSITORY)"  main
             env:
