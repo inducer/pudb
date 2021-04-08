@@ -2,7 +2,7 @@ codecov==2.0.5
 coverage==4.3.4
 pbr==2.0.0
 py==1.4.33
-Pygments==2.2.0
+Pygments==2.7.4
 pytest
 pytest-cov
 pytest-mock
