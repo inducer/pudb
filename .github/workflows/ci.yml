@@ -18,7 +18,8 @@ jobs:
         -
             uses: actions/setup-python@v1
             with:
-                python-version: '3.x'
+                # matches compat target in setup.py
+                python-version: '3.6'
         -   name: "Main Script"
             run: |
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
