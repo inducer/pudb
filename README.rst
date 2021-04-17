@@ -13,18 +13,17 @@ PuDB: a console-based visual debugger for Python
 
 Its goal is to provide all the niceties of modern GUI-based debuggers in a
 more lightweight and keyboard-friendly package. PuDB allows you to debug code
-right where you write and test it--in a terminal. If you've worked with the
-excellent (but nowadays ancient) DOS-based Turbo Pascal or C tools, PuDB's UI
-might look familiar.
+right where you write and test it--in a terminal.
 
 Here are some screenshots:
 
-* Default theme:
-    .. image:: https://tiker.net/pub/pudb-screenshot.png
+* Light theme
 
-* Dark theme:
-    .. image:: https://raw.githubusercontent.com/ranelpadon/pudb/improve_the_readme_file/screenshot.png
-       :height: 394px
+  .. image:: doc/images/pudb-screenshot-light.png
+
+* Dark theme
+
+  .. image:: doc/images/pudb-screenshot-dark.png
 
 You may watch screencasts too:
 
