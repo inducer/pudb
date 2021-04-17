@@ -17,11 +17,20 @@ right where you write and test it--in a terminal. If you've worked with the
 excellent (but nowadays ancient) DOS-based Turbo Pascal or C tools, PuDB's UI
 might look familiar.
 
-Here's a screenshot:
+Here are the screenshots:
 
-.. image:: https://tiker.net/pub/pudb-screenshot.png
+* Default theme:
+    .. image:: https://tiker.net/pub/pudb-screenshot.png
 
-You may watch a `screencast <http://vimeo.com/5255125>`_, too.
+* Dark theme:
+    .. image:: ./screenshot.png
+       :height: 394px
+
+You may watch screencasts too:
+
+* `Meet Pudb, a debugger for Python code (2020) <https://www.youtube.com/watch?v=bJYkCWPs_UU>`_
+
+* `PuDB Intro Screencast (2009) <http://vimeo.com/5255125>`_
 
 Features
 --------
@@ -30,6 +39,8 @@ Features
   visible at once and continuously updated. This helps you be more aware of
   what's going on in your program. Variable displays can be expanded, collapsed
   and have various customization options.
+
+* Pre-bundled themes, including dark themes. Could set a custom theme also.
 
 * Simple, keyboard-based navigation using single keystrokes makes debugging
   quick and easy. PuDB understands cursor-keys and Vi shortcuts for navigation.
