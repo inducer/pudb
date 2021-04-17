@@ -17,7 +17,7 @@ right where you write and test it--in a terminal. If you've worked with the
 excellent (but nowadays ancient) DOS-based Turbo Pascal or C tools, PuDB's UI
 might look familiar.
 
-Here are the screenshots:
+Here are some screenshots:
 
 * Default theme:
     .. image:: https://tiker.net/pub/pudb-screenshot.png
