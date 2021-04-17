@@ -23,7 +23,7 @@ Here are the screenshots:
     .. image:: https://tiker.net/pub/pudb-screenshot.png
 
 * Dark theme:
-    .. image:: ./screenshot.png
+    .. image:: https://raw.githubusercontent.com/ranelpadon/pudb/improve_the_readme_file/screenshot.png
        :height: 394px
 
 You may watch screencasts too:
