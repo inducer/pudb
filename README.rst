@@ -40,7 +40,7 @@ Features
   what's going on in your program. Variable displays can be expanded, collapsed
   and have various customization options.
 
-* Pre-bundled themes, including dark themes. Could set a custom theme also.
+* Pre-bundled themes, including dark themes via "Ctrl-P". Could set a custom theme also.
 
 * Simple, keyboard-based navigation using single keystrokes makes debugging
   quick and easy. PuDB understands cursor-keys and Vi shortcuts for navigation.
