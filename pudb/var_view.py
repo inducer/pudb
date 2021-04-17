@@ -84,6 +84,10 @@ class PudbCollection(ABC):
                          "not behave like one: {m}".format(
                              l=label, m=error))
 
+    @classmethod
+    def length(cls, collection):
+        return len(collection)
+
 
 class PudbSequence(ABC):
     @classmethod
@@ -112,6 +116,10 @@ class PudbSequence(ABC):
             ui_log.error("Object {l!r} appears to be a sequence, but does "
                          "not behave like one: {m}".format(
                              l=label, m=error))
+
+    @classmethod
+    def length(cls, sequence):
+        return len(sequence)
 
 
 class PudbMapping(ABC):
@@ -150,6 +158,10 @@ class PudbMapping(ABC):
             ui_log.error("Object {l!r} appears to be a mapping, but does "
                          "not behave like one: {m}".format(
                              l=label, m=error))
+
+    @classmethod
+    def length(cls, mapping):
+        return len(mapping.keys())
 
 
 # Order is important here- A mapping without keys could be viewed as a
@@ -527,7 +539,7 @@ class ValueWalker(ABC):
             is_empty = False
             if count > 0 and count % 10 == 0:
                 try:
-                    length = len(value)
+                    length = container_cls.length(value)
                 except Exception:
                     length = -1
                 if self.add_continuation_item(parent, id_path, count, length):

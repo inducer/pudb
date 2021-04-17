@@ -107,7 +107,7 @@ def load_config():
 
     conf_dict.setdefault("current_stack_frame", "top")
 
-    conf_dict.setdefault("stringifier", "type")
+    conf_dict.setdefault("stringifier", "default")
 
     conf_dict.setdefault("custom_theme", "")
     conf_dict.setdefault("custom_stringifier", "")
