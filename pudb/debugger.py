@@ -186,7 +186,8 @@ class Debugger(bdb.Bdb):
             **kwargs):
 
         if self.is_remote and not hasattr(self, 'close_remote_session'):
-            raise RuntimeError('Remote debuggers need to implement close_remote_session')
+            raise RuntimeError(
+                'Remote debuggers need to implement close_remote_session')
 
         # Pass remaining kwargs to python debugger framework
         bdb.Bdb.__init__(self, **kwargs)
