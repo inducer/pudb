@@ -199,7 +199,7 @@ def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=Fal
     """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
-    if rdb is None or not rdb.active:
+    if rdb is None or not rdb.is_active:
         rdb = _current[0] = RemoteDebugger(
             host=host, port=port, term_size=term_size, reverse=reverse
         )
