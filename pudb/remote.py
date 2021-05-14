@@ -79,6 +79,7 @@ class RemoteDebugger(Debugger):
     me = "pudb"
     _prev_outs = None
     _sock = None
+    is_remote = True
 
     def __init__(
         self,
@@ -89,7 +90,6 @@ class RemoteDebugger(Debugger):
         term_size=None,
         reverse=False,
     ):
-        self.active = True
         self.out = out
 
         self._prev_handles = sys.stdin, sys.stdout
@@ -178,36 +178,28 @@ class RemoteDebugger(Debugger):
     def say(self, m):
         print(m, file=self.out)
 
-    def _close_session(self):
+    def close_remote_session(self):
         self.stdin, self.stdout = sys.stdin, sys.stdout = self._prev_handles
         self._handle.close()
         self._client.close()
-        self._sock.close()
-        self.active = False
+        if self._sock:
+            self._sock.close()
         self.say(SESSION_ENDED.format(self=self))
 
-    def do_continue(self, arg):
-        self._close_session()
-        self.set_continue()
-        return 1
-
-    do_c = do_cont = do_continue
-
-    def do_quit(self, arg):
-        self._close_session()
-        self.set_quit()
-        return 1
-
     def set_quit(self):
-        # this raises a BdbQuit exception that we are unable to catch.
-        sys.settrace(None)
+        self.is_active = False
+        return super().set_quit()
+
+    def set_continue(self):
+        self.is_active = False
+        return super().set_continue()
 
 
 def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False):
     """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
-    if rdb is None or not rdb.active:
+    if rdb is None or not rdb.is_active:
         rdb = _current[0] = RemoteDebugger(
             host=host, port=port, term_size=term_size, reverse=reverse
         )
