@@ -345,12 +345,14 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         self.assert_class_counts_equal({"sequences": 1})
 
     def test_containerlike_classes(self):
-        for class_count, containerlike_class in enumerate(
+        class_count = 0
+        for cls_idx, containerlike_class in enumerate(
                 generate_containerlike_class()):
             label = containerlike_class.name()
             value = containerlike_class(zip(string.ascii_lowercase,
                                             range(3, 10)))
             self.assert_walks_contents(container=value, label=label)
+            class_count = cls_idx + 1
 
         self.assert_class_counts_equal({
             "mappings": 256,
@@ -365,7 +367,7 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
                         + self.class_counts["other"])
 
         # +1 here because enumerate starts from 0, not 1
-        self.assertEqual(class_count + 1, walked_total)
+        self.assertEqual(class_count, walked_total)
 
     def test_empty_frozenset(self):
         self.assert_walks_contents(frozenset())
