@@ -370,7 +370,7 @@ class Debugger(bdb.Bdb):
     def get_shortened_stack(self, frame, tb):
         stack, index = self.get_stack(frame, tb)
 
-        for i, (s_frame, lineno) in enumerate(stack):
+        for i, (s_frame, _lineno) in enumerate(stack):
             if s_frame is self.bottom_frame and index >= i:
                 stack = stack[i:]
                 index -= i
@@ -2196,7 +2196,10 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     def dialog(self, content, buttons_and_results,
             title=None, bind_enter_esc=True, focus_buttons=False,
-            extra_bindings=[]):
+            extra_bindings=None):
+        if extra_bindings is None:
+            extra_bindings = []
+
         class ResultSetter:
             def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 subself.res = res

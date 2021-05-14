@@ -63,10 +63,13 @@ class SetPropagatingDict(dict):
 custom_shell_dict = {}
 
 
-def run_classic_shell(globals, locals, first_time=[True]):
-    if first_time:
+SHELL_FIRST_TIME = [True]
+
+
+def run_classic_shell(globals, locals):
+    if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
-        first_time.pop()
+        SHELL_FIRST_TIME.pop()
     else:
         banner = ""
 
@@ -142,11 +145,11 @@ def ipython_version():
         return None
 
 
-def run_ipython_shell_v10(globals, locals, first_time=[True]):
+def run_ipython_shell_v10(globals, locals):
     """IPython shell from IPython version 0.10"""
-    if first_time:
+    if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
-        first_time.pop()
+        SHELL_FIRST_TIME.pop()
     else:
         banner = ""
 
@@ -178,11 +181,11 @@ def _update_ipython_ns(shell, globals, locals):
     shell.init_completer()
 
 
-def run_ipython_shell_v11(globals, locals, first_time=[True]):
+def run_ipython_shell_v11(globals, locals):
     """IPython shell from IPython version 0.11"""
-    if first_time:
+    if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
-        first_time.pop()
+        SHELL_FIRST_TIME.pop()
     else:
         banner = ""
 
