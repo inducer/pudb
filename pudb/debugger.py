@@ -179,15 +179,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
-    is_active = True
-    is_remote = False
-
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
             **kwargs):
-
-        if self.is_remote and not hasattr(self, "close_remote_session"):
-            raise RuntimeError(
-                "Remote debuggers need to implement close_remote_session")
 
         # Pass remaining kwargs to python debugger framework
         bdb.Bdb.__init__(self, **kwargs)
@@ -2382,8 +2375,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.show_count -= 1
         if self.show_count == 0:
             self.screen.stop()
-            if self.debugger.is_remote and not self.debugger.is_active:
-                self.debugger.close_remote_session()
 
     def call_with_ui(self, f, *args, **kwargs):
         self.show()

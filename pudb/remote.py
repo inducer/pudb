@@ -35,6 +35,7 @@ import sys
 import fcntl
 import termios
 import struct
+import atexit
 
 from pudb.debugger import Debugger
 
@@ -79,7 +80,6 @@ class RemoteDebugger(Debugger):
     me = "pudb"
     _prev_outs = None
     _sock = None
-    is_remote = True
 
     def __init__(
         self,
@@ -186,23 +186,16 @@ class RemoteDebugger(Debugger):
             self._sock.close()
         self.say(SESSION_ENDED.format(self=self))
 
-    def set_quit(self):
-        self.is_active = False
-        return super().set_quit()
-
-    def set_continue(self):
-        self.is_active = False
-        return super().set_continue()
-
 
 def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False):
     """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
-    if rdb is None or not rdb.is_active:
+    if rdb is None:
         rdb = _current[0] = RemoteDebugger(
             host=host, port=port, term_size=term_size, reverse=reverse
         )
+        atexit.register(lambda e: e.close_remote_session(), rdb)
     return rdb
 
 
