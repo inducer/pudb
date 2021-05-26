@@ -32,6 +32,7 @@ from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
 
 # minor LGPL violation: stolen from python-xdg
 
+# see https://github.com/inducer/pudb/pull/453 for context
 _home = os.environ.get("HOME", os.path.expanduser("~"))
 xdg_data_home = os.environ.get("XDG_DATA_HOME",
             os.path.join(_home, ".local", "share") if _home else None)
