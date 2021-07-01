@@ -244,29 +244,29 @@ else:
     #       beginning of add_snippet().
     #
     ATTR_MAP = {  # noqa: N806
-            t.Token: "source",
-            t.Keyword.Namespace: "namespace",
-            t.Token.Argument: "argument",
-            t.Token.Dunder: "dunder",
-            t.Token.Keyword2: "keyword2",
-            t.Keyword: "keyword",
-            t.Literal: "literal",
-            t.Name.Exception: "exception",
-            t.Name.Function: "name",
-            t.Name.Class: "name",
-            t.Name.Builtin: "builtin",
-            t.Name.Builtin.Pseudo: "pseudo",
-            t.Punctuation: "punctuation",
-            t.Operator: "operator",
-            t.String: "string",
-            # XXX: Single and Double don't actually work yet.
-            # See https://bitbucket.org/birkenfeld/pygments-main/issue/685
-            t.String.Double: "doublestring",
-            t.String.Single: "singlestring",
-            t.String.Backtick: "backtick",
-            t.String.Doc: "docstring",
-            t.Comment: "comment",
-            }
+        t.Token: "source",
+        t.Keyword.Namespace: "namespace",
+        t.Token.Argument: "argument",
+        t.Token.Dunder: "dunder",
+        t.Token.Keyword2: "keyword2",
+        t.Keyword: "keyword",
+        t.Literal: "literal",
+        t.Name.Exception: "exception",
+        t.Name.Function: "name",
+        t.Name.Class: "name",
+        t.Name.Builtin: "builtin",
+        t.Name.Builtin.Pseudo: "pseudo",
+        t.Punctuation: "punctuation",
+        t.Operator: "operator",
+        t.String: "string",
+        # XXX: Single and Double don't actually work yet.
+        # See https://bitbucket.org/birkenfeld/pygments-main/issue/685
+        t.String.Double: "doublestring",
+        t.String.Single: "singlestring",
+        t.String.Backtick: "backtick",
+        t.String.Doc: "docstring",
+        t.Comment: "comment",
+    }
 
     # Token translation table. Maps token types and their
     # associated strings to new token types.
@@ -300,67 +300,67 @@ else:
             self.lineno_format = lineno_format
             self.breakpoints = breakpoints
 
+        def add_snippet(self, ttype, s):
+            if not s:
+                return
+
+            # Find function arguments. When found, change their
+            # ttype to t.Token.Argument
+            new_ttype = argument_parser.parse_token(ttype, s)
+            if new_ttype:
+                ttype = new_ttype
+
+            # Translate tokens
+            if ttype in ATTR_TRANSLATE:
+                if s in ATTR_TRANSLATE[ttype]:
+                    ttype = ATTR_TRANSLATE[ttype][s]
+
+            # Translate dunder method tokens
+            if ttype == (
+                    t.Name.Function
+                    and s.startswith("__") and s.endswith("__")
+                    ):
+                ttype = t.Token.Dunder
+
+            while ttype not in ATTR_MAP:
+                if ttype.parent is not None:
+                    ttype = ttype.parent
+                else:
+                    raise RuntimeError(
+                            "untreated token type: %s" % str(ttype))
+
+            attr = ATTR_MAP[ttype]
+
+            self.current_line += s
+            self.current_attr.append((attr, len(s)))
+
+        def shipout_line(self):
+            self.result.append(
+                SourceLine(
+                    self.debugger_ui,
+                    self.current_line,
+                    self.lineno_format % self.lineno,
+                    self.current_attr,
+                    has_breakpoint=self.lineno in self.breakpoints,
+                ))
+            self.current_line = ""
+            self.current_attr = []
+            self.lineno += 1
+
         def format(self, tokensource, outfile):
-            def add_snippet(ttype, s):
-                if not s:
-                    return
-
-                # Find function arguments. When found, change their
-                # ttype to t.Token.Argument
-                new_ttype = argument_parser.parse_token(ttype, s)
-                if new_ttype:
-                    ttype = new_ttype
-
-                # Translate tokens
-                if ttype in ATTR_TRANSLATE:
-                    if s in ATTR_TRANSLATE[ttype]:
-                        ttype = ATTR_TRANSLATE[ttype][s]
-
-                # Translate dunder method tokens
-                if ttype == (
-                        t.Name.Function
-                        and s.startswith("__") and s.endswith("__")
-                        ):
-                    ttype = t.Token.Dunder
-
-                while ttype not in ATTR_MAP:
-                    if ttype.parent is not None:
-                        ttype = ttype.parent
-                    else:
-                        raise RuntimeError(
-                                "untreated token type: %s" % str(ttype))
-
-                attr = ATTR_MAP[ttype]
-
-                self.current_line += s
-                self.current_attr.append((attr, len(s)))
-
-            def shipout_line():
-                self.result.append(
-                    SourceLine(
-                        self.debugger_ui,
-                        self.current_line,
-                        self.lineno_format % self.lineno,
-                        self.current_attr,
-                        has_breakpoint=self.lineno in self.breakpoints,
-                    ))
-                self.current_line = ""
-                self.current_attr = []
-                self.lineno += 1
-
             for ttype, value in tokensource:
                 while True:
                     newline_pos = value.find("\n")
                     if newline_pos == -1:
-                        add_snippet(ttype, value)
+                        self.add_snippet(ttype, value)
                         break
                     else:
-                        add_snippet(ttype, value[:newline_pos])
-                        shipout_line()
+                        self.add_snippet(ttype, value[:newline_pos])
+                        self.shipout_line()
                         value = value[newline_pos+1:]
 
             if self.current_line:
-                shipout_line()
+                self.shipout_line()
 
     def format_source(debugger_ui, lines, breakpoints):
         lineno_format = "%%%dd " % (len(str(len(lines))))
