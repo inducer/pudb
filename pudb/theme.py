@@ -74,6 +74,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         ("builtin",             "source"),
         ("pseudo",              "source"),
         ("dunder",              "name"),
+        ("magic",               "dunder"),
         ("exception",           "source"),
         ("keyword2",            "keyword"),
         ("current line marker", "source"),
@@ -91,6 +92,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         "builtin":   None,
         "pseudo":    None,
         "dunder":    None,
+        "magic":     None,
         "exception": None,
         "keyword2":  None,
 
