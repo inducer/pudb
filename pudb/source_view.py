@@ -260,8 +260,6 @@ else:
         t.Punctuation: "punctuation",
         t.Operator: "operator",
         t.String: "string",
-        # XXX: Single and Double don't actually work yet.
-        # See https://bitbucket.org/birkenfeld/pygments-main/issue/685
         t.String.Double: "doublestring",
         t.String.Single: "singlestring",
         t.String.Backtick: "backtick",
