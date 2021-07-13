@@ -802,7 +802,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 urwid.AttrMap(self.cmdline_pile, None, "focused sidebar")
                 )
         self.cmdline_on = not CONFIG["hide_cmdline_win"]
-        self.cmdline_weight = 1
+        self.cmdline_weight = float(CONFIG.get("cmdline_height", 1))
         self.lhs_col = urwid.Pile([
             ("weight", 5, self.source_attr),
             ("weight", self.cmdline_weight if self.cmdline_on else 0,
@@ -1806,7 +1806,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ command line sizing
         def set_cmdline_default_size(weight):
+            from pudb.settings import save_config
+
             self.cmdline_weight = weight
+            CONFIG["cmdline_height"] = weight
+            save_config(CONFIG)
             self.set_cmdline_size()
 
         def max_cmdline(w, size, key):
