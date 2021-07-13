@@ -1781,34 +1781,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         def cmdline_history_next(w, size, key):
             cmdline_history_browse(1)
 
-        def cmdline_start_of_line(w, size, key):
-            self.cmdline_edit.edit_pos = 0
-
-        def cmdline_end_of_line(w, size, key):
-            self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
-
-        def cmdline_del_word(w, size, key):
-            pos = self.cmdline_edit.edit_pos
-            before, after = (
-                    self.cmdline_edit.edit_text[:pos],
-                    self.cmdline_edit.edit_text[pos:])
-            before = before[::-1]
-            before = before.lstrip()
-            i = 0
-            while i < len(before):
-                if not before[i].isspace():
-                    i += 1
-                else:
-                    break
-
-            self.cmdline_edit.edit_text = before[i:][::-1] + after
-            self.cmdline_edit.edit_post = len(before[i:])
-
-        def cmdline_del_to_start_of_line(w, size, key):
-            pos = self.cmdline_edit.edit_pos
-            self.cmdline_edit.edit_text = self.cmdline_edit.edit_text[pos:]
-            self.cmdline_edit.edit_pos = 0
-
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
