@@ -775,7 +775,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.cmdline_contents = urwid.SimpleFocusListWalker([])
         self.cmdline_list = urwid.ListBox(self.cmdline_contents)
-        self.cmdline_edit = urwid.Edit([
+        import urwid_readline
+        self.cmdline_edit = urwid_readline.ReadlineEdit([
             ("command line prompt", ">>> ")
             ])
         cmdline_edit_attr = urwid.AttrMap(self.cmdline_edit, "command line edit")
@@ -1828,11 +1829,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_edit_sigwrap.listen("ctrl n", cmdline_history_next)
         self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
-        self.cmdline_edit_sigwrap.listen("ctrl d", toggle_cmdline_focus)
-        self.cmdline_edit_sigwrap.listen("ctrl a", cmdline_start_of_line)
-        self.cmdline_edit_sigwrap.listen("ctrl e", cmdline_end_of_line)
-        self.cmdline_edit_sigwrap.listen("ctrl w", cmdline_del_word)
-        self.cmdline_edit_sigwrap.listen("ctrl u", cmdline_del_to_start_of_line)
 
         self.top.listen("ctrl x", toggle_cmdline_focus)
 

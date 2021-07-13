@@ -22,7 +22,8 @@ setup(
     install_requires=[
         "urwid>=1.1.1",
         "pygments>=2.7.4",
-        "jedi>=0.18,<1"
+        "jedi>=0.18,<1",
+        "urwid_readline"
     ],
     test_requires=[
         "pytest>=2",
