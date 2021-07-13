@@ -775,7 +775,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.cmdline_contents = urwid.SimpleFocusListWalker([])
         self.cmdline_list = urwid.ListBox(self.cmdline_contents)
-        self.cmdline_edit = urwid.Edit([
+        import urwid_readline
+        self.cmdline_edit = urwid_readline.ReadlineEdit([
             ("command line prompt", ">>> ")
             ])
         cmdline_edit_attr = urwid.AttrMap(self.cmdline_edit, "command line edit")
@@ -1780,34 +1781,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         def cmdline_history_next(w, size, key):
             cmdline_history_browse(1)
 
-        def cmdline_start_of_line(w, size, key):
-            self.cmdline_edit.edit_pos = 0
-
-        def cmdline_end_of_line(w, size, key):
-            self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
-
-        def cmdline_del_word(w, size, key):
-            pos = self.cmdline_edit.edit_pos
-            before, after = (
-                    self.cmdline_edit.edit_text[:pos],
-                    self.cmdline_edit.edit_text[pos:])
-            before = before[::-1]
-            before = before.lstrip()
-            i = 0
-            while i < len(before):
-                if not before[i].isspace():
-                    i += 1
-                else:
-                    break
-
-            self.cmdline_edit.edit_text = before[i:][::-1] + after
-            self.cmdline_edit.edit_post = len(before[i:])
-
-        def cmdline_del_to_start_of_line(w, size, key):
-            pos = self.cmdline_edit.edit_pos
-            self.cmdline_edit.edit_text = self.cmdline_edit.edit_text[pos:]
-            self.cmdline_edit.edit_pos = 0
-
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
@@ -1828,11 +1801,6 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_edit_sigwrap.listen("ctrl n", cmdline_history_next)
         self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
-        self.cmdline_edit_sigwrap.listen("ctrl d", toggle_cmdline_focus)
-        self.cmdline_edit_sigwrap.listen("ctrl a", cmdline_start_of_line)
-        self.cmdline_edit_sigwrap.listen("ctrl e", cmdline_end_of_line)
-        self.cmdline_edit_sigwrap.listen("ctrl w", cmdline_del_word)
-        self.cmdline_edit_sigwrap.listen("ctrl u", cmdline_del_to_start_of_line)
 
         self.top.listen("ctrl x", toggle_cmdline_focus)
 
