@@ -2642,10 +2642,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.current_exc_tuple = exc_tuple
 
         from pudb import VERSION
-        caption = [(None,
-            "PuDB %s - ?:help  n:next  s:step into  b:breakpoint  "
-            "!:python command line"
-            % VERSION)]
+        caption = [(None, "PuDB %s - ?:help - %s" %
+                    (VERSION, self.source_code_provider.get_source_identifier()))]
 
         if self.debugger.post_mortem:
             if show_exc_dialog and exc_tuple is not None:
