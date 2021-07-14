@@ -403,6 +403,7 @@ class Debugger(bdb.Bdb):
         self.stack, index = self.get_shortened_stack(frame, tb)
 
         if self.post_mortem:
+            self.stack.append((self.bottom_frame, self.bottom_frame.f_lineno))
             index = len(self.stack)-1
 
         self.set_frame_index(index)
