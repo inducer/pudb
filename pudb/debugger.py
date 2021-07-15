@@ -2633,7 +2633,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 filename = filename[first_dirname_index + 1:]
                 return filename
 
-        caption = separator.join([info_string, get_source_filename()])
+        caption = [(None, separator.join([info_string, get_source_filename()]))]
 
         if self.debugger.post_mortem:
             if show_exc_dialog and exc_tuple is not None:
