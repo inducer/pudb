@@ -2617,7 +2617,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.current_exc_tuple = exc_tuple
 
         from pudb import VERSION
-        separator = ' - '
+        separator = " - "
         info_string = separator.join(["PuDB %s" % VERSION, "?:help"])
 
         def get_source_filename():
