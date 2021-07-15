@@ -2642,8 +2642,23 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.current_exc_tuple = exc_tuple
 
         from pudb import VERSION
-        caption = [(None, "PuDB %s - ?:help - %s" %
-                    (VERSION, self.source_code_provider.get_source_identifier()))]
+        separator = ' - '
+        info_string = separator.join(["PuDB %s" % VERSION, "?:help"])
+
+        def get_source_filename():
+            available_width = self.screen.get_cols_rows(
+            )[0] - (len(info_string) + len(separator))
+            full_filename = self.source_code_provider.get_source_identifier()
+            if available_width > len(full_filename):
+                return full_filename
+            else:
+                trim_index = len(full_filename) - available_width
+                filename = full_filename[trim_index:]
+                first_dirname_index = filename.find(os.sep)
+                filename = filename[first_dirname_index + 1:]
+                return filename
+
+        caption = separator.join([info_string, get_source_filename()])
 
         if self.debugger.post_mortem:
             if show_exc_dialog and exc_tuple is not None:
