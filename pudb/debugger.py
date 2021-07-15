@@ -2624,7 +2624,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             available_width = self.screen.get_cols_rows(
             )[0] - (len(info_string) + len(separator))
             full_filename = self.source_code_provider.get_source_identifier()
-            if available_width > len(full_filename):
+            if (full_filename is None):
+                return "Source filename not available"
+            elif available_width > len(full_filename):
                 return full_filename
             else:
                 trim_index = len(full_filename) - available_width
