@@ -189,7 +189,7 @@ class ArgumentParser:
     def parse_token(self, token, s):
         """Parse token. Return None or replacement token type"""
         if self.state == ParseState.idle:
-            if token is self.t.Name.Function:
+            if token in (self.t.Name.Function, self.t.Name.Function.Magic):
                 self.state = ParseState.found_function
                 self.paren_level = 0
         elif self.state == ParseState.found_function:
@@ -197,8 +197,7 @@ class ArgumentParser:
                 self.state = ParseState.found_open_paren
                 self.paren_level = 1
         else:
-            if ((token is self.t.Name)
-                    or (token is self.t.Name.Builtin.Pseudo and s == "self")):
+            if (token is self.t.Name):
                 return self.t.Token.Argument
             elif token is self.t.Punctuation and s == ")":
                 self.paren_level -= 1
@@ -279,9 +278,6 @@ else:
                 },
             t.Operator: {
                 ".": t.Token,
-                },
-            t.Name.Builtin.Pseudo: {
-                "self": t.Token,
                 },
             t.Name.Builtin: {
                 "object": t.Name.Class,
