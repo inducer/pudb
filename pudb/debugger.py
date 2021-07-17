@@ -858,7 +858,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                         ],
                     dividechars=1)
 
-        self.caption = urwid.Text("")
+        from pudb.ui_tools import Caption
+        self.caption = Caption("")
         header = urwid.AttrMap(self.caption, "header")
         self.top = SignalWrap(urwid.Frame(
             urwid.AttrMap(self.columns, "background"),
@@ -2618,37 +2619,31 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         from pudb import VERSION
         separator = " - "
-        info_string = separator.join(["PuDB %s" % VERSION, "?:help"])
-
-        def get_source_filename():
-            available_width = self.screen.get_cols_rows(
-            )[0] - (len(info_string) + len(separator))
-            full_filename = self.source_code_provider.get_source_identifier()
-            if (full_filename is None):
-                return "Source filename not available"
-            elif available_width > len(full_filename):
-                return full_filename
-            else:
-                trim_index = len(full_filename) - available_width
-                filename = full_filename[trim_index:]
-                first_dirname_index = filename.find(os.sep)
-                filename = filename[first_dirname_index + 1:]
-                return filename
-
-        caption = [(None, separator.join([info_string, get_source_filename()]))]
+        pudb_version = "PuDB %s" % VERSION
+        hotkey = "?:help"
+        if self.source_code_provider.get_source_identifier():
+            source_filename = self.source_code_provider.get_source_identifier()
+        else:
+            source_filename = "source filename is unavailable"
+        caption = [(None, pudb_version),
+                (None, separator),
+                (None, hotkey),
+                (None, separator),
+                (None, source_filename)
+                ]
 
         if self.debugger.post_mortem:
             if show_exc_dialog and exc_tuple is not None:
                 self.show_exception_dialog(exc_tuple)
 
             caption.extend([
-                (None, " "),
+                (None, separator),
                 ("warning", "[POST-MORTEM MODE]")
                 ])
         elif exc_tuple is not None:
             caption.extend([
-                (None, " "),
-                ("warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
+                (None, separator),
+                ("warning", "[PROCESSING EXCEPTION, hit 'e' to examine]")
                 ])
 
         self.caption.set_text(caption)

@@ -332,4 +332,61 @@ class SearchBox(urwid.Edit):
 
         return result
 
+
+class Caption(urwid.Text):
+    def __init__(self, markup, separator=" - "):
+        self.separator = separator
+        super().__init__(markup)
+
+    def set_text(self, markup):
+        super().set_text(markup)
+        if len(markup) > 0:
+            # Assume the format of caption is:
+            # <PuDB version> <hotkey> <source filename> [optional_alert]
+            caption, _ = self.get_text()
+            caption_elements = caption.split(self.separator)
+            self.pudb_version = caption_elements[0]
+            self.hotkey = caption_elements[1]
+            self.full_source_filename = caption_elements[2]
+            self.optional_alert = caption_elements[3] if len(
+                caption_elements) > 3 else ""
+        else:
+            self.pudb_version = self.hotkey = ""
+            self.full_source_filename = self.optional_alert = ""
+
+    def rows(self, size, focus=False):
+        # Always return 1 to avoid
+        # `assert head.rows() == hrows, "rows, render mismatch")`
+        # in urwid.Frame.render() in urwid/container.py
+        return 1
+
+    def render(self, size, focus=False):
+        maxcol = size[0]
+        if super().rows(size) > 1:
+            filename = self.get_shortened_source_filename(size)
+        else:
+            filename = self.full_source_filename
+        caption = self.separator.join(
+            [self.pudb_version, self.hotkey, filename, self.optional_alert]
+            ).strip(self.separator)
+        if self.optional_alert:
+            attr = [("warning", len(caption))]
+        else:
+            attr = [(None, 0)]
+
+        return make_canvas([caption], [attr], maxcol)
+
+    def get_shortened_source_filename(self, size):
+        import os
+        maxcol = size[0]
+
+        occupied_width = (len(self.pudb_version) + len(self.hotkey)
+                          + len(self.optional_alert) + len(self.separator)*3)
+        available_width = maxcol - occupied_width
+        trim_index = len(self.full_source_filename) - available_width
+        filename = self.full_source_filename[trim_index:]
+        first_dirname_index = filename.find(os.sep)
+        filename = filename[first_dirname_index + 1:]
+
+        return filename
 # }}}
