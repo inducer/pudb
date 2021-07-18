@@ -115,7 +115,8 @@ Keys in variables list:
     m - toggle method visibility
     w - toggle line wrapping
     n/insert - add new watch expression
-    e - edit options (also to delete)
+    delete - remove watch expression
+    e - edit options
 
 Keys in stack list:
     enter - jump to frame
@@ -939,6 +940,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.wrap = not iinfo.wrap
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
+            elif key == "delete":
+                fvi = self.get_frame_var_info(read_only=False)
+                for i, watch_expr in enumerate(fvi.watches):
+                    if watch_expr is var.watch_expr:
+                        del fvi.watches[i]
 
             self.update_var_view(focus_index=focus_index)
 
@@ -1096,6 +1102,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.var_list.listen("e", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
+        self.var_list.listen("delete", change_var_state)
 
         self.var_list.listen("[", partial(change_rhs_box, "variables", 0, -1))
         self.var_list.listen("]", partial(change_rhs_box, "variables", 0, 1))
