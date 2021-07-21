@@ -333,60 +333,92 @@ class SearchBox(urwid.Edit):
         return result
 
 
-class Caption(urwid.Text):
-    def __init__(self, markup, separator=" - "):
-        self.separator = separator
-        super().__init__(markup)
+from collections import namedtuple
+caption_parts = ["pudb_version", "hotkey", "full_source_filename", "optional_alert"]
+CaptionParts = namedtuple(
+    "CaptionParts",
+    caption_parts,
+    )
 
-    def set_text(self, markup):
-        super().set_text(markup)
-        if len(markup) > 0:
-            # Assume the format of caption is:
-            # <PuDB version> <hotkey> <source filename> [optional_alert]
-            caption, _ = self.get_text()
-            caption_elements = caption.split(self.separator)
-            self.pudb_version = caption_elements[0]
-            self.hotkey = caption_elements[1]
-            self.full_source_filename = caption_elements[2]
-            self.optional_alert = caption_elements[3] if len(
-                caption_elements) > 3 else ""
-        else:
-            self.pudb_version = self.hotkey = ""
-            self.full_source_filename = self.optional_alert = ""
+
+class Caption(urwid.Text):
+    """
+    A text widget that will automatically shorten its content
+    to fit in 1 row if needed
+    """
+
+    def __init__(self, caption_parts, separator=(None, " - ")):
+        self.separator = separator
+        super().__init__(caption_parts)
+
+    def __str__(self):
+        caption_text = self.separator[1].join(
+            [part[1] for part in self.caption_parts]).rstrip(self.separator[1])
+        return caption_text
+
+    @property
+    def markup(self):
+        """
+        Returns markup of str(self) by inserting the markup of
+        self.separator between each item in self.caption_parts
+        """
+
+        # Reference: https://stackoverflow.com/questions/5920643/add-an-item-between-each-item-already-in-the-list # noqa
+        markup = [self.separator] * (len(self.caption_parts) * 2 - 1)
+        markup[0::2] = self.caption_parts
+        if not self.caption_parts.optional_alert[1]:
+            markup = markup[:-2]
+        return markup
+
+    def render(self, size, focus=False):
+        markup = self._get_fit_width_markup(size)
+        return urwid.Text(markup).render(size)
+
+    def set_text(self, caption_parts):
+        super().set_text([*caption_parts])
+        self.caption_parts = caption_parts
 
     def rows(self, size, focus=False):
         # Always return 1 to avoid
-        # `assert head.rows() == hrows, "rows, render mismatch")`
+        # AssertionError: `assert head.rows() == hrows, "rows, render mismatch")`
         # in urwid.Frame.render() in urwid/container.py
         return 1
 
-    def render(self, size, focus=False):
+    def _get_fit_width_markup(self, size):
+        if urwid.Text(str(self)).rows(size) == 1:
+            return self.markup
+        filename_markup_index = 4
         maxcol = size[0]
-        if super().rows(size) > 1:
-            filename = self.get_shortened_source_filename(size)
-        else:
-            filename = self.full_source_filename
-        caption = self.separator.join(
-            [self.pudb_version, self.hotkey, filename, self.optional_alert]
-            ).strip(self.separator)
-        if self.optional_alert:
-            attr = [("warning", len(caption))]
-        else:
-            attr = [(None, 0)]
+        markup = self.markup
+        markup[filename_markup_index] = (
+            markup[filename_markup_index][0],
+            self._get_shortened_source_filename(size))
+        caption = urwid.Text(markup)
+        while True:
+            if caption.rows(size) == 1:
+                return markup
+            else:
+                for i in range(len(markup)):
+                    clip_amount = len(caption.get_text()[0]) - maxcol
+                    markup[i] = (markup[i][0], markup[i][1][clip_amount:])
+                    caption = urwid.Text(markup)
 
-        return make_canvas([caption], [attr], maxcol)
-
-    def get_shortened_source_filename(self, size):
+    def _get_shortened_source_filename(self, size):
         import os
         maxcol = size[0]
 
-        occupied_width = (len(self.pudb_version) + len(self.hotkey)
-                          + len(self.optional_alert) + len(self.separator)*3)
-        available_width = maxcol - occupied_width
-        trim_index = len(self.full_source_filename) - available_width
-        filename = self.full_source_filename[trim_index:]
-        first_dirname_index = filename.find(os.sep)
-        filename = filename[first_dirname_index + 1:]
+        occupied_width = len(str(self)) - \
+                             len(self.caption_parts.full_source_filename[1])
+        available_width = max(0, maxcol - occupied_width)
+        trim_index = len(
+            self.caption_parts.full_source_filename[1]) - available_width
+        filename = self.caption_parts.full_source_filename[1][trim_index:]
 
-        return filename
+        if self.caption_parts.full_source_filename[1][trim_index-1] == os.sep:
+            #filename starts with the full name of a directory or file
+            return filename
+        else:
+            first_path_sep_index = filename.find(os.sep)
+            filename = filename[first_path_sep_index + 1:]
+            return filename
 # }}}
