@@ -62,7 +62,7 @@ def test_markup(captions):
             (None, "/home/foo - bar/baz.py")]
 
     assert captions["with_alert"].markup \
-       == [(None, "PuDB VERSION"), (None, " - "),
+        == [(None, "PuDB VERSION"), (None, " - "),
             (None, "?:help"), (None, " - "),
             (None, "/home/foo - bar/baz.py"), (None, " - "),
             ("warning", "[POST-MORTEM MODE]")]
@@ -122,21 +122,27 @@ def test_get_fit_width_markup(captions):
         max(1, caption_length - len(full_source_filename) + 5), )
     cut_more_than_filename = (max(1, caption_length
             - len(full_source_filename) - len("PuDB VE")), )
-    sizes = {"cut_only_filename": cut_only_filename,
+    sizes = {"equals_caption": (max(1, caption_length), ),
+            "cut_only_filename": cut_only_filename,
             "cut_more_than_filename": cut_more_than_filename,
             "one_col": (1, ),
              }
     # Test
+    assert caption._get_fit_width_markup(sizes["equals_caption"]) \
+            == [(None, "PuDB VERSION"), (None, " - "),
+                (None, "?:help"), (None, " - "),
+                (None, "/home/foo - bar/baz.py"), (None, " - "),
+                ("warning", "[POST-MORTEM MODE]")]
     assert caption._get_fit_width_markup(sizes["cut_only_filename"]) \
-        == [(None, "PuDB VERSION"), (None, " - "),
-            (None, "?:help"), (None, " - "),
-            (None, "az.py"), (None, " - "), ("warning", "[POST-MORTEM MODE]")]
+            == [(None, "PuDB VERSION"), (None, " - "),
+                (None, "?:help"), (None, " - "),
+                (None, "az.py"), (None, " - "), ("warning", "[POST-MORTEM MODE]")]
     assert caption._get_fit_width_markup(sizes["cut_more_than_filename"]) \
-        == [(None, "RSION"), (None, " - "),
-            (None, "?:help"), (None, " - "),
-            (None, ""), (None, " - "), ("warning", "[POST-MORTEM MODE]")]
+            == [(None, "RSION"), (None, " - "),
+                (None, "?:help"), (None, " - "),
+                (None, ""), (None, " - "), ("warning", "[POST-MORTEM MODE]")]
     assert caption._get_fit_width_markup(sizes["one_col"]) \
-       == [(None, "")]*6 + [("warning", "]")]
+            == [(None, "")]*6 + [("warning", "]")]
 
 
 def test_get_shortened_source_filename(captions):
@@ -160,5 +166,7 @@ def test_get_shortened_source_filename(captions):
         assert captions[k]._get_shortened_source_filename(sizes["lose_all_dir"]) \
                 == "baz.py"
         assert captions[k]._get_shortened_source_filename(
-            sizes["lose_some_filename_chars"]) == "z.py"
-        assert captions[k]._get_shortened_source_filename(sizes["lose_all"]) == ""
+                sizes["lose_some_filename_chars"]) \
+                == "z.py"
+        assert captions[k]._get_shortened_source_filename(sizes["lose_all"]) \
+                == ""
