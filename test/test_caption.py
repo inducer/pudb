@@ -34,6 +34,33 @@ def captions(text_markups):
             }
 
 
+@pytest.fixture
+def term_sizes():
+    def _term_sizes(caption):
+        caption_length = len(str(caption))
+        full_source_filename = caption.caption_parts.full_source_filename[1]
+        cut_only_filename = (
+            max(1, caption_length - len(full_source_filename) + 5), )
+        cut_more_than_filename = (max(1, caption_length
+                - len(full_source_filename) - len("PuDB VE")), )
+        return {"wider_than_caption": (caption_length + 1, ),
+                "equals_caption": (max(1, caption_length), ),
+                "narrower_than_caption": (max(1, caption_length - 10), ),
+                "cut_only_filename": cut_only_filename,
+                "cut_more_than_filename": cut_more_than_filename,
+                "one_col": (1, ),
+                "cut_at_path_sep": (max(1, caption_length - 1), ),
+                "lose_some_dir": (max(1, caption_length - 2), ),
+                "lose_all_dir": (max(1,
+                    caption_length - len("/home/foo - bar/")), ),
+                "lose_some_filename_chars": (max(1,
+                    caption_length - len("/home/foo - bar/ba")), ),
+                "lose_all_source": (max(1,
+                    caption_length - len("/home/foo - bar/baz.py")), ),
+                }
+    return _term_sizes
+
+
 def test_init(captions):
     for key in ["empty", "without_alert", "with_alert"]:
         assert captions[key].separator == (None, " - ")
@@ -73,16 +100,12 @@ def test_markup(captions):
             (None, "/home/foo - bar/baz.py")]
 
 
-def test_render(captions):
-    for k in captions.keys():
-        sizes = {"wider_than_caption": (max(1, len(str(captions[k])) + 1), ),
-                "equals_caption": (max(1, len(str(captions[k]))), ),
-                "narrower_than_caption": (max(1, len(str(captions[k])) - 10), ),
-                 }
-        for s in sizes:
-            got = captions[k].render(sizes[s])
-            markup = captions[k]._get_fit_width_markup(sizes[s])
-            expected = urwid.Text(markup).render(sizes[s])
+def test_render(captions, term_sizes):
+    for caption in captions.values():
+        for size in term_sizes(caption).values():
+            got = caption.render(size)
+            markup = caption._get_fit_width_markup(size)
+            expected = urwid.Text(markup).render(size)
             assert list(expected.content()) == list(got.content())
 
 
@@ -110,24 +133,11 @@ def test_rows(captions):
         assert caption.rows(size=(1, 1)) == 1
 
 
-def test_get_fit_width_markup(captions):
+def test_get_fit_width_markup(captions, term_sizes):
     # No need to check empty caption because
     # len(str(caption)) == 0 always smaller than min terminal column == 1
-
-    # Set up
     caption = captions["with_alert"]
-    caption_length = len(str(caption))
-    full_source_filename = caption.caption_parts.full_source_filename[1]
-    cut_only_filename = (
-        max(1, caption_length - len(full_source_filename) + 5), )
-    cut_more_than_filename = (max(1, caption_length
-            - len(full_source_filename) - len("PuDB VE")), )
-    sizes = {"equals_caption": (max(1, caption_length), ),
-            "cut_only_filename": cut_only_filename,
-            "cut_more_than_filename": cut_more_than_filename,
-            "one_col": (1, ),
-             }
-    # Test
+    sizes = term_sizes(caption)
     assert caption._get_fit_width_markup(sizes["equals_caption"]) \
             == [(None, "PuDB VERSION"), (None, " - "),
                 (None, "?:help"), (None, " - "),
@@ -145,20 +155,11 @@ def test_get_fit_width_markup(captions):
             == [(None, "")]*6 + [("warning", "]")]
 
 
-def test_get_shortened_source_filename(captions):
+def test_get_shortened_source_filename(captions, term_sizes):
     # No need to check empty caption because
     # len(str(caption)) == 0 always smaller than min terminal column == 1
     for k in ["with_alert", "without_alert", "custom_separator"]:
-        caption_length = len(str(captions[k]))
-        sizes = {"cut_at_path_sep": (max(1, caption_length - 1), ),
-                "lose_some_dir": (max(1, caption_length - 2), ),
-                "lose_all_dir": (max(1,
-                    caption_length - len("/home/foo - bar/")), ),
-                "lose_some_filename_chars": (max(1,
-                    caption_length - len("/home/foo - bar/ba")), ),
-                "lose_all": (max(1,
-                    caption_length - len("/home/foo - bar/baz.py")), ),
-                 }
+        sizes = term_sizes(captions[k])
         assert captions[k]._get_shortened_source_filename(sizes["cut_at_path_sep"]) \
                 == "home/foo - bar/baz.py"
         assert captions[k]._get_shortened_source_filename(sizes["lose_some_dir"]) \
@@ -168,5 +169,5 @@ def test_get_shortened_source_filename(captions):
         assert captions[k]._get_shortened_source_filename(
                 sizes["lose_some_filename_chars"]) \
                 == "z.py"
-        assert captions[k]._get_shortened_source_filename(sizes["lose_all"]) \
+        assert captions[k]._get_shortened_source_filename(sizes["lose_all_source"]) \
                 == ""
