@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from pudb.lowlevel import ui_log
 
 THEMES = [
         "classic",
@@ -1015,11 +1016,11 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             fname = expanduser(expandvars(theme))
             with open(fname) as inf:
                 exec(compile(inf.read(), fname, "exec"), symbols)
+        except FileNotFoundError:
+            ui_log.error("Unable to locate custom theme file {!r}"
+                         .format(theme))
         except Exception:
-            print("Error when importing theme:")
-            from traceback import print_exc
-            print_exc()
-            input("Hit enter:")
+            ui_log.exception("Error when importing theme:")
 
     # Apply style inheritance
     for child, parent in inheritance_map:
