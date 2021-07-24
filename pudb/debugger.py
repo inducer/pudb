@@ -965,7 +965,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                 watch_edit = urwid.Edit([
                     ("label", "Watch expression: ")
                     ], var.watch_expr.expression)
-                id_segment = [urwid.AttrMap(watch_edit, "value"), urwid.Text("")]
+                id_segment = [
+                        urwid.AttrMap(watch_edit, "input", "focused input"),
+                        urwid.Text(""),
+                        ]
 
                 buttons.extend([None, ("Delete", "del")])
 
@@ -1069,7 +1072,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             if self.dialog(
                     urwid.ListBox(urwid.SimpleListWalker([
-                        urwid.AttrMap(watch_edit, "value")
+                        urwid.AttrMap(watch_edit, "input", "focused input")
                         ])),
                     [
                         ("OK", True),
@@ -1236,8 +1239,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 labelled_value("Hits: ", bp.hits),
                 urwid.Text(""),
                 enabled_checkbox,
-                urwid.AttrMap(cond_edit, "value", "value"),
-                urwid.AttrMap(ign_count_edit, "value", "value"),
+                urwid.AttrMap(cond_edit, "input", "focused input"),
+                urwid.AttrMap(ign_count_edit, "input", "focused input"),
                 ]))
 
             result = self.dialog(lb, [
@@ -1363,7 +1366,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         labelled_value("File :",
                             self.source_code_provider.identifier()),
                         labelled_value("Current Line :", line+1),
-                        urwid.AttrMap(lineno_edit, "value")
+                        urwid.AttrMap(lineno_edit, "input", "focused input")
                         ])),
                     [
                         ("OK", True),
@@ -1530,7 +1533,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             lb = urwid.ListBox(mod_list)
 
             w = urwid.Pile([
-                ("flow", urwid.AttrMap(filt_edit, "value")),
+                ("flow", urwid.AttrMap(filt_edit, "input", "focused input")),
                 ("fixed", 1, urwid.SolidFill()),
                 urwid.AttrMap(lb, "selectable")])
 

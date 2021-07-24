@@ -278,7 +278,7 @@ def edit_config(ui, conf_dict):
               "ptpython", "ptipython"]
     known_shell = conf_dict["shell"] in shells
     shell_edit = urwid.Edit(edit_text=conf_dict["custom_shell"])
-    shell_edit_list_item = urwid.AttrMap(shell_edit, "value")
+    shell_edit_list_item = urwid.AttrMap(shell_edit, "input", "focused input")
 
     shell_rb_group = []
     shell_rbs = [
@@ -308,7 +308,7 @@ def edit_config(ui, conf_dict):
 
     theme_rb_group = []
     theme_edit = urwid.Edit(edit_text=conf_dict["custom_theme"])
-    theme_edit_list_item = urwid.AttrMap(theme_edit, "value")
+    theme_edit_list_item = urwid.AttrMap(theme_edit, "input", "focused input")
     theme_rbs = [
             urwid.RadioButton(theme_rb_group, name,
                 conf_dict["theme"] == name, on_state_change=_update_config,
@@ -355,7 +355,8 @@ def edit_config(ui, conf_dict):
         "selecting a variable and typing 'e' to edit the variable's display "
         "settings, or by typing one of d/t/r/s/i/c. Note that str and repr will "
         "be slower than the default, type, or id stringifiers.\n")
-    stringifier_edit_list_item = urwid.AttrMap(stringifier_edit, "value")
+    stringifier_edit_list_item = urwid.AttrMap(stringifier_edit,
+                                               "input", "focused input")
     stringifier_rbs = [
             urwid.RadioButton(stringifier_rb_group, name,
                 conf_dict["stringifier"] == name,
