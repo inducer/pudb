@@ -1019,8 +1019,10 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         except FileNotFoundError:
             ui_log.error("Unable to locate custom theme file {!r}"
                          .format(theme))
+            return None
         except Exception:
             ui_log.exception("Error when importing theme:")
+            return None
 
     # Apply style inheritance
     for child, parent in inheritance_map:
