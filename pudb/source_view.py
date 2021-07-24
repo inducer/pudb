@@ -279,9 +279,6 @@ else:
             t.Operator: {
                 ".": t.Token,
                 },
-            t.Name.Builtin: {
-                "object": t.Name.Class,
-                },
             }
 
     class UrwidFormatter(Formatter):
