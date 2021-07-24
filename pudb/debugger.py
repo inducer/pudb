@@ -2235,8 +2235,9 @@ class DebuggerUI(FrameVarInfoKeeper):
         may_use_fancy_formats = not hasattr(urwid.escape, "_fg_attr_xterm")
 
         from pudb.theme import get_palette
-        screen.register_palette(
-                get_palette(may_use_fancy_formats, CONFIG["theme"]))
+        palette = get_palette(may_use_fancy_formats, CONFIG["theme"])
+        if palette:
+            screen.register_palette(palette)
 
     def show_exception_dialog(self, exc_tuple):
         from traceback import format_exception
