@@ -23,63 +23,259 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from dataclasses import dataclass, astuple, replace
+from typing import Optional
 from pudb.lowlevel import ui_log
 
 THEMES = [
-        "classic",
-        "vim",
-        "dark vim",
-        "midnight",
-        "solarized",
-        "agr-256",
-        "monokai",
-        "monokai-256"
-        ]
-
-import urwid
+    "classic",
+    "vim",
+    "dark vim",
+    "midnight",
+    "solarized",
+    "agr-256",
+    "monokai",
+    "monokai-256",
+]
 
 
-def get_palette(may_use_fancy_formats, theme="classic"):
+@dataclass
+class PaletteEntry:
+    name: str
+    foreground: str = "default"
+    background: str = "default"
+    mono: Optional[str] = None
+    foreground_high: Optional[str] = None
+    background_high: Optional[str] = None
+
+    def handle_256_colors(self):
+        if self.foreground.lower().strip().startswith("h"):
+            self.foreground_high = self.foreground
+            self.foreground = "default"
+        if self.background.lower().strip().startswith("h"):
+            self.background_high = self.background
+            self.background = "default"
+
+
+# ------------------------------------------------------------------------------
+# Reference for some palette items:
+#
+#  "namespace" : "import", "from", "using"
+#  "operator"  : "+", "-", "=" etc.
+#                NOTE: Does not include ".", which is assigned the type "source"
+#  "argument"  : Function arguments
+#  "builtin"   : "range", "dict", "set", "list", etc.
+#  "pseudo"    : "self", "cls"
+#  "dunder"    : Class method names of the form __<name>__ within
+#               a class definition
+#  "magic"     : Subset of "dunder", methods that the python language assigns
+#               special meaning to. ("__str__", "__init__", etc.)
+#  "exception" : Exception names
+#  "keyword"   : All keywords except those specifically assigned to "keyword2"
+#                ("from", "and", "break", "is", "try", "True", "None", etc.)
+#  "keyword2"  : "class", "def", "exec", "lambda", "print"
+# ------------------------------------------------------------------------------
+
+
+# {{{ style inheritance
+BASE_STYLES = {
+    "background":         None,
+    "selectable":         None,
+    "focused selectable": None,
+    "highlighted":        None,
+    "hotkey":             None,
+}
+
+
+# Map styles to their parent. If a style is not defined, use the parent style
+# recursively.
+# focused > highlighted > current > breakpoint line/disabled breakpoint
+CLEAN_INHERITANCE_MAP = {
+    # {{{ general ui
+    "label": "background",
+    "header": "background",
+    "dialog title": "header",
+    "group head": "header",
+    "focused sidebar": "header",
+
+    "input": "selectable",
+    "focused input": "focused selectable",
+    "button": "input",
+    "focused button": "focused input",
+    "value": "input",
+    "fixed value": "label",
+
+    "warning": "highlighted",
+    "search box": "focused input",
+    "search not found": "warning",
+    # }}}
+
+    # {{{ source view
+    "source": "selectable",
+    "focused source": "focused selectable",
+    "highlighted source": "highlighted",
+
+    "current source": "source",
+    "current focused source": "focused source",
+    "current highlighted source": "current source",
+
+    "breakpoint source": "source",
+    "breakpoint focused source": "focused source",
+    "current breakpoint source": "current source",
+    "current breakpoint focused source": "current focused source",
+
+    "line number": "source",
+    "breakpoint marker": "line number",
+    "current line marker": "breakpoint marker",
+    # }}}
+
+    # {{{ sidebar
+    "sidebar one": "selectable",
+    "sidebar two": "selectable",
+    "sidebar three": "selectable",
+
+    "focused sidebar one": "focused selectable",
+    "focused sidebar two": "focused selectable",
+    "focused sidebar three": "focused selectable",
+    # }}}
+
+    # {{{ variables view
+    "variables": "selectable",
+    "variable separator": "background",
+
+    "var value": "sidebar one",
+    "var label": "sidebar two",
+    "focused var value": "focused sidebar one",
+    "focused var label": "focused sidebar two",
+
+    "highlighted var label": "highlighted",
+    "highlighted var value": "highlighted",
+    "focused highlighted var label": "focused var label",
+    "focused highlighted var value": "focused var value",
+
+    "return label": "var label",
+    "return value": "var value",
+    "focused return label": "focused var label",
+    "focused return value": "focused var value",
+    # }}}
+
+    # {{{ stack
+    "stack": "selectable",
+
+    "frame name": "sidebar one",
+    "frame class": "sidebar two",
+    "frame location": "sidebar three",
+
+    "focused frame name": "focused sidebar one",
+    "focused frame class": "focused sidebar two",
+    "focused frame location": "focused sidebar three",
+
+    "current frame name": "frame name",
+    "current frame class": "frame class",
+    "current frame location": "frame location",
+
+    "focused current frame name": "focused frame name",
+    "focused current frame class": "focused frame class",
+    "focused current frame location": "focused frame location",
+    # }}}
+
+    # {{{ breakpoints view
+    "breakpoint": "sidebar two",
+    "disabled breakpoint": "sidebar three",
+
+    "current breakpoint": "breakpoint",
+    "disabled current breakpoint": "disabled breakpoint",
+
+    "focused breakpoint": "focused sidebar two",
+    "focused current breakpoint": "focused breakpoint",
+
+    "focused disabled breakpoint": "focused sidebar three",
+    "focused disabled current breakpoint": "focused disabled breakpoint",
+    # }}}
+
+    # {{{ shell
+    "command line edit": "source",
+    "command line output": "source",
+    "command line prompt": "source",
+    "command line input": "source",
+    "command line error": "warning",
+
+    "focused command line output": "focused source",
+    "focused command line input": "focused source",
+    "focused command line error": "focused source",
+
+    "command line clear button": "button",
+    "command line focused button": "focused button",
+    # }}}
+
+    # {{{ Code syntax
+    "comment":      "source",
+    "keyword":      "source",
+    "literal":      "source",
+    "name":         "source",
+    "operator":     "source",
+    "punctuation":  "source",
+    "argument":     "name",
+    "builtin":      "name",
+    "exception":    "name",
+    "function":     "name",
+    "pseudo":       "builtin",
+    "class":        "function",
+    "dunder":       "function",
+    "magic":        "dunder",
+    "namespace":    "keyword",
+    "keyword2":     "keyword",
+    "string":       "literal",
+    "doublestring": "string",
+    "singlestring": "string",
+    "docstring":    "string",
+    "backtick":     "string",
+    # }}}
+}
+INHERITANCE_MAP = CLEAN_INHERITANCE_MAP.copy()
+
+
+def get_style(palette_dict: dict, style_name: str):
+    """
+    Recursively search up the style hierarchy for the first style which has
+    been defined, and add it to the palette_dict under the given style_name.
+    """
+    try:
+        style = palette_dict[style_name]
+        if not isinstance(style, PaletteEntry):
+            style = PaletteEntry(style_name, *style)
+            style.handle_256_colors()
+            palette_dict[style_name] = style
+        return style
+    except KeyError:
+        parent_name = INHERITANCE_MAP[style_name]
+        style = replace(get_style(palette_dict, parent_name), name=style_name)
+        palette_dict[style_name] = style
+        return style
+
+
+def link(child: str, parent: str):
+    INHERITANCE_MAP[child] = parent
+
+# }}}
+
+
+def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
+    """
+    Load the requested theme and return a list containing all palette entries
+    needed to highlight the debugger UI, including syntax highlighting.
+    """
+    # undo previous link() calls
+    INHERITANCE_MAP.update(CLEAN_INHERITANCE_MAP)
+
     if may_use_fancy_formats:
         def add_setting(color, setting):
-            return color+","+setting
+            return f"{color}, {setting}"
     else:
         def add_setting(color, setting):
             return color
 
-    # ------------------------------------------------------------------------------
-    # Reference for some palette items:
-    #
-    #  "namespace" : "import", "from", "using"
-    #  "operator"  : "+", "-", "=" etc.
-    #                NOTE: Does not include ".", which is assigned the type "source"
-    #  "argument"  : Function arguments
-    #  "builtin"   : "range", "dict", "set", "list", etc.
-    #  "pseudo"    : "None", "True", "False"
-    #                NOTE: Does not include "self", which is assigned the
-    #                type "source"
-    #  "dunder"    : Class method names of the form __<name>__ within
-    #               a class definition
-    #  "exception" : Exception names
-    #  "keyword"   : All keywords except those specifically assigned to "keyword2"
-    #                ("from", "and", "break", "is", "try", "pass", etc.)
-    #  "keyword2"  : "class", "def", "exec", "lambda", "print"
-    # ------------------------------------------------------------------------------
-
-    inheritance_map = (
-        # Style                 Inherits from
-        # ----------            ----------
-        ("namespace",           "keyword"),
-        ("operator",            "source"),
-        ("argument",            "source"),
-        ("builtin",             "source"),
-        ("pseudo",              "source"),
-        ("dunder",              "name"),
-        ("magic",               "dunder"),
-        ("exception",           "source"),
-        ("keyword2",            "keyword"),
-        ("current line marker", "source"),
-    )
+    # {{{ themes
 
     palette_dict = {
         # The following styles are initialized to "None".  Themes
@@ -164,6 +360,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         "current source": ("black", "dark cyan"),
         "current focused source": (add_setting("white", "bold"), "dark cyan"),
         "current highlighted source": ("white", "dark cyan"),
+        # }}}
 
         # {{{ highlighting
 
@@ -171,7 +368,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         "breakpoint marker": ("dark red", "dark blue"),
         "line number": ("light gray", "dark blue"),
         "keyword": (add_setting("white", "bold"), "dark blue"),
-        "name": ("light cyan", "dark blue"),
+        "function": ("light cyan", "dark blue"),
         "literal": ("light magenta, bold", "dark blue"),
 
         "string": (add_setting("light magenta", "bold"), "dark blue"),
@@ -181,8 +378,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
         "punctuation": ("light gray", "dark blue"),
         "comment": ("light gray", "dark blue"),
-
-        # }}}
 
         # }}}
 
@@ -249,7 +444,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
         palette_dict.update({
             "source": ("black", "default"),
             "keyword": ("brown", "default"),
-            "kw_namespace": ("dark magenta", "default"),
 
             "literal": ("black", "default"),
             "string": ("dark red", "default"),
@@ -259,8 +453,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             "punctuation": ("black", "default"),
             "comment": ("dark blue", "default"),
-            "classname": ("dark cyan", "default"),
-            "name": ("dark cyan", "default"),
+            "function": ("dark cyan", "default"),
             "line number": ("dark gray", "default"),
             "current line marker": ("dark red", "default"),
             "breakpoint marker": ("dark red", "default"),
@@ -408,7 +601,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "singlestring": ("dark magenta", "black"),
             "docstring": ("dark magenta", "black"),
 
-            "name": ("light cyan", "black"),
+            "function": ("light cyan", "black"),
             "punctuation": ("yellow", "black"),
             "comment": ("light blue", "black"),
 
@@ -490,7 +683,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             "line number": ("light gray", "default"),
             "keyword": ("dark magenta", "default"),
-            "name": ("white", "default"),
+            "function": ("white", "default"),
             "literal": ("dark cyan", "default"),
             "string": ("dark red", "default"),
             "doublestring": ("dark red", "default"),
@@ -499,8 +692,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "backtick": ("light green", "default"),
             "punctuation": ("white", "default"),
             "comment": ("dark green", "default"),
-            "classname": ("dark cyan", "default"),
-            "funcname": ("white", "default"),
 
             "current line marker": ("dark red", "default"),
             "breakpoint marker": ("dark red", "default"),
@@ -602,7 +793,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             "line number": ("light blue", "default"),
             "keyword": ("dark green", "default"),
-            "name": ("light blue", "default"),
+            "function": ("light blue", "default"),
             "literal": ("dark cyan", "default"),
             "string": ("dark cyan", "default"),
             "doublestring": ("dark cyan", "default"),
@@ -611,8 +802,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "backtick": ("light green", "default"),
             "punctuation": ("light blue", "default"),
             "comment": ("light green", "default"),
-            "classname": ("dark blue", "default"),
-            "funcname": ("dark blue", "default"),
 
             # shell
 
@@ -741,7 +930,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "singlestring": ("h113", "h235"),
             "docstring": ("h113", "h235"),
 
-            "name": ("h192", "h235"),
+            "function": ("h192", "h235"),
             "punctuation": ("h223", "h235"),
             "comment": ("h246", "h235"),
 
@@ -815,7 +1004,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             "line number": ("dark gray", "black"),
             "keyword2": ("light cyan", "black"),
-            "name": ("light green", "black"),
+            "function": ("light green", "black"),
             "literal": ("light magenta", "black"),
 
             "namespace": ("light red", "black"),
@@ -834,8 +1023,6 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             "backtick": ("light green", "default"),
             "punctuation": ("white", "default"),
             "comment": ("dark green", "default"),
-            "classname": ("dark cyan", "default"),
-            "funcname": ("white", "default"),
 
             "current line marker": ("dark red", "default"),
             "breakpoint marker": ("dark red", "default"),
@@ -965,7 +1152,7 @@ def get_palette(may_use_fancy_formats, theme="classic"):
 
             "line number": ("h241", "h235"),
             "keyword2": ("h51", "h235"),
-            "name": ("h155", "h235"),
+            "function": ("h155", "h235"),
             "literal": ("h141", "h235"),
 
             "namespace": ("h198", "h235"),
@@ -1008,9 +1195,10 @@ def get_palette(may_use_fancy_formats, theme="classic"):
     else:
         try:
             symbols = {
-                    "palette": palette_dict,
-                    "add_setting": add_setting,
-                    }
+                "palette": palette_dict,
+                "add_setting": add_setting,
+                "link": link,
+            }
 
             from os.path import expanduser, expandvars
             fname = expanduser(expandvars(theme))
@@ -1025,24 +1213,14 @@ def get_palette(may_use_fancy_formats, theme="classic"):
             return None
 
     # Apply style inheritance
-    for child, parent in inheritance_map:
-        if palette_dict[child] is None:
-            palette_dict[child] = palette_dict[parent]
+    for style_name in set(INHERITANCE_MAP.keys()).union(BASE_STYLES.keys()):
+        get_style(palette_dict, style_name)
 
-    palette_list = []
-    for setting_name, color_values in palette_dict.items():
-        fg_color = color_values[0].lower().strip()
-        bg_color = color_values[1].lower().strip()
-
-        # Convert hNNN syntax to equivalent #RGB value
-        # (https://github.com/wardi/urwid/issues/24)
-        if fg_color.startswith("h") or bg_color.startswith("h"):
-            attr = urwid.AttrSpec(fg_color, bg_color, colors=256)
-            palette_list.append((setting_name, "default", "default", "default",
-                attr.foreground,
-                attr.background))
-        else:
-            palette_list.append((setting_name,) + color_values)
+    palette_list = [
+        astuple(entry)
+        for entry in palette_dict.values()
+        if isinstance(entry, PaletteEntry)
+    ]
 
     return palette_list
 
