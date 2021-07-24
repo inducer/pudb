@@ -465,12 +465,16 @@ def get_stringifier(iinfo: InspectInfo) -> Callable:
     except KeyError:
         try:
             if not custom_stringifier_dict:  # Only execfile once
-                from os.path import expanduser
-                custom_stringifier_fname = expanduser(iinfo.display_type)
+                from os.path import expanduser, expandvars
+                custom_stringifier_fname = expanduser(expandvars(iinfo.display_type))
                 with open(custom_stringifier_fname) as inf:
                     exec(compile(inf.read(), custom_stringifier_fname, "exec"),
                             custom_stringifier_dict,
                             custom_stringifier_dict)
+        except FileNotFoundError:
+            ui_log.error("Unable to locate custom stringifier file {!r}"
+                         .format(iinfo.display_type))
+            return error_stringifier
         except Exception:
             ui_log.exception("Error when importing custom stringifier")
             return error_stringifier
