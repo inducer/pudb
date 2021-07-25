@@ -375,8 +375,9 @@ class Caption(urwid.Text):
         return urwid.Text(markup).render(size)
 
     def set_text(self, caption_parts):
-        super().set_text([*caption_parts])
-        self.caption_parts = caption_parts
+        markup = [(attr, str(content)) for (attr, content) in caption_parts]
+        self.caption_parts = CaptionParts(*markup)
+        super().set_text(markup)
 
     def rows(self, size, focus=False):
         # Always return 1 to avoid
