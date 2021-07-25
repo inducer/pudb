@@ -27,9 +27,12 @@ def captions(text_markups):
             text_markups.pudb_version, text_markups.hotkey,
             text_markups.full_source_filename]
     return {"empty": Caption(empty),
-            "without_alert": Caption(CaptionParts._make(always_display + [(None, "")])),
-            "with_alert": Caption(CaptionParts._make(always_display + [text_markups.alert])),
-            "custom_separator": Caption(CaptionParts._make(always_display + [(None, "")]),
+            "without_alert": Caption(CaptionParts._make(
+                always_display + [(None, "")])),
+            "with_alert": Caption(CaptionParts._make(
+                always_display + [text_markups.alert])),
+            "custom_separator": Caption(CaptionParts._make(
+                always_display + [(None, "")]),
                 separator=text_markups.custom_separator),
             }
 
@@ -69,12 +72,12 @@ def test_init(captions):
 
 def test_str(captions):
     assert str(captions["empty"]) == ""
-    assert str(captions["without_alert"]
-               ) == "PuDB VERSION - ?:help - /home/foo - bar/baz.py"
-    assert str(captions["with_alert"]
-               ) == "PuDB VERSION - ?:help - /home/foo - bar/baz.py - [POST-MORTEM MODE]"  # noqa
-    assert str(captions["custom_separator"]
-               ) == "PuDB VERSION | ?:help | /home/foo - bar/baz.py"
+    assert str(captions["without_alert"]) \
+            == "PuDB VERSION - ?:help - /home/foo - bar/baz.py"
+    assert str(captions["with_alert"]) \
+            == "PuDB VERSION - ?:help - /home/foo - bar/baz.py - [POST-MORTEM MODE]"
+    assert str(captions["custom_separator"]) \
+            == "PuDB VERSION | ?:help | /home/foo - bar/baz.py"
 
 
 def test_markup(captions):
@@ -111,8 +114,7 @@ def test_render(captions, term_sizes):
 
 def test_set_text(captions):
     assert captions["empty"].caption_parts == CaptionParts._make([(None, "")]*4)
-    for key in ["without_alert", "custom_separator"]:
-        assert captions[key].caption_parts \
+    assert captions["without_alert"].caption_parts \
             == CaptionParts(
                     (None, "PuDB VERSION"),
                     (None, "?:help"),
