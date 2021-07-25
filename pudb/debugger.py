@@ -859,7 +859,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         ],
                     dividechars=1)
 
-        self.caption = Caption(CaptionParts(*[(None, "")]*4))
+        self.caption = Caption(CaptionParts._make([(None, "")]*4))
         header = urwid.AttrMap(self.caption, "header")
         self.top = SignalWrap(urwid.Frame(
             urwid.AttrMap(self.columns, "background"),

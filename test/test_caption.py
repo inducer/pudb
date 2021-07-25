@@ -22,14 +22,14 @@ def text_markups():
 
 @pytest.fixture
 def captions(text_markups):
-    empty = CaptionParts(*[(None, "")]*4)
+    empty = CaptionParts._make([(None, "")]*4)
     always_display = [
             text_markups.pudb_version, text_markups.hotkey,
             text_markups.full_source_filename]
     return {"empty": Caption(empty),
-            "without_alert": Caption(CaptionParts(*always_display, (None, ""))),
-            "with_alert": Caption(CaptionParts(*always_display, text_markups.alert)),
-            "custom_separator": Caption(CaptionParts(*always_display, (None, "")),
+            "without_alert": Caption(CaptionParts._make(always_display + [(None, "")])),
+            "with_alert": Caption(CaptionParts._make(always_display + [text_markups.alert])),
+            "custom_separator": Caption(CaptionParts._make(always_display + [(None, "")]),
                 separator=text_markups.custom_separator),
             }
 
@@ -110,7 +110,7 @@ def test_render(captions, term_sizes):
 
 
 def test_set_text(captions):
-    assert captions["empty"].caption_parts == CaptionParts(*[(None, "")]*4)
+    assert captions["empty"].caption_parts == CaptionParts._make([(None, "")]*4)
     for key in ["without_alert", "custom_separator"]:
         assert captions[key].caption_parts \
             == CaptionParts(
