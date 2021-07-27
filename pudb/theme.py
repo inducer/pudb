@@ -532,35 +532,35 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             # }}}
 
             # {{{ syntax
-            "source": ("black", "default"),
-            "keyword": ("brown", "default"),
+            "source": ("black", "white"),
+            "keyword": ("brown", "white"),
 
-            "literal": ("black", "default"),
-            "string": ("dark red", "default"),
-            "doublestring": ("dark red", "default"),
-            "singlestring": ("dark red", "default"),
-            "docstring": ("dark red", "default"),
+            "literal": ("black", "white"),
+            "string": ("dark red", "white"),
+            "doublestring": ("dark red", "white"),
+            "singlestring": ("dark red", "white"),
+            "docstring": ("dark red", "white"),
 
-            "punctuation": ("black", "default"),
-            "comment": ("dark blue", "default"),
-            "function": ("dark cyan", "default"),
-            "line number": ("dark gray", "default"),
-            "current line marker": ("dark red", "default"),
-            "breakpoint marker": ("dark red", "default"),
+            "punctuation": ("black", "white"),
+            "comment": ("dark blue", "white"),
+            "function": ("dark cyan", "white"),
+            "line number": ("dark gray", "white"),
+            "current line marker": ("dark red", "white"),
+            "breakpoint marker": ("dark red", "white"),
             # }}}
 
             # {{{ shell
             "command line edit":
-            ("black", "default"),
+            ("black", "white"),
             "command line prompt":
-            (add_setting("black", "bold"), "default"),
+            (add_setting("black", "bold"), "white"),
 
             "command line output":
-            (add_setting("black", "bold"), "default"),
+            (add_setting("black", "bold"), "white"),
             "command line input":
-            ("black", "default"),
+            ("black", "white"),
             "command line error":
-            (add_setting("light red", "bold"), "default"),
+            (add_setting("light red", "bold"), "white"),
 
             "focused command line output":
             ("black", "dark green"),
@@ -732,20 +732,20 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
         # Based on XCode's midnight theme
         # Looks best in a console with green text against black background
         palette_dict.update({
-            "variables": ("white", "default"),
+            "variables": ("white", "black"),
 
-            "var label": ("light blue", "default"),
-            "var value": ("white", "default"),
+            "var label": ("light blue", "black"),
+            "var value": ("white", "black"),
 
-            "stack": ("white", "default"),
+            "stack": ("white", "black"),
 
-            "frame name": ("white", "default"),
-            "frame class": ("dark blue", "default"),
-            "frame location": ("light cyan", "default"),
+            "frame name": ("white", "black"),
+            "frame class": ("dark blue", "black"),
+            "frame location": ("light cyan", "black"),
 
-            "current frame name": (add_setting("white", "bold"), "default"),
-            "current frame class": ("dark blue", "default"),
-            "current frame location": ("light cyan", "default"),
+            "current frame name": (add_setting("white", "bold"), "black"),
+            "current frame class": ("dark blue", "black"),
+            "current frame location": ("light cyan", "black"),
 
             "focused frame name": ("black", "dark green"),
             "focused frame class": (add_setting("white", "bold"), "dark green"),
@@ -756,55 +756,55 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
                 add_setting("white", "bold"), "dark green"),
             "focused current frame location": ("dark blue", "dark green"),
 
-            "search box": ("default", "default"),
+            "search box": ("white", "black"),
 
-            "breakpoint": ("white", "default"),
-            "disabled breakpoint": ("dark gray", "default"),
+            "breakpoint": ("white", "black"),
+            "disabled breakpoint": ("dark gray", "black"),
             "focused breakpoint": ("black", "dark green"),
             "focused disabled breakpoint": ("dark gray", "dark green"),
-            "current breakpoint": (add_setting("white", "bold"), "default"),
+            "current breakpoint": (add_setting("white", "bold"), "black"),
             "disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "default"),
+                add_setting("dark gray", "bold"), "black"),
             "focused current breakpoint": (
                 add_setting("white", "bold"), "dark green", "bold"),
             "focused disabled current breakpoint": (
                 add_setting("dark gray", "bold"), "dark green", "bold"),
 
-            "source": ("white", "default"),
+            "source": ("white", "black"),
             "highlighted source": ("white", "light cyan"),
             "current source": ("white", "light gray"),
             "current focused source": ("white", "brown"),
 
-            "line number": ("light gray", "default"),
-            "keyword": ("dark magenta", "default"),
-            "function": ("white", "default"),
-            "literal": ("dark cyan", "default"),
-            "string": ("dark red", "default"),
-            "doublestring": ("dark red", "default"),
-            "singlestring": ("light blue", "default"),
-            "docstring": ("light red", "default"),
-            "backtick": ("light green", "default"),
-            "punctuation": ("white", "default"),
-            "comment": ("dark green", "default"),
+            "line number": ("light gray", "black"),
+            "keyword": ("dark magenta", "black"),
+            "function": ("white", "black"),
+            "literal": ("dark cyan", "black"),
+            "string": ("dark red", "black"),
+            "doublestring": ("dark red", "black"),
+            "singlestring": ("light blue", "black"),
+            "docstring": ("light red", "black"),
+            "backtick": ("light green", "black"),
+            "punctuation": ("white", "black"),
+            "comment": ("dark green", "black"),
 
-            "current line marker": ("dark red", "default"),
-            "breakpoint marker": ("dark red", "default"),
+            "current line marker": ("dark red", "black"),
+            "breakpoint marker": ("dark red", "black"),
 
             # {{{ shell
 
-            "command line edit": ("white", "default"),
-            "command line prompt": (add_setting("white", "bold"), "default"),
+            "command line edit": ("white", "black"),
+            "command line prompt": (add_setting("white", "bold"), "black"),
 
-            "command line output": (add_setting("white", "bold"), "default"),
-            "command line input": (add_setting("white", "bold"), "default"),
-            "command line error": (add_setting("light red", "bold"), "default"),
+            "command line output": (add_setting("white", "bold"), "black"),
+            "command line input": (add_setting("white", "bold"), "black"),
+            "command line error": (add_setting("light red", "bold"), "black"),
 
             "focused command line output": ("black", "dark green"),
             "focused command line input": (
                     add_setting("white", "bold"), "dark green"),
             "focused command line error": ("black", "dark green"),
 
-            "command line clear button": (add_setting("white", "bold"), "default"),
+            "command line clear button": (add_setting("white", "bold"), "black"),
             "command line focused button": ("black", "light gray"),  # White
             # doesn't work in curses mode
 
@@ -825,10 +825,10 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "value": ("white", "dark blue"),
             "fixed value": ("black", "light blue"),
 
-            "variables": ("light blue", "default"),
+            "variables": ("light blue", "white"),
 
-            "var label": ("dark blue", "default"),
-            "var value": ("light blue", "default"),
+            "var label": ("dark blue", "white"),
+            "var value": ("light blue", "white"),
 
             "focused var label": ("white", "dark blue"),
             "focused var value": ("black", "dark blue"),
@@ -838,11 +838,11 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused highlighted var label": ("white", "light green"),
             "focused highlighted var value": ("white", "light green"),
 
-            "stack": ("light blue", "default"),
+            "stack": ("light blue", "white"),
 
-            "frame name": ("dark blue", "default"),
-            "frame class": ("light blue", "default"),
-            "frame location": ("light green", "default"),
+            "frame name": ("dark blue", "white"),
+            "frame class": ("light blue", "white"),
+            "frame location": ("light green", "white"),
 
             "focused frame name": ("white", "dark blue"),
             "focused frame class": ("black", "dark blue"),
@@ -857,8 +857,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "current frame location": ("dark gray", "light green"),
 
             # breakpoints
-            "breakpoint": ("light blue", "default"),
-            "disabled breakpoint": ("light gray", "default"),
+            "breakpoint": ("light blue", "white"),
+            "disabled breakpoint": ("light gray", "white"),
             "focused breakpoint": ("white", "light green"),
             "focused disabled breakpoint": ("light gray", "light green"),
             "current breakpoint": ("white", "dark blue"),
@@ -871,12 +871,12 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "current breakpoint source": ("black", "light green"),
             "breakpoint focused source": ("dark gray", "dark blue"),
             "current breakpoint focused source": ("black", "light green"),
-            "current line marker": ("dark red", "default"),
-            "breakpoint marker": ("dark red", "default"),
+            "current line marker": ("dark red", "white"),
+            "breakpoint marker": ("dark red", "white"),
 
-            "search box": ("default", "default"),
+            "search box": ("white", "black"),
 
-            "source": ("light blue", "default"),
+            "source": ("light blue", "white"),
             "current source": ("light gray", "light blue"),
             "current focused source": ("light gray", "light blue"),
 
@@ -885,32 +885,32 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "current highlighted source": ("black", "dark cyan"),
             "highlighted source": ("light blue", "black"),
 
-            "line number": ("light blue", "default"),
-            "keyword": ("dark green", "default"),
-            "function": ("light blue", "default"),
-            "literal": ("dark cyan", "default"),
-            "string": ("dark cyan", "default"),
-            "doublestring": ("dark cyan", "default"),
-            "singlestring": ("light blue", "default"),
-            "docstring": ("dark cyan", "default"),
-            "backtick": ("light green", "default"),
-            "punctuation": ("light blue", "default"),
-            "comment": ("light green", "default"),
+            "line number": ("light blue", "white"),
+            "keyword": ("dark green", "white"),
+            "function": ("light blue", "white"),
+            "literal": ("dark cyan", "white"),
+            "string": ("dark cyan", "white"),
+            "doublestring": ("dark cyan", "white"),
+            "singlestring": ("light blue", "white"),
+            "docstring": ("dark cyan", "white"),
+            "backtick": ("light green", "white"),
+            "punctuation": ("light blue", "white"),
+            "comment": ("light green", "white"),
 
             # shell
 
-            "command line edit": ("light blue", "default"),
-            "command line prompt": ("light blue", "default"),
+            "command line edit": ("light blue", "white"),
+            "command line prompt": ("light blue", "white"),
 
-            "command line output": ("light blue", "default"),
-            "command line input": ("light blue", "default"),
-            "command line error": ("dark red", "default"),
+            "command line output": ("light blue", "white"),
+            "command line input": ("light blue", "white"),
+            "command line error": ("dark red", "white"),
 
             "focused command line output": ("black", "light green"),
             "focused command line input": ("black", "light green"),
             "focused command line error": ("dark red", "light blue"),
 
-            "command line clear button": ("light blue", "default"),
+            "command line clear button": ("light blue", "white"),
             "command line focused button": ("black", "light blue"),
         })
 
@@ -1053,20 +1053,20 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
         # Based on XCode's midnight theme
         # Looks best in a console with green text against black background
         palette_dict.update({
-            "variables": ("white", "default"),
+            "variables": ("white", "black"),
 
-            "var label": ("light blue", "default"),
-            "var value": ("white", "default"),
+            "var label": ("light blue", "black"),
+            "var value": ("white", "black"),
 
-            "stack": ("white", "default"),
+            "stack": ("white", "black"),
 
-            "frame name": ("white", "default"),
-            "frame class": ("dark blue", "default"),
-            "frame location": ("light cyan", "default"),
+            "frame name": ("white", "black"),
+            "frame class": ("dark blue", "black"),
+            "frame location": ("light cyan", "black"),
 
-            "current frame name": (add_setting("white", "bold"), "default"),
-            "current frame class": ("dark blue", "default"),
-            "current frame location": ("light cyan", "default"),
+            "current frame name": (add_setting("white", "bold"), "black"),
+            "current frame class": ("dark blue", "black"),
+            "current frame location": ("light cyan", "black"),
 
             "focused frame name": ("black", "dark green"),
             "focused frame class": (add_setting("white", "bold"), "dark green"),
@@ -1077,21 +1077,21 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
                 add_setting("white", "bold"), "dark green"),
             "focused current frame location": ("dark blue", "dark green"),
 
-            "search box": ("default", "default"),
+            "search box": ("white", "black"),
 
-            "breakpoint": ("white", "default"),
-            "disabled breakpoint": ("dark gray", "default"),
+            "breakpoint": ("white", "black"),
+            "disabled breakpoint": ("dark gray", "black"),
             "focused breakpoint": ("black", "dark green"),
             "focused disabled breakpoint": ("dark gray", "dark green"),
-            "current breakpoint": (add_setting("white", "bold"), "default"),
+            "current breakpoint": (add_setting("white", "bold"), "black"),
             "disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "default"),
+                add_setting("dark gray", "bold"), "black"),
             "focused current breakpoint": (
                 add_setting("white", "bold"), "dark green", "bold"),
             "focused disabled current breakpoint": (
                 add_setting("dark gray", "bold"), "dark green", "bold"),
 
-            "source": ("white", "default"),
+            "source": ("white", "black"),
             "highlighted source": ("white", "light cyan"),
             "current source": ("white", "light gray"),
             "current focused source": ("white", "brown"),
@@ -1110,32 +1110,32 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "exception": ("light cyan", "black"),
             "keyword": ("light red", "black"),
 
-            "string": ("dark red", "default"),
-            "doublestring": ("dark red", "default"),
-            "singlestring": ("light blue", "default"),
-            "docstring": ("light red", "default"),
-            "backtick": ("light green", "default"),
-            "punctuation": ("white", "default"),
-            "comment": ("dark green", "default"),
+            "string": ("dark red", "black"),
+            "doublestring": ("dark red", "black"),
+            "singlestring": ("light blue", "black"),
+            "docstring": ("light red", "black"),
+            "backtick": ("light green", "black"),
+            "punctuation": ("white", "black"),
+            "comment": ("dark green", "black"),
 
-            "current line marker": ("dark red", "default"),
-            "breakpoint marker": ("dark red", "default"),
+            "current line marker": ("dark red", "black"),
+            "breakpoint marker": ("dark red", "black"),
 
             # {{{ shell
 
-            "command line edit": ("white", "default"),
-            "command line prompt": (add_setting("white", "bold"), "default"),
+            "command line edit": ("white", "black"),
+            "command line prompt": (add_setting("white", "bold"), "black"),
 
-            "command line output": (add_setting("white", "bold"), "default"),
-            "command line input": (add_setting("white", "bold"), "default"),
-            "command line error": (add_setting("light red", "bold"), "default"),
+            "command line output": (add_setting("white", "bold"), "black"),
+            "command line input": (add_setting("white", "bold"), "black"),
+            "command line error": (add_setting("light red", "bold"), "black"),
 
             "focused command line output": ("black", "dark green"),
             "focused command line input": (
                     add_setting("white", "bold"), "dark green"),
             "focused command line error": ("black", "dark green"),
 
-            "command line clear button": (add_setting("white", "bold"), "default"),
+            "command line clear button": (add_setting("white", "bold"), "black"),
             "command line focused button": ("black", "light gray"),  # White
             # doesn't work in curses mode
 
