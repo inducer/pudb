@@ -156,11 +156,11 @@ class StackFrame(urwid.FlowWidget):
             crnt_pfx = "   "
 
         text = crnt_pfx+self.name
-        attr = [(apfx+"frame name", 3+len(self.name))]
+        attr = [(apfx+"frame name", 4+len(self.name))]
 
         if self.class_name is not None:
             text += " [%s]" % self.class_name
-            attr.append((apfx+"frame class", len(self.class_name)+3))
+            attr.append((apfx+"frame class", len(self.class_name)+2))
 
         loc = " %s:%d" % (self.filename, self.line)
         text += loc
