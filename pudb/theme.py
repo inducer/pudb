@@ -183,13 +183,11 @@ CLEAN_INHERITANCE_MAP = {
     # {{{ breakpoints view
     "breakpoint": "sidebar two",
     "disabled breakpoint": "sidebar three",
-
     "current breakpoint": "breakpoint",
     "disabled current breakpoint": "disabled breakpoint",
 
     "focused breakpoint": "focused sidebar two",
     "focused current breakpoint": "focused breakpoint",
-
     "focused disabled breakpoint": "focused sidebar three",
     "focused disabled current breakpoint": "focused disabled breakpoint",
     # }}}
@@ -278,119 +276,162 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
 
     # {{{ themes
 
-    # {{{ base styles
-    palette_dict = {
-        "background": ("black", "light gray", "standout"),
-        "selectable": ("black", "dark cyan", "bold"),
-        "focused selectable": ("black", "dark green", "underline"),
-        "input": (add_setting("yellow", "bold"), "dark blue"),
-        "warning": (add_setting("white", "bold"), "dark red", "bold, standout"),
-        "highlighted": ("white", "dark cyan", "bold, underline"),
-        "source": ("white", "dark blue"),
-    }
-    # }}}
-
     if theme == "classic":
         # {{{ classic theme
-        palette_dict.update({
-            # {{{ ui
-            "header": ("black", "light gray", "standout"),
-
+        palette_dict = {
+            # {{{ base styles
+            "background": ("black", "light gray"),
             "selectable": ("black", "dark cyan"),
-            "focused selectable": ("black", "dark green"),
-
+            "focused selectable": ("black", "light cyan"),
+            "highlighted": ("black", "dark magenta"),
+            "hotkey": (add_setting("black", "underline"), "light gray"),
+            # }}}
+            # {{{ general ui
+            "dialog title": (add_setting("white", "bold"), "dark cyan"),
+            "group head": (add_setting("dark blue", "bold"), "light gray"),
+            "focused sidebar": (add_setting("yellow", "bold"), "light gray"),
             "button": (add_setting("white", "bold"), "dark blue"),
             "focused button": ("light cyan", "black"),
-
-            "dialog title": (add_setting("white", "bold"), "dark cyan"),
-
-            "background": ("black", "light gray"),
-            "hotkey": (add_setting("black", "underline"), "light gray", "underline"),
-            "focused sidebar": (add_setting("yellow", "bold"), "light gray", "standout"),
-
-            "warning": (add_setting("white", "bold"), "dark red", "standout"),
-
-            "label": ("black", "light gray"),
             "value": (add_setting("yellow", "bold"), "dark blue"),
             "fixed value": ("light gray", "dark blue"),
-            "group head": (add_setting("dark blue", "bold"), "light gray"),
-
-            "search box": ("black", "dark cyan"),
-            "search not found": ("white", "dark red"),
-
+            "warning": (add_setting("white", "bold"), "dark red"),
             # }}}
+            # {{{ source view
+            "source": (add_setting("yellow", "bold"), "dark blue"),
+            "focused source": ("black", "dark cyan"),
+            "current source": ("black", "dark green"),
+            "current focused source": (
+                add_setting("white", "bold"), "dark cyan"),
+            "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
+            "current breakpoint source": ("black", "dark red"),
 
+            "current line marker": ("dark red", "dark blue"),
+            "breakpoint marker": ("dark red", "dark blue"),
+            "line number": ("light gray", "dark blue"),
+            # }}}
+            # {{{ sidebar
+            # }}}
+            # {{{ variables view
+            "variables": ("black", "dark cyan"),
+            "variable separator": ("dark cyan", "light gray"),
+
+            "var label": ("dark blue", "dark cyan"),
+            "var value": ("black", "dark cyan"),
+            "focused var label": ("dark blue", "dark green"),
+            "focused var value": ("black", "dark green"),
+
+            "highlighted var label": ("white", "dark cyan"),
+            "highlighted var value": ("black", "dark cyan"),
+            "focused highlighted var label": ("white", "dark green"),
+            "focused highlighted var value": ("black", "dark green"),
+
+            "return label": ("white", "dark blue"),
+            "return value": ("black", "dark cyan"),
+            "focused return label": ("light gray", "dark blue"),
+            "focused return value": ("black", "dark green"),
+            # }}}
+            # {{{ stack
+            "stack": ("black", "dark cyan"),
+
+            "frame name": ("black", "dark cyan"),
+            "focused frame name": ("black", "dark green"),
+            "frame class": ("dark blue", "dark cyan"),
+            "focused frame class": ("dark blue", "dark green"),
+            "frame location": ("light cyan", "dark cyan"),
+            "focused frame location": ("light cyan", "dark green"),
+
+            "current frame name": (
+                add_setting("white", "bold"), "dark cyan"),
+            "focused current frame name": (
+                add_setting("white", "bold"), "dark green"),
+            "current frame class": ("dark blue", "dark cyan"),
+            "focused current frame class": ("dark blue", "dark green"),
+            "current frame location": ("light cyan", "dark cyan"),
+            "focused current frame location": ("light cyan", "dark green"),
+            # }}}
+            # {{{ breakpoints view
+            "breakpoint": ("black", "dark cyan"),
+            "disabled breakpoint": ("dark gray", "dark cyan"),
+            "current breakpoint": (add_setting("white", "bold"), "dark cyan"),
+            "disabled current breakpoint": (
+                add_setting("dark gray", "bold"), "dark cyan"),
+            "focused breakpoint": ("black", "dark green"),
+            "focused disabled breakpoint": ("dark gray", "dark green"),
+            "focused current breakpoint": (
+                add_setting("white", "bold"), "dark green"),
+            "focused disabled current breakpoint": (
+                add_setting("dark gray", "bold"), "dark green"),
+            # }}}
             # {{{ shell
-
             "command line edit": (add_setting("yellow", "bold"), "dark blue"),
-            "command line prompt": (add_setting("white", "bold"), "dark blue"),
-
             "command line output": ("light cyan", "dark blue"),
+            "command line prompt": (add_setting("white", "bold"), "dark blue"),
             "command line input": (add_setting("light cyan", "bold"), "dark blue"),
             "command line error": (add_setting("light red", "bold"), "dark blue"),
 
             "focused command line output": ("black", "dark green"),
             "focused command line input": (
-                add_setting("light cyan", "bold"),
-                "dark green"),
+                add_setting("light cyan", "bold"), "dark green"),
             "focused command line error": ("black", "dark green"),
 
             "command line clear button": (add_setting("white", "bold"), "dark blue"),
             "command line focused button": ("light cyan", "black"),
-
             # }}}
-
-            # {{{ source
-            "breakpoint": ("black", "dark cyan"),
-            "disabled breakpoint": ("dark gray", "dark cyan"),
-            "focused breakpoint": ("black", "dark green"),
-            "focused disabled breakpoint": ("dark gray", "dark green"),
-            "current breakpoint": (add_setting("white", "bold"), "dark cyan"),
-            "disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "dark cyan"),
-            "focused current breakpoint": (
-                add_setting("white", "bold"), "dark green", "bold"),
-            "focused disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "dark green", "bold"),
-
-            "source": (add_setting("yellow", "bold"), "dark blue"),
-            "focused source": ("black", "dark green"),
-            "highlighted source": ("black", "dark magenta"),
-            "current source": ("black", "dark cyan"),
-            "current focused source": (add_setting("white", "bold"), "dark cyan"),
-            "current highlighted source": ("white", "dark cyan"),
-            # }}}
-
-            # {{{ highlighting
-
-            "current line marker": ("dark red", "dark blue"),
-            "breakpoint marker": ("dark red", "dark blue"),
-            "line number": ("light gray", "dark blue"),
+            # {{{ Code syntax
             "keyword": (add_setting("white", "bold"), "dark blue"),
             "function": ("light cyan", "dark blue"),
             "literal": ("light magenta, bold", "dark blue"),
-
             "string": (add_setting("light magenta", "bold"), "dark blue"),
             "doublestring": (add_setting("light magenta", "bold"), "dark blue"),
             "singlestring": (add_setting("light magenta", "bold"), "dark blue"),
             "docstring": (add_setting("light magenta", "bold"), "dark blue"),
-
             "punctuation": ("light gray", "dark blue"),
             "comment": ("light gray", "dark blue"),
-
             # }}}
+        }
+        # }}}
+    elif theme == "vim":
+        # {{{ vim theme
 
-            # {{{ breakpoints
-
+        palette_dict = {
+            # {{{ base styles
+            "background": ("black", "light gray"),
+            "selectable": ("black", "dark cyan"),
+            "focused selectable": ("black", "dark green"),
+            "hotkey": (add_setting("black", "underline"), "light gray"),
+            "highlighted": ("black", "dark magenta"),
+            # }}}
+            # {{{ general ui
+            "header": ("black", "light gray"),
+            "button": (add_setting("white", "bold"), "dark blue"),
+            "focused button": ("light cyan", "black"),
+            "dialog title": (add_setting("white", "bold"), "dark cyan"),
+            "focused sidebar": (add_setting("yellow", "bold"), "light gray"),
+            "warning": (add_setting("white", "bold"), "dark red"),
+            "label": ("black", "light gray"),
+            "value": (add_setting("yellow", "bold"), "dark blue"),
+            "fixed value": ("light gray", "dark blue"),
+            "group head": (add_setting("dark blue", "bold"), "light gray"),
+            "search box": ("black", "dark cyan"),
+            "search not found": ("white", "dark red"),
+            # }}}
+            # {{{ source view
+            "source": ("black", "white"),
+            "focused source": ("black", "dark green"),
+            "current source": ("black", "dark cyan"),
+            "current focused source": (add_setting("white", "bold"), "dark cyan"),
+            "current highlighted source": ("white", "dark cyan"),
             "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
             "breakpoint focused source": ("black", "dark red"),
             "current breakpoint source": ("black", "dark red"),
             "current breakpoint focused source": ("white", "dark red"),
-
+            "line number": ("dark gray", "white"),
+            "current line marker": ("dark red", "white"),
+            "breakpoint marker": ("dark red", "white"),
             # }}}
-
+            # {{{ sidebar
+            # }}}
             # {{{ variables view
-
             "variables": ("black", "dark cyan"),
             "variable separator": ("dark cyan", "light gray"),
 
@@ -408,11 +449,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "return value": ("black", "dark cyan"),
             "focused return label": ("light gray", "dark blue"),
             "focused return value": ("black", "dark green"),
-
             # }}}
-
             # {{{ stack
-
             "stack": ("black", "dark cyan"),
 
             "frame name": ("black", "dark cyan"),
@@ -422,49 +460,16 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "frame location": ("light cyan", "dark cyan"),
             "focused frame location": ("light cyan", "dark green"),
 
-            "current frame name": (add_setting("white", "bold"),
-                                   "dark cyan"),
-            "focused current frame name": (add_setting("white", "bold"),
-                                           "dark green", "bold"),
+            "current frame name": (
+                add_setting("white", "bold"), "dark cyan"),
+            "focused current frame name": (
+                add_setting("white", "bold"), "dark green"),
             "current frame class": ("dark blue", "dark cyan"),
             "focused current frame class": ("dark blue", "dark green"),
             "current frame location": ("light cyan", "dark cyan"),
             "focused current frame location": ("light cyan", "dark green"),
-
             # }}}
-        })
-        # }}}
-    elif theme == "vim":
-        # {{{ vim theme
-
-        palette_dict.update({
-            # {{{ ui
-            "header": ("black", "light gray", "standout"),
-
-            "selectable": ("black", "dark cyan"),
-            "focused selectable": ("black", "dark green"),
-
-            "button": (add_setting("white", "bold"), "dark blue"),
-            "focused button": ("light cyan", "black"),
-
-            "dialog title": (add_setting("white", "bold"), "dark cyan"),
-
-            "background": ("black", "light gray"),
-            "hotkey": (add_setting("black", "underline"), "light gray", "underline"),
-            "focused sidebar": (add_setting("yellow", "bold"), "light gray", "standout"),
-
-            "warning": (add_setting("white", "bold"), "dark red", "standout"),
-
-            "label": ("black", "light gray"),
-            "value": (add_setting("yellow", "bold"), "dark blue"),
-            "fixed value": ("light gray", "dark blue"),
-            "group head": (add_setting("dark blue", "bold"), "light gray"),
-
-            "search box": ("black", "dark cyan"),
-            "search not found": ("white", "dark red"),
-            # }}}
-
-            # {{{ source
+            # {{{ breakpoints view
             "breakpoint": ("black", "dark cyan"),
             "disabled breakpoint": ("dark gray", "dark cyan"),
             "focused breakpoint": ("black", "dark green"),
@@ -473,115 +478,85 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "disabled current breakpoint": (
                 add_setting("dark gray", "bold"), "dark cyan"),
             "focused current breakpoint": (
-                add_setting("white", "bold"), "dark green", "bold"),
+                add_setting("white", "bold"), "dark green"),
             "focused disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "dark green", "bold"),
-
-            "focused source": ("black", "dark green"),
-            "highlighted source": ("black", "dark magenta"),
-            "current source": ("black", "dark cyan"),
-            "current focused source": (add_setting("white", "bold"), "dark cyan"),
-            "current highlighted source": ("white", "dark cyan"),
+                add_setting("dark gray", "bold"), "dark green"),
             # }}}
+            # {{{ shell
+            "command line edit": ("black", "white"),
+            "command line prompt": (
+                add_setting("black", "bold"), "white"),
+            "command line output": (
+                add_setting("black", "bold"), "white"),
+            "command line input": ("black", "white"),
+            "command line error": (
+                add_setting("light red", "bold"), "white"),
 
-            # {{{ breakpoints
-            "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
-            "breakpoint focused source": ("black", "dark red"),
-            "current breakpoint source": ("black", "dark red"),
-            "current breakpoint focused source": ("white", "dark red"),
+            "focused command line output": (
+                "black", "dark green"),
+            "focused command line input": (
+                add_setting("light cyan", "bold"), "dark green"),
+            "focused command line error": ("black", "dark green"),
+            "focused command line error": ("black", "dark green"),
+
+            "command line clear button": (
+                add_setting("white", "bold"), "dark blue"),
+            "command line focused button": ("light cyan", "black"),
             # }}}
-
-            # {{{ variables view
-            "variables": ("black", "dark cyan"),
-            "variable separator": ("dark cyan", "light gray"),
-
-            "var label": ("dark blue", "dark cyan"),
-            "var value": ("black", "dark cyan"),
-            "focused var label": ("dark blue", "dark green"),
-            "focused var value": ("black", "dark green"),
-
-            "highlighted var label": ("white", "dark cyan"),
-            "highlighted var value": ("black", "dark cyan"),
-            "focused highlighted var label": ("white", "dark green"),
-            "focused highlighted var value": ("black", "dark green"),
-
-            "return label": ("white", "dark blue"),
-            "return value": ("black", "dark cyan"),
-            "focused return label": ("light gray", "dark blue"),
-            "focused return value": ("black", "dark green"),
-            # }}}
-
-            # {{{ stack
-            "stack": ("black", "dark cyan"),
-
-            "frame name": ("black", "dark cyan"),
-            "focused frame name": ("black", "dark green"),
-            "frame class": ("dark blue", "dark cyan"),
-            "focused frame class": ("dark blue", "dark green"),
-            "frame location": ("light cyan", "dark cyan"),
-            "focused frame location": ("light cyan", "dark green"),
-
-            "current frame name": (add_setting("white", "bold"),
-                                   "dark cyan"),
-            "focused current frame name": (add_setting("white", "bold"),
-                                           "dark green", "bold"),
-            "current frame class": ("dark blue", "dark cyan"),
-            "focused current frame class": ("dark blue", "dark green"),
-            "current frame location": ("light cyan", "dark cyan"),
-            "focused current frame location": ("light cyan", "dark green"),
-            # }}}
-
-            # {{{ syntax
-            "source": ("black", "white"),
+            # {{{ Code syntax
             "keyword": ("brown", "white"),
-
             "literal": ("black", "white"),
             "string": ("dark red", "white"),
             "doublestring": ("dark red", "white"),
             "singlestring": ("dark red", "white"),
             "docstring": ("dark red", "white"),
-
             "punctuation": ("black", "white"),
             "comment": ("dark blue", "white"),
             "function": ("dark cyan", "white"),
-            "line number": ("dark gray", "white"),
-            "current line marker": ("dark red", "white"),
-            "breakpoint marker": ("dark red", "white"),
             # }}}
-
-            # {{{ shell
-            "command line edit":
-            ("black", "white"),
-            "command line prompt":
-            (add_setting("black", "bold"), "white"),
-
-            "command line output":
-            (add_setting("black", "bold"), "white"),
-            "command line input":
-            ("black", "white"),
-            "command line error":
-            (add_setting("light red", "bold"), "white"),
-
-            "focused command line output":
-            ("black", "dark green"),
-            "focused command line input":
-            (add_setting("light cyan", "bold"), "dark green"),
-            "focused command line error":
-            ("black", "dark green"),
-
-            "focused command line error": ("black", "dark green"),
-            "command line clear button":
-            (add_setting("white", "bold"), "dark blue"),
-            "command line focused button": ("light cyan", "black"),
-            # }}}
-            })
+            }
         # }}}
     elif theme == "dark vim":
         # {{{ dark vim
 
-        palette_dict.update({
-            "header": ("black", "light gray", "standout"),
+        palette_dict = {
+            # {{{ base styles
+            "background": ("black", "light gray"),
+            "selectable": ("light gray", "dark gray"),
+            "focused selectable": ("white", "light blue"),
+            "highlighted": ("black", "dark magenta"),
+            "hotkey": (add_setting("black", "underline"), "light gray"),
+            # }}}
+            # {{{ general ui
+            "header": ("black", "light gray"),
+            "group head": (add_setting("dark blue", "bold"), "light gray"),
+            "dialog title": (add_setting("white", "bold"), "dark gray"),
+            "button": ("light gray", "dark gray"),
+            "focused button": ("white", "light blue"),
+            "focused sidebar": ("light blue", "light gray"),
+            "warning": (add_setting("white", "bold"), "dark red"),
+            "label": ("black", "light gray"),
+            "value": ("white", "dark gray"),
+            "fixed value": ("light gray", "dark gray"),
+            "search box": ("white", "dark gray"),
+            # }}}
+            # {{{ source view
+            "line number": ("dark gray", "black"),
+            "current line marker": ("dark red", "black"),
+            "breakpoint marker": ("dark red", "black"),
 
+            "breakpoint source": ("light gray", "dark red"),
+            "breakpoint focused source": ("black", "dark red"),
+            "current breakpoint source": ("black", "dark red"),
+            "current breakpoint focused source": ("white", "dark red"),
+            "source": ("white", "black"),
+            "focused source": ("white", "light blue"),
+            "current source": ("black", "light gray"),
+            "current focused source": ("white", "dark cyan"),
+            "current highlighted source": ("white", "dark cyan"),
+            # }}}
+            # {{{ sidebar
+            # }}}
             # {{{ variables view
             "variables": ("black", "dark gray"),
             "variable separator": ("dark cyan", "light gray"),
@@ -600,11 +575,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "return value": ("light cyan", "dark gray"),
             "focused return label": ("yellow", "light blue"),
             "focused return value": ("white", "light blue"),
-
             # }}}
-
-            # {{{ stack view
-
+            # {{{ stack
             "stack": ("black", "dark gray"),
 
             "frame name": ("light gray", "dark gray"),
@@ -614,129 +586,115 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "frame location": ("white", "dark gray"),
             "focused frame location": ("white", "light blue"),
 
-            "current frame name": (add_setting("white", "bold"),
-                "dark gray"),
-            "focused current frame name": (add_setting("white", "bold"),
-                "light blue", "bold"),
+            "current frame name": (
+                add_setting("white", "bold"), "dark gray"),
+            "focused current frame name": (
+                add_setting("white", "bold"), "light blue"),
             "current frame class": ("dark blue", "dark gray"),
             "focused current frame class": ("dark blue", "dark green"),
             "current frame location": ("light cyan", "dark gray"),
             "focused current frame location": ("light cyan", "light blue"),
-
             # }}}
-
-            # {{{ breakpoint view
-
+            # {{{ breakpoints view
             "breakpoint": ("light gray", "dark gray"),
             "disabled breakpoint": ("black", "dark gray"),
             "focused breakpoint": ("light gray", "light blue"),
             "focused disabled breakpoint": ("black", "light blue"),
             "current breakpoint": (add_setting("white", "bold"), "dark gray"),
             "disabled current breakpoint": ("black", "dark gray"),
-            "focused current breakpoint":
-                (add_setting("white", "bold"), "light blue"),
-            "focused disabled current breakpoint":
-                ("black", "light blue"),
-
+            "focused current breakpoint": (
+                add_setting("white", "bold"), "light blue"),
+            "focused disabled current breakpoint": ("black", "light blue"),
             # }}}
+            # {{{ shell
+            "command line edit": ("white", "black"),
+            "command line prompt": (add_setting("yellow", "bold"), "black"),
 
-            # {{{ ui widgets
+            "command line output": (add_setting("yellow", "bold"), "black"),
+            "command line input": ("white", "black"),
+            "command line error": (add_setting("light red", "bold"), "black"),
 
-            "selectable": ("light gray", "dark gray"),
-            "focused selectable": ("white", "light blue"),
+            "focused command line output": ("black", "light blue"),
+            "focused command line input": (
+                add_setting("light cyan", "bold"), "light blue"),
+            "focused command line error": ("black", "light blue"),
 
-            "button": ("light gray", "dark gray"),
-            "focused button": ("white", "light blue"),
-
-            "background": ("black", "light gray"),
-            "hotkey": (add_setting("black", "underline"), "light gray", "underline"),
-            "focused sidebar": ("light blue", "light gray", "standout"),
-
-            "warning": (add_setting("white", "bold"), "dark red", "standout"),
-
-            "label": ("black", "light gray"),
-            "value": ("white", "dark gray"),
-            "fixed value": ("light gray", "dark gray"),
-
-            "search box": ("white", "dark gray"),
-            "search not found": ("white", "dark red"),
-
-            "dialog title": (add_setting("white", "bold"), "dark gray"),
-
+            "command line clear button": (add_setting("white", "bold"), "dark blue"),
+            "command line focused button": ("light cyan", "black"),
             # }}}
-
-            # {{{ source view
-
-            "current line marker": ("dark red", "black"),
-            "breakpoint marker": ("dark red", "black"),
-
-            "breakpoint source": ("light gray", "dark red"),
-            "breakpoint focused source": ("black", "dark red"),
-            "current breakpoint source": ("black", "dark red"),
-            "current breakpoint focused source": ("white", "dark red"),
-
-            # }}}
-
-            # {{{ highlighting
-
-            "source": ("white", "black"),
-            "focused source": ("white", "light blue"),
-            "highlighted source": ("black", "dark magenta"),
-            "current source": ("black", "light gray"),
-            "current focused source": ("white", "dark cyan"),
-            "current highlighted source": ("white", "dark cyan"),
-
-            "line number": ("dark gray", "black"),
+            # {{{ Code syntax
             "keyword": ("yellow", "black"),
-
             "literal": ("dark magenta", "black"),
             "string": ("dark magenta", "black"),
             "doublestring": ("dark magenta", "black"),
             "singlestring": ("dark magenta", "black"),
             "docstring": ("dark magenta", "black"),
-
             "function": ("light cyan", "black"),
             "punctuation": ("yellow", "black"),
             "comment": ("light blue", "black"),
-
             # }}}
-
-            # {{{ shell
-
-            "command line edit":
-            ("white", "black"),
-            "command line prompt":
-            (add_setting("yellow", "bold"), "black"),
-
-            "command line output":
-            (add_setting("yellow", "bold"), "black"),
-            "command line input":
-            ("white", "black"),
-            "command line error":
-            (add_setting("light red", "bold"), "black"),
-
-            "focused command line output":
-            ("black", "light blue"),
-            "focused command line input":
-            (add_setting("light cyan", "bold"), "light blue"),
-            "focused command line error":
-            ("black", "light blue"),
-
-            # }}}
-            })
-
+            }
         # }}}
     elif theme == "midnight":
         # {{{ midnight
 
         # Based on XCode's midnight theme
         # Looks best in a console with green text against black background
-        palette_dict.update({
-            "variables": ("white", "black"),
+        palette_dict = {
+            # {{{ base styles
+            "background": ("black", "light gray"),
+            "selectable": ("black", "dark cyan"),
+            "focused selectable": ("black", "dark green"),
+            "hotkey": (add_setting("black", "underline"), "light gray"),
+            "highlighted": ("white", "dark cyan"),
+            # }}}
+            # {{{ general ui
+            "input": (add_setting("yellow", "bold"), "dark blue"),
+            "warning": (add_setting("white", "bold"), "dark red"),
+            "search box": ("white", "black"),
+            "dialog title": (add_setting("white", "bold"), "dark cyan"),
+            "group head": (add_setting("dark blue", "bold"), "light gray"),
+            "focused sidebar": (add_setting("yellow", "bold"), "light gray"),
+            "button": (add_setting("white", "bold"), "dark blue"),
+            "focused button": ("light cyan", "black"),
+            "value": (add_setting("yellow", "bold"), "dark blue"),
+            "fixed value": ("light gray", "dark blue"),
+            # }}}
+            # {{{ source view
+            "source": ("white", "black"),
+            "highlighted source": ("white", "light cyan"),
+            "current source": ("white", "light gray"),
+            "current focused source": ("white", "brown"),
+            "focused source": ("black", "dark cyan"),
+            "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
+            "current breakpoint source": ("black", "dark red"),
 
+            "line number": ("light gray", "black"),
+            "current line marker": ("dark red", "black"),
+            "breakpoint marker": ("dark red", "black"),
+            # }}}
+            # {{{ sidebar
+            # }}}
+            # {{{ variables view
+            "variables": ("white", "black"),
             "var label": ("light blue", "black"),
             "var value": ("white", "black"),
+            "variable separator": ("dark cyan", "light gray"),
 
+            "focused var label": ("dark blue", "dark green"),
+            "focused var value": ("black", "dark green"),
+
+            "highlighted var label": ("white", "dark cyan"),
+            "highlighted var value": ("black", "dark cyan"),
+            "focused highlighted var label": ("white", "dark green"),
+            "focused highlighted var value": ("black", "dark green"),
+
+            "return label": ("white", "dark blue"),
+            "return value": ("black", "dark cyan"),
+            "focused return label": ("light gray", "dark blue"),
+            "focused return value": ("black", "dark green"),
+            # }}}
+            # {{{ stack
             "stack": ("white", "black"),
 
             "frame name": ("white", "black"),
@@ -755,9 +713,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused current frame class": (
                 add_setting("white", "bold"), "dark green"),
             "focused current frame location": ("dark blue", "dark green"),
-
-            "search box": ("white", "black"),
-
+            # }}}
+            # {{{ breakpoints view
             "breakpoint": ("white", "black"),
             "disabled breakpoint": ("dark gray", "black"),
             "focused breakpoint": ("black", "dark green"),
@@ -766,32 +723,11 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "disabled current breakpoint": (
                 add_setting("dark gray", "bold"), "black"),
             "focused current breakpoint": (
-                add_setting("white", "bold"), "dark green", "bold"),
+                add_setting("white", "bold"), "dark green"),
             "focused disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "dark green", "bold"),
-
-            "source": ("white", "black"),
-            "highlighted source": ("white", "light cyan"),
-            "current source": ("white", "light gray"),
-            "current focused source": ("white", "brown"),
-
-            "line number": ("light gray", "black"),
-            "keyword": ("dark magenta", "black"),
-            "function": ("white", "black"),
-            "literal": ("dark cyan", "black"),
-            "string": ("dark red", "black"),
-            "doublestring": ("dark red", "black"),
-            "singlestring": ("light blue", "black"),
-            "docstring": ("light red", "black"),
-            "backtick": ("light green", "black"),
-            "punctuation": ("white", "black"),
-            "comment": ("dark green", "black"),
-
-            "current line marker": ("dark red", "black"),
-            "breakpoint marker": ("dark red", "black"),
-
+                add_setting("dark gray", "bold"), "dark green"),
+            # }}}
             # {{{ shell
-
             "command line edit": ("white", "black"),
             "command line prompt": (add_setting("white", "bold"), "black"),
 
@@ -805,27 +741,73 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused command line error": ("black", "dark green"),
 
             "command line clear button": (add_setting("white", "bold"), "black"),
-            "command line focused button": ("black", "light gray"),  # White
-            # doesn't work in curses mode
-
+            "command line focused button": ("black", "light gray"),
             # }}}
-
-        })
+            # {{{ Code syntax
+            "keyword": ("dark magenta", "black"),
+            "function": ("white", "black"),
+            "literal": ("dark cyan", "black"),
+            "string": ("dark red", "black"),
+            "doublestring": ("dark red", "black"),
+            "singlestring": ("light blue", "black"),
+            "docstring": ("light red", "black"),
+            "backtick": ("light green", "black"),
+            "punctuation": ("white", "black"),
+            "comment": ("dark green", "black"),
+            # }}}
+        }
 
         # }}}
     elif theme == "solarized":
         # {{{ solarized
-        palette_dict.update({
-            # UI
-            "header": ("black", "light blue", "standout"),
-            "focused sidebar": ("yellow", "light blue", "standout"),
-            "group head": ("black", "light blue"),
+        palette_dict = {
+            # {{{ base styles
             "background": ("black", "light blue"),
+            "selectable": ("black", "dark cyan"),
+            "focused selectable": ("black", "light cyan"),
+            "highlighted": ("black", "dark magenta"),
+            "hotkey": (add_setting("black", "underline"), "light gray"),
+            # }}}
+            # {{{ general ui
+            "dialog title": (add_setting("white", "bold"), "dark cyan"),
+            "button": (add_setting("white", "bold"), "dark blue"),
+            "focused button": ("light cyan", "black"),
+            "warning": (add_setting("white", "bold"), "dark red"),
+            "header": ("black", "light blue"),
+            "focused sidebar": ("yellow", "light blue"),
+            "group head": ("black", "light blue"),
             "label": ("black", "light blue"),
             "value": ("white", "dark blue"),
             "fixed value": ("black", "light blue"),
+            "search box": ("white", "black"),
+            # }}}
+            # {{{ source view
+            "breakpoint source": ("light blue", "black"),
+            "current breakpoint source": ("black", "light green"),
+            "breakpoint focused source": ("dark gray", "dark blue"),
+            "current breakpoint focused source": ("black", "light green"),
+            "source": ("light blue", "white"),
+            "current source": ("light gray", "light blue"),
+            "current focused source": ("light gray", "light blue"),
 
+            "focused source": ("dark gray", "dark blue"),
+
+            "current highlighted source": ("black", "dark cyan"),
+            "highlighted source": ("light blue", "black"),
+
+            "line number": ("light blue", "white"),
+            "current line marker": ("dark red", "white"),
+            "breakpoint marker": ("dark red", "white"),
+            # }}}
+            # {{{ sidebar
+            # }}}
+            # {{{ variables view
             "variables": ("light blue", "white"),
+            "variable separator": ("dark cyan", "light gray"),
+            "return label": ("white", "dark blue"),
+            "return value": ("black", "dark cyan"),
+            "focused return label": ("light gray", "dark blue"),
+            "focused return value": ("black", "dark green"),
 
             "var label": ("dark blue", "white"),
             "var value": ("light blue", "white"),
@@ -837,7 +819,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "highlighted var value": ("white", "light green"),
             "focused highlighted var label": ("white", "light green"),
             "focused highlighted var value": ("white", "light green"),
-
+            # }}}
+            # {{{ stack
             "stack": ("light blue", "white"),
 
             "frame name": ("dark blue", "white"),
@@ -855,8 +838,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "current frame name": ("white", "light green"),
             "current frame class": ("black", "light green"),
             "current frame location": ("dark gray", "light green"),
-
-            # breakpoints
+            # }}}
+            # {{{ breakpoints view
             "breakpoint": ("light blue", "white"),
             "disabled breakpoint": ("light gray", "white"),
             "focused breakpoint": ("white", "light green"),
@@ -865,40 +848,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "disabled current breakpoint": ("light gray", "dark blue"),
             "focused current breakpoint": ("white", "light green"),
             "focused disabled current breakpoint": ("light gray", "light green"),
-
-            # source
-            "breakpoint source": ("light blue", "black"),
-            "current breakpoint source": ("black", "light green"),
-            "breakpoint focused source": ("dark gray", "dark blue"),
-            "current breakpoint focused source": ("black", "light green"),
-            "current line marker": ("dark red", "white"),
-            "breakpoint marker": ("dark red", "white"),
-
-            "search box": ("white", "black"),
-
-            "source": ("light blue", "white"),
-            "current source": ("light gray", "light blue"),
-            "current focused source": ("light gray", "light blue"),
-
-            "focused source": ("dark gray", "dark blue"),
-
-            "current highlighted source": ("black", "dark cyan"),
-            "highlighted source": ("light blue", "black"),
-
-            "line number": ("light blue", "white"),
-            "keyword": ("dark green", "white"),
-            "function": ("light blue", "white"),
-            "literal": ("dark cyan", "white"),
-            "string": ("dark cyan", "white"),
-            "doublestring": ("dark cyan", "white"),
-            "singlestring": ("light blue", "white"),
-            "docstring": ("dark cyan", "white"),
-            "backtick": ("light green", "white"),
-            "punctuation": ("light blue", "white"),
-            "comment": ("light green", "white"),
-
-            # shell
-
+            # }}}
+            # {{{ shell
             "command line edit": ("light blue", "white"),
             "command line prompt": ("light blue", "white"),
 
@@ -912,14 +863,70 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
 
             "command line clear button": ("light blue", "white"),
             "command line focused button": ("black", "light blue"),
-        })
+            # }}}
+            # {{{ Code syntax
+            "keyword": ("dark green", "white"),
+            "function": ("light blue", "white"),
+            "literal": ("dark cyan", "white"),
+            "string": ("dark cyan", "white"),
+            "doublestring": ("dark cyan", "white"),
+            "singlestring": ("light blue", "white"),
+            "docstring": ("dark cyan", "white"),
+            "backtick": ("light green", "white"),
+            "punctuation": ("light blue", "white"),
+            "comment": ("light green", "white"),
+            # }}}
+        }
 
     # }}}
     elif theme == "agr-256":
         # {{{ agr-256
-        palette_dict.update({
-            "header": ("h235", "h252", "standout"),
+        palette_dict = {
+            # {{{ base styles
+            "background": ("h235", "h252"),
+            "selectable": ("h252", "h235"),
+            "focused selectable": ("h255", "h24"),
+            "hotkey": (add_setting("h235", "underline"), "h252"),
+            "highlighted": ("h252", "h22"),
+            # }}}
+            # {{{ general ui
+            "header": ("h235", "h252"),
+            "button": ("h252", "h235"),
+            "focused button": ("h255", "h24"),
 
+            "focused sidebar": ("h23", "h252"),
+
+            "warning": (add_setting("h255", "bold"), "h124"),
+
+            "label": ("h235", "h252"),
+            "value": ("h255", "h17"),
+            "fixed value": ("h252", "h17"),
+            "group head": (add_setting("h25", "bold"), "h252"),
+
+            "search box": ("h255", "h235"),
+            "search not found": ("h255", "h124"),
+
+            "dialog title": (add_setting("h255", "bold"), "h235"),
+            # }}}
+            # {{{ source view
+            "current line marker": ("h160", "h235"),
+            "breakpoint marker": ("h160", "h235"),
+
+            "breakpoint source": ("h252", "h124"),
+            "breakpoint focused source": ("h192", "h124"),
+            "current breakpoint source": ("h192", "h124"),
+            "current breakpoint focused source": (
+                    add_setting("h192", "bold"), "h124"),
+            "source": ("h255", "h235"),
+            "focused source": ("h192", "h24"),
+            "current source": (add_setting("h252", "bold"), "h23"),
+            "current focused source": (add_setting("h192", "bold"), "h23"),
+            "current highlighted source": ("h255", "h22"),
+
+            "line number": ("h241", "h235"),
+            # }}}
+            # {{{ sidebar
+            # }}}
             # {{{ variables view
             "variables": ("h235", "h233"),
             "variable separator": ("h23", "h252"),
@@ -939,8 +946,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused return label": (add_setting("h192", "bold"), "h24"),
             "focused return value": ("h192", "h24"),
             # }}}
-
-            # {{{ stack view
+            # {{{ stack
             "stack": ("h235", "h233"),
 
             "frame name": ("h192", "h233"),
@@ -957,8 +963,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "current frame location": ("h252", "h22"),
             "focused current frame location": ("h255", "h64"),
             # }}}
-
-            # {{{ breakpoint view
+            # {{{ breakpoints view
             "breakpoint": ("h80", "h233"),
             "disabled breakpoint": ("h60", "h233"),
             "focused breakpoint": ("h192", "h24"),
@@ -969,67 +974,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused disabled current breakpoint": (
                 add_setting("h016", "bold"), "h64"),
             # }}}
-
-            # {{{ ui widgets
-
-            "selectable": ("h252", "h235"),
-            "focused selectable": ("h255", "h24"),
-
-            "button": ("h252", "h235"),
-            "focused button": ("h255", "h24"),
-
-            "background": ("h235", "h252"),
-            "hotkey": (add_setting("h235", "underline"), "h252", "underline"),
-            "focused sidebar": ("h23", "h252", "standout"),
-
-            "warning": (add_setting("h255", "bold"), "h124", "standout"),
-
-            "label": ("h235", "h252"),
-            "value": ("h255", "h17"),
-            "fixed value": ("h252", "h17"),
-            "group head": (add_setting("h25", "bold"), "h252"),
-
-            "search box": ("h255", "h235"),
-            "search not found": ("h255", "h124"),
-
-            "dialog title": (add_setting("h255", "bold"), "h235"),
-
-            # }}}
-
-            # {{{ source view
-            "current line marker": ("h160", "h235"),
-            "breakpoint marker": ("h160", "h235"),
-
-            "breakpoint source": ("h252", "h124"),
-            "breakpoint focused source": ("h192", "h124"),
-            "current breakpoint source": ("h192", "h124"),
-            "current breakpoint focused source": (
-                    add_setting("h192", "bold"), "h124"),
-            # }}}
-
-            # {{{ highlighting
-            "source": ("h255", "h235"),
-            "focused source": ("h192", "h24"),
-            "highlighted source": ("h252", "h22"),
-            "current source": (add_setting("h252", "bold"), "h23"),
-            "current focused source": (add_setting("h192", "bold"), "h23"),
-            "current highlighted source": ("h255", "h22"),
-
-            "line number": ("h241", "h235"),
-            "keyword": ("h111", "h235"),
-
-            "literal": ("h173", "h235"),
-            "string": ("h113", "h235"),
-            "doublestring": ("h113", "h235"),
-            "singlestring": ("h113", "h235"),
-            "docstring": ("h113", "h235"),
-
-            "function": ("h192", "h235"),
-            "punctuation": ("h223", "h235"),
-            "comment": ("h246", "h235"),
-
-            # }}}
-
             # {{{ shell
             "command line edit": ("h255", "h233"),
             "command line prompt": (add_setting("h192", "bold"), "h233"),
@@ -1045,19 +989,78 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "command line clear button": (add_setting("h255", "bold"), "h233"),
             "command line focused button": ("h255", "h24"),
             # }}}
-        })
+            # {{{ Code syntax
+            "keyword": ("h111", "h235"),
+            "literal": ("h173", "h235"),
+            "string": ("h113", "h235"),
+            "doublestring": ("h113", "h235"),
+            "singlestring": ("h113", "h235"),
+            "docstring": ("h113", "h235"),
+            "function": ("h192", "h235"),
+            "punctuation": ("h223", "h235"),
+            "comment": ("h246", "h235"),
+            # }}}
+        }
         # }}}
     elif theme == "monokai":
         # {{{ midnight
 
         # Based on XCode's midnight theme
         # Looks best in a console with green text against black background
-        palette_dict.update({
+        palette_dict = {
+            # {{{ base styles
+            "background": ("black", "light gray"),
+            "selectable": ("black", "dark cyan"),
+            "focused selectable": ("black", "light cyan"),
+            "highlighted": ("black", "dark magenta"),
+            "hotkey": (add_setting("black", "underline"), "light gray"),
+            # }}}
+            # {{{ general ui
+            "dialog title": (add_setting("white", "bold"), "dark cyan"),
+            "group head": (add_setting("dark blue", "bold"), "light gray"),
+            "focused sidebar": (add_setting("yellow", "bold"), "light gray"),
+            "button": (add_setting("white", "bold"), "dark blue"),
+            "focused button": ("light cyan", "black"),
+            "value": (add_setting("yellow", "bold"), "dark blue"),
+            "fixed value": ("light gray", "dark blue"),
+            "warning": (add_setting("white", "bold"), "dark red"),
+            "search box": ("white", "black"),
+            # }}}
+            # {{{ source view
+            "focused source": ("black", "dark cyan"),
+            "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
+            "current breakpoint source": ("black", "dark red"),
+            "source": ("white", "black"),
+            "highlighted source": ("white", "light cyan"),
+            "current source": ("white", "light gray"),
+            "current focused source": ("white", "brown"),
+            "line number": ("dark gray", "black"),
+            "current line marker": ("dark red", "black"),
+            "breakpoint marker": ("dark red", "black"),
+            # }}}
+            # {{{ sidebar
+            # }}}
+            # {{{ variables view
             "variables": ("white", "black"),
+            "variable separator": ("dark cyan", "light gray"),
 
             "var label": ("light blue", "black"),
             "var value": ("white", "black"),
 
+            "focused var label": ("dark blue", "dark green"),
+            "focused var value": ("black", "dark green"),
+
+            "highlighted var label": ("white", "dark cyan"),
+            "highlighted var value": ("black", "dark cyan"),
+            "focused highlighted var label": ("white", "dark green"),
+            "focused highlighted var value": ("black", "dark green"),
+
+            "return label": ("white", "dark blue"),
+            "return value": ("black", "dark cyan"),
+            "focused return label": ("light gray", "dark blue"),
+            "focused return value": ("black", "dark green"),
+            # }}}
+            # {{{ stack
             "stack": ("white", "black"),
 
             "frame name": ("white", "black"),
@@ -1076,9 +1079,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused current frame class": (
                 add_setting("white", "bold"), "dark green"),
             "focused current frame location": ("dark blue", "dark green"),
-
-            "search box": ("white", "black"),
-
+            # }}}
+            # {{{ breakpoints view
             "breakpoint": ("white", "black"),
             "disabled breakpoint": ("dark gray", "black"),
             "focused breakpoint": ("black", "dark green"),
@@ -1087,42 +1089,11 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "disabled current breakpoint": (
                 add_setting("dark gray", "bold"), "black"),
             "focused current breakpoint": (
-                add_setting("white", "bold"), "dark green", "bold"),
+                add_setting("white", "bold"), "dark green"),
             "focused disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "dark green", "bold"),
-
-            "source": ("white", "black"),
-            "highlighted source": ("white", "light cyan"),
-            "current source": ("white", "light gray"),
-            "current focused source": ("white", "brown"),
-
-            "line number": ("dark gray", "black"),
-            "keyword2": ("light cyan", "black"),
-            "function": ("light green", "black"),
-            "literal": ("light magenta", "black"),
-
-            "namespace": ("light red", "black"),
-            "operator": ("light red", "black"),
-            "argument": ("brown", "black"),
-            "builtin": ("light cyan", "black"),
-            "pseudo": ("light magenta", "black"),
-            "dunder": ("light cyan", "black"),
-            "exception": ("light cyan", "black"),
-            "keyword": ("light red", "black"),
-
-            "string": ("dark red", "black"),
-            "doublestring": ("dark red", "black"),
-            "singlestring": ("light blue", "black"),
-            "docstring": ("light red", "black"),
-            "backtick": ("light green", "black"),
-            "punctuation": ("white", "black"),
-            "comment": ("dark green", "black"),
-
-            "current line marker": ("dark red", "black"),
-            "breakpoint marker": ("dark red", "black"),
-
+                add_setting("dark gray", "bold"), "dark green"),
+            # }}}
             # {{{ shell
-
             "command line edit": ("white", "black"),
             "command line prompt": (add_setting("white", "bold"), "black"),
 
@@ -1136,19 +1107,83 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused command line error": ("black", "dark green"),
 
             "command line clear button": (add_setting("white", "bold"), "black"),
-            "command line focused button": ("black", "light gray"),  # White
-            # doesn't work in curses mode
-
+            "command line focused button": ("black", "light gray"),
+            # }}}
+            # {{{ Code syntax
+            "keyword2": ("light cyan", "black"),
+            "function": ("light green", "black"),
+            "literal": ("light magenta", "black"),
+            "namespace": ("light red", "black"),
+            "operator": ("light red", "black"),
+            "argument": ("brown", "black"),
+            "builtin": ("light cyan", "black"),
+            "pseudo": ("light magenta", "black"),
+            "dunder": ("light cyan", "black"),
+            "exception": ("light cyan", "black"),
+            "keyword": ("light red", "black"),
+            "string": ("dark red", "black"),
+            "doublestring": ("dark red", "black"),
+            "singlestring": ("light blue", "black"),
+            "docstring": ("light red", "black"),
+            "backtick": ("light green", "black"),
+            "punctuation": ("white", "black"),
+            "comment": ("dark green", "black"),
             # }}}
 
-        })
+            # {{{ base styles
+            # }}}
+            # {{{ general ui
+            # }}}
+            # {{{ source view
+            # }}}
+            # {{{ sidebar
+            # }}}
+            # {{{ variables view
+            # }}}
+        }
 
         # }}}
     elif theme == "monokai-256":
         # {{{ monokai-256
-        palette_dict.update({
-            "header": ("h235", "h252", "standout"),
-
+        palette_dict = {
+            # {{{ base styles
+            "background": ("h235", "h252"),
+            "hotkey": (add_setting("h235", "underline"), "h252"),
+            "selectable": ("h252", "h235"),
+            "focused selectable": ("h255", "h24"),
+            "highlighted": ("h252", "h22"),
+            # }}}
+            # {{{ general ui
+            "header": ("h235", "h252"),
+            "button": ("h252", "h235"),
+            "focused button": ("h255", "h24"),
+            "focused sidebar": ("h23", "h252"),
+            "warning": (add_setting("h255", "bold"), "h124"),
+            "label": ("h235", "h252"),
+            "value": ("h255", "h17"),
+            "fixed value": ("h252", "h17"),
+            "group head": (add_setting("h25", "bold"), "h252"),
+            "search box": ("h255", "h235"),
+            "search not found": ("h255", "h124"),
+            "dialog title": (add_setting("h255", "bold"), "h235"),
+            # }}}
+            # {{{ source view
+            "current line marker": ("h160", "h235"),
+            "breakpoint marker": ("h160", "h235"),
+            "breakpoint source": ("h252", "h124"),
+            "breakpoint focused source": ("h192", "h124"),
+            "current breakpoint source": ("h192", "h124"),
+            "current breakpoint focused source": (
+                    add_setting("h192", "bold"), "h124"),
+            "source": ("h255", "h235"),
+            "focused source": ("h237", "h172"),
+            "current source": (add_setting("h252", "bold"), "h23"),
+            "current focused source": (add_setting("h192", "bold"), "h23"),
+            "current highlighted source": ("h255", "h22"),
+            "line number": ("h241", "h235"),
+            # }}}
+            # {{{ sidebar
+            # }}}
             # {{{ variables view
             "variables": ("h235", "h233"),
             "variable separator": ("h23", "h252"),
@@ -1168,8 +1203,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused return label": (add_setting("h192", "bold"), "h24"),
             "focused return value": ("h237", "h172"),
             # }}}
-
-            # {{{ stack view
+            # {{{ stack
             "stack": ("h235", "h233"),
 
             "frame name": ("h192", "h233"),
@@ -1186,8 +1220,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "current frame location": ("h252", "h22"),
             "focused current frame location": ("h255", "h64"),
             # }}}
-
-            # {{{ breakpoint view
+            # {{{ breakpoints view
             "breakpoint": ("h80", "h233"),
             "disabled breakpoint": ("h60", "h233"),
             "focused breakpoint": ("h237", "h172"),
@@ -1198,76 +1231,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused disabled current breakpoint": (
                 add_setting("h016", "bold"), "h64"),
             # }}}
-
-            # {{{ ui widgets
-
-            "selectable": ("h252", "h235"),
-            "focused selectable": ("h255", "h24"),
-
-            "button": ("h252", "h235"),
-            "focused button": ("h255", "h24"),
-
-            "background": ("h235", "h252"),
-            "hotkey": (add_setting("h235", "underline"), "h252", "underline"),
-            "focused sidebar": ("h23", "h252", "standout"),
-
-            "warning": (add_setting("h255", "bold"), "h124", "standout"),
-
-            "label": ("h235", "h252"),
-            "value": ("h255", "h17"),
-            "fixed value": ("h252", "h17"),
-            "group head": (add_setting("h25", "bold"), "h252"),
-
-            "search box": ("h255", "h235"),
-            "search not found": ("h255", "h124"),
-
-            "dialog title": (add_setting("h255", "bold"), "h235"),
-
-            # }}}
-
-            # {{{ source view
-            "current line marker": ("h160", "h235"),
-            "breakpoint marker": ("h160", "h235"),
-
-            "breakpoint source": ("h252", "h124"),
-            "breakpoint focused source": ("h192", "h124"),
-            "current breakpoint source": ("h192", "h124"),
-            "current breakpoint focused source": (
-                    add_setting("h192", "bold"), "h124"),
-            # }}}
-
-            # {{{ highlighting
-            "source": ("h255", "h235"),
-            "focused source": ("h237", "h172"),
-            "highlighted source": ("h252", "h22"),
-            "current source": (add_setting("h252", "bold"), "h23"),
-            "current focused source": (add_setting("h192", "bold"), "h23"),
-            "current highlighted source": ("h255", "h22"),
-
-            "line number": ("h241", "h235"),
-            "keyword2": ("h51", "h235"),
-            "function": ("h155", "h235"),
-            "literal": ("h141", "h235"),
-
-            "namespace": ("h198", "h235"),
-            "operator": ("h198", "h235"),
-            "argument": ("h208", "h235"),
-            "builtin": ("h51", "h235"),
-            "pseudo": ("h141", "h235"),
-            "dunder": ("h51", "h235"),
-            "exception": ("h51", "h235"),
-            "keyword": ("h198", "h235"),
-
-            "string": ("h228", "h235"),
-            "doublestring": ("h228", "h235"),
-            "singlestring": ("h228", "h235"),
-            "docstring": ("h243", "h235"),
-
-            "punctuation": ("h255", "h235"),
-            "comment": ("h243", "h235"),
-
-            # }}}
-
             # {{{ shell
             "command line edit": ("h255", "h233"),
             "command line prompt": (add_setting("h192", "bold"), "h233"),
@@ -1283,7 +1246,26 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "command line clear button": (add_setting("h255", "bold"), "h233"),
             "command line focused button": ("h255", "h24"),
             # }}}
-        })
+            # {{{ Code syntax
+            "keyword2": ("h51", "h235"),
+            "function": ("h155", "h235"),
+            "literal": ("h141", "h235"),
+            "namespace": ("h198", "h235"),
+            "operator": ("h198", "h235"),
+            "argument": ("h208", "h235"),
+            "builtin": ("h51", "h235"),
+            "pseudo": ("h141", "h235"),
+            "dunder": ("h51", "h235"),
+            "exception": ("h51", "h235"),
+            "keyword": ("h198", "h235"),
+            "string": ("h228", "h235"),
+            "doublestring": ("h228", "h235"),
+            "singlestring": ("h228", "h235"),
+            "docstring": ("h243", "h235"),
+            "punctuation": ("h255", "h235"),
+            "comment": ("h243", "h235"),
+            # }}}
+        }
         # }}}
     elif theme == "mono":
         # {{{ mono
@@ -1291,7 +1273,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "background": ("standout",),
             "selectable": (),
             "focused selectable": ("underline",),
-            "warning": ("bold",),
             "highlighted": ("bold",),
             "hotkey": ("underline, standout",),
         }
@@ -1299,6 +1280,19 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
     else:
         # {{{ custom
         try:
+            # {{{ base styles
+            palette_dict = {
+                "background": ("black", "light gray"),
+                "hotkey": (add_setting("black", "underline"), "light gray"),
+                "selectable": ("black", "dark cyan"),
+                "focused selectable": ("black", "dark green"),
+                "input": (add_setting("yellow", "bold"), "dark blue"),
+                "warning": (add_setting("white", "bold"), "dark red"),
+                "highlighted": ("white", "dark cyan"),
+                "source": ("white", "dark blue"),
+            }
+            # }}}
+
             symbols = {
                 "palette": palette_dict,
                 "add_setting": add_setting,
