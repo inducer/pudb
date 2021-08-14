@@ -1183,19 +1183,21 @@ class DebuggerUI(FrameVarInfoKeeper):
         def save_breakpoints(w, size, key):
             self.debugger.save_breakpoints()
 
-        def delete_breakpoint(w, size, key):
+        def handle_delete_breakpoint(w, size, key):
             bp_list = self._get_bp_list()
             if bp_list:
                 _, pos = self.bp_list._w.get_focus()
                 bp = bp_list[pos]
-                bp.enabled = False
-                set_breakpoint_source(bp)
+                delete_breakpoint(bp)
 
-                err = self.debugger.clear_break(bp.file, bp.line)
-                if err:
-                    self.message("Error clearing breakpoint:\n" + err)
-                else:
-                    self.update_breakpoints()
+        def delete_breakpoint(bp):
+            bp.enabled = False
+            set_breakpoint_source(bp)
+            err = self.debugger.clear_break(bp.file, bp.line)
+            if err:
+                self.message("Error clearing breakpoint:\n" + err)
+            else:
+                self.update_breakpoints()
 
         def enable_disable_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
@@ -1259,23 +1261,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         FileSourceCodeProvider(self.debugger, bp.file))
                 self.columns.set_focus(0)
             elif result == "del":
-                bp_source_identifier = \
-                        self.source_code_provider.get_source_identifier()
-
-                if bp_source_identifier is None:
-                    self.message(
-                        "Cannot currently delete a breakpoint here--"
-                        "source code does not correspond to a file location. "
-                        "(perhaps this is generated code)")
-
-                if bp_source_identifier == bp.file:
-                    self.source[bp.line-1].set_breakpoint(False)
-
-                err = self.debugger.clear_break(bp.file, bp.line)
-                if err:
-                    self.message("Error clearing breakpoint:\n" + err)
-                else:
-                    self.update_breakpoints()
+                delete_breakpoint(bp)
 
         def show_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
@@ -1286,7 +1272,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         FileSourceCodeProvider(self.debugger, bp.file))
 
         self.bp_list.listen("enter", show_breakpoint)
-        self.bp_list.listen("d", delete_breakpoint)
+        self.bp_list.listen("d", handle_delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
         self.bp_list.listen("e", examine_breakpoint)
         self.bp_list.listen("b", enable_disable_breakpoint)
