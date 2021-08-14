@@ -204,9 +204,9 @@ class BreakpointFrame(urwid.FlowWidget):
         bp_pfx = bp_pfx.ljust(3)
 
         hits_label = "hits" if self.hits != 1 else "hit"
-        loc = " %s:%d (%s %s)" % (self.filename, self.line, self.hits, hits_label)
+        loc = f" {self.filename}:{self.line} ({self.hits} {hits_label})"
         text = bp_pfx+loc
-        attr = [(apfx+"breakpoint", len(loc))]
+        attr = [(apfx+"breakpoint", len(text))]
 
         return make_canvas([text], [attr], maxcol, apfx+"breakpoint")
 
