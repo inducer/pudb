@@ -1172,25 +1172,24 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ breakpoint listeners
 
+        def set_breakpoint_source(bp):
+            bp_source_identifier = \
+                    self.source_code_provider.get_source_identifier()
+            if (bp.file
+                    and bp_source_identifier == bp.file
+                    and bp.line-1 < len(self.source)):
+                self.source[bp.line-1].set_breakpoint(bp.enabled)
+
         def save_breakpoints(w, size, key):
             self.debugger.save_breakpoints()
 
         def delete_breakpoint(w, size, key):
-            bp_source_identifier = \
-                    self.source_code_provider.get_source_identifier()
-
-            if bp_source_identifier is None:
-                self.message(
-                    "Cannot currently delete a breakpoint here--"
-                    "source code does not correspond to a file location. "
-                    "(perhaps this is generated code)")
-
             bp_list = self._get_bp_list()
             if bp_list:
                 _, pos = self.bp_list._w.get_focus()
                 bp = bp_list[pos]
-                if bp_source_identifier == bp.file and bp.line-1 < len(self.source):
-                    self.source[bp.line-1].set_breakpoint(False)
+                bp.enabled = False
+                set_breakpoint_source(bp)
 
                 err = self.debugger.clear_break(bp.file, bp.line)
                 if err:
@@ -1200,17 +1199,12 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def enable_disable_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
-
             if bp_entry is None:
                 return
-
             bp = self._get_bp_list()[pos]
             bp.enabled = not bp.enabled
-
-            sline = self.source[bp.line-1]
-            sline.set_breakpoint(bp.enabled)
-
             self.update_breakpoints()
+            set_breakpoint_source(bp)
 
         def examine_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
