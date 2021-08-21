@@ -576,124 +576,86 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
     # }}}
     elif theme == "agr-256":
         # {{{ agr-256
+
+        # Give the colors some comprehensible names
+        black = "h235"
+        blacker = "h233"
+        dark_cyan = "h24"
+        dark_gray = "h241"
+        dark_green = "h22"
+        dark_red = "h88"
+        dark_teal = "h23"
+        light_blue = "h111"
+        light_cyan = "h80"
+        light_gray = "h252"
+        light_green = "h113"
+        light_red = "h160"
+        medium_gray = "h246"
+        salmon = "h223"
+        orange = "h173"
+        white = "h255"
+        yellow = "h192"
+
+        link("focused breakpoint", "focused selectable")
+        link("current breakpoint", "current frame name")
+        link("focused current breakpoint", "focused current frame name")
         palette_dict = {
             # {{{ base styles
-            "background": ("h235", "h252"),
-            "selectable": ("h252", "h235"),
-            "focused selectable": ("h255", "h24"),
-            "hotkey": (add_setting("h235", "underline"), "h252"),
-            "highlighted": ("h252", "h22"),
+            "background": (black, light_gray),
+            "selectable": (white, blacker),
+            "focused selectable": (yellow, dark_cyan),
+            "hotkey": (add_setting(black, "underline"), light_gray),
+            "highlighted": (white, dark_green),
             # }}}
             # {{{ general ui
-            "header": ("h235", "h252"),
-            "button": ("h252", "h235"),
-            "focused button": ("h255", "h24"),
-
-            "focused sidebar": ("h23", "h252"),
-
-            "warning": (add_setting("h255", "bold"), "h124"),
-
-            "label": ("h235", "h252"),
-            "value": ("h255", "h17"),
-            "fixed value": ("h252", "h17"),
-            "group head": (add_setting("h25", "bold"), "h252"),
-
-            "search box": ("h255", "h235"),
-            "search not found": ("h255", "h124"),
-
-            "dialog title": (add_setting("h255", "bold"), "h235"),
+            "focused sidebar": (dark_cyan, light_gray),
+            "group head": (add_setting(dark_cyan, "bold"), light_gray),
+            "dialog title": (add_setting(light_gray, "bold"), black),
+            "warning": (add_setting(white, "bold"), dark_red),
+            "fixed value": (add_setting(white, "bold"), dark_gray),
+            "button": (add_setting(white, "bold"), black),
+            "focused button": (add_setting(yellow, "bold"), dark_cyan),
             # }}}
             # {{{ source view
-            "current line marker": ("h160", "h235"),
-            "breakpoint marker": ("h160", "h235"),
-
-            "breakpoint source": ("h252", "h124"),
-            "breakpoint focused source": ("h192", "h124"),
-            "current breakpoint source": ("h192", "h124"),
-            "current breakpoint focused source": (
-                    add_setting("h192", "bold"), "h124"),
-            "source": ("h255", "h235"),
-            "focused source": ("h192", "h24"),
-            "current source": (add_setting("h252", "bold"), "h23"),
-            "current focused source": (add_setting("h192", "bold"), "h23"),
-            "current highlighted source": ("h255", "h22"),
-
-            "line number": ("h241", "h235"),
+            "line number": (dark_gray, black),
+            "current line marker": (add_setting(yellow, "bold"), black),
+            "breakpoint marker": (add_setting(light_red, "bold"), black),
+            "source": (white, black),
+            "breakpoint source": (add_setting(white, "bold"), dark_red),
+            "current source": (add_setting(light_gray, "bold"), dark_teal),
             # }}}
             # {{{ sidebar
+            "sidebar two": (light_blue, blacker),
+            "focused sidebar two": (light_gray, dark_cyan),
+            "sidebar three": (medium_gray, blacker),
+            "focused sidebar three": (salmon, dark_cyan),
             # }}}
             # {{{ variables view
-            "variables": ("h235", "h233"),
-            "variable separator": ("h23", "h252"),
-
-            "var label": ("h111", "h233"),
-            "var value": ("h255", "h233"),
-            "focused var label": ("h192", "h24"),
-            "focused var value": ("h192", "h24"),
-
-            "highlighted var label": ("h252", "h22"),
-            "highlighted var value": ("h255", "h22"),
-            "focused highlighted var label": ("h252", "h64"),
-            "focused highlighted var value": ("h255", "h64"),
-
-            "return label": ("h113", "h233"),
-            "return value": ("h113", "h233"),
-            "focused return label": (add_setting("h192", "bold"), "h24"),
-            "focused return value": ("h192", "h24"),
+            "highlighted var label": (light_gray, dark_green),
+            "return label": (light_green, blacker),
+            "focused return label": (
+                add_setting(light_gray, "bold"), dark_cyan),
             # }}}
             # {{{ stack
-            "stack": ("h235", "h233"),
-
-            "frame name": ("h192", "h233"),
-            "focused frame name": ("h192", "h24"),
-            "frame class": ("h111", "h233"),
-            "focused frame class": ("h192", "h24"),
-            "frame location": ("h252", "h233"),
-            "focused frame location": ("h192", "h24"),
-
-            "current frame name": ("h255", "h22"),
-            "focused current frame name": ("h255", "h64"),
-            "current frame class": ("h111", "h22"),
-            "focused current frame class": ("h255", "h64"),
-            "current frame location": ("h252", "h22"),
-            "focused current frame location": ("h255", "h64"),
-            # }}}
-            # {{{ breakpoints view
-            "breakpoint": ("h80", "h233"),
-            "disabled breakpoint": ("h60", "h233"),
-            "focused breakpoint": ("h192", "h24"),
-            "focused disabled breakpoint": ("h182", "h24"),
-            "current breakpoint": (add_setting("h255", "bold"), "h22"),
-            "disabled current breakpoint": (add_setting("h016", "bold"), "h22"),
-            "focused current breakpoint": (add_setting("h255", "bold"), "h64"),
-            "focused disabled current breakpoint": (
-                add_setting("h016", "bold"), "h64"),
+            "current frame name": (yellow, blacker),
+            "focused current frame name": (
+                add_setting(yellow, "bold"), dark_cyan),
             # }}}
             # {{{ shell
-            "command line edit": ("h255", "h233"),
-            "command line prompt": (add_setting("h192", "bold"), "h233"),
-
-            "command line output": ("h80", "h233"),
-            "command line input": ("h255", "h233"),
-            "command line error": ("h160", "h233"),
-
-            "focused command line output": (add_setting("h192", "bold"), "h24"),
-            "focused command line input": ("h255", "h24"),
-            "focused command line error": ("h235", "h24"),
-
-            "command line clear button": (add_setting("h255", "bold"), "h233"),
-            "command line focused button": ("h255", "h24"),
+            "command line prompt": (add_setting(yellow, "bold"), black),
+            "command line output": (light_cyan, black),
+            "command line error": (light_red, black),
             # }}}
             # {{{ Code syntax
-            "keyword": ("h111", "h235"),
-            "literal": ("h173", "h235"),
-            "string": ("h113", "h235"),
-            "doublestring": ("h113", "h235"),
-            "singlestring": ("h113", "h235"),
-            "docstring": ("h113", "h235"),
-            "function": ("h192", "h235"),
-            "punctuation": ("h223", "h235"),
-            "comment": ("h246", "h235"),
+            "comment": (medium_gray, black),
+            "exception": (orange, black),
+            "function": (yellow, black),
+            "keyword": (light_blue, black),
+            "literal": (orange, black),
+            "operator": (yellow, black),
+            "pseudo": (medium_gray, black),
+            "punctuation": (salmon, black),
+            "string": (light_green, black),
             # }}}
         }
         # }}}
