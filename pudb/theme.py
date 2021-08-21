@@ -660,142 +660,69 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
         }
         # }}}
     elif theme == "monokai":
-        # {{{ midnight
-
-        # Based on XCode's midnight theme
-        # Looks best in a console with green text against black background
+        # {{{ monokai
+        link("current breakpoint", "current frame name")
+        link("focused current breakpoint", "focused current frame name")
         palette_dict = {
             # {{{ base styles
             "background": ("black", "light gray"),
-            "selectable": ("black", "dark cyan"),
-            "focused selectable": ("black", "light cyan"),
-            "highlighted": ("black", "dark magenta"),
+            "selectable": ("white", "black"),
+            "focused selectable": ("white", "dark gray"),
+            "highlighted": ("black", "dark green"),
             "hotkey": (add_setting("black", "underline"), "light gray"),
             # }}}
             # {{{ general ui
-            "dialog title": (add_setting("white", "bold"), "dark cyan"),
-            "group head": (add_setting("dark blue", "bold"), "light gray"),
-            "focused sidebar": (add_setting("yellow", "bold"), "light gray"),
-            "button": (add_setting("white", "bold"), "dark blue"),
-            "focused button": ("light cyan", "black"),
-            "value": (add_setting("yellow", "bold"), "dark blue"),
-            "fixed value": ("light gray", "dark blue"),
+            "input": ("white", "black"),
+            "button": (add_setting("white", "bold"), "black"),
+            "focused button": (add_setting("white", "bold"), "dark gray"),
+            "focused sidebar": ("dark blue", "light gray"),
             "warning": (add_setting("white", "bold"), "dark red"),
-            "search box": ("white", "black"),
+            "group head": (add_setting("black", "bold"), "light gray"),
+            "dialog title": (add_setting("white", "bold"), "black"),
             # }}}
             # {{{ source view
-            "focused source": ("black", "dark cyan"),
-            "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
-            "current breakpoint source": ("black", "dark red"),
-            "source": ("white", "black"),
-            "highlighted source": ("white", "light cyan"),
-            "current source": ("white", "light gray"),
-            "current focused source": ("white", "brown"),
+            "current source": ("black", "dark cyan"),
+            "breakpoint source": (add_setting("white", "bold"), "dark red"),
             "line number": ("dark gray", "black"),
-            "current line marker": ("dark red", "black"),
-            "breakpoint marker": ("dark red", "black"),
+            "current line marker": (add_setting("dark cyan", "bold"), "black"),
+            "breakpoint marker": (add_setting("dark red", "bold"), "black"),
             # }}}
             # {{{ sidebar
+            "sidebar two": ("light cyan", "black"),
+            "focused sidebar two": ("light cyan", "dark gray"),
+            "sidebar three": ("light magenta", "black"),
+            "focused sidebar three": ("light magenta", "dark gray"),
             # }}}
             # {{{ variables view
-            "variables": ("white", "black"),
-            "variable separator": ("dark cyan", "light gray"),
-
-            "var label": ("light blue", "black"),
-            "var value": ("white", "black"),
-
-            "focused var label": ("dark blue", "dark green"),
-            "focused var value": ("black", "dark green"),
-
-            "highlighted var label": ("white", "dark cyan"),
-            "highlighted var value": ("black", "dark cyan"),
-            "focused highlighted var label": ("white", "dark green"),
-            "focused highlighted var value": ("black", "dark green"),
-
-            "return label": ("white", "dark blue"),
-            "return value": ("black", "dark cyan"),
-            "focused return label": ("light gray", "dark blue"),
-            "focused return value": ("black", "dark green"),
+            "return label": ("light green", "black"),
+            "focused return label": ("light green", "dark gray"),
             # }}}
             # {{{ stack
-            "stack": ("white", "black"),
-
-            "frame name": ("white", "black"),
-            "frame class": ("dark blue", "black"),
-            "frame location": ("light cyan", "black"),
-
-            "current frame name": (add_setting("white", "bold"), "black"),
-            "current frame class": ("dark blue", "black"),
-            "current frame location": ("light cyan", "black"),
-
-            "focused frame name": ("black", "dark green"),
-            "focused frame class": (add_setting("white", "bold"), "dark green"),
-            "focused frame location": ("dark blue", "dark green"),
-
-            "focused current frame name": ("black", "dark green"),
-            "focused current frame class": (
-                add_setting("white", "bold"), "dark green"),
-            "focused current frame location": ("dark blue", "dark green"),
-            # }}}
-            # {{{ breakpoints view
-            "breakpoint": ("white", "black"),
-            "disabled breakpoint": ("dark gray", "black"),
-            "focused breakpoint": ("black", "dark green"),
-            "focused disabled breakpoint": ("dark gray", "dark green"),
-            "current breakpoint": (add_setting("white", "bold"), "black"),
-            "disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "black"),
-            "focused current breakpoint": (
-                add_setting("white", "bold"), "dark green"),
-            "focused disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "dark green"),
+            "current frame name": ("light green", "black"),
+            "focused current frame name": ("light green", "dark gray"),
             # }}}
             # {{{ shell
-            "command line edit": ("white", "black"),
-            "command line prompt": (add_setting("white", "bold"), "black"),
-
-            "command line output": (add_setting("white", "bold"), "black"),
-            "command line input": (add_setting("white", "bold"), "black"),
-            "command line error": (add_setting("light red", "bold"), "black"),
-
-            "focused command line output": ("black", "dark green"),
-            "focused command line input": (
-                    add_setting("white", "bold"), "dark green"),
-            "focused command line error": ("black", "dark green"),
-
-            "command line clear button": (add_setting("white", "bold"), "black"),
-            "command line focused button": ("black", "light gray"),
+            "command line prompt": (add_setting("yellow", "bold"), "black"),
+            "command line output": ("light cyan", "black"),
+            "command line error": ("yellow", "black"),
+            "focused command line output": ("light cyan", "dark gray"),
+            "focused command line error": (
+                add_setting("yellow", "bold"), "dark gray"),
             # }}}
             # {{{ Code syntax
-            "keyword2": ("light cyan", "black"),
-            "function": ("light green", "black"),
-            "literal": ("light magenta", "black"),
-            "namespace": ("light red", "black"),
-            "operator": ("light red", "black"),
-            "argument": ("brown", "black"),
-            "builtin": ("light cyan", "black"),
-            "pseudo": ("light magenta", "black"),
-            "dunder": ("light cyan", "black"),
+            "literal":   ("light magenta", "black"),
+            "builtin":   ("light cyan", "black"),
             "exception": ("light cyan", "black"),
-            "keyword": ("light red", "black"),
-            "string": ("dark red", "black"),
-            "doublestring": ("dark red", "black"),
-            "singlestring": ("light blue", "black"),
-            "docstring": ("light red", "black"),
-            "backtick": ("light green", "black"),
-            "punctuation": ("white", "black"),
-            "comment": ("dark green", "black"),
-            # }}}
-
-            # {{{ base styles
-            # }}}
-            # {{{ general ui
-            # }}}
-            # {{{ source view
-            # }}}
-            # {{{ sidebar
-            # }}}
-            # {{{ variables view
+            "keyword2":  ("light cyan", "black"),
+            "function":  ("light green", "black"),
+            "class":     (add_setting("light green", "underline"), "black"),
+            "keyword":   ("light red", "black"),
+            "operator":  ("light red", "black"),
+            "comment":   ("dark gray", "black"),
+            "docstring": ("dark gray", "black"),
+            "argument":  ("brown", "black"),
+            "pseudo":    ("brown", "black"),
+            "string":    ("yellow", "black"),
             # }}}
         }
 
