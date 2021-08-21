@@ -256,6 +256,7 @@ else:
         t.Name.Class: "name",
         t.Name.Builtin: "builtin",
         t.Name.Builtin.Pseudo: "pseudo",
+        t.Name.Variable.Magic: "magic",
         t.Punctuation: "punctuation",
         t.Operator: "operator",
         t.String: "string",
