@@ -1194,13 +1194,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                 delete_breakpoint(bp)
 
         def delete_breakpoint(bp):
-            bp.enabled = False
-            set_breakpoint_source(bp)
             err = self.debugger.clear_break(bp.file, bp.line)
             if err:
                 self.message("Error clearing breakpoint:\n" + err)
             else:
+                bp.enabled = False
                 self.update_breakpoints()
+                set_breakpoint_source(bp)
 
         def enable_disable_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
@@ -1265,6 +1265,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.columns.set_focus(0)
             elif result == "del":
                 delete_breakpoint(bp)
+
+            self.update_breakpoints()
+            set_breakpoint_source(bp)
 
         def show_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
