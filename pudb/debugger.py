@@ -529,7 +529,8 @@ class Debugger(bdb.Bdb):
 # UI stuff --------------------------------------------------------------------
 
 from pudb.ui_tools import make_hotkey_markup, labelled_value, \
-        SelectableText, SignalWrap, StackFrame, BreakpointFrame
+        SelectableText, SignalWrap, StackFrame, BreakpointFrame, \
+        Caption, CaptionParts
 
 from pudb.var_view import FrameVarInfoKeeper
 
@@ -858,7 +859,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         ],
                     dividechars=1)
 
-        self.caption = urwid.Text("")
+        self.caption = Caption(CaptionParts._make([(None, "")]*4))
         header = urwid.AttrMap(self.caption, "header")
         self.top = SignalWrap(urwid.Frame(
             urwid.AttrMap(self.columns, "background"),
@@ -2609,26 +2610,26 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.current_exc_tuple = exc_tuple
 
         from pudb import VERSION
-        caption = [(None,
-            "PuDB %s - ?:help  n:next  s:step into  b:breakpoint  "
-            "!:python command line"
-            % VERSION)]
+        pudb_version = (None, "PuDB %s" % VERSION)
+        hotkey = (None, "?:help")
+        if self.source_code_provider.get_source_identifier():
+            filename = (None, self.source_code_provider.get_source_identifier())
+        else:
+            filename = (None, "source filename is unavailable")
+        optional_alert = (None, "")
 
         if self.debugger.post_mortem:
             if show_exc_dialog and exc_tuple is not None:
                 self.show_exception_dialog(exc_tuple)
 
-            caption.extend([
-                (None, " "),
-                ("warning", "[POST-MORTEM MODE]")
-                ])
-        elif exc_tuple is not None:
-            caption.extend([
-                (None, " "),
-                ("warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
-                ])
+            optional_alert = ("warning", "[POST-MORTEM MODE]")
 
-        self.caption.set_text(caption)
+        elif exc_tuple is not None:
+            optional_alert = \
+                    ("warning", "[PROCESSING EXCEPTION, hit 'e' to examine]")
+
+        self.caption.set_text(CaptionParts(
+            pudb_version, hotkey, filename, optional_alert))
         self.event_loop()
 
     def set_source_code_provider(self, source_code_provider, force_update=False):
