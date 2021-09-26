@@ -123,6 +123,13 @@ def load_config():
 
     conf_dict.setdefault("hide_cmdline_win", "False")
 
+    # hotkeys
+    conf_dict.setdefault("hotkeys_code", "C")
+    conf_dict.setdefault("hotkeys_variables", "V")
+    conf_dict.setdefault("hotkeys_stack", "S")
+    conf_dict.setdefault("hotkeys_breakpoints", "B")
+
+
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:

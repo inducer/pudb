@@ -17,7 +17,7 @@ back to the source view?**
 
 A: Press your left arrow key.
 
-**Q: Where are breakpoints stored?**
+**Q: Where are breakpoints, PuDB settings file or shell history stored?**
 
 A: All PuDB information is stored in a location specified by the `XDG Base
 Directory Specification

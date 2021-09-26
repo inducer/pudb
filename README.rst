@@ -66,6 +66,24 @@ Features
 * Should work with Python 3.6 and newer. (Versions 2019.2 and older continue
   to support Python 2.7.)
 
+Configuration
+-------------
+
+Override default key bindings in the settings file (see `faq`_). Add the bindings under mentioned section in the config file.
+
+.. _faq: doc/misc.rst#faq
+
+
+- window chooser bindings
+
+.. code-block:: ini
+
+    [pudb]
+    hotkeys_breakpoints = B
+    hotkeys_code = C
+    hotkeys_stack = S
+    hotkeys_variables = V
+
 Links
 -----
 
