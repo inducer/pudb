@@ -2620,12 +2620,12 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             caption.extend([
                 (None, " "),
-                ("warning", "[POST-MORTEM MODE]")
+                ("header warning", "[POST-MORTEM MODE]")
                 ])
         elif exc_tuple is not None:
             caption.extend([
                 (None, " "),
-                ("warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
+                ("header warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
                 ])
 
         self.caption.set_text(caption)
