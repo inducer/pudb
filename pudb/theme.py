@@ -425,7 +425,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "header": ("dark blue", "light gray"),
             "dialog title": (add_setting("white", "bold"), "black"),
             "warning": (add_setting("light red", "bold"), "black"),
-            "warning": (add_setting("light red", "bold"), "light gray"),
+            "header warning": (add_setting("light red", "bold"), "light gray"),
             # }}}
             # {{{ source view
             "source": ("white", "black"),
