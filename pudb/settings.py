@@ -25,7 +25,6 @@ THE SOFTWARE.
 
 import os
 import sys
-
 from configparser import ConfigParser
 from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
                            settings_log)
@@ -123,6 +122,8 @@ def load_config():
 
     conf_dict.setdefault("hide_cmdline_win", "False")
 
+    conf_dict.setdefault("enable_community_contributed_content", "False")
+
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
@@ -136,6 +137,7 @@ def load_config():
     normalize_bool_inplace("wrap_variables")
     normalize_bool_inplace("prompt_on_quit")
     normalize_bool_inplace("hide_cmdline_win")
+    normalize_bool_inplace("enable_community_contributed_content")
 
     _config_[0] = conf_dict
     return conf_dict
@@ -223,6 +225,11 @@ def edit_config(ui, conf_dict):
             conf_dict.update(new_conf_dict)
             _update_hide_cmdline_win()
 
+        elif option == "enable_community_contributed_content":
+            new_conf_dict["enable_community_contributed_content"] = (
+                not check_box.get_state())
+            conf_dict.update(new_conf_dict)
+
         elif option == "current_stack_frame":
             # only activate if the new state of the radio button is 'on'
             if new_state:
@@ -269,6 +276,14 @@ def edit_config(ui, conf_dict):
                                       "when not in use",
             bool(conf_dict["hide_cmdline_win"]), on_state_change=_update_config,
                 user_data=("hide_cmdline_win", None))
+
+    enable_community_contributed_content = urwid.CheckBox(
+        "Enable community contributed content. This will give  you access to more "
+        "stringifiers, shells and themes. \n"
+        "Changing this setting requires a restart of PuDB.",
+        bool(conf_dict["enable_community_contributed_content"]),
+        on_state_change=_update_config,
+        user_data=("enable_community_contributed_content", None))
 
     # {{{ shells
 
@@ -345,8 +360,18 @@ def edit_config(ui, conf_dict):
     # {{{ stringifier
 
     from pudb.var_view import STRINGIFIERS
+    from pudb.contrib.stringifiers import CONTRIB_STRINGIFIERS
     stringifier_opts = list(STRINGIFIERS.keys())
+    if conf_dict["enable_community_contributed_content"]:
+        stringifier_opts = (
+            list(STRINGIFIERS.keys()) + list(CONTRIB_STRINGIFIERS.keys()))
     known_stringifier = conf_dict["stringifier"] in stringifier_opts
+    contrib_stringifier = conf_dict["stringifier"] in CONTRIB_STRINGIFIERS
+    fallback_to_default_stringifier = (contrib_stringifier and not
+        conf_dict["enable_community_contributed_content"])
+    use_default_stringifier = ((conf_dict["stringifier"] == "default") or
+        fallback_to_default_stringifier)
+    custom_stringifier = not (known_stringifier or contrib_stringifier)
     stringifier_rb_group = []
     stringifier_edit = urwid.Edit(edit_text=conf_dict["custom_stringifier"])
     stringifier_info = urwid.Text(
@@ -357,15 +382,21 @@ def edit_config(ui, conf_dict):
         "be slower than the default, type, or id stringifiers.\n")
     stringifier_edit_list_item = urwid.AttrMap(stringifier_edit,
                                                "input", "focused input")
+
     stringifier_rbs = [
+        urwid.RadioButton(stringifier_rb_group, "default",
+            use_default_stringifier,
+            on_state_change=_update_config,
+            user_data=("stringifier", "default"))
+        ]+[
             urwid.RadioButton(stringifier_rb_group, name,
                 conf_dict["stringifier"] == name,
                 on_state_change=_update_config,
                 user_data=("stringifier", name))
-            for name in stringifier_opts
+            for name in stringifier_opts if name != "default"
             ]+[
                 urwid.RadioButton(stringifier_rb_group, "Custom:",
-                    not known_stringifier, on_state_change=_update_config,
+                    custom_stringifier, on_state_change=_update_config,
                     user_data=("stringifier", None)),
                 stringifier_edit_list_item,
                 urwid.Text("\nTo use a custom stringifier, see "
@@ -441,6 +472,7 @@ def edit_config(ui, conf_dict):
             + [cb_line_numbers]
             + [cb_prompt_on_quit]
             + [hide_cmdline_win]
+            + [enable_community_contributed_content]
 
             + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
             + [shell_info]

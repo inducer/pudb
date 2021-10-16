@@ -84,3 +84,11 @@ version control tool.::
     git clone https://github.com/inducer/pudb.git
 
 You may also `browse the code <https://github.com/inducer/pudb>`_ online.
+
+
+Customize and Extend PuDB
+-------------------------
+
+You can contribute your custom stringifiers, themes and shells under
+`pudb/contrib` folder. Currently the process is streamlined for stringifiers,
+while shells and themes will require some refactoring of the core PuDB code.

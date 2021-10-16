@@ -203,7 +203,8 @@ class InspectInfo:
         self.access_level = CONFIG["default_variables_access_level"]
         self.show_methods = False
         self.wrap = CONFIG["wrap_variables"]
-
+        self.enable_contrib_stringifiers = \
+                CONFIG["enable_community_contributed_content"]
 
 class WatchExpression:
     def __init__(self, expression):
@@ -456,11 +457,19 @@ STRINGIFIERS = {
 }
 
 
+import pudb.contrib.stringifiers as contrib
+
+
 def get_stringifier(iinfo: InspectInfo) -> Callable:
     """
     :return: a function that turns an object into a Unicode text object.
     """
     try:
+        if iinfo.display_type in contrib.CONTRIB_STRINGIFIERS:
+            if iinfo.enable_contrib_stringifiers:
+                return contrib.CONTRIB_STRINGIFIERS[iinfo.display_type]
+            else:
+                return STRINGIFIERS["default"]
         return STRINGIFIERS[iinfo.display_type]
     except KeyError:
         try:
