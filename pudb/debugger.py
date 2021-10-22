@@ -2356,7 +2356,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     # }}}
 
-    # {{{ interaction
+    # {{{ event loop
 
     def event_loop(self, toplevel=None):
         prev_quit_loop = self.quit_event_loop
