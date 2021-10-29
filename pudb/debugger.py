@@ -2386,7 +2386,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e039"  # noqa
+        WELCOME_LEVEL = "e040"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2402,6 +2402,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2021.2:\n\n"
+                    "- Remaster themes (Michael van der Kamp)\n"
+                    "- Add more internal shell shortcuts (Huy Nguyen Quang)\n"
+                    "- Save internal shell history between sessions "
+                    "(Diego Velazquez)\n"
+                    "- Various bug fixes\n"
 
                     "\nChanges in version 2021.1:\n\n"
                     "- Add shortcut to edit files in source and stack view "
