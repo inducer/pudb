@@ -18,7 +18,7 @@ setup(
     long_description=long_description,
     author="Andreas Kloeckner",
     author_email="inform@tiker.net",
-    python_requires="~=3.6",
+    python_requires="~=3.7",
     install_requires=[
         "urwid>=1.1.1",
         "pygments>=2.7.4",
