@@ -27,7 +27,7 @@ THE SOFTWARE.
 from pudb.settings import load_config
 
 
-NUM_VERSION = (2021, 2)
+NUM_VERSION = (2021, 2, 1)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
