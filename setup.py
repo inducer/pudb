@@ -23,11 +23,11 @@ setup(
         "urwid>=1.1.1",
         "pygments>=2.7.4",
         "jedi>=0.18,<1",
-        "urwid_readline"
+        "urwid_readline",
+        "dataclasses>=0.7;python_version<='3.6'",
     ],
     test_requires=[
         "pytest>=2",
-        "dataclasses>=0.7;python_version<='3.6'"
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
