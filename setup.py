@@ -24,7 +24,7 @@ setup(
         "pygments>=2.7.4",
         "jedi>=0.18,<1",
         "urwid_readline",
-	"dataclasses>=0.7;python_version<='3.6'",
+        "dataclasses>=0.7;python_version<='3.6'",
     ],
     test_requires=[
         "pytest>=2",
