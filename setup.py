@@ -27,6 +27,7 @@ setup(
     ],
     test_requires=[
         "pytest>=2",
+        "dataclasses>=0.7;python_version<='3.6'"
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
