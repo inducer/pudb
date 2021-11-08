@@ -29,6 +29,7 @@ import bdb
 import gc
 import os
 import sys
+import string
 
 from itertools import count
 from functools import partial
@@ -1789,6 +1790,142 @@ class DebuggerUI(FrameVarInfoKeeper):
         def cmdline_history_next(w, size, key):
             cmdline_history_browse(1)
 
+        def cmdline_start_of_line(w, size, key):
+            self.cmdline_edit.edit_pos = 0
+
+        def cmdline_end_of_line(w, size, key):
+            self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
+
+        def cmdline_del_next_char(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            self.cmdline_edit.edit_text = (self.cmdline_edit.edit_text[:pos]
+                                           + self.cmdline_edit.edit_text[pos + 1:])
+
+        def cmdline_next_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            after = self.cmdline_edit.edit_text[pos:]
+            len_before_lstrip = len(after)
+            after = after.lstrip(string.punctuation + ' ')
+            i = 0
+            while i < len(after):
+                if not after[i].isalnum():
+                    break
+                i += 1
+            self.cmdline_edit.edit_pos += i + (len_before_lstrip - len(after))
+
+        def cmdline_next_full_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            after = self.cmdline_edit.edit_text[pos:]
+            len_before_lstrip = len(after)
+            after = after.lstrip()
+            i = 0
+            while i < len(after):
+                if after[i].isspace():
+                    break
+                i += 1
+            self.cmdline_edit.edit_pos += i + (len_before_lstrip - len(after))
+
+        def cmdline_previous_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            before = self.cmdline_edit.edit_text[:pos]
+            before = before[::-1]
+            len_before_lstrip = len(before)
+            before = before.lstrip(string.punctuation + ' ')
+            i = 0
+            while i < len(before):
+                if not before[i].isalnum():
+                    break
+                i += 1
+            self.cmdline_edit.edit_pos -= i + (len_before_lstrip - len(before))
+
+        def cmdline_previous_full_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            before = self.cmdline_edit.edit_text[:pos]
+            before = before[::-1]
+            len_before_lstrip = len(before)
+            before = before.lstrip()
+            i = 0
+            while i < len(before):
+                if before[i].isspace():
+                    break
+                i += 1
+            self.cmdline_edit.edit_pos -= i + (len_before_lstrip - len(before))
+
+        def cmdline_next_char(w, size, key):
+            self.cmdline_edit.edit_pos += 1
+
+        def cmdline_previous_char(w, size, key):
+            self.cmdline_edit.edit_pos -= 1
+
+        def cmdline_del_next_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            before, after = (
+                    self.cmdline_edit.edit_text[:pos],
+                    self.cmdline_edit.edit_text[pos:])
+            after = after.lstrip(string.punctuation + ' ')
+            i = 0
+            while i < len(after):
+                if not after[i].isalnum():
+                    break
+                i += 1
+
+            self.cmdline_edit.edit_text = before + after[i:]
+
+        def cmdline_del_next_full_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            before, after = (
+                    self.cmdline_edit.edit_text[:pos],
+                    self.cmdline_edit.edit_text[pos:])
+            after = after.lstrip()
+            i = 0
+            while i < len(after):
+                if after[i].isspace():
+                    break
+                i += 1
+
+            self.cmdline_edit.edit_text = before + after[i:]
+
+        def cmdline_del_previous_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            before, after = (
+                    self.cmdline_edit.edit_text[:pos],
+                    self.cmdline_edit.edit_text[pos:])
+            before = before[::-1]
+            before = before.lstrip(string.punctuation + ' ')
+            i = 0
+            while i < len(before):
+                if not before[i].isalnum():
+                    break
+                i += 1
+
+            self.cmdline_edit.edit_text = before[i:][::-1] + after
+            self.cmdline_edit.edit_post = len(before[i:])
+
+        def cmdline_del_previous_full_word(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            before, after = (
+                    self.cmdline_edit.edit_text[:pos],
+                    self.cmdline_edit.edit_text[pos:])
+            before = before[::-1]
+            before = before.lstrip()
+            i = 0
+            while i < len(before):
+                if before[i].isspace():
+                    break
+                i += 1
+
+            self.cmdline_edit.edit_text = before[i:][::-1] + after
+            self.cmdline_edit.edit_post = len(before[i:])
+
+        def cmdline_del_to_end_of_line(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            self.cmdline_edit.edit_text = self.cmdline_edit.edit_text[:pos]
+
+        def cmdline_del_to_start_of_line(w, size, key):
+            pos = self.cmdline_edit.edit_pos
+            self.cmdline_edit.edit_text = self.cmdline_edit.edit_text[pos:]
+            self.cmdline_edit.edit_pos = 0
+
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
@@ -1809,6 +1946,22 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_edit_sigwrap.listen("ctrl n", cmdline_history_next)
         self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
+
+        self.cmdline_edit_sigwrap.listen("ctrl a", cmdline_start_of_line)
+        self.cmdline_edit_sigwrap.listen("ctrl e", cmdline_end_of_line)
+        self.cmdline_edit_sigwrap.listen("ctrl d", cmdline_del_next_char)
+        self.cmdline_edit_sigwrap.listen("meta backspace", cmdline_del_previous_word)
+        self.cmdline_edit_sigwrap.listen("meta d", cmdline_del_next_word)
+        self.cmdline_edit_sigwrap.listen("ctrl w", cmdline_del_previous_full_word)
+        self.cmdline_edit_sigwrap.listen("meta ctrl d", cmdline_del_next_full_word)
+        self.cmdline_edit_sigwrap.listen("ctrl u", cmdline_del_to_start_of_line)
+        self.cmdline_edit_sigwrap.listen("ctrl k", cmdline_del_to_end_of_line)
+        self.cmdline_edit_sigwrap.listen("ctrl f", cmdline_next_char)
+        self.cmdline_edit_sigwrap.listen("ctrl b", cmdline_previous_char)
+        self.cmdline_edit_sigwrap.listen("meta f", cmdline_next_word)
+        self.cmdline_edit_sigwrap.listen("meta b", cmdline_previous_word)
+        self.cmdline_edit_sigwrap.listen("meta ctrl f", cmdline_next_full_word)
+        self.cmdline_edit_sigwrap.listen("meta ctrl b", cmdline_previous_full_word)
 
         self.top.listen("ctrl x", toggle_cmdline_focus)
 
