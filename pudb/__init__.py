@@ -312,19 +312,17 @@ def post_mortem(tb=None, e_type=None, e_value=None):
 
     dbg = _get_debugger()
     dbg.reset()
-    dbg.interaction(tb.tb_frame, exc_info)
+    dbg.interaction(None, (exc_info[0], exc_info[1], tb))
 
 
 def pm():
     import sys
-    try:
-        e_type = sys.last_type
-        e_value = sys.last_value
-        tb = sys.last_traceback
-    except AttributeError:
+    exc_type, exc_val, tb = sys.exc_info()
+
+    if exc_type is None:
         # No exception on record. Do nothing.
         return
-    post_mortem(tb, e_type, e_value)
+    post_mortem()
 
 
 if __name__ == "__main__":
