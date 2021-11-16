@@ -1,5 +1,5 @@
-Getting Started
----------------
+Starting the debugger
+---------------------
 
 To start debugging, simply insert::
 
@@ -81,6 +81,8 @@ connection::
     pudb:6899: Please telnet into 127.0.0.1 6899.
     pudb:6899: Waiting for client...
 
+.. automodule:: pudb.remote
+
 "Reverse" remote debugging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -105,7 +107,6 @@ Specify host and port in set_trace and set the *reverse* parameter to *True*::
 Then watch the debugger connect to netcat::
 
     pudb:9999: Now in session with 127.0.0.1:6899.
-
 
 Using the debugger after forking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

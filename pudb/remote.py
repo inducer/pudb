@@ -1,3 +1,10 @@
+"""
+.. autoclass:: RemoteDebugger
+
+.. autofunction:: set_trace
+.. autofunction:: debugger
+"""
+
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -77,6 +84,10 @@ Please specify one using the PUDB_RDB_PORT environment variable.
 
 
 class RemoteDebugger(Debugger):
+    """
+    .. automethod:: __init__
+    """
+
     me = "pudb"
     _prev_outs = None
     _sock = None
@@ -90,7 +101,23 @@ class RemoteDebugger(Debugger):
         term_size=None,
         reverse=False,
     ):
+        """
+        :arg term_size: A two-tuple ``(columns, rows)``, or *None*. If *None*,
+            try to determine the terminal size automatically.
+
+            Currently, this uses a heuristic: It uses the terminal size of the
+            debuggee as that for the debugger. The idea is that you might be
+            running both in two tabs of the same terminal window, hence using
+            terminals of the same size.
+        """
         self.out = out
+
+        if term_size is None:
+            try:
+                s = struct.unpack("hh", fcntl.ioctl(1, termios.TIOCGWINSZ, "1234"))
+                term_size = (s[1], s[0])
+            except Exception:
+                term_size = (80, 24)
 
         self._prev_handles = sys.stdin, sys.stdout
         self._client, (address, port) = self.get_client(
@@ -205,13 +232,6 @@ def set_trace(
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:
         frame = _frame().f_back
-    if term_size is None:
-        try:
-            # Getting terminal size
-            s = struct.unpack("hh", fcntl.ioctl(1, termios.TIOCGWINSZ, "1234"))
-            term_size = (s[1], s[0])
-        except Exception:
-            term_size = (80, 24)
 
     return debugger(
         term_size=term_size, host=host, port=port, reverse=reverse
