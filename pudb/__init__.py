@@ -58,9 +58,6 @@ import builtins
 builtins.__dict__["pu"] = PudbShortcuts()
 
 
-CURRENT_DEBUGGER = []
-
-
 def _tty_override():
     import os
     return os.environ.get("PUDB_TTY")
@@ -76,7 +73,8 @@ def _open_tty(tty_path):
 
 
 def _get_debugger(**kwargs):
-    if not CURRENT_DEBUGGER:
+    from pudb.debugger import Debugger
+    if not Debugger._current_debugger:
         tty_path = _tty_override()
         if tty_path and ("stdin" not in kwargs or "stdout" not in kwargs):
             tty_file, term_size = _open_tty(tty_path)
@@ -87,14 +85,14 @@ def _get_debugger(**kwargs):
         from pudb.debugger import Debugger
         dbg = Debugger(**kwargs)
 
-        CURRENT_DEBUGGER.append(dbg)
         return dbg
     else:
-        return CURRENT_DEBUGGER[0]
+        return Debugger._current_debugger[0]
 
 
 def _have_debugger():
-    return len(CURRENT_DEBUGGER) > 0
+    from pudb.debugger import Debugger
+    return bool(Debugger._current_debugger)
 
 
 import signal  # noqa

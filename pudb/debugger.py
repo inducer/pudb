@@ -180,8 +180,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
+    _current_debugger = []
+
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
             **kwargs):
+
+        if Debugger._current_debugger:
+            raise ValueError("a Debugger instance already exists")
+        self._current_debugger.append(self)
 
         # Pass remaining kwargs to python debugger framework
         bdb.Bdb.__init__(self, **kwargs)
@@ -199,6 +205,10 @@ class Debugger(bdb.Bdb):
         from pudb.settings import load_breakpoints
         for bpoint_descr in load_breakpoints():
             self.set_break(*bpoint_descr)
+
+    def __del__(self):
+        assert self._current_debugger == [self]
+        self._current_debugger.pop()
 
     # These (dispatch_line and set_continue) are copied from bdb with the
     # patch from https://bugs.python.org/issue16482 applied. See
