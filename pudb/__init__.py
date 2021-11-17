@@ -306,13 +306,9 @@ def post_mortem(tb=None, e_type=None, e_value=None):
     else:
         exc_info = (e_type, e_value, tb)
 
-    tb = exc_info[2]
-    while tb.tb_next is not None:
-        tb = tb.tb_next
-
     dbg = _get_debugger()
     dbg.reset()
-    dbg.interaction(None, (exc_info[0], exc_info[1], tb))
+    dbg.interaction(None, exc_info)
 
 
 def pm():
