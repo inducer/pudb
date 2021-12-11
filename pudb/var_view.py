@@ -42,8 +42,6 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
-ELLIPSIS = "…"
-
 BASIC_TYPES = []
 BASIC_TYPES.append(type(None))
 BASIC_TYPES.append(int)
@@ -493,9 +491,6 @@ def get_stringifier(iinfo: InspectInfo) -> Callable:
 # {{{ tree walking
 
 class ValueWalker(ABC):
-    NUM_PREVIEW_ITEMS = 3
-    MAX_PREVIEW_ITEM_LEN = 16
-
     EMPTY_LABEL = "<empty>"
     CONTINUATION_LABEL = "[...]"
 
