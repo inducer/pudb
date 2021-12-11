@@ -42,12 +42,13 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
-BASIC_TYPES = []
-BASIC_TYPES.append(type(None))
-BASIC_TYPES.append(int)
-BASIC_TYPES.append(str)
-BASIC_TYPES.extend((float, complex))
-BASIC_TYPES = tuple(BASIC_TYPES)
+BASIC_TYPES = (
+    type(None),
+    int,
+    str,
+    float,
+    complex,
+)
 
 # }}}
 
