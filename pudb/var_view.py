@@ -42,14 +42,6 @@ try:
 except ImportError:
     HAVE_NUMPY = 0
 
-BASIC_TYPES = (
-    type(None),
-    int,
-    str,
-    float,
-    complex,
-)
-
 # }}}
 
 
@@ -216,24 +208,6 @@ class WatchEvalError:
 # }}}
 
 
-# {{{ safe types
-
-def get_str_safe_types():
-    import types
-
-    return tuple(getattr(types, s) for s in
-        "BuiltinFunctionType BuiltinMethodType  ClassType "
-        "CodeType FileType FrameType FunctionType GetSetDescriptorType "
-        "LambdaType MemberDescriptorType MethodType ModuleType "
-        "SliceType TypeType TracebackType UnboundMethodType XRangeType".split()
-        if hasattr(types, s)) + (WatchEvalError,)
-
-
-STR_SAFE_TYPES = get_str_safe_types()
-
-# }}}
-
-
 # {{{ widget
 
 class VariableWidget(urwid.FlowWidget):
@@ -393,7 +367,33 @@ class VariableWidget(urwid.FlowWidget):
 # }}}
 
 
-custom_stringifier_dict = {}
+# {{{ stringifiers
+
+BASIC_TYPES = (
+    type(None),
+    int,
+    str,
+    float,
+    complex,
+)
+
+
+# {{{ safe types
+
+def get_str_safe_types():
+    import types
+
+    return tuple(getattr(types, s) for s in
+        "BuiltinFunctionType BuiltinMethodType  ClassType "
+        "CodeType FileType FrameType FunctionType GetSetDescriptorType "
+        "LambdaType MemberDescriptorType MethodType ModuleType "
+        "SliceType TypeType TracebackType UnboundMethodType XRangeType".split()
+        if hasattr(types, s)) + (WatchEvalError,)
+
+
+STR_SAFE_TYPES = get_str_safe_types()
+
+# }}}
 
 
 def default_stringifier(value):
@@ -446,6 +446,8 @@ def error_stringifier(_):
     return "ERROR: Invalid custom stringifier file."
 
 
+custom_stringifier_dict = {}
+
 STRINGIFIERS = {
     "default": default_stringifier,
     "type": type_stringifier,
@@ -487,6 +489,8 @@ def get_stringifier(iinfo: InspectInfo) -> Callable:
             else:
                 return (lambda value:
                     str(custom_stringifier_dict["pudb_stringifier"](value)))
+
+# }}}
 
 
 # {{{ tree walking
