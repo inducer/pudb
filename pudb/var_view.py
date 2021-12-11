@@ -485,7 +485,7 @@ def get_stringifier(iinfo: InspectInfo) -> Callable:
                              "named pudb_stringifier at the module level.")
                 return lambda value: str(
                         "ERROR: Invalid custom stringifier file: "
-                        "pudb_stringifer not defined.")
+                        "pudb_stringifier not defined.")
             else:
                 return (lambda value:
                     str(custom_stringifier_dict["pudb_stringifier"](value)))
