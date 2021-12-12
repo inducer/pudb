@@ -69,10 +69,12 @@ Features
 Configuration
 -------------
 
-Override default key bindings in the settings file (see `faq`_). Add the bindings under mentioned section in the config file.
-
+Override default key bindings in the settings file (see `faq`_).
+Add the bindings under mentioned section in the config file.
 .. _faq: doc/misc.rst#faq
 
+Only few actions are supported currently.
+`urwid key syntax <http://urwid.org/manual/userinput.html#keyboard-input>`
 
 - window chooser bindings
 
