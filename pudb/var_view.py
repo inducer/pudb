@@ -464,6 +464,8 @@ def get_stringifier(iinfo: InspectInfo) -> Callable:
     try:
         return STRINGIFIERS[iinfo.display_type]
     except KeyError:
+        if "" == iinfo.display_type.strip():
+            return lambda _: "ERROR: custom stringifier is not set"
         try:
             if not custom_stringifier_dict:  # Only execfile once
                 from os.path import expanduser, expandvars
