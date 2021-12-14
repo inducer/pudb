@@ -248,7 +248,8 @@ def run_ipython_kernel(globals, locals):
 
 def get_ptpython_history_file():
     from argparse import ArgumentParser
-    from ptpython.entry_points.run_ptpython import get_config_and_history_file
+    from ptpython.entry_points.run_ptpython import (  # pylint: disable=import-error
+            get_config_and_history_file)
     parser = ArgumentParser()
     parser.add_argument("--history_file")
     parser.add_argument("--config_file")
