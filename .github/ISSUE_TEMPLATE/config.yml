@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: ❓ Question
+    url: https://github.com/inducer/pudb/discussions/categories/q-a
+    about: Ask and answer questions about pudb on Discussions
+  - name: 🔧 Troubleshooting
+    url: https://github.com/inducer/pudb/discussions/categories/troubleshooting
+    about: For troubleshooting help, see the Discussions
