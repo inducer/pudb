@@ -48,7 +48,8 @@ from typing import Callable, Any
 
 from pudb.debugger import Debugger
 
-__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace", "debug_remote_on_single_rank"]
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace",
+           "debug_remote_on_single_rank"]
 
 default_port = 6899
 
@@ -240,19 +241,19 @@ def set_trace(
     ).set_trace(frame)
 
 
-def debug_remote_on_single_rank(function: Callable, comm: Any, rank: int = 0):
+def debug_remote_on_single_rank(func: Callable, comm: Any, rank: int = 0) -> None:
     """Run a remote debugger on a single rank of an :mod:`mpi4py` application."""
     if comm.rank == rank:
         dbg = debugger()
         try:
-            dbg.runcall(function)
+            dbg.runcall(func)
         except Exception:
             from pudb import pm
             pm()
 
     else:
         try:
-            function()
+            func()
         finally:
             from time import sleep
             while True:
