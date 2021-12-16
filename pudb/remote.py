@@ -3,6 +3,7 @@
 
 .. autofunction:: set_trace
 .. autofunction:: debugger
+.. autofunction:: debug_remote_on_single_rank
 """
 
 __copyright__ = """
@@ -43,10 +44,11 @@ import fcntl
 import termios
 import struct
 import atexit
+from typing import Callable, Any
 
 from pudb.debugger import Debugger
 
-__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace"]
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace", "debug_remote_on_single_rank"]
 
 default_port = 6899
 
@@ -236,3 +238,22 @@ def set_trace(
     return debugger(
         term_size=term_size, host=host, port=port, reverse=reverse
     ).set_trace(frame)
+
+
+def debug_remote_on_single_rank(function: Callable, comm: Any, rank: int = 0):
+    """Run a remote debugger on a single rank of an :mod:`mpi4py` application."""
+    if comm.rank == rank:
+        dbg = debugger()
+        try:
+            dbg.runcall(function)
+        except Exception:
+            from pudb import pm
+            pm()
+
+    else:
+        try:
+            function()
+        finally:
+            from time import sleep
+            while True:
+                sleep(1)
