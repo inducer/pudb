@@ -200,6 +200,14 @@ class Debugger(bdb.Bdb):
         for bpoint_descr in load_breakpoints():
             self.set_break(*bpoint_descr)
 
+    @property
+    def stack(self):
+        if self.post_mortem:
+            # Return the bottom frame so the user can expand variables in post_mortem
+            return [(self.bottom_frame, self.bottom_frame.f_lineno)]
+        else:
+            return self._stack
+
     # These (dispatch_line and set_continue) are copied from bdb with the
     # patch from https://bugs.python.org/issue16482 applied. See
     # https://github.com/inducer/pudb/pull/90.
@@ -401,7 +409,7 @@ class Debugger(bdb.Bdb):
         if not found_bottom_frame and not self.post_mortem:
             return
 
-        self.stack, index = self.get_shortened_stack(frame, tb)
+        self._stack, index = self.get_shortened_stack(frame, tb)
 
         if self.post_mortem:
             index = len(self.stack)-1
