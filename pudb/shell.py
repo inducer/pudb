@@ -246,10 +246,19 @@ def run_ipython_kernel(globals, locals):
 # }}}
 
 
+def get_ptpython_history_file():
+    from argparse import ArgumentParser
+    from ptpython.entry_points.run_ptpython import (  # pylint: disable=import-error
+            get_config_and_history_file)
+    parser = ArgumentParser()
+    parser.add_argument("--history_file")
+    parser.add_argument("--config_file")
+    return get_config_and_history_file(parser.parse_args())[1]
+
+
 def run_ptpython_shell(globals, locals):
     # Use the default ptpython history
-    import os
-    history_filename = os.path.expanduser("~/.ptpython/history")
+    history_filename = get_ptpython_history_file()
     ptpython_embed(globals=globals.copy(), locals=locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)
@@ -257,9 +266,7 @@ def run_ptpython_shell(globals, locals):
 
 def run_ptipython_shell(globals, locals):
     # Use the default ptpython history
-    import os
-
-    history_filename = os.path.expanduser("~/.ptpython/history")
+    history_filename = get_ptpython_history_file()
     ptipython_embed(globals=globals.copy(), locals=locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)
