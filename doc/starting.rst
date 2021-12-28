@@ -70,7 +70,8 @@ instead, use the ``--log-errors`` flag::
 Remote debugging
 ^^^^^^^^^^^^^^^^
 
-Rudimentary remote debugging is also supported::
+Rudimentary remote debugging is also supported. To break into the debugger,
+enabling you to connect via ``telnet``, use the following code::
 
     from pudb.remote import set_trace
     set_trace(term_size=(80, 24))
@@ -78,8 +79,18 @@ Rudimentary remote debugging is also supported::
 At this point, the debugger will look for a free port and wait for a telnet
 connection::
 
-    pudb:6899: Please telnet into 127.0.0.1 6899.
+    pudb:6899: Please start a telnet session using a command like:
+    telnet 127.0.0.1 6899
     pudb:6899: Waiting for client...
+
+To debug a function in a remote debugger (and examine any exceptions that
+may occur), use code like the following:
+
+.. literalinclude:: ../examples/remote-debug.py
+
+Upon running this, again, the debugger will wait for a telnet connection.
+
+The following programming interface is available for the remote debugger:
 
 .. automodule:: pudb.remote
 
@@ -138,7 +149,8 @@ Usage with pytest
 ^^^^^^^^^^^^^^^^^
 
 To use PuDB with `pytest <http://docs.pytest.org/en/latest/>`_, consider
-using the `pytest-pudb <https://pypi.python.org/pypi/pytest-pudb>`_ plugin.
+using the `pytest-pudb <https://pypi.python.org/pypi/pytest-pudb>`_ plugin,
+which provides a ``--pudb`` option that simplifies the procedure below.
 
 Alternatively, as of version 2017.1.2, pudb can be used to debug test failures
 in `pytest <http://docs.pytest.org/en/latest/>`_, by running the test runner

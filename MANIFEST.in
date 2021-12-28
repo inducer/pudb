@@ -10,4 +10,6 @@ include doc/*.py
 include doc/conf.py
 include doc/images/*.png
 
+include examples/*.py
+
 include manual-tests/*.py
