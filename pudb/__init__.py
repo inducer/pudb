@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 
 from pudb.settings import load_config
+import sys
 
 
 NUM_VERSION = (2021, 2, 2)
@@ -35,7 +36,6 @@ __version__ = VERSION
 class PudbShortcuts:
     @property
     def db(self):
-        import sys
         dbg = _get_debugger()
 
         import threading
@@ -45,7 +45,6 @@ class PudbShortcuts:
 
     @property
     def go(self):
-        import sys
         dbg = _get_debugger()
 
         import threading
@@ -115,7 +114,6 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
     # have a "restart" command which would allow explicit specification of
     # command line arguments.
 
-    import sys
     if args is not None:
         prev_sys_argv = sys.argv[:]
         if run_as_module:
@@ -207,15 +205,15 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
 
 
 def runstatement(statement, globals=None, locals=None):
-    _get_debugger().run(statement, globals, locals)
+    return _get_debugger().run(statement, globals, locals)
 
 
 def runeval(expression, globals=None, locals=None):
     return _get_debugger().runeval(expression, globals, locals)
 
 
-def runcall(*args, **kwds):
-    return _get_debugger().runcall(*args, **kwds)
+def runcall(*args, **kwargs):
+    return _get_debugger().runcall(*args, **kwargs)
 
 
 def set_trace(paused=True):
