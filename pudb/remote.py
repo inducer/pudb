@@ -65,7 +65,8 @@ Please specify one using the PUDB_RDB_PORT environment variable.
 """
 
 BANNER = """\
-{self.ident}: Please telnet into {self.host} {self.port}.
+{self.ident}: Please start a telnet session using a command like:
+telnet {self.host} {self.port}
 {self.ident}: Waiting for client...
 """
 
