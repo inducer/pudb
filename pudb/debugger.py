@@ -479,6 +479,8 @@ class Debugger(bdb.Bdb):
         if not self._wait_for_mainpyfile:
             self.interaction(frame, exc_tuple)
 
+    # {{{ entrypoints
+
     def _runscript(self, filename):
         # Provide separation from current __main__, which is likely
         # pudb.__main__ run.  Preserving its namespace is not important, and
@@ -532,6 +534,32 @@ class Debugger(bdb.Bdb):
         self._wait_for_mainpyfile = True
 
         self.run(code)
+
+    def runstatement(self, statement, globals=None, locals=None):
+        try:
+            return self.run(statement, globals, locals)
+        except Exception:
+            self.post_mortem = True
+            self.interaction(None, sys.exc_info())
+            raise
+
+    def runeval(self, expression, globals=None, locals=None):
+        try:
+            return super().runeval(expression, globals, locals)
+        except Exception:
+            self.post_mortem = True
+            self.interaction(None, sys.exc_info())
+            raise
+
+    def runcall(self, *args, **kwargs):
+        try:
+            return super().runcall(*args, **kwargs)
+        except Exception:
+            self.post_mortem = True
+            self.interaction(None, sys.exc_info())
+            raise
+
+    # }}}
 
 # }}}
 
