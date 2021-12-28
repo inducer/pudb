@@ -289,7 +289,7 @@ def edit_config(ui, conf_dict):
                 not known_shell, on_state_change=_update_config,
                 user_data=("shell", None)),
                 shell_edit_list_item,
-                urwid.Text("\nTo use a custom shell, see example-shell.py "
+                urwid.Text("\nTo use a custom shell, see examples/shell.py "
                     "in the pudb distribution. Enter the full path to a "
                     "file like it in the box above. '~' will be expanded "
                     "to your home directory. The file should contain a "
@@ -318,7 +318,7 @@ def edit_config(ui, conf_dict):
                     not known_theme, on_state_change=_update_config,
                     user_data=("theme", None)),
                 theme_edit_list_item,
-                urwid.Text("\nTo use a custom theme, see example-theme.py in the "
+                urwid.Text("\nTo use a custom theme, see examples/theme.py in the "
                     "pudb distribution. Enter the full path to a file like it in "
                     "the box above. '~' will be expanded to your home directory. "
                     "Note that a custom theme will not be applied until you close "
@@ -369,7 +369,7 @@ def edit_config(ui, conf_dict):
                     user_data=("stringifier", None)),
                 stringifier_edit_list_item,
                 urwid.Text("\nTo use a custom stringifier, see "
-                    "example-stringifier.py in the pudb distribution. Enter the "
+                    "examples/stringifier.py in the pudb distribution. Enter the "
                     "full path to a file like it in the box above. "
                     "'~' will be expanded to your home directory. "
                     "The file should contain a function called pudb_stringifier() "
