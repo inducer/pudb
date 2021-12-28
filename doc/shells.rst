@@ -72,7 +72,7 @@ the path to the file.
 
 Here is an example custom shell file:
 
-.. literalinclude:: ../example-shell.py
+.. literalinclude:: ../examples/shell.py
    :language: python
 
 Note, many shells do not allow passing in globals and locals dictionaries
