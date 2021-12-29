@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# Demonstrate on how to debug an mpi4py application.
+# This example demonstrates how to debug an mpi4py application.
 # Run this with 'mpirun -n 2 python mpi4py-debug.py'.
 # You can then attach to the debugger by running 'telnet 127.0.0.1 6899'
-# in another terminal.
+# (when using the default pudb configuration) in another terminal.
 
 from mpi4py import MPI
 from pudb.remote import debug_remote_on_single_rank
