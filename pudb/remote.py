@@ -242,23 +242,19 @@ def set_trace(
     ).set_trace(frame)
 
 
-def debug_remote_on_single_rank(func: Callable, comm: Any, rank: int = 0) -> None:
-    """Run a remote debugger on a single rank of an `mpi4py` application.
-    `func` will be called on rank `rank` running in a :class:`RemoteDebugger`,
+def debug_remote_on_single_rank(comm: Any, rank: int, func: Callable, *args, **kwargs) -> None:
+    """Run a remote debugger on a single rank of an ``mpi4py`` application.
+    *func* will be called on rank *rank* running in a :class:`RemoteDebugger`,
     and will be called normally on all other ranks.
 
-    :param func: the function to debug.
-    :param comm: an `mpi4py` communicator.
+    :param comm: an ``mpi4py`` ``Comm`` object.
     :param rank: the rank to debug. All other ranks will spin until this rank exits.
+    :param func: the callable to debug.
+    :param args: the arguments passed to ``func``.
+    :param kwargs: the kwargs passed to ``func``.
     """
     if comm.rank == rank:
-        dbg = debugger()
-        try:
-            dbg.runcall(func)
-        except Exception:
-            from pudb import pm
-            pm()
-
+        debugger().runcall(func, *args, **kwargs)
     else:
         try:
             func()
