@@ -242,7 +242,8 @@ def set_trace(
     ).set_trace(frame)
 
 
-def debug_remote_on_single_rank(comm: Any, rank: int, func: Callable, *args, **kwargs) -> None:
+def debug_remote_on_single_rank(comm: Any, rank: int, func: Callable,
+                                *args: Any, **kwargs: Any) -> None:
     """Run a remote debugger on a single rank of an ``mpi4py`` application.
     *func* will be called on rank *rank* running in a :class:`RemoteDebugger`,
     and will be called normally on all other ranks.
