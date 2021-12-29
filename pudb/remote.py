@@ -258,7 +258,7 @@ def debug_remote_on_single_rank(comm: Any, rank: int, func: Callable,
         debugger().runcall(func, *args, **kwargs)
     else:
         try:
-            func()
+            func(*args, **kwargs)
         finally:
             from time import sleep
             while True:
