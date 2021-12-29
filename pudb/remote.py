@@ -243,7 +243,12 @@ def set_trace(
 
 
 def debug_remote_on_single_rank(func: Callable, comm: Any, rank: int = 0) -> None:
-    """Run a remote debugger on a single rank of an :mod:`mpi4py` application."""
+    """Run a remote debugger on a single rank of an `mpi4py` application.
+
+    :param func: the function to debug.
+    :param comm: An `mpi4py` communicator.
+    :param rank: The rank to debug. All other ranks will spin until this rank exits.
+    """
     if comm.rank == rank:
         dbg = debugger()
         try:
