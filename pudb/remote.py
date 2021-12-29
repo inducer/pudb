@@ -3,6 +3,7 @@
 
 .. autofunction:: set_trace
 .. autofunction:: debugger
+.. autofunction:: debug_remote_on_single_rank
 """
 
 __copyright__ = """
@@ -43,10 +44,12 @@ import fcntl
 import termios
 import struct
 import atexit
+from typing import Callable, Any
 
 from pudb.debugger import Debugger
 
-__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace"]
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace",
+           "debug_remote_on_single_rank"]
 
 default_port = 6899
 
@@ -237,3 +240,26 @@ def set_trace(
     return debugger(
         term_size=term_size, host=host, port=port, reverse=reverse
     ).set_trace(frame)
+
+
+def debug_remote_on_single_rank(comm: Any, rank: int, func: Callable,
+                                *args: Any, **kwargs: Any) -> None:
+    """Run a remote debugger on a single rank of an ``mpi4py`` application.
+    *func* will be called on rank *rank* running in a :class:`RemoteDebugger`,
+    and will be called normally on all other ranks.
+
+    :param comm: an ``mpi4py`` ``Comm`` object.
+    :param rank: the rank to debug. All other ranks will spin until this rank exits.
+    :param func: the callable to debug.
+    :param args: the arguments passed to ``func``.
+    :param kwargs: the kwargs passed to ``func``.
+    """
+    if comm.rank == rank:
+        debugger().runcall(func, *args, **kwargs)
+    else:
+        try:
+            func(*args, **kwargs)
+        finally:
+            from time import sleep
+            while True:
+                sleep(1)
