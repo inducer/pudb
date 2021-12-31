@@ -1692,8 +1692,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "command line error")
                 return
 
+            try:
+                from packaging.version import parse as LooseVersion     # noqa: N812
+            except ImportError:
+                from distutils.version import LooseVersion
+
             import jedi
-            from distutils.version import LooseVersion
             if LooseVersion(jedi.__version__) < LooseVersion("0.16.0"):
                 self.add_cmdline_content(
                         "jedi 0.16.0 is required for Tab completion",
