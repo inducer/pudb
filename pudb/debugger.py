@@ -2428,7 +2428,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e040"  # noqa
+        WELCOME_LEVEL = "e041"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2444,6 +2444,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2022.1:\n\n"
+                    "- Add debug_remote_on_single_rank (PR #498 by Matthias Diener)\n"
+                    "- Improve remote debugging usability\n"
+                    "- Bug fixes\n"
 
                     "\nChanges in version 2021.2:\n\n"
                     "- Remaster themes (Michael van der Kamp)\n"
