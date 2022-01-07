@@ -2446,7 +2446,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "on your way.\n"
 
                     "\nChanges in version 2022.1:\n\n"
-                    "- Add debug_remote_on_single_rank (PR #498 by Matthias Diener)\n"
+                    "- Add debug_remote_on_single_rank "
+                    "(PR #498 by Matthias Diener)\n"
                     "- Improve remote debugging usability\n"
                     "- Bug fixes\n"
 
