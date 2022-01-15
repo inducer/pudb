@@ -31,7 +31,7 @@ import inspect
 import warnings
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Sized
 from typing import Tuple, List
 from pudb.lowlevel import ui_log
 from pudb.ui_tools import text_width
@@ -428,8 +428,8 @@ def default_stringifier(value):
         if isinstance(result, str):
             return str(result)
 
-    elif type(value) in [set, frozenset, list, tuple, dict]:
-        return "%s (%s)" % (type(value).__name__, len(value))
+    elif isinstance(value, Sized):
+        return f"{type(value).__name__} ({len(value)})"
 
     return str(type(value).__name__)
 
