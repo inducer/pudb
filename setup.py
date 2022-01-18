@@ -49,7 +49,7 @@ setup(
         "Topic :: Terminals",
         "Topic :: Utilities",
     ],
-    packages=["pudb"],
+    packages=["pudb", "pudb.contrib", "pudb.contrib.stringifiers"],
     entry_points={
         "console_scripts": [
             # Deprecated. Should really use python -m pudb.
