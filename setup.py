@@ -29,6 +29,7 @@ setup(
     ],
     test_requires=[
         "pytest>=2",
+        "pytest-mock",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
