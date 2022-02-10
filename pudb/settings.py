@@ -129,7 +129,6 @@ def load_config():
     conf_dict.setdefault("hotkeys_stack", "S")
     conf_dict.setdefault("hotkeys_breakpoints", "B")
 
-
     def normalize_bool_inplace(name):
         try:
             if conf_dict[name].lower() in ["0", "false", "off"]:
