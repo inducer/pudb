@@ -20,3 +20,8 @@ version = ver_dic["VERSION"]
 
 # The full version, including alpha/beta/rc tags.
 release = version
+
+intersphinx_mapping = {
+    "https://docs.python.org/3": None,
+    "urwid": ("https://urwid.org/", None),
+    }

@@ -2093,10 +2093,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.top.listen("!", run_cmdline)
         self.top.listen("e", show_traceback)
 
-        self.top.listen("C", focus_code)
-        self.top.listen("V", RHColumnFocuser(0))
-        self.top.listen("S", RHColumnFocuser(1))
-        self.top.listen("B", RHColumnFocuser(2))
+        self.top.listen(CONFIG["hotkeys_code"], focus_code)
+        self.top.listen(CONFIG["hotkeys_variables"], RHColumnFocuser(0))
+        self.top.listen(CONFIG["hotkeys_stack"], RHColumnFocuser(1))
+        self.top.listen(CONFIG["hotkeys_breakpoints"], RHColumnFocuser(2))
 
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
