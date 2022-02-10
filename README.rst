@@ -66,35 +66,6 @@ Features
 * Should work with Python 3.6 and newer. (Versions 2019.2 and older continue
   to support Python 2.7.)
 
-Configuration
--------------
-
-=============================
-Override default key bindings
-=============================
-
-
--  Configure in the settings file (see `faq`_).
-
-- Add the bindings under mentioned section in the config file (see `urwid key syntax <http://urwid.org/manual/userinput.html#keyboard-input>`_).
-
-- Only few actions are supported currently.
-
-.. _faq: doc/misc.rst#faq
-
-
-
-
-.. code-block:: ini
-
-    [pudb]
-    
-    # window chooser bindings
-    hotkeys_breakpoints = B
-    hotkeys_code = C
-    hotkeys_stack = S
-    hotkeys_variables = V
-
 Links
 -----
 

@@ -44,3 +44,27 @@ to its built-in stringification behavior.
 
 A stringifier that takes a long time will further stall
 the debugger UI while it runs.
+
+Configuring PuDB
+----------------
+
+Overriding default key bindings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Configure in the settings file (see :ref:`faq`).
+
+- Add the bindings under mentioned section in the config file
+  (see :ref:`urwid:keyboard-input`).
+
+- Only few actions are supported currently, coverage will increase with time.
+  (Contributions welcome!)
+
+.. code-block:: ini
+
+    [pudb]
+
+    # window chooser bindings
+    hotkeys_breakpoints = B
+    hotkeys_code = C
+    hotkeys_stack = S
+    hotkeys_variables = V
