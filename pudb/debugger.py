@@ -88,7 +88,7 @@ Keys:
 
 Shell-related:
     ! - open the external shell (configured in the settings)
-    Ctrl-x - toggle the internal shell focus
+    {CONFIG["hotkeys_toggle_cmdline_focus"]} - toggle the internal shell focus
 
     +/- - grow/shrink inline shell (active in command line history)
     _/= - minimize/maximize inline shell (active in command line history)
@@ -869,7 +869,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ])
 
         self.cmdline_pile = urwid.Pile([
-            ("flow", urwid.Text("Command line: [Ctrl-X]")),
+            ("flow", urwid.Text(
+                f"Command line: [{CONFIG['hotkeys_toggle_cmdline_focus']}]")),
             ("weight", 1, urwid.AttrMap(self.cmdline_list, "command line output")),
             ("flow", self.cmdline_edit_bar),
             ])
@@ -1878,7 +1879,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
 
-        self.top.listen("ctrl x", toggle_cmdline_focus)
+        self.top.listen(CONFIG["hotkeys_toggle_cmdline_focus"], toggle_cmdline_focus)
 
         # {{{ command line sizing
         def set_cmdline_default_size(weight):
