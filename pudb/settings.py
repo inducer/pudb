@@ -128,6 +128,7 @@ def load_config():
     conf_dict.setdefault("hotkeys_variables", "V")
     conf_dict.setdefault("hotkeys_stack", "S")
     conf_dict.setdefault("hotkeys_breakpoints", "B")
+    conf_dict.setdefault("hotkeys_toggle_cmdline_focus", "ctrl x")
 
     def normalize_bool_inplace(name):
         try:
