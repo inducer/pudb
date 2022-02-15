@@ -487,7 +487,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "fixed value": ("light gray", "dark blue"),
             # }}}
             # {{{ source view
-            "source": ("white", "black"),
+            "source": ("", "black"),
             "highlighted source": ("white", "light cyan"),
             "current source": ("white", "dark gray"),
             "current focused source": ("black", "brown"),
@@ -580,7 +580,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "docstring": ("yellow", "black"),
             "backtick": ("light green", "black"),
             "punctuation": ("white", "black"),
-            "comment": ("dark green", "black"),
+            "comment": ("white", "black"),
             "exception": ("light green", "black"),
             # }}}
         }
