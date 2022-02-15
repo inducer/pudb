@@ -557,13 +557,13 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "command line edit": ("white", "black"),
             "command line prompt": (add_setting("white", "bold"), "black"),
 
-            "command line output": (add_setting("white", "bold"), "black"),
-            "command line input": (add_setting("white", "bold"), "black"),
+            "command line output": ("white", "black"),
+            "command line input": ("white", "black"),
             "command line error": (add_setting("light red", "bold"), "black"),
 
             "focused command line output": ("black", "dark green"),
             "focused command line input": (
-                    add_setting("white", "bold"), "dark green"),
+                    "white", "dark green"),
             "focused command line error": ("black", "dark green"),
 
             "command line clear button": (add_setting("white", "bold"), "black"),
