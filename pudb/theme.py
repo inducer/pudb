@@ -464,6 +464,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
 
         # Based on XCode's midnight theme
         # Looks best in a console with green text against black background
+        link("current breakpoint", "current frame name")
+        link("focused current breakpoint", "focused current frame name")
         palette_dict = {
             # {{{ base styles
             "background": ("black", "light gray"),
@@ -487,9 +489,9 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             # {{{ source view
             "source": ("white", "black"),
             "highlighted source": ("white", "light cyan"),
-            "current source": ("white", "light gray"),
-            "current focused source": ("white", "brown"),
-            "focused source": ("black", "dark cyan"),
+            "current source": ("white", "dark gray"),
+            "current focused source": ("black", "brown"),
+            "focused source": ("white", "dark blue"),
             "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
             "current breakpoint source": ("black", "dark red"),
 
@@ -569,15 +571,17 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             # }}}
             # {{{ Code syntax
             "keyword": ("dark magenta", "black"),
-            "function": ("white", "black"),
+            "pseudo": ("light magenta", "black"),
+            "function": (add_setting("light blue", "bold"), "black"),
+            "builtin": ("dark gray", "black"),
             "literal": ("dark cyan", "black"),
             "string": ("dark red", "black"),
             "doublestring": ("dark red", "black"),
-            "singlestring": ("light blue", "black"),
-            "docstring": ("light red", "black"),
+            "docstring": ("yellow", "black"),
             "backtick": ("light green", "black"),
             "punctuation": ("white", "black"),
             "comment": ("dark green", "black"),
+            "exception": ("light green", "black"),
             # }}}
         }
 
