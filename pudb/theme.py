@@ -471,7 +471,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "background": ("black", "light gray"),
             "selectable": ("black", "dark cyan"),
             "focused selectable": ("black", "dark green"),
-            "hotkey": (add_setting("black", "underline"), "light gray"),
+            "hotkey": (add_setting("black", "underline, italics"), "light gray"),
             "highlighted": ("white", "dark cyan"),
             # }}}
             # {{{ general ui
@@ -480,17 +480,17 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "search box": ("white", "black"),
             "dialog title": (add_setting("white", "bold"), "dark cyan"),
             "group head": (add_setting("dark blue", "bold"), "light gray"),
-            "focused sidebar": (add_setting("yellow", "bold"), "light gray"),
+            "focused sidebar": ("black", "white"),
             "button": (add_setting("white", "bold"), "dark blue"),
             "focused button": ("light cyan", "black"),
             "value": (add_setting("yellow", "bold"), "dark blue"),
             "fixed value": ("light gray", "dark blue"),
             # }}}
             # {{{ source view
-            "source": ("", "black"),
-            "highlighted source": ("white", "light cyan"),
-            "current source": ("white", "dark gray"),
-            "current focused source": ("black", "brown"),
+            "source": ("dark green", "black"),
+            "highlighted source": ("black", "dark green"),
+            "current source": ("black", "brown"),
+            "current focused source": ("black", "yellow"),
             "focused source": ("white", "dark blue"),
             "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
             "current breakpoint source": ("black", "dark red"),
@@ -507,51 +507,51 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "var value": ("white", "black"),
             "variable separator": ("dark cyan", "light gray"),
 
-            "focused var label": ("dark blue", "dark green"),
-            "focused var value": ("black", "dark green"),
+            "focused var label": ("white", "dark blue"),
+            "focused var value": ("white", "dark blue"),
 
-            "highlighted var label": ("white", "dark cyan"),
-            "highlighted var value": ("black", "dark cyan"),
-            "focused highlighted var label": ("white", "dark green"),
-            "focused highlighted var value": ("black", "dark green"),
+            "highlighted var label": ("black", "dark green"),
+            "highlighted var value": ("black", "dark green"),
+            "focused highlighted var label": ("black", "light green"),
+            "focused highlighted var value": ("black", "light green"),
 
             "return label": ("white", "dark blue"),
             "return value": ("black", "dark cyan"),
             "focused return label": ("light gray", "dark blue"),
-            "focused return value": ("black", "dark green"),
+            "focused return value": ("black", "dark blue"),
             # }}}
             # {{{ stack
             "stack": ("white", "black"),
 
             "frame name": ("white", "black"),
-            "frame class": ("dark blue", "black"),
+            "frame class": ("light blue", "black"),
             "frame location": ("light cyan", "black"),
 
             "current frame name": (add_setting("white", "bold"), "black"),
-            "current frame class": ("dark blue", "black"),
-            "current frame location": ("light cyan", "black"),
+            "current frame class": (add_setting("light blue", "bold"), "black"),
+            "current frame location": (add_setting("light cyan", "bold"), "black"),
 
-            "focused frame name": ("black", "dark green"),
-            "focused frame class": (add_setting("white", "bold"), "dark green"),
-            "focused frame location": ("dark blue", "dark green"),
+            "focused frame name": ("white", "dark blue"),
+            "focused frame class": ("white", "dark blue"),
+            "focused frame location": ("white", "dark blue"),
 
-            "focused current frame name": ("black", "dark green"),
+            "focused current frame name": (add_setting("white", "bold"), "dark blue"),
             "focused current frame class": (
-                add_setting("white", "bold"), "dark green"),
-            "focused current frame location": ("dark blue", "dark green"),
+                add_setting("white", "bold"), "dark blue"),
+            "focused current frame location": (add_setting("white", "bold"), "dark blue"),
             # }}}
             # {{{ breakpoints view
             "breakpoint": ("white", "black"),
             "disabled breakpoint": ("dark gray", "black"),
-            "focused breakpoint": ("black", "dark green"),
-            "focused disabled breakpoint": ("dark gray", "dark green"),
+            "focused breakpoint": ("white", "dark blue"),
+            "focused disabled breakpoint": ("light gray", "dark blue"),
             "current breakpoint": (add_setting("white", "bold"), "black"),
             "disabled current breakpoint": (
                 add_setting("dark gray", "bold"), "black"),
             "focused current breakpoint": (
-                add_setting("white", "bold"), "dark green"),
+                add_setting("white", "bold"), "dark blue"),
             "focused disabled current breakpoint": (
-                add_setting("dark gray", "bold"), "dark green"),
+                add_setting("light gray", "bold"), "dark blue"),
             # }}}
             # {{{ shell
             "command line edit": ("white", "black"),
@@ -561,10 +561,10 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "command line input": ("white", "black"),
             "command line error": (add_setting("light red", "bold"), "black"),
 
-            "focused command line output": ("black", "dark green"),
+            "focused command line output": ("white", "dark blue"),
             "focused command line input": (
-                    "white", "dark green"),
-            "focused command line error": ("black", "dark green"),
+                    "white", "dark blue"),
+            "focused command line error": ("black", "light red"),
 
             "command line clear button": (add_setting("white", "bold"), "black"),
             "command line focused button": ("black", "light gray"),
