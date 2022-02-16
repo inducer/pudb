@@ -253,7 +253,7 @@ def get_ptpython_history_file():
     parser = ArgumentParser()
     parser.add_argument("--history_file")
     parser.add_argument("--config_file")
-    return get_config_and_history_file(parser.parse_args())[1]
+    return get_config_and_history_file(parser.parse_args([]))[1]
 
 
 def run_ptpython_shell(globals, locals):
