@@ -535,10 +535,12 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused frame class": ("white", "dark blue"),
             "focused frame location": ("white", "dark blue"),
 
-            "focused current frame name": (add_setting("white", "bold"), "dark blue"),
+            "focused current frame name": (
+                add_setting("white", "bold"), "dark blue"),
             "focused current frame class": (
                 add_setting("white", "bold"), "dark blue"),
-            "focused current frame location": (add_setting("white", "bold"), "dark blue"),
+            "focused current frame location": (
+                add_setting("white", "bold"), "dark blue"),
             # }}}
             # {{{ breakpoints view
             "breakpoint": ("white", "black"),
