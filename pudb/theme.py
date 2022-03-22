@@ -469,19 +469,19 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
         palette_dict = {
             # {{{ base styles
             "background": ("black", "light gray"),
-            "selectable": ("black", "dark cyan"),
-            "focused selectable": ("black", "dark green"),
+            "selectable": ("white", "black"),
+            "focused selectable": ("white", "dark blue"),
             "hotkey": (add_setting("black", "underline, italics"), "light gray"),
-            "highlighted": ("white", "dark cyan"),
+            "highlighted": ("black", "dark green"),
             # }}}
             # {{{ general ui
-            "input": (add_setting("yellow", "bold"), "dark blue"),
+            "input": ("black", "dark cyan"),
             "warning": (add_setting("white", "bold"), "dark red"),
             "search box": ("white", "black"),
             "dialog title": (add_setting("white", "bold"), "dark cyan"),
             "group head": (add_setting("dark blue", "bold"), "light gray"),
+            "button": (add_setting("white", "bold"), "dark cyan"),
             "focused sidebar": ("black", "white"),
-            "button": (add_setting("white", "bold"), "dark blue"),
             "focused button": ("light cyan", "black"),
             "value": (add_setting("yellow", "bold"), "dark blue"),
             "fixed value": ("light gray", "dark blue"),
@@ -490,7 +490,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "source": ("dark green", "black"),
             "highlighted source": ("black", "dark green"),
             "current source": ("black", "brown"),
-            "current focused source": ("black", "yellow"),
+            "current focused source": (add_setting("yellow", "bold"), "dark blue"),
             "focused source": ("white", "dark blue"),
             "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
             "current breakpoint source": ("black", "dark red"),
@@ -500,9 +500,10 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "breakpoint marker": ("dark red", "black"),
             # }}}
             # {{{ sidebar
+            "sidebar two": ("light blue", "black"),
+            "sidebar three": ("light cyan", "black"),
             # }}}
             # {{{ variables view
-            "variables": ("white", "black"),
             "var label": ("light blue", "black"),
             "var value": ("white", "black"),
             "variable separator": ("dark cyan", "light gray"),
@@ -518,7 +519,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "return label": ("white", "dark blue"),
             "return value": ("black", "dark cyan"),
             "focused return label": ("light gray", "dark blue"),
-            "focused return value": ("black", "dark blue"),
             # }}}
             # {{{ stack
             "stack": ("white", "black"),
@@ -559,14 +559,9 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "command line edit": ("white", "black"),
             "command line prompt": (add_setting("white", "bold"), "black"),
 
-            "command line output": ("white", "black"),
+            "command line output": ("light green", "black"),
             "command line input": ("white", "black"),
             "command line error": (add_setting("light red", "bold"), "black"),
-
-            "focused command line output": ("white", "dark blue"),
-            "focused command line input": (
-                    "white", "dark blue"),
-            "focused command line error": ("black", "light red"),
 
             "command line clear button": (add_setting("white", "bold"), "black"),
             "command line focused button": ("black", "light gray"),
