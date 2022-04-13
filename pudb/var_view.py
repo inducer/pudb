@@ -429,7 +429,13 @@ def default_stringifier(value):
             return str(result)
 
     elif isinstance(value, Sized):
-        return f"{type(value).__name__} ({len(value)})"
+        try:
+            # Example: numpy arrays with shape == () raise on len()
+            obj_len = len(value)
+        except TypeError:
+            pass
+        else:
+            return f"{type(value).__name__} ({obj_len})"
 
     return str(type(value).__name__)
 
