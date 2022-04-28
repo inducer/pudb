@@ -44,7 +44,7 @@ HELP_HEADER = r"""
 Key Assignments: Use Arrow Down/Up or Page Down/Up to scroll.
 """
 
-HELP_MAIN = r"""
+HELP_MAIN = rf"""
 Keys:
     Ctrl-p - edit preferences
 
@@ -74,10 +74,10 @@ Keys:
     / - search
     ,/. - search next/previous
 
-    V - focus variables
-    S - focus stack
-    B - focus breakpoint list
-    C - focus code
+    {CONFIG["hotkeys_variables"]} - focus variables
+    {CONFIG["hotkeys_stack"]} - focus stack
+    {CONFIG["hotkeys_breakpoints"]} - focus breakpoint list
+    {CONFIG["hotkeys_code"]} - focus code
 
     F1/? - show this help screen
     q - quit
@@ -98,7 +98,7 @@ Shell-related:
     Tab - yes, there is (simple) tab completion
 """
 
-HELP_SIDE = r"""
+HELP_SIDE = rf"""
 Sidebar-related (active in sidebar):
     +/- - grow/shrink sidebar width
     _/= - minimize/maximize sidebar width
@@ -135,10 +135,10 @@ Other keys:
     Ctrl-d/u - page down/up
     G/g - end/home
 
-    V - focus variables
-    S - focus stack
-    B - focus breakpoint list
-    C - focus code
+    {CONFIG["hotkeys_variables"]} - focus variables
+    {CONFIG["hotkeys_stack"]} - focus stack
+    {CONFIG["hotkeys_breakpoints"]} - focus breakpoint list
+    {CONFIG["hotkeys_code"]} - focus code
 
     F1/? - show this help screen
     q - quit
