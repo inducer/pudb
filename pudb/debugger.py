@@ -2789,7 +2789,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 for bp in self._get_bp_list()]
 
     def update_stack(self):
-        def make_frame_ui(frame_lineno):
+        def make_frame_ui(i, frame_lineno):
             frame, lineno = frame_lineno
 
             code = frame.f_code
@@ -2804,11 +2804,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     ui_log.exception(message)
                     class_name = "!! %s !!" % message
 
-            return StackFrame(frame is self.debugger.curframe,
+            return StackFrame(i == self.debugger.curindex,
                     code.co_name, class_name,
                     self._format_fname(code.co_filename), lineno)
 
-        frame_uis = [make_frame_ui(fl) for fl in self.debugger.stack]
+        frame_uis = [make_frame_ui(i, fl)
+                for i, fl in enumerate(self.debugger.stack)]
         if CONFIG["current_stack_frame"] == "top":
             frame_uis = frame_uis[::-1]
         elif CONFIG["current_stack_frame"] == "bottom":
