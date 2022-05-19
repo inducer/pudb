@@ -372,6 +372,8 @@ class Debugger(bdb.Bdb):
             self.set_frame_index(self.curindex+1)
 
     def get_shortened_stack(self, frame, tb):
+        if tb is not None:
+            frame = None
         stack, index = self.get_stack(frame, tb)
 
         for i, (s_frame, _lineno) in enumerate(stack):
