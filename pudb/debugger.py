@@ -397,11 +397,13 @@ class Debugger(bdb.Bdb):
         else:
             tb = exc_tuple[2]
 
-        if frame is None and tb is not None:
-            frame = tb.tb_frame
+        if frame is None:
+            assert tb is not None
+            walk_frame = tb.tb_frame
+        else:
+            walk_frame = frame
 
         found_bottom_frame = False
-        walk_frame = frame
         while True:
             if walk_frame is self.bottom_frame:
                 found_bottom_frame = True
@@ -411,6 +413,7 @@ class Debugger(bdb.Bdb):
             walk_frame = walk_frame.f_back
 
         if not found_bottom_frame and not self.post_mortem:
+            # We aren't supposed to be debugging this.
             return
 
         self.stack, index = self.get_shortened_stack(frame, tb)
