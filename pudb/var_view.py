@@ -56,7 +56,7 @@ class PudbCollection(ABC):
                     any("__contains__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except (AttributeError, TypeError):
+            except Exception:
                 pass
         return NotImplemented
 
@@ -70,7 +70,7 @@ class PudbCollection(ABC):
         try:
             for count, entry in enumerate(collection):
                 yield None, entry, f"[{count:d}]"
-        except (AttributeError, TypeError) as error:
+        except Exception as error:
             ui_log.error("Object {l!r} appears to be a collection, but does "
                          "not behave like one: {m}".format(
                              l=label, m=error))
@@ -89,7 +89,7 @@ class PudbSequence(ABC):
                     any("__getitem__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except (AttributeError, TypeError):
+            except Exception:
                 pass
         return NotImplemented
 
@@ -103,7 +103,7 @@ class PudbSequence(ABC):
         try:
             for count, entry in enumerate(sequence):
                 yield str(count), entry, f"[{count:d}]"
-        except (AttributeError, TypeError) as error:
+        except Exception as error:
             ui_log.error("Object {l!r} appears to be a sequence, but does "
                          "not behave like one: {m}".format(
                              l=label, m=error))
@@ -123,7 +123,7 @@ class PudbMapping(ABC):
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                     any("keys" in b.__dict__ for b in c.__mro__),
                 ])
-            except (AttributeError, TypeError):
+            except Exception:
                 pass
         return NotImplemented
 
@@ -145,7 +145,7 @@ class PudbMapping(ABC):
             for key in mapping.keys():
                 key_repr = cls._safe_key_repr(key)
                 yield (key_repr, mapping[key], f"[{key_repr}]")
-        except (AttributeError, TypeError) as error:
+        except Exception as error:
             ui_log.error("Object {l!r} appears to be a mapping, but does "
                          "not behave like one: {m}".format(
                              l=label, m=error))
