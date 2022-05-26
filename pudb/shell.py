@@ -177,6 +177,7 @@ def _update_ipython_ns(shell, globals, locals):
         user_module.__dict__ = globals
         shell.user_module = user_module
 
+    shell.init_history()
     shell.init_user_ns()
     shell.init_completer()
 
