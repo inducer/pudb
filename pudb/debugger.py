@@ -745,6 +745,17 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 # }}}
 
 
+class StoppedScreen:
+    def __init__(self, screen):
+        self.screen = screen
+
+    def __enter__(self):
+        self.screen.stop()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.screen.start()
+
+
 class DebuggerUI(FrameVarInfoKeeper):
     # {{{ constructor
 
@@ -1179,10 +1190,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             try:
                 original_modification_time = os.path.getmtime(file_name)
-                self.screen.stop()
-                filename_edited = self.debugger.open_file_to_edit(file_name,
-                                                                  line_number)
-                self.screen.start()
+                with StoppedScreen(self.screen):
+                    filename_edited = self.debugger.open_file_to_edit(file_name,
+                                                                      line_number)
                 new_modification_time = os.path.getmtime(file_name)
                 file_changed = new_modification_time - original_modification_time > 0
             except Exception:
@@ -1953,9 +1963,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         # {{{ top-level listeners
 
         def show_output(w, size, key):
-            self.screen.stop()
-            input("Hit Enter to return:")
-            self.screen.start()
+            with StoppedScreen(self.screen):
+                input("Hit Enter to return:")
 
         def reload_breakpoints_and_redisplay():
             reload_breakpoints()
@@ -1995,55 +2004,52 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("No exception available.")
 
         def run_external_cmdline(w, size, key):
-            self.screen.stop()
+            with StoppedScreen(self.screen):
+                curframe = self.debugger.curframe
 
-            curframe = self.debugger.curframe
-
-            import pudb.shell as shell
-            if CONFIG["shell"] == "ipython" and shell.have_ipython():
-                runner = shell.run_ipython_shell
-            elif CONFIG["shell"] == "ipython_kernel" and shell.have_ipython():
-                runner = shell.run_ipython_kernel
-            elif CONFIG["shell"] == "bpython" and shell.HAVE_BPYTHON:
-                runner = shell.run_bpython_shell
-            elif CONFIG["shell"] == "ptpython" and shell.HAVE_PTPYTHON:
-                runner = shell.run_ptpython_shell
-            elif CONFIG["shell"] == "ptipython" and shell.HAVE_PTIPYTHON:
-                runner = shell.run_ptipython_shell
-            elif CONFIG["shell"] == "classic":
-                runner = shell.run_classic_shell
-            else:
-                def fallback():
-                    ui_log.error("Falling back to classic shell")
-                    return shell.run_classic_shell
-
-                try:
-                    if not shell.custom_shell_dict:  # Only execfile once
-                        from os.path import expanduser, expandvars
-                        cshell_fname = expanduser(expandvars(CONFIG["shell"]))
-                        with open(cshell_fname) as inf:
-                            exec(compile(inf.read(), cshell_fname, "exec"),
-                                    shell.custom_shell_dict,
-                                    shell.custom_shell_dict)
-                except FileNotFoundError:
-                    ui_log.error("Unable to locate custom shell file {!r}"
-                                 .format(CONFIG["shell"]))
-                    runner = fallback()
-                except Exception:
-                    ui_log.exception("Error when importing custom shell")
-                    runner = fallback()
+                import pudb.shell as shell
+                if CONFIG["shell"] == "ipython" and shell.have_ipython():
+                    runner = shell.run_ipython_shell
+                elif CONFIG["shell"] == "ipython_kernel" and shell.have_ipython():
+                    runner = shell.run_ipython_kernel
+                elif CONFIG["shell"] == "bpython" and shell.HAVE_BPYTHON:
+                    runner = shell.run_bpython_shell
+                elif CONFIG["shell"] == "ptpython" and shell.HAVE_PTPYTHON:
+                    runner = shell.run_ptpython_shell
+                elif CONFIG["shell"] == "ptipython" and shell.HAVE_PTIPYTHON:
+                    runner = shell.run_ptipython_shell
+                elif CONFIG["shell"] == "classic":
+                    runner = shell.run_classic_shell
                 else:
-                    if "pudb_shell" not in shell.custom_shell_dict:
-                        ui_log.error(
-                            "%s does not contain a function named pudb_shell at "
-                            "the module level." % CONFIG["shell"])
+                    def fallback():
+                        ui_log.error("Falling back to classic shell")
+                        return shell.run_classic_shell
+
+                    try:
+                        if not shell.custom_shell_dict:  # Only execfile once
+                            from os.path import expanduser, expandvars
+                            cshell_fname = expanduser(expandvars(CONFIG["shell"]))
+                            with open(cshell_fname) as inf:
+                                exec(compile(inf.read(), cshell_fname, "exec"),
+                                        shell.custom_shell_dict,
+                                        shell.custom_shell_dict)
+                    except FileNotFoundError:
+                        ui_log.error("Unable to locate custom shell file {!r}"
+                                     .format(CONFIG["shell"]))
+                        runner = fallback()
+                    except Exception:
+                        ui_log.exception("Error when importing custom shell")
                         runner = fallback()
                     else:
-                        runner = shell.custom_shell_dict["pudb_shell"]
+                        if "pudb_shell" not in shell.custom_shell_dict:
+                            ui_log.error(
+                                "%s does not contain a function named pudb_shell at "
+                                "the module level." % CONFIG["shell"])
+                            runner = fallback()
+                        else:
+                            runner = shell.custom_shell_dict["pudb_shell"]
 
-            runner(curframe.f_globals, curframe.f_locals)
-
-            self.screen.start()
+                runner(curframe.f_globals, curframe.f_locals)
 
             self.update_var_view()
 
