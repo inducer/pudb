@@ -1440,8 +1440,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                         ("OK", True),
                         ("Cancel", False),
                         ], title="Go to Line Number"):
-                lineno = min(max(0, int(lineno_edit.value())-1), len(self.source)-1)
-                self.source.set_focus(lineno)
+
+                value = lineno_edit.value()
+                if value:
+                    lineno = min(max(0, int(value)-1), len(self.source)-1)
+                    self.source.set_focus(lineno)
 
         def scroll_left(w, size, key):
             self.source_hscroll_start = max(
