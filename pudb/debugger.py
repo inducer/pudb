@@ -2845,16 +2845,12 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
-    def update_var_view(self, locals=None, globals=None, focus_index=None):
-        if locals is None:
-            locals = self.debugger.curframe.f_locals
-        if globals is None:
-            globals = self.debugger.curframe.f_globals
-
+    def update_var_view(self, focus_index=None):
         from pudb.var_view import make_var_view
         self.locals[:] = make_var_view(
                 self.get_frame_var_info(read_only=True),
-                locals, globals)
+                self.debugger.curframe.f_locals,
+                self.debugger.curframe.f_globals)
         if focus_index is not None:
             # Have to set the focus _after_ updating the locals list, as there
             # appears to be a brief moment while reseting the list when the
