@@ -200,6 +200,12 @@ class WatchExpression:
     def __init__(self, expression):
         self.expression = expression
 
+    def eval(self, frame_globals, frame_locals):
+        try:
+            return eval(self.expression, frame_globals, frame_locals)
+        except Exception:
+            return WatchEvalError()
+
 
 class WatchEvalError:
     def __str__(self):
@@ -717,8 +723,8 @@ class TopAndMainVariableWalker(ValueWalker):
 SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 
-def make_var_view(frame_var_info, locals, globals):
-    vars = list(locals.keys())
+def make_var_view(frame_var_info, frame_locals, frame_globals):
+    vars = list(frame_locals.keys())
     vars.sort(key=str.lower)
 
     tmv_walker = TopAndMainVariableWalker(frame_var_info)
@@ -726,21 +732,18 @@ def make_var_view(frame_var_info, locals, globals):
     watch_widget_list = []
 
     for watch_expr in frame_var_info.watches:
-        try:
-            value = eval(watch_expr.expression, globals, locals)
-        except Exception:
-            value = WatchEvalError()
+        value = watch_expr.eval(frame_globals, frame_locals)
 
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
                 .walk_value(None, watch_expr.expression, value)
 
     if "__return__" in vars:
-        ret_walker.walk_value(None, "Return", locals["__return__"],
+        ret_walker.walk_value(None, "Return", frame_locals["__return__"],
                 attr_prefix="return")
 
     for var in vars:
         if not (var.startswith("__") and var.endswith("__")):
-            tmv_walker.walk_value(None, var, locals[var])
+            tmv_walker.walk_value(None, var, frame_locals[var])
 
     result = tmv_walker.main_widget_list
 
