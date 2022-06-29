@@ -216,8 +216,16 @@ class WatchExpression:
         return self._value
 
     def set_expression(self, expression):
-        self.expression = expression
+        if expression != self.expression:
+            self.expression = expression
+            self._value = self.NOT_EVALUATED
+
+    def set_method(self, method):
+        self.method = method
         self._value = self.NOT_EVALUATED
+
+    def set_scope(self, scope):
+        self.scope = scope
 
 
 class WatchEvalError:
@@ -803,13 +811,31 @@ class FrameVarInfoKeeper:
         else:
             return self.frame_var_info.setdefault(ssid, FrameVarInfo())
 
-    def add_watch(self, watch_expr: WatchExpression):
+    def add_watch(self, watch_expr: WatchExpression, fvi=None):
         if watch_expr.scope == "local":
-            fvi = self.get_frame_var_info(read_only=False)
+            if fvi is None:
+                fvi = self.get_frame_var_info(read_only=False)
             fvi.watches.append(watch_expr)
         elif watch_expr.scope == "global":
             self.global_watches.append(watch_expr)
 
+    def delete_watch(self, watch_expr: WatchExpression, fvi=None):
+        if fvi is None:
+            fvi = self.get_frame_var_info(read_only=False)
+        # Need to delete both locally and globally- could be in either!
+        # (The watch_expr.scope attribute may have changed)
+        try:
+            fvi.watches.remove(watch_expr)
+        except ValueError:
+            pass
+        try:
+            self.global_watches.remove(watch_expr)
+        except ValueError:
+            pass
+
+    def change_watch_scope(self, watch_expr, fvi=None):
+        self.delete_watch(watch_expr, fvi)
+        self.add_watch(watch_expr, fvi)
 
 # }}}
 
