@@ -743,8 +743,23 @@ def make_var_view(global_watches, frame_var_info, frame_globals, frame_locals):
     for watch_expr in chain(global_watches, frame_var_info.watches):
         value = watch_expr.eval(frame_globals, frame_locals)
         scope_str = watch_expr.scope[0]
-        method_str = "=" if watch_expr.method == "expression" else "*"
-        label = f"[{scope_str}{method_str}] {watch_expr.expression}"
+        expression = watch_expr.expression
+        if watch_expr.method == "reference":
+            found = False
+            # locals first as that's the context the user is more likely to be
+            # interested in re: seeing renames.
+            for mapping in (frame_locals, frame_globals):
+                for k, v in mapping.items():
+                    if v is value:
+                        expression = f"{expression} ({k})"
+                        found = True
+                        break
+                if found:
+                    break
+            method_str = "*"
+        else:
+            method_str = "="
+        label = f"[{scope_str}{method_str}] {expression}"
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
                 .walk_value(None, label, value)
 
