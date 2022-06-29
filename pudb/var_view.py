@@ -198,15 +198,22 @@ class InspectInfo:
 
 
 class WatchExpression:
+    NOT_EVALUATED = object()
+
     def __init__(self, expression="", scope="local", method="expression"):
         self.expression = expression
         self.scope = scope
+        self.method = method
+        self._value = self.NOT_EVALUATED
 
     def eval(self, frame_globals, frame_locals):
-        try:
-            return eval(self.expression, frame_globals, frame_locals)
-        except Exception:
-            return WatchEvalError()
+        if (self.method == "expression"
+                or self._value is self.NOT_EVALUATED):
+            try:
+                self._value = eval(self.expression, frame_globals, frame_locals)
+            except Exception:
+                return WatchEvalError()
+        return self._value
 
 
 class WatchEvalError:
@@ -735,7 +742,9 @@ def make_var_view(global_watches, frame_var_info, frame_globals, frame_locals):
 
     for watch_expr in chain(global_watches, frame_var_info.watches):
         value = watch_expr.eval(frame_globals, frame_locals)
-        label = f"[{watch_expr.scope[0]}] {watch_expr.expression}"
+        scope_str = watch_expr.scope[0]
+        method_str = "=" if watch_expr.method == "expression" else "*"
+        label = f"[{scope_str}{method_str}] {watch_expr.expression}"
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
                 .walk_value(None, label, value)
 

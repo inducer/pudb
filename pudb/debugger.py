@@ -1159,6 +1159,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                 if new_state == True:
                     watch_expr.scope = user_data
 
+            def set_watch_method(radio_button, new_state, user_data):
+                if new_state == True:
+                    watch_expr.method = user_data
+
             watch_edit = urwid.Edit([("label", "Watch expression: ")])
 
             scope_rbs = []
@@ -1177,12 +1181,31 @@ class DebuggerUI(FrameVarInfoKeeper):
                 user_data="global",
             )
 
+            method_rbs = []
+            urwid.RadioButton(
+                group=method_rbs,
+                label="Expression: always re-evaluate the expression",
+                state=True,
+                on_state_change=set_watch_method,
+                user_data="expression",
+            )
+            urwid.RadioButton(
+                group=method_rbs,
+                label="Reference: evaluate once, watch the resulting value",
+                state=False,
+                on_state_change=set_watch_method,
+                user_data="reference",
+            )
+
             if self.dialog(
                 urwid.ListBox(urwid.SimpleListWalker([
                     urwid.AttrMap(watch_edit, "input", "focused input"),
                     urwid.Text(""),
                     urwid.Text("Scope:"),
-                ] + scope_rbs)),
+                ] + scope_rbs + [
+                    urwid.Text(""),
+                    urwid.Text("Method:"),
+                ] + method_rbs)),
                 [
                     ("OK", True),
                     ("Cancel", False),
