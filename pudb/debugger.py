@@ -1150,8 +1150,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             lb = urwid.ListBox(urwid.SimpleListWalker(
                 id_segment
+                + [urwid.Text("Stringifier:")]
                 + rb_grp_show + [urwid.Text("")]
+                + [urwid.Text("Access:")]
                 + rb_grp_access + [urwid.Text("")]
+                + [urwid.Text("Options:")]
                 + [
                     wrap_checkbox,
                     expanded_checkbox,
