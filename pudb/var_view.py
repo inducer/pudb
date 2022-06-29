@@ -198,8 +198,9 @@ class InspectInfo:
 
 
 class WatchExpression:
-    def __init__(self, expression):
+    def __init__(self, expression="", scope="local", method="expression"):
         self.expression = expression
+        self.scope = scope
 
     def eval(self, frame_globals, frame_locals):
         try:
@@ -734,9 +735,9 @@ def make_var_view(global_watches, frame_var_info, frame_globals, frame_locals):
 
     for watch_expr in chain(global_watches, frame_var_info.watches):
         value = watch_expr.eval(frame_globals, frame_locals)
-
+        label = f"[{watch_expr.scope[0]}] {watch_expr.expression}"
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
-                .walk_value(None, watch_expr.expression, value)
+                .walk_value(None, label, value)
 
     if "__return__" in vars:
         ret_walker.walk_value(None, "Return", frame_locals["__return__"],
@@ -773,6 +774,14 @@ class FrameVarInfoKeeper:
             return self.frame_var_info.get(ssid, FrameVarInfo())
         else:
             return self.frame_var_info.setdefault(ssid, FrameVarInfo())
+
+    def add_watch(self, watch_expr: WatchExpression):
+        if watch_expr.scope == "local":
+            fvi = self.get_frame_var_info(read_only=False)
+            fvi.watches.append(watch_expr)
+        elif watch_expr.scope == "global":
+            self.global_watches.append(watch_expr)
+
 
 # }}}
 

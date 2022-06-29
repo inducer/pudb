@@ -1152,23 +1152,45 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.update_var_view()
 
         def insert_watch(w, size, key):
-            watch_edit = urwid.Edit([
-                ("label", "Watch expression: ")
-                ])
+            from pudb.var_view import WatchExpression
+            watch_expr = WatchExpression()
+
+            def set_watch_scope(radio_button, new_state, user_data):
+                if new_state == True:
+                    watch_expr.scope = user_data
+
+            watch_edit = urwid.Edit([("label", "Watch expression: ")])
+
+            scope_rbs = []
+            urwid.RadioButton(
+                group=scope_rbs,
+                label="Local: watch in current frame only",
+                state=True,
+                on_state_change=set_watch_scope,
+                user_data="local",
+            )
+            urwid.RadioButton(
+                group=scope_rbs,
+                label="Global: watch in all frames",
+                state=False,
+                on_state_change=set_watch_scope,
+                user_data="global",
+            )
 
             if self.dialog(
-                    urwid.ListBox(urwid.SimpleListWalker([
-                        urwid.AttrMap(watch_edit, "input", "focused input")
-                        ])),
-                    [
-                        ("OK", True),
-                        ("Cancel", False),
-                        ], title="Add Watch Expression"):
-
-                from pudb.var_view import WatchExpression
-                we = WatchExpression(watch_edit.get_edit_text())
-                fvi = self.get_frame_var_info(read_only=False)
-                fvi.watches.append(we)
+                urwid.ListBox(urwid.SimpleListWalker([
+                    urwid.AttrMap(watch_edit, "input", "focused input"),
+                    urwid.Text(""),
+                    urwid.Text("Scope:"),
+                ] + scope_rbs)),
+                [
+                    ("OK", True),
+                    ("Cancel", False),
+                ],
+                title="Add Watch Expression"
+            ):
+                watch_expr.expression = watch_edit.get_edit_text()
+                self.add_watch(watch_expr)
                 self.update_var_view()
 
         self.var_list.listen("\\", change_var_state)
