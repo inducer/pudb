@@ -215,6 +215,10 @@ class WatchExpression:
                 return WatchEvalError()
         return self._value
 
+    def set_expression(self, expression):
+        self.expression = expression
+        self._value = self.NOT_EVALUATED
+
 
 class WatchEvalError:
     def __str__(self):
