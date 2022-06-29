@@ -2848,6 +2848,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
     def update_var_view(self, focus_index=None):
         from pudb.var_view import make_var_view
         self.locals[:] = make_var_view(
+                self.global_watches,
                 self.get_frame_var_info(read_only=True),
                 self.debugger.curframe.f_locals,
                 self.debugger.curframe.f_globals)

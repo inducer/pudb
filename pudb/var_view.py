@@ -32,6 +32,7 @@ import warnings
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sized
+from itertools import chain
 from typing import Tuple, List
 from pudb.lowlevel import ui_log
 from pudb.ui_tools import text_width
@@ -723,7 +724,7 @@ class TopAndMainVariableWalker(ValueWalker):
 SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 
-def make_var_view(frame_var_info, frame_locals, frame_globals):
+def make_var_view(global_watches, frame_var_info, frame_locals, frame_globals):
     vars = list(frame_locals.keys())
     vars.sort(key=str.lower)
 
@@ -731,7 +732,7 @@ def make_var_view(frame_var_info, frame_locals, frame_globals):
     ret_walker = BasicValueWalker(frame_var_info)
     watch_widget_list = []
 
-    for watch_expr in frame_var_info.watches:
+    for watch_expr in chain(global_watches, frame_var_info.watches):
         value = watch_expr.eval(frame_globals, frame_locals)
 
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
@@ -762,6 +763,7 @@ def make_var_view(frame_var_info, frame_locals, frame_globals):
 class FrameVarInfoKeeper:
     def __init__(self):
         self.frame_var_info = {}
+        self.global_watches = []
 
     def get_frame_var_info(self, read_only, ssid=None):
         if ssid is None:
