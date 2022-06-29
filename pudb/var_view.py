@@ -215,6 +215,26 @@ class WatchExpression:
                 return WatchEvalError()
         return self._value
 
+    def label(self, value, frame_globals, frame_locals):
+        scope_str = self.scope[0]
+        expression = self.expression
+        if self.method == "reference":
+            found = False
+            # locals first as that's the context the user is more likely to be
+            # interested in re: seeing renames.
+            for mapping in (frame_locals, frame_globals):
+                for k, v in mapping.items():
+                    if v is value:
+                        expression = f"{expression} ({k})"
+                        found = True
+                        break
+                if found:
+                    break
+            method_str = "*"
+        else:
+            method_str = "="
+        return f"[{scope_str}{method_str}] {expression}"
+
     def set_expression(self, expression):
         if expression != self.expression:
             self.expression = expression
@@ -754,24 +774,7 @@ def make_var_view(global_watches, frame_var_info, frame_globals, frame_locals):
 
     for watch_expr in chain(global_watches, frame_var_info.watches):
         value = watch_expr.eval(frame_globals, frame_locals)
-        scope_str = watch_expr.scope[0]
-        expression = watch_expr.expression
-        if watch_expr.method == "reference":
-            found = False
-            # locals first as that's the context the user is more likely to be
-            # interested in re: seeing renames.
-            for mapping in (frame_locals, frame_globals):
-                for k, v in mapping.items():
-                    if v is value:
-                        expression = f"{expression} ({k})"
-                        found = True
-                        break
-                if found:
-                    break
-            method_str = "*"
-        else:
-            method_str = "="
-        label = f"[{scope_str}{method_str}] {expression}"
+        label = watch_expr.label(value, frame_globals, frame_locals)
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
                 .walk_value(None, label, value)
 
