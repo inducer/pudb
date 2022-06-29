@@ -1025,9 +1025,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.show_methods = not iinfo.show_methods
             elif key == "delete":
                 fvi = self.get_frame_var_info(read_only=False)
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
+                try:
+                    fvi.watches.remove(var.watch_expr)
+                except ValueError:
+                    pass
 
             self.update_var_view(focus_index=focus_index)
 
@@ -1143,9 +1144,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     var.watch_expr.expression = watch_edit.get_edit_text()
 
             elif result == "del":
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
+                try:
+                    fvi.watches.remove(var.watch_expr)
+                except ValueError:
+                    pass
 
             self.update_var_view()
 
