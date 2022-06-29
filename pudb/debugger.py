@@ -2850,8 +2850,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.locals[:] = make_var_view(
                 self.global_watches,
                 self.get_frame_var_info(read_only=True),
-                self.debugger.curframe.f_locals,
-                self.debugger.curframe.f_globals)
+                self.debugger.curframe.f_globals,
+                self.debugger.curframe.f_locals)
         if focus_index is not None:
             # Have to set the focus _after_ updating the locals list, as there
             # appears to be a brief moment while reseting the list when the

@@ -724,7 +724,7 @@ class TopAndMainVariableWalker(ValueWalker):
 SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 
-def make_var_view(global_watches, frame_var_info, frame_locals, frame_globals):
+def make_var_view(global_watches, frame_var_info, frame_globals, frame_locals):
     vars = list(frame_locals.keys())
     vars.sort(key=str.lower)
 
