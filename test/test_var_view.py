@@ -134,7 +134,7 @@ def generate_containerlike_class():
                 @classmethod
                 def name(cls):
                     return "ContainerlikeClass:{}".format(
-                        ":".join(selected_methods))
+                            ":".join(selected_methods))  # noqa: B023
 
             for method in selected_methods:
                 func = method_factory(method)
