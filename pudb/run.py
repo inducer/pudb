@@ -1,9 +1,19 @@
 def main():
+    import os
     import sys
-
     import argparse
+
+    from pudb import VERSION
+
+    version_info = "pudb:%(prog)s v" + VERSION
+
+    if sys.argv[1:] == ["-v"]:
+        print(version_info % {"prog": os.path.basename(__file__)})
+        sys.exit(os.EX_OK)
+
     parser = argparse.ArgumentParser(
-        usage="%(prog)s [options] [-m] SCRIPT-OR-MODULE-TO-RUN [SCRIPT_ARGS]"
+        usage="%(prog)s [options] [-m] SCRIPT-OR-MODULE-TO-RUN [SCRIPT_ARGS]",
+        epilog=version_info
     )
     parser.add_argument("-s", "--steal-output", action="store_true"),
 
@@ -19,6 +29,7 @@ def main():
     parser.add_argument("--pre-run", metavar="COMMAND",
                         help="Run command before each program run",
                         default="")
+    parser.add_argument("--version", action="version", version=version_info)
     parser.add_argument("script_args", nargs=argparse.REMAINDER,
                         help="Arguments to pass to script or module")
 
