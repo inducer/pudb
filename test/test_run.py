@@ -19,7 +19,7 @@ main_version_scenarios = [
 
 @pytest.mark.parametrize(
     "argv",
-    [pytest.param(scenario, id=csv(scenario)) for scenario in main_version_scenarios],
+    [pytest.param(s, id=csv(s)) for s in main_version_scenarios],
 )
 def test_main_version(capsys, mocker, argv):
     mocker.patch("sys.argv", [os.path.basename(main.__code__.co_filename), *argv])
