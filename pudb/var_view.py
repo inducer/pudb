@@ -247,6 +247,9 @@ class WatchExpression:
     def set_scope(self, scope):
         self.scope = scope
 
+    def reset_value(self):
+        self._value = self.NOT_EVALUATED
+
 
 class WatchEvalError:
     def __str__(self):
@@ -839,6 +842,10 @@ class FrameVarInfoKeeper:
     def change_watch_scope(self, watch_expr, fvi=None):
         self.delete_watch(watch_expr, fvi)
         self.add_watch(watch_expr, fvi)
+
+    def reset_global_watch_values(self):
+        for watch_expr in self.global_watches:
+            watch_expr.reset_value()
 
 # }}}
 

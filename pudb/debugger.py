@@ -319,6 +319,7 @@ class Debugger(bdb.Bdb):
     def restart(self):
         from linecache import checkcache
         checkcache()
+        self.ui.reset_global_watch_values()
         self.ui.set_source_code_provider(NullSourceCodeProvider())
         self.setup_state()
 
