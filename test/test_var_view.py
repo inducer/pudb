@@ -145,8 +145,8 @@ def generate_containerlike_class():
 
 class BaseValueWalkerTestCase(unittest.TestCase):
     """
-    There are no actual tests defined in this class, it provides utitlities
-    useful for testing the variable view in variaous ways.
+    There are no actual tests defined in this class, it provides utilities
+    useful for testing the variable view in various ways.
     """
     EMPTY_ITEM = (ValueWalker.EMPTY_LABEL, None)
     MOD_STR = " [all+()]"
@@ -200,7 +200,7 @@ class BaseValueWalkerTestCase(unittest.TestCase):
         self.values_to_expand = [container]
         self.walker = BasicValueWalker(FrameVarInfoForTesting(expand_paths))
 
-        # Build out list of extected view contents according to container type.
+        # Build out list of expected view contents according to container type.
         expected = [(label, self.value_string(container))]
         if isinstance(container, PudbMapping):
             expected.extend([(f"[{repr(key)}]", repr(container[key]))
