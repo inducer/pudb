@@ -30,16 +30,12 @@ from configparser import ConfigParser
 from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
                            settings_log)
 
-# minor LGPL violation: stolen from python-xdg
-
 # see https://github.com/inducer/pudb/pull/453 for context
 _home = os.environ.get("HOME", os.path.expanduser("~"))
-xdg_data_home = os.environ.get("XDG_DATA_HOME",
-            os.path.join(_home, ".local", "share") if _home else None)
-
-
-XDG_CONFIG_HOME = os.environ.get("XDG_CONFIG_HOME",
-                                 os.path.join(_home, ".config") if _home else None)
+XDG_CONF_RESOURCE = "pudb"
+XDG_CONFIG_HOME = os.environ.get(
+    "XDG_CONFIG_HOME",
+    os.path.join(_home, ".config") if _home else None)
 
 if XDG_CONFIG_HOME:
     XDG_CONFIG_DIRS = [XDG_CONFIG_HOME]
@@ -47,26 +43,18 @@ else:
     XDG_CONFIG_DIRS = os.environ.get("XDG_CONFIG_DIRS", "/etc/xdg").split(":")
 
 
-def get_save_config_path(*resource):
-    if XDG_CONFIG_HOME is None:
+def get_save_config_path():
+    if not XDG_CONFIG_HOME:
         return None
-    if not resource:
-        resource = [XDG_CONF_RESOURCE]
 
-    # no idea what pylint's problem is here
-    resource = os.path.join(*resource)  # pylint: disable=no-value-for-parameter
-
-    assert not resource.startswith("/")
-    path = os.path.join(XDG_CONFIG_HOME, resource)
+    path = os.path.join(XDG_CONFIG_HOME, XDG_CONF_RESOURCE)
     if not os.path.isdir(path):
-        os.makedirs(path, 448)  # 0o700
-    return path
+        os.makedirs(path, mode=0o700)
 
-# end LGPL violation
+    return path
 
 
 CONF_SECTION = "pudb"
-XDG_CONF_RESOURCE = "pudb"
 CONF_FILE_NAME = "pudb.cfg"
 
 SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
