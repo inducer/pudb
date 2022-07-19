@@ -44,12 +44,12 @@ else:
 
 
 def get_save_config_path():
+    # This may not raise, as it is called during import.
     if not XDG_CONFIG_HOME:
         return None
 
     path = os.path.join(XDG_CONFIG_HOME, XDG_CONF_RESOURCE)
-    if not os.path.isdir(path):
-        os.makedirs(path, mode=0o700)
+    os.makedirs(path, mode=0o700, exist_ok=True)
 
     return path
 
@@ -65,6 +65,8 @@ _config_ = [None]
 
 
 def load_config():
+    # This may not raise, as it is called during import.
+
     # Only ever do this once
     if _config_[0] is not None:
         return _config_[0]
@@ -136,6 +138,8 @@ def load_config():
 
 
 def save_config(conf_dict):
+    # This may not raise, as it is called during import.
+
     from os.path import join
 
     cparser = ConfigParser()
