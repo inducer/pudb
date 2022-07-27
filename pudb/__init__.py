@@ -80,6 +80,7 @@ def _get_debugger(**kwargs):
             kwargs.setdefault("stdin", tty_file)
             kwargs.setdefault("stdout", tty_file)
             kwargs.setdefault("term_size", term_size)
+            tty_file.close()
 
         from pudb.debugger import Debugger
         dbg = Debugger(**kwargs)
