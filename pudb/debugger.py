@@ -842,7 +842,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             try:
                 # Load global history if present
-                return open(path, "r").read().splitlines()
+                with open(path, "r") as histfile:
+                    return histfile.read().splitlines()
             except FileNotFoundError:
                 return []
 
