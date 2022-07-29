@@ -40,9 +40,6 @@ import errno
 import os
 import socket
 import sys
-import fcntl
-import termios
-import struct
 import atexit
 from typing import Callable, Any
 
@@ -118,8 +115,8 @@ class RemoteDebugger(Debugger):
 
         if term_size is None:
             try:
-                s = struct.unpack("hh", fcntl.ioctl(1, termios.TIOCGWINSZ, "1234"))
-                term_size = (s[1], s[0])
+                s = os.get_terminal_size()
+                term_size = (s.columns, s.lines)
             except Exception:
                 term_size = (80, 24)
 
