@@ -1,6 +1,5 @@
 import sys
 import os
-import struct
 
 from pudb.debugger import Debugger
 
