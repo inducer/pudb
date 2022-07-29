@@ -1,3 +1,5 @@
+import sys
+
 from pudb.lowlevel import detect_encoding, decode_lines
 
 
@@ -76,20 +78,30 @@ def test_executable_lines():
 
         main()
         """
+    expected = {1, 2, 3, 4, 6, 8}
+    if sys.version_info >= (3, 11):
+        # See https://github.com/python/cpython/pull/94562 and
+        # https://peps.python.org/pep-0626/
+        expected |= {0}
 
-    assert get_exec_lines(test_code) == {1, 2, 3, 4, 6, 8}
+    assert get_exec_lines(test_code) == expected
 
     test_code = "a = 3*5\n" + 333 * "\n" + "b = 15"
-    assert get_exec_lines(test_code) == {
+    expected = {
         1,
         128,  # bogus,
         255,  # bogus,
         335
-        }
+    }
+    if sys.version_info >= (3, 11):
+        # See https://github.com/python/cpython/pull/94562 and
+        # https://peps.python.org/pep-0626/
+        expected |= {0}
+
+    assert get_exec_lines(test_code) == expected
 
 
 if __name__ == "__main__":
-    import sys
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:
