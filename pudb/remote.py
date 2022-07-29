@@ -40,7 +40,6 @@ import errno
 import os
 import socket
 import sys
-import struct
 import atexit
 from typing import Callable, Any
 
