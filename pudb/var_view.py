@@ -170,11 +170,14 @@ CONTAINER_CLASSES = (
 # {{{ data
 
 class FrameVarInfo:
-    def __init__(self):
+    def __init__(self, global_watch_iinfo):
         self.id_path_to_iinfo = {}
         self.watches = []
+        self.global_watch_iinfo = global_watch_iinfo
 
     def get_inspect_info(self, id_path, read_only):
+        if id_path in self.global_watch_iinfo:
+            return self.global_watch_iinfo[id_path]
         if read_only:
             return self.id_path_to_iinfo.get(
                     id_path, InspectInfo())
@@ -205,6 +208,9 @@ class WatchExpression:
         self.scope = scope
         self.method = method
         self._value = self.NOT_EVALUATED
+
+    def id_path(self):
+        return str(id(self))
 
     def eval(self, frame_globals, frame_locals):
         if (self.method == "expression"
@@ -778,8 +784,9 @@ def make_var_view(global_watches, frame_var_info, frame_globals, frame_locals):
     for watch_expr in chain(global_watches, frame_var_info.watches):
         value = watch_expr.eval(frame_globals, frame_locals)
         label = watch_expr.label(value, frame_globals, frame_locals)
+        id_path = watch_expr.id_path()
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
-                .walk_value(None, label, value)
+                .walk_value(None, label, value, id_path)
 
     if "__return__" in vars:
         ret_walker.walk_value(None, "Return", frame_locals["__return__"],
@@ -808,14 +815,24 @@ class FrameVarInfoKeeper:
         self.frame_var_info = {}
         self.global_watches = []
 
+        # In order to have the global watch expression presented the same way in
+        # all frames, we need persistent storage for global InspectInfo.
+        self.global_watch_iinfo = {}
+
     def get_frame_var_info(self, read_only, ssid=None):
         if ssid is None:
             # self.debugger set by subclass
             ssid = self.debugger.get_stack_situation_id()  # noqa: E501 # pylint: disable=no-member
         if read_only:
-            return self.frame_var_info.get(ssid, FrameVarInfo())
+            return self.frame_var_info.get(
+                ssid,
+                FrameVarInfo(self.global_watch_iinfo),
+            )
         else:
-            return self.frame_var_info.setdefault(ssid, FrameVarInfo())
+            return self.frame_var_info.setdefault(
+                ssid,
+                FrameVarInfo(self.global_watch_iinfo),
+            )
 
     def add_watch(self, watch_expr: WatchExpression, fvi=None):
         if watch_expr.scope == "local":
@@ -824,6 +841,7 @@ class FrameVarInfoKeeper:
             fvi.watches.append(watch_expr)
         elif watch_expr.scope == "global":
             self.global_watches.append(watch_expr)
+            self.global_watch_iinfo[watch_expr.id_path()] = InspectInfo()
 
     def delete_watch(self, watch_expr: WatchExpression, fvi=None):
         if fvi is None:
@@ -836,6 +854,7 @@ class FrameVarInfoKeeper:
             pass
         try:
             self.global_watches.remove(watch_expr)
+            self.global_watch_iinfo.pop(watch_expr.id_path())
         except ValueError:
             pass
 
