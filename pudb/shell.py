@@ -220,7 +220,17 @@ def run_ipython_shell_v11(globals, locals):
         args.append(banner)
     else:
         print(banner)
+
+    # XXX Quick and dirty way to fix issues with IPython 8.0.0+, introduced
+    # by commit 08d54c0e367b535fd88aca5273fd09e5e70d08f8.
+    # Setting _atexit_once_called = True will prevent call to
+    # IPython.core.interactiveshell.InteractiveShell._atexit_once() from inside
+    # IPython.terminal.interactiveshell.TerminalInteractiveShell.mainloop()
+    # This allows us to repeatedly re-call mainloop() and the whole
+    # run_ipython_shell_v11() function
+    shell._atexit_once_called = True
     shell.mainloop(*args)
+    del shell._atexit_once_called
 
     # Restore originating namespace
     _update_ipython_ns(shell, old_globals, old_locals)
