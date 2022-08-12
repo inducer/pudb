@@ -1,4 +1,4 @@
-def main():
+def get_argparse_parser():
     import os
     import sys
     import argparse
@@ -32,6 +32,13 @@ def main():
     parser.add_argument("--version", action="version", version=version_info)
     parser.add_argument("script_args", nargs=argparse.REMAINDER,
                         help="Arguments to pass to script or module")
+    return parser
+
+
+def main(**kwargs):
+    import sys
+
+    parser = get_argparse_parser()
 
     options = parser.parse_args()
     args = options.script_args

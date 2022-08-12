@@ -1,0 +1,5 @@
+#compdef {{programs}}
+
+_arguments -s -S \
+  {{flags}} \
+  '*:file:_files'
