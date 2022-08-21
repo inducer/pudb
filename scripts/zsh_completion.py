@@ -5,7 +5,7 @@ import sys
 import re
 from setuptools import find_packages
 from argparse import SUPPRESS
-from typing import Final
+from typing import Final, Tuple
 
 path = dirn(dirn((os.path.abspath(__file__))))
 sys.path.insert(0, path)
@@ -56,12 +56,18 @@ for action in get_argparse_parser()._actions:
             completion += ":_dirs"
         elif action.metavar == "url":
             completion += ":_urls"
+        elif action.metavar == "command":
+            completion += ":_command_names -e"
+    elif isinstance(action.metavar, Tuple):
+        completion = ":" + " ".join(map(str, action.metavar)).replace(
+            ":", "\\:"
+        )
     elif isinstance(action.default, bool) or action.default == SUPPRESS:
         completion = ""
     else:
         completion = ":" + pat_class.findall(str(action.default.__class__))[0]
     if action.choices:
-        completion += ":(" + " ".join(action.choices) + ")"
+        completion += ":(" + " ".join(map(str, action.choices)) + ")"
     flags += ["{0}{1}'".format(flag, completion)]
 
 with open(ZSH_COMPLETION_TEMPLATE) as f:
