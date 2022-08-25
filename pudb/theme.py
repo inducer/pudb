@@ -475,16 +475,15 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "highlighted": ("black", "dark green"),
             # }}}
             # {{{ general ui
-            "input": ("black", "dark cyan"),
+            "input": ("light green", "black"),
+            "focused input": ("light green", "black"),
             "warning": (add_setting("white", "bold"), "dark red"),
-            "search box": ("white", "black"),
-            "dialog title": (add_setting("white", "bold"), "dark cyan"),
+            "dialog title": (add_setting("white", "bold"), "dark blue"),
             "group head": (add_setting("dark blue", "bold"), "light gray"),
-            "button": (add_setting("white", "bold"), "dark cyan"),
+            "button": (add_setting("white", "bold"), "dark blue"),
+            "focused button": ("white", "black"),
             "focused sidebar": ("black", "white"),
-            "focused button": ("light cyan", "black"),
             "value": (add_setting("yellow", "bold"), "dark blue"),
-            "fixed value": ("light gray", "dark blue"),
             # }}}
             # {{{ source view
             "source": ("light green", "black"),
@@ -513,8 +512,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
 
             "highlighted var label": ("black", "dark green"),
             "highlighted var value": ("black", "dark green"),
-            "focused highlighted var label": ("black", "light green"),
-            "focused highlighted var value": ("black", "light green"),
 
             "return label": ("white", "dark blue"),
             "return value": ("black", "dark cyan"),
@@ -564,7 +561,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "command line error": (add_setting("light red", "bold"), "black"),
 
             "command line clear button": (add_setting("white", "bold"), "black"),
-            "command line focused button": ("black", "light gray"),
+            "command line focused button": ("white", "dark blue"),
             # }}}
             # {{{ Code syntax
             "keyword": ("dark magenta", "black"),
