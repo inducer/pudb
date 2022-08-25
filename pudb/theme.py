@@ -568,6 +568,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             # }}}
             # {{{ Code syntax
             "keyword": ("dark magenta", "black"),
+            "operator": ("dark green", "black"),
             "pseudo": ("light magenta", "black"),
             "function": (add_setting("light blue", "bold"), "black"),
             "builtin": ("dark gray", "black"),
