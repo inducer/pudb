@@ -47,7 +47,7 @@ except ImportError:
 
 # {{{ abstract base classes for containers
 
-class PudbCollection(ABC):
+class PudbCollection(ABC):  # noqa: B024
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbCollection:
@@ -80,7 +80,7 @@ class PudbCollection(ABC):
         return len(collection)
 
 
-class PudbSequence(ABC):
+class PudbSequence(ABC):  # noqa: B024
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbSequence:
@@ -113,7 +113,7 @@ class PudbSequence(ABC):
         return len(sequence)
 
 
-class PudbMapping(ABC):
+class PudbMapping(ABC):  # noqa: B024
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbMapping:
