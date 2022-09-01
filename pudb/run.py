@@ -1,7 +1,22 @@
+COMMAND = {"zsh": "_command_names -e"}
+PREAMBLE = {
+    "zsh": """\
+_script_args() {
+  _arguments -S -s '(-)1:script_args:_files -g "*.py"' '*: :_files'
+}
+""",
+}
+SCRIPT_ARGS = {"zsh": "_script_args"}
+
+
 def get_argparse_parser():
     import os
     import sys
     import argparse
+    try:
+        import shtab
+    except ImportError:
+        from . import _shtab as shtab
 
     from pudb import VERSION
 
@@ -15,6 +30,7 @@ def get_argparse_parser():
         usage="%(prog)s [options] [-m] SCRIPT-OR-MODULE-TO-RUN [SCRIPT_ARGS]",
         epilog=version_info
     )
+    shtab.add_argument_to(parser, preamble=PREAMBLE)
     parser.add_argument("-s", "--steal-output", action="store_true"),
 
     # note: we're implementing -m as a boolean flag, mimicking pdb's behavior,
@@ -25,13 +41,15 @@ def get_argparse_parser():
                         help="Debug as module or package instead of as a script")
 
     parser.add_argument("-le", "--log-errors", nargs=1, metavar="FILE",
-                        help="Log internal errors to the given file")
+                        help="Log internal errors to the given file"
+                        ).complete = shtab.FILE
     parser.add_argument("--pre-run", metavar="COMMAND",
                         help="Run command before each program run",
-                        default="")
+                        default="").complete = COMMAND
     parser.add_argument("--version", action="version", version=version_info)
     parser.add_argument("script_args", nargs=argparse.REMAINDER,
-                        help="Arguments to pass to script or module")
+                        help="Arguments to pass to script or module"
+                        ).complete = SCRIPT_ARGS
     return parser
 
 

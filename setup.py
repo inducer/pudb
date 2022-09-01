@@ -3,8 +3,6 @@
 from setuptools import setup
 from pudb import VERSION
 
-import sys
-
 try:
     readme = open("README.rst")
     long_description = str(readme.read())
@@ -27,6 +25,7 @@ setup(
         "packaging>=20.0",
         "dataclasses>=0.7;python_version<'3.7'",
     ],
+    extras_require={"completion": ["shtab"]},
     test_requires=[
         "pytest>=2",
         "pytest-mock",
