@@ -53,7 +53,7 @@ setup(
     entry_points={
         "console_scripts": [
             # Deprecated. Should really use python -m pudb.
-            "pudb3 = pudb.run:main",
+            "pudb = pudb.run:main",
             ],
         "gui_script": [],
     },

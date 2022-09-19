@@ -30,7 +30,7 @@ def test_main_version(capsys, mocker, argv):
 
     captured = capsys.readouterr()
 
-    assert "pudb:pudb3 v" in captured.out
+    assert "pudb v" in captured.out
 
 
 def test_main_v_with_args(capsys, mocker):
