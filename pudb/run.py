@@ -1,4 +1,4 @@
-COMMAND = {"zsh": "_command_names -e"}
+COMMAND = {"zsh": "{_command_names -e}"}
 PREAMBLE = {
     "zsh": """\
 _script_args() {
@@ -20,13 +20,14 @@ def get_argparse_parser():
 
     from pudb import VERSION
 
-    version_info = "pudb:%(prog)s v" + VERSION
+    version_info = "%(prog)s v" + VERSION
 
     if sys.argv[1:] == ["-v"]:
-        print(version_info % {"prog": os.path.basename(__file__)})
+        print(version_info % {"prog": "pudb"})
         sys.exit(os.EX_OK)
 
     parser = argparse.ArgumentParser(
+        "pudb",
         usage="%(prog)s [options] [-m] SCRIPT-OR-MODULE-TO-RUN [SCRIPT_ARGS]",
         epilog=version_info
     )
