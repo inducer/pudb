@@ -127,7 +127,13 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
     prev_sys_path = sys.path[:]
     sys.path[0] = str(Path(mainpyfile).resolve().parent)
 
+    import os
+    cwd = os.getcwd()
+
     while True:
+        # Script may have changed directory. Restore cwd before restart.
+        os.chdir(cwd)
+
         if pre_run:
             from subprocess import call
             retcode = call(pre_run, close_fds=True, shell=True)
