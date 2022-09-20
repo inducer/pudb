@@ -123,9 +123,9 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
             sys.argv = [mainpyfile] + args
 
     # replace pudb's dir with script's dir in front of module search path.
-    from os.path import dirname
+    from pathlib import Path
     prev_sys_path = sys.path[:]
-    sys.path[0] = dirname(mainpyfile)
+    sys.path[0] = str(Path(mainpyfile).resolve().parent)
 
     while True:
         if pre_run:
