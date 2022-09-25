@@ -106,8 +106,8 @@ def runmodule(*args, **kwargs):
 
 
 def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
-              run_as_module=False):
-    dbg = _get_debugger(steal_output=steal_output)
+              _continue=False, run_as_module=False):
+    dbg = _get_debugger(steal_output=steal_output, _continue=_continue)
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
