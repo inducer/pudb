@@ -32,7 +32,14 @@ def get_argparse_parser():
         epilog=version_info
     )
     shtab.add_argument_to(parser, preamble=PREAMBLE)
-    parser.add_argument("-s", "--steal-output", action="store_true"),
+    # dest="_continue_at_start" needed as "continue" is a python keyword
+    parser.add_argument(
+        "-c", "--continue",
+        action="store_true",
+        dest="_continue_at_start",
+        help="Let the script run until an exception occurs or a breakpoint is hit",
+    )
+    parser.add_argument("-s", "--steal-output", action="store_true")
 
     # note: we're implementing -m as a boolean flag, mimicking pdb's behavior,
     # and makes it possible without much fuss to support cases like:
@@ -69,6 +76,7 @@ def main(**kwargs):
     options_kwargs = {
         "pre_run": options.pre_run,
         "steal_output": options.steal_output,
+        "_continue_at_start": options._continue_at_start,
     }
 
     if len(args) < 1:

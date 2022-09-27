@@ -183,7 +183,7 @@ class Debugger(bdb.Bdb):
     _current_debugger = []
 
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
-            **kwargs):
+                 _continue_at_start=False, **kwargs):
 
         if Debugger._current_debugger:
             raise ValueError("a Debugger instance already exists")
@@ -193,6 +193,7 @@ class Debugger(bdb.Bdb):
         bdb.Bdb.__init__(self, **kwargs)
         self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
         self.steal_output = steal_output
+        self._continue_at_start__setting = _continue_at_start
 
         self.setup_state()
 
@@ -304,6 +305,7 @@ class Debugger(bdb.Bdb):
         self.bottom_frame = None
         self.mainpyfile = ""
         self._wait_for_mainpyfile = False
+        self._continue_at_start = self._continue_at_start__setting
         self.current_bp = None
         self.post_mortem = False
         # Mapping of (filename, lineno) to bool. If True, will stop on the
@@ -442,12 +444,8 @@ class Debugger(bdb.Bdb):
         if "__exc_tuple__" in frame.f_locals:
             del frame.f_locals["__exc_tuple__"]
 
-        if self._wait_for_mainpyfile:
-            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                    or frame.f_lineno <= 0):
-                return
-            self._wait_for_mainpyfile = False
-            self.bottom_frame = frame
+        if self._waiting_for_mainpyfile(frame):
+            return
 
         if self.get_break(self.canonic(frame.f_code.co_filename), frame.f_lineno):
             self.current_bp = (
@@ -466,15 +464,24 @@ class Debugger(bdb.Bdb):
         if frame.f_code.co_name != "<module>":
             frame.f_locals["__return__"] = return_value
 
-        if self._wait_for_mainpyfile:
-            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                    or frame.f_lineno <= 0):
-                return
-            self._wait_for_mainpyfile = False
-            self.bottom_frame = frame
+        if self._waiting_for_mainpyfile(frame):
+            return
 
         if "__exc_tuple__" not in frame.f_locals:
             self.interaction(frame)
+
+    def _waiting_for_mainpyfile(self, frame):
+        if self._wait_for_mainpyfile:
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
+                    or frame.f_lineno <= 0):
+                return True
+            self._wait_for_mainpyfile = False
+            self.bottom_frame = frame
+            if self._continue_at_start:
+                self._continue_at_start = False
+                self.set_continue()
+                return True
+        return False
 
     def user_exception(self, frame, exc_tuple):
         """This function is called if an exception occurs,
@@ -506,7 +513,7 @@ class Debugger(bdb.Bdb):
         # events depends on python version). So we take special measures to
         # avoid stopping before we reach the main script (see user_line and
         # user_call for details).
-        self._wait_for_mainpyfile = 1
+        self._wait_for_mainpyfile = True
         self.mainpyfile = self.canonic(filename)
         statement = 'exec(compile(open("{}").read(), "{}", "exec"))'.format(
                 filename, filename)
