@@ -33,7 +33,12 @@ def get_argparse_parser():
     )
     shtab.add_argument_to(parser, preamble=PREAMBLE)
     # dest="_continue_at_start" needed as "continue" is a python keyword
-    parser.add_argument("-c", "--continue", action="store_true", dest="_continue_at_start")
+    parser.add_argument(
+        "-c", "--continue",
+        action="store_true",
+        dest="_continue_at_start",
+        help="Let the script run until an exception occurs or a breakpoint is hit",
+    )
     parser.add_argument("-s", "--steal-output", action="store_true")
 
     # note: we're implementing -m as a boolean flag, mimicking pdb's behavior,
