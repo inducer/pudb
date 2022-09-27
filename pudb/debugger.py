@@ -183,7 +183,7 @@ class Debugger(bdb.Bdb):
     _current_debugger = []
 
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
-                 _continue=False, **kwargs):
+                 _continue_at_start=False, **kwargs):
 
         if Debugger._current_debugger:
             raise ValueError("a Debugger instance already exists")
@@ -193,7 +193,7 @@ class Debugger(bdb.Bdb):
         bdb.Bdb.__init__(self, **kwargs)
         self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
         self.steal_output = steal_output
-        self._continue = _continue
+        self._continue_at_start__setting = _continue_at_start
 
         self.setup_state()
 
@@ -305,7 +305,7 @@ class Debugger(bdb.Bdb):
         self.bottom_frame = None
         self.mainpyfile = ""
         self._wait_for_mainpyfile = False
-        self._continue_at_start = self._continue
+        self._continue_at_start = self._continue_at_start__setting
         self.current_bp = None
         self.post_mortem = False
         # Mapping of (filename, lineno) to bool. If True, will stop on the
