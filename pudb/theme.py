@@ -490,7 +490,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "highlighted source": ("black", "dark green"),
             "current source": ("black", "brown"),
             "current focused source": (add_setting("yellow", "bold"), "dark blue"),
-            "focused source": ("white", "dark blue"),
             "breakpoint source": (add_setting("yellow", "bold"), "dark red"),
             "current breakpoint source": ("black", "dark red"),
 
@@ -503,34 +502,14 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "sidebar three": ("light cyan", "black"),
             # }}}
             # {{{ variables view
-            "var label": ("light blue", "black"),
-            "var value": ("white", "black"),
-            "variable separator": ("dark cyan", "light gray"),
-
-            "focused var label": ("white", "dark blue"),
-            "focused var value": ("white", "dark blue"),
-
-            "highlighted var label": ("black", "dark green"),
-            "highlighted var value": ("black", "dark green"),
-
             "return label": ("white", "dark blue"),
             "return value": ("black", "dark cyan"),
             "focused return label": ("light gray", "dark blue"),
             # }}}
             # {{{ stack
-            "stack": ("white", "black"),
-
-            "frame name": ("white", "black"),
-            "frame class": ("light blue", "black"),
-            "frame location": ("light cyan", "black"),
-
             "current frame name": (add_setting("white", "bold"), "black"),
             "current frame class": (add_setting("light blue", "bold"), "black"),
             "current frame location": (add_setting("light cyan", "bold"), "black"),
-
-            "focused frame name": ("white", "dark blue"),
-            "focused frame class": ("white", "dark blue"),
-            "focused frame location": ("white", "dark blue"),
 
             "focused current frame name": (
                 add_setting("white", "bold"), "dark blue"),
@@ -542,7 +521,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             # {{{ breakpoints view
             "breakpoint": ("white", "black"),
             "disabled breakpoint": ("dark gray", "black"),
-            "focused breakpoint": ("white", "dark blue"),
             "focused disabled breakpoint": ("light gray", "dark blue"),
             "current breakpoint": (add_setting("white", "bold"), "black"),
             "disabled current breakpoint": (
@@ -556,7 +534,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "command line edit": ("white", "black"),
             "command line prompt": (add_setting("white", "bold"), "black"),
 
-            "command line output": ("light green", "black"),
             "command line input": ("white", "black"),
             "command line error": (add_setting("light red", "bold"), "black"),
 
@@ -571,7 +548,6 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "builtin": ("dark gray", "black"),
             "literal": ("dark cyan", "black"),
             "string": ("dark red", "black"),
-            "doublestring": ("dark red", "black"),
             "docstring": ("yellow", "black"),
             "backtick": ("dark green", "black"),
             "punctuation": ("white", "black"),
