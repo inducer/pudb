@@ -9,7 +9,7 @@ jobs:
         name: Automatic push to gitlab.tiker.net
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v3
         -   run: |
                 mkdir ~/.ssh && echo -e "Host gitlab.tiker.net\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
                 eval $(ssh-agent) && echo "$GITLAB_AUTOPUSH_KEY" | ssh-add -
