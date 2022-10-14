@@ -14,9 +14,9 @@ jobs:
         name: Flake8
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v3
         -
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v4
             with:
                 # matches compat target in setup.py
                 python-version: '3.6'
@@ -29,9 +29,9 @@ jobs:
         name: Pylint
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v3
         -
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v4
             with:
                 python-version: '3.x'
         -   name: "Main Script"
@@ -44,11 +44,11 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                python-version: ["3.6", "3.8", "3.9", "3.x", pypy3]
+                python-version: ["3.6", "3.8", "3.9", "3.x", "pypy3.8"]
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v3
         -
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v4
             with:
                 python-version: ${{ matrix.python-version }}
         -   name: "Main Script"
@@ -62,9 +62,9 @@ jobs:
         name: Pytest with Coverage Test
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v3
         -
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v4
             with:
                 python-version: '3.x'
         -   name: "Main Script"
@@ -81,9 +81,9 @@ jobs:
         name: Documentation
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v3
         -
-            uses: actions/setup-python@v1
+            uses: actions/setup-python@v4
             with:
                 python-version: '3.x'
         -   name: "Main Script"
