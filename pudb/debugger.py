@@ -2450,7 +2450,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e043"  # noqa
+        WELCOME_LEVEL = "e044"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2466,6 +2466,12 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2022.1.3:\n\n"
+                    "- Fix finding executable lines for Python 3.11 (Lumir Balhar)\n"
+                    "- Fix the midnight theme (Aaron Meurer)\n"
+                    "- Add a --continue flag (Michael van der Kamp)\n"
+                    "- Various fixes\n"
 
                     "\nChanges in version 2022.1.2:\n\n"
                     "- Various fixes\n"
