@@ -100,9 +100,9 @@ Shell-related:
 
 HELP_SIDE = r"""
 Sidebar-related (active in sidebar):
-    +/- - grow/shrink sidebar
-    _/= - minimize/maximize sidebar
-    [/] - grow/shrink relative size of active sidebar box
+    +/- - grow/shrink sidebar width
+    _/= - minimize/maximize sidebar width
+    [/] - grow/shrink relative height of active sidebar box
 
 Keys in variables list:
     \/enter/space - expand/collapse
