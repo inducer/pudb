@@ -327,6 +327,7 @@ class Debugger(bdb.Bdb):
             return
 
         self.curframe, lineno = self.stack[index]
+        self.curframe_locals = self.curframe.f_locals
 
         filename = self.curframe.f_code.co_filename
 
@@ -1706,8 +1707,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             from pudb.shell import SetPropagatingDict
             return SetPropagatingDict(
-                    [curframe.f_locals, curframe.f_globals],
-                    curframe.f_locals)
+                    [self.debugger.curframe_locals, curframe.f_globals],
+                    self.debugger.curframe_locals)
 
         def cmdline_tab_complete(w, size, key):
             try:
@@ -2060,7 +2061,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         else:
                             runner = shell.custom_shell_dict["pudb_shell"]
 
-                runner(curframe.f_globals, curframe.f_locals)
+                runner(curframe.f_globals, self.debugger.curframe_locals)
 
             self.update_var_view()
 
@@ -2768,7 +2769,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
     def update_var_view(self, locals=None, globals=None, focus_index=None):
         if locals is None:
-            locals = self.debugger.curframe.f_locals
+            locals = self.debugger.curframe_locals
         if globals is None:
             globals = self.debugger.curframe.f_globals
 
