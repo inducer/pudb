@@ -164,7 +164,7 @@ def run_ipython_shell_v10(globals, locals):
 def _update_ipython_ns(shell, globals, locals):
     """Update the IPython 0.11 namespace at every visit"""
 
-    shell.user_ns = locals
+    shell.user_ns = locals.copy()
 
     try:
         shell.user_global_ns = globals
