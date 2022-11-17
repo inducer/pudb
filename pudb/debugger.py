@@ -1838,6 +1838,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 sys.stdout = prev_sys_stdout
                 sys.stderr = prev_sys_stderr
 
+            self.update_var_view()
+
         def cmdline_history_browse(direction):
             if self.cmdline_history_position == -1:
                 self.cmdline_history_position = len(self.cmdline_history)
