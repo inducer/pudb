@@ -1,0 +1,122 @@
+from pudb.themes.utils import add_setting, link
+
+# ------------------------------------------------------------------------------
+# Colors are approximations of https://www.nordtheme.com/docs/colors-and-palettes
+# Polar Night is made up of four darker colors (nord 0, nord1, nord2, and nord3) 
+# that are commonly used for base elements like backgrounds or text color in 
+# bright ambiance designs.
+# ------------------------------------------------------------------------------
+
+# nord0 is the origin color or the Polar Night palette.
+nord0 = "h236"
+
+# nord1 is a brighter shade color based on nord0.
+nord1 = "h238"
+
+# nord2 is an even more brighter shade color of nord0.
+nord2 = "h239"
+
+# nord3 is the brightest shade color based on nord0.
+nord3 = "h240"
+
+# nord4 is the origin color or the Snow Storm palette.
+nord4 = "h253"
+
+# nord5 is a brighter shade color of nord4.
+nord5 = "h255"
+
+# nord6 is the brightest shade color based on nord4.
+# We don't use nord 6 because it is not representable.
+# nord6 = "h256"
+
+
+# nord7 is a calm and highly contrasted color reminiscent of
+# frozen polar water.
+nord7 = "h109"
+
+
+# nord8 is a bright and shiny primary accent color reminiscent of pure
+# and clear ice.
+nord8 = "h110"
+
+
+# nord9 is a more darkened and less saturated color reminiscent of
+# arctic waters.
+nord9 = "h109"
+
+# nord10 is a dark and intensive color reminiscent of the deep arctic ocean.
+nord10 = "h67"
+
+# nord11 is a reddish color.
+nord11 = "h131"
+
+link("current breakpoint", "current frame name")
+link("focused current breakpoint", "focused current frame name")
+palette_dict = {
+
+    # {{{ base styles
+    "background": (nord0, nord7),
+    "selectable": (nord4, nord1),
+    "focused selectable": (nord4, nord2),
+    "highlighted": (nord4, nord3),
+    "hotkey": (add_setting(nord0, "underline"), nord7),
+    # }}}
+    # {{{ general ui
+    "input": (nord4, nord0),
+    "button": (add_setting(nord4, "bold"), nord0),
+    "focused button": (add_setting(nord4, "bold"), nord2),
+    "focused sidebar": (nord0, nord11),
+    "warning": (add_setting(nord4, "bold"), nord4),
+    "group head": (add_setting(nord0, "bold"), nord1),
+    "dialog title": (add_setting(nord4, "bold"), nord1),
+    # }}}
+    # {{{ source view
+    "source": (nord4, nord0),
+    "current source": (nord11, nord0),
+    "breakpoint source": (nord4, nord0),
+    "line number": (nord2, nord0),
+    "current line marker": (add_setting(nord11, "bold"), nord0),
+    "breakpoint marker": (add_setting(nord11, "bold"), nord0),
+    # }}}
+    # {{{ sidebar
+    "sidebar two": (nord9, nord1),
+    "focused sidebar two": (nord0, nord2),
+    "sidebar three": (nord0, nord1),
+    "focused sidebar three": (nord5, nord2),
+    # }}}
+    # {{{ variables view
+    "highlighted var label": (nord8, nord9),
+    "return label": (nord9, nord8),
+    "focused return label": (nord9, nord8),
+    # }}}
+    # {{{ stack
+    "current frame name": (nord9, nord1),
+    "focused current frame name": (nord9, nord2),
+    # }}}
+    # {{{ shell
+    "command line prompt": (
+        add_setting(nord5, "bold"), nord0),
+    "command line output": (nord7, nord0),
+    "command line error": (nord3, nord0),
+    "focused command line output": (nord7, nord2),
+    "focused command line error": (
+        add_setting(nord3, "bold"), nord2),
+    # }}}
+    # {{{ Code syntax
+    "literal":     (nord8, nord0),
+    "builtin":     (nord8, nord0),
+    "exception":   (nord8, nord0),
+    "keyword2":    (nord9, nord0),
+    "function":    (nord8, nord0),
+    "class":       (add_setting(nord9, "underline"), nord0),
+    "keyword":     (nord8, nord0),
+    "operator":    (nord5, nord0),
+    "comment":     (nord2, nord0),
+    "docstring":   (nord2, nord0),
+    "argument":    (nord11, nord0),
+    "pseudo":      (nord5, nord0),
+    "string":      (nord5, nord0),
+    # }}}
+}
+
+# vim: foldmethod=marker
