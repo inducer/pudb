@@ -2032,9 +2032,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                 elif CONFIG["shell"] == "classic":
                     runner = shell.run_classic_shell
                 else:
-                    def fallback():
-                        ui_log.error("Falling back to classic shell")
-                        return shell.run_classic_shell
+                    def fallback(error_message):
+                        fallback_message = "Falling back to classic shell."
+                        message = f"{error_message} {fallback_message}"
+                        ui_log.error(message)
+                        return partial(shell.run_classic_shell, message=message)
 
                     try:
                         if not shell.custom_shell_dict:  # Only execfile once
@@ -2045,18 +2047,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                                         shell.custom_shell_dict,
                                         shell.custom_shell_dict)
                     except FileNotFoundError:
-                        ui_log.error("Unable to locate custom shell file {!r}"
-                                     .format(CONFIG["shell"]))
-                        runner = fallback()
+                        runner = fallback(
+                            "Unable to locate custom shell file {!r}."
+                            .format(CONFIG["shell"])
+                        )
                     except Exception:
-                        ui_log.exception("Error when importing custom shell")
-                        runner = fallback()
+                        runner = fallback("Error when importing custom shell.")
                     else:
                         if "pudb_shell" not in shell.custom_shell_dict:
-                            ui_log.error(
+                            runner = fallback(
                                 "%s does not contain a function named pudb_shell at "
-                                "the module level." % CONFIG["shell"])
-                            runner = fallback()
+                                "the module level." % CONFIG["shell"]
+                            )
                         else:
                             runner = shell.custom_shell_dict["pudb_shell"]
 
