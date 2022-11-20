@@ -3,11 +3,8 @@
 from setuptools import setup
 from pudb import VERSION
 
-try:
-    readme = open("README.rst")
+with open("README.rst") as readme:
     long_description = str(readme.read())
-finally:
-    readme.close()
 
 setup(
     name="pudb",
@@ -16,14 +13,13 @@ setup(
     long_description=long_description,
     author="Andreas Kloeckner",
     author_email="inform@tiker.net",
-    python_requires="~=3.6",
+    python_requires="~=3.8",
     install_requires=[
         "urwid>=1.1.1",
         "pygments>=2.7.4",
         "jedi>=0.18,<1",
         "urwid_readline",
         "packaging>=20.0",
-        "dataclasses>=0.7;python_version<'3.7'",
     ],
     extras_require={"completion": ["shtab"]},
     test_requires=[
