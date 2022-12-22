@@ -1442,7 +1442,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 lineno = pos+1
 
                 bp_source_identifier = \
-                        self.source_code_provider.get_breakpoint_source_identifier()
+                        self.source_code_provider.get_source_identifier()
 
                 if bp_source_identifier is None:
                     self.message(
