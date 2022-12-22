@@ -53,6 +53,7 @@ Keys:
     c - continue
     r/f - finish current function
     t - run to cursor
+    j - jump to line
     e - show traceback [post-mortem or in exception state]
     b - set/clear breakpoint
     Ctrl-e - open file at current line to edit with $EDITOR
@@ -1460,20 +1461,19 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "for the following reason:\n\n"
                         + invalid_reason)
                 else:
-                    err = self.debugger.set_break(
-                         bp_source_identifier, pos+1, temporary=True)
-                    if err:
-                        self.message("Error dealing with jump:\n" + err)
-
                     try:
                         self.debugger.set_jump(
-                            self.debugger.curframe, pos+1)
+                            self.debugger.curframe, lineno)
+                        self.debugger.stack[self.debugger.curindex] = self.debugger.stack[self.debugger.curindex][0], lineno
+                        self.debugger.set_step()
                     except ValueError as e:
                         self.message("""\
 Error with jump. Note that jumping only works on the topmost stack frame.
 (The error was: %s)""" % (e.args[0],))
 
-                    end()
+                    # Update UI. end() will run past the line
+                    self.set_current_line(lineno, self.source_code_provider)
+                    self.update_stack()
 
         def go_to_line(w, size, key):
             _, line = self.source.get_focus()
