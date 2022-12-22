@@ -53,7 +53,7 @@ Keys:
     c - continue
     r/f - finish current function
     t - run to cursor
-    j - jump to line
+    J - jump to line
     e - show traceback [post-mortem or in exception state]
     b - set/clear breakpoint
     Ctrl-e - open file at current line to edit with $EDITOR
