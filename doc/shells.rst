@@ -52,8 +52,15 @@ PuDB supports the following external shells.
 - Internal (same as pressing ``Ctrl-x``). This is the default.
 - Classic (similar to the default ``python`` interactive shell)
 - `IPython <https://ipython.org/>`_
+   The `IPython` shell can also be used in a server-client fasion, which is
+   enabled by selecting the shell `ipython_kernel` in the settings. When set,
+   the ``!`` key will start an `IPython` kernel and wait for connection from,
+   e.g., `qtconsole`. Like other shells, `ipython_kernel` blocks the debugger
+   UI while it is active. Type `quit` or `exit` from a client to exit the
+   kernel and return to the debugger.
 - `bpython <https://bpython-interpreter.org/>`_
 - `ptpython <https://github.com/jonathanslenders/ptpython>`_
+
 
 Custom shells
 -------------
@@ -65,7 +72,7 @@ the path to the file.
 
 Here is an example custom shell file:
 
-.. literalinclude:: ../example-shell.py
+.. literalinclude:: ../examples/shell.py
    :language: python
 
 Note, many shells do not allow passing in globals and locals dictionaries

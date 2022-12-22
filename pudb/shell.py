@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 try:
     import bpython  # noqa
     # Access a property to verify module exists in case
@@ -24,14 +22,6 @@ except ImportError:
     HAVE_PTPYTHON = False
 else:
     HAVE_PTPYTHON = True
-
-
-try:
-    import readline
-    import rlcompleter
-    HAVE_READLINE = True
-except ImportError:
-    HAVE_READLINE = False
 
 
 # {{{ combined locals/globals dict
@@ -73,12 +63,18 @@ class SetPropagatingDict(dict):
 custom_shell_dict = {}
 
 
-def run_classic_shell(globals, locals, first_time=[True]):
-    if first_time:
+SHELL_FIRST_TIME = [True]
+
+
+def run_classic_shell(globals, locals, message=""):
+    if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
-        first_time.pop()
+        SHELL_FIRST_TIME.pop()
     else:
         banner = ""
+
+    if message:
+        banner = f"{message}\n{banner}"
 
     ns = SetPropagatingDict([locals, globals], locals)
 
@@ -88,14 +84,21 @@ def run_classic_shell(globals, locals, first_time=[True]):
             get_save_config_path(),
             "shell-history")
 
-    if HAVE_READLINE:
+    try:
+        import readline
+        import rlcompleter
+        have_readline = True
+    except ImportError:
+        have_readline = False
+
+    if have_readline:
         readline.set_completer(
                 rlcompleter.Completer(ns).complete)
         readline.parse_and_bind("tab: complete")
         readline.clear_history()
         try:
             readline.read_history_file(hist_file)
-        except IOError:
+        except OSError:
             pass
 
     from code import InteractiveConsole
@@ -103,15 +106,15 @@ def run_classic_shell(globals, locals, first_time=[True]):
 
     cons.interact(banner)
 
-    if HAVE_READLINE:
+    if have_readline:
         readline.write_history_file(hist_file)
 
 
 def run_bpython_shell(globals, locals):
     ns = SetPropagatingDict([locals, globals], locals)
 
-    import bpython.cli
-    bpython.cli.main(args=[], locals_=ns)
+    import bpython
+    bpython.embed(args=[], locals_=ns)
 
 
 # {{{ ipython
@@ -145,11 +148,11 @@ def ipython_version():
         return None
 
 
-def run_ipython_shell_v10(globals, locals, first_time=[True]):
-    '''IPython shell from IPython version 0.10'''
-    if first_time:
+def run_ipython_shell_v10(globals, locals):
+    """IPython shell from IPython version 0.10"""
+    if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
-        first_time.pop()
+        SHELL_FIRST_TIME.pop()
     else:
         banner = ""
 
@@ -162,30 +165,31 @@ def run_ipython_shell_v10(globals, locals, first_time=[True]):
 
 
 def _update_ipython_ns(shell, globals, locals):
-    '''Update the IPython 0.11 namespace at every visit'''
+    """Update the IPython 0.11 namespace at every visit"""
 
     shell.user_ns = locals.copy()
 
     try:
         shell.user_global_ns = globals
     except AttributeError:
-        class DummyMod(object):
-            "A dummy module used for IPython's interactive namespace."
+        class DummyMod:
+            """A dummy module used for IPython's interactive namespace."""
             pass
 
         user_module = DummyMod()
         user_module.__dict__ = globals
         shell.user_module = user_module
 
+    shell.init_history()
     shell.init_user_ns()
     shell.init_completer()
 
 
-def run_ipython_shell_v11(globals, locals, first_time=[True]):
-    '''IPython shell from IPython version 0.11'''
-    if first_time:
+def run_ipython_shell_v11(globals, locals):
+    """IPython shell from IPython version 0.11"""
+    if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
-        first_time.pop()
+        SHELL_FIRST_TIME.pop()
     else:
         banner = ""
 
@@ -219,7 +223,17 @@ def run_ipython_shell_v11(globals, locals, first_time=[True]):
         args.append(banner)
     else:
         print(banner)
+
+    # XXX Quick and dirty way to fix issues with IPython 8.0.0+, introduced
+    # by commit 08d54c0e367b535fd88aca5273fd09e5e70d08f8.
+    # Setting _atexit_once_called = True will prevent call to
+    # IPython.core.interactiveshell.InteractiveShell._atexit_once() from inside
+    # IPython.terminal.interactiveshell.TerminalInteractiveShell.mainloop()
+    # This allows us to repeatedly re-call mainloop() and the whole
+    # run_ipython_shell_v11() function
+    shell._atexit_once_called = True
     shell.mainloop(*args)
+    del shell._atexit_once_called
 
     # Restore originating namespace
     _update_ipython_ns(shell, old_globals, old_locals)
@@ -227,18 +241,38 @@ def run_ipython_shell_v11(globals, locals, first_time=[True]):
 
 def run_ipython_shell(globals, locals):
     import IPython
-    if have_ipython() and hasattr(IPython, 'Shell'):
+    if have_ipython() and hasattr(IPython, "Shell"):
         return run_ipython_shell_v10(globals, locals)
     else:
         return run_ipython_shell_v11(globals, locals)
 
+
+def run_ipython_kernel(globals, locals):
+    from IPython import embed_kernel
+
+    class DummyMod:
+        pass
+
+    user_module = DummyMod()
+    user_module.__dict__ = globals
+    embed_kernel(module=user_module, local_ns=locals)
+
 # }}}
+
+
+def get_ptpython_history_file():
+    from argparse import ArgumentParser
+    from ptpython.entry_points.run_ptpython import (  # pylint: disable=import-error
+            get_config_and_history_file)
+    parser = ArgumentParser()
+    parser.add_argument("--history_file")
+    parser.add_argument("--config_file")
+    return get_config_and_history_file(parser.parse_args([]))[1]
 
 
 def run_ptpython_shell(globals, locals):
     # Use the default ptpython history
-    import os
-    history_filename = os.path.expanduser('~/.ptpython/history')
+    history_filename = get_ptpython_history_file()
     ptpython_embed(globals=globals.copy(), locals=locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)
@@ -246,9 +280,7 @@ def run_ptpython_shell(globals, locals):
 
 def run_ptipython_shell(globals, locals):
     # Use the default ptpython history
-    import os
-
-    history_filename = os.path.expanduser('~/.ptpython/history')
+    history_filename = get_ptpython_history_file()
     ptipython_embed(globals=globals.copy(), locals=locals.copy(),
                    history_filename=history_filename,
                    configure=run_config)

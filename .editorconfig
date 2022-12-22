@@ -1,0 +1,32 @@
+# https://editorconfig.org/
+# https://github.com/editorconfig/editorconfig-vim 
+# https://github.com/editorconfig/editorconfig-emacs 
+
+root = true
+
+[*]
+indent_style = space
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.py]
+indent_size = 4
+
+[*.rst]
+indent_size = 4
+
+[*.cpp]
+indent_size = 2
+
+[*.hpp]
+indent_size = 2
+
+# There may be one in doc/
+[Makefile]
+indent_style = tab
+
+# https://github.com/microsoft/vscode/issues/1679
+[*.md]
+trim_trailing_whitespace = false

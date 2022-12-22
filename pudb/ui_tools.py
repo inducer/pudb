@@ -1,19 +1,32 @@
-from __future__ import absolute_import, division, print_function
 import urwid
-from urwid.util import _target_encoding, calc_width, calc_text_pos
+from urwid.util import calc_width, calc_text_pos
 
 
 # generic urwid helpers -------------------------------------------------------
 
 def text_width(txt):
-    """
-    Return the width of the text in the terminal
+    """Return the width of the text in the terminal.
+
+    :arg txt: A Unicode text object.
 
     Use this instead of len() whenever txt could contain double- or zero-width
     Unicode characters.
 
     """
     return calc_width(txt, 0, len(txt))
+
+
+def encode_like_urwid(s):
+    from urwid import escape
+    from urwid.util import _target_encoding
+
+    # Consistent with
+    # https://github.com/urwid/urwid/blob/2cc54891965283faf9113da72202f5d405f90fa3/urwid/util.py#L126-L128
+
+    s = s.replace(escape.SI+escape.SO, "")  # remove redundant shifts
+    s = s.encode(_target_encoding, "replace")
+    return s
+
 
 def make_canvas(txt, attr, maxcol, fill_attr=None):
     processed_txt = []
@@ -41,7 +54,7 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
         def get_byte_line_attr(line, line_attr):
             i = 0
             for label, column_count in line_attr:
-                byte_count = len(line[i:i+column_count].encode(_target_encoding))
+                byte_count = len(encode_like_urwid(line[i:i+column_count]))
                 i += column_count
                 yield label, byte_count
 
@@ -143,11 +156,11 @@ class StackFrame(urwid.FlowWidget):
             crnt_pfx = "   "
 
         text = crnt_pfx+self.name
-        attr = [(apfx+"frame name", 3+len(self.name))]
+        attr = [(apfx+"frame name", 4+len(self.name))]
 
         if self.class_name is not None:
             text += " [%s]" % self.class_name
-            attr.append((apfx+"frame class", len(self.class_name)+3))
+            attr.append((apfx+"frame class", len(self.class_name)+2))
 
         loc = " %s:%d" % (self.filename, self.line)
         text += loc
@@ -181,7 +194,7 @@ class BreakpointFrame(urwid.FlowWidget):
         else:
             apfx = ""
 
-        bp_pfx = ''
+        bp_pfx = ""
         if not self.enabled:
             apfx += "disabled "
             bp_pfx += "X"
@@ -190,10 +203,10 @@ class BreakpointFrame(urwid.FlowWidget):
             bp_pfx += ">>"
         bp_pfx = bp_pfx.ljust(3)
 
-        hits_label = 'hits' if self.hits != 1 else 'hit'
-        loc = " %s:%d (%s %s)" % (self.filename, self.line, self.hits, hits_label)
+        hits_label = "hits" if self.hits != 1 else "hit"
+        loc = f" {self.filename}:{self.line} ({self.hits} {hits_label})"
         text = bp_pfx+loc
-        attr = [(apfx+"breakpoint", len(loc))]
+        attr = [(apfx+"breakpoint", len(text))]
 
         return make_canvas([text], [attr], maxcol, apfx+"breakpoint")
 
@@ -201,7 +214,7 @@ class BreakpointFrame(urwid.FlowWidget):
         return key
 
 
-class SearchController(object):
+class SearchController:
     def __init__(self, ui):
         self.ui = ui
         self.highlight_line = None
@@ -236,13 +249,10 @@ class SearchController(object):
             lhs_col.item_types.insert(
                     0, ("flow", None))
             lhs_col.widget_list.insert(0, self.search_AttrMap)
+            self.ui.reset_cmdline_size()
 
-            self.ui.columns.set_focus(lhs_col)
-            lhs_col.set_focus(self.search_AttrMap)
-        else:
-            self.ui.columns.set_focus(lhs_col)
-            lhs_col.set_focus(self.search_AttrMap)
-            #self.search_box.restart_search()
+        self.ui.columns.set_focus(lhs_col)
+        lhs_col.set_focus(self.search_AttrMap)
 
     def perform_search(self, dir, s=None, start=None, update_search_start=False):
         self.cancel_highlight()
@@ -296,15 +306,6 @@ class SearchBox(urwid.Edit):
     def __init__(self, controller):
         urwid.Edit.__init__(self, [("label", "Search: ")], "")
         self.controller = controller
-
-    def restart_search(self):
-        from time import time
-        now = time()
-
-        if self.search_start_time > 5:
-            self.set_edit_text("")
-
-        self.search_time = now
 
     def keypress(self, size, key):
         result = urwid.Edit.keypress(self, size, key)

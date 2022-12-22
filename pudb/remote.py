@@ -1,10 +1,15 @@
-# -*- coding: utf-8 -*-
+"""
+.. autoclass:: RemoteDebugger
 
-from __future__ import absolute_import, print_function, unicode_literals
+.. autofunction:: set_trace
+.. autofunction:: debugger
+.. autofunction:: debug_remote_on_single_rank
+"""
 
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
+Copyright (C) 2020-2020 Son Geon
 """
 
 __license__ = """
@@ -35,24 +40,23 @@ import errno
 import os
 import socket
 import sys
-import fcntl
-import termios
-import struct
+import atexit
+from typing import Callable, Any
 
 from pudb.debugger import Debugger
 
-__all__ = ['PUDB_RDB_HOST', 'PUDB_RDB_PORT', 'default_port',
-           'debugger', 'set_trace']
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace",
+           "debug_remote_on_single_rank"]
 
 default_port = 6899
 
-PUDB_RDB_HOST = os.environ.get('PUDB_RDB_HOST') or '127.0.0.1'
-PUDB_RDB_PORT = int(os.environ.get('PUDB_RDB_PORT') or default_port)
+PUDB_RDB_HOST = os.environ.get("PUDB_RDB_HOST") or "127.0.0.1"
+PUDB_RDB_PORT = int(os.environ.get("PUDB_RDB_PORT") or default_port)
 
 #: Holds the currently active debugger.
 _current = [None]
 
-_frame = getattr(sys, '_getframe')
+_frame = sys._getframe
 
 NO_AVAILABLE_PORT = """\
 {self.ident}: Couldn't find an available port.
@@ -61,71 +65,126 @@ Please specify one using the PUDB_RDB_PORT environment variable.
 """
 
 BANNER = """\
-{self.ident}: Please telnet into {self.host} {self.port}.
+{self.ident}: Please start a telnet session using a command like:
+telnet {self.host} {self.port}
 {self.ident}: Waiting for client...
 """
 
-SESSION_STARTED = '{self.ident}: Now in session with {self.remote_addr}.'
-SESSION_ENDED = '{self.ident}: Session with {self.remote_addr} ended.'
+SESSION_STARTED = "{self.ident}: Now in session with {self.remote_addr}."
+SESSION_ENDED = "{self.ident}: Session with {self.remote_addr} ended."
+
+CONN_REFUSED = """\
+Cannot connect to the reverse telnet client {self.host} {self.port}.
+
+Try to open reverse client by running
+stty -echo -icanon && nc -l -p 6899  # Linux
+stty -echo -icanon && nc -l 6899  # BSD/MacOS
+
+Please specify one using the PUDB_RDB_PORT environment variable.
+"""
 
 
 class RemoteDebugger(Debugger):
-    me = 'pudb'
+    """
+    .. automethod:: __init__
+    """
+
+    me = "pudb"
     _prev_outs = None
     _sock = None
 
-    def __init__(self, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT,
-                 port_search_limit=100, out=sys.stdout, term_size=None):
-        self.active = True
+    def __init__(
+        self,
+        host=PUDB_RDB_HOST,
+        port=PUDB_RDB_PORT,
+        port_search_limit=100,
+        out=sys.stdout,
+        term_size=None,
+        reverse=False,
+    ):
+        """
+        :arg term_size: A two-tuple ``(columns, rows)``, or *None*. If *None*,
+            try to determine the terminal size automatically.
+
+            Currently, this uses a heuristic: It uses the terminal size of the
+            debuggee as that for the debugger. The idea is that you might be
+            running both in two tabs of the same terminal window, hence using
+            terminals of the same size.
+        """
         self.out = out
 
+        if term_size is None:
+            try:
+                s = os.get_terminal_size()
+                term_size = (s.columns, s.lines)
+            except Exception:
+                term_size = (80, 24)
+
         self._prev_handles = sys.stdin, sys.stdout
+        self._client, (address, port) = self.get_client(
+            host=host, port=port, search_limit=port_search_limit, reverse=reverse
+        )
+        self.remote_addr = ":".join(str(v) for v in address)
 
-        self._sock, this_port = self.get_avail_port(
-            host, port, port_search_limit)
-        self._sock.setblocking(1)
-        self._sock.listen(1)
-        self.ident = '{0}:{1}'.format(self.me, this_port)
-        self.host = host
-        self.port = this_port
-        self.say(BANNER.format(self=self))
-
-        self._client, address = self._sock.accept()
-        self._client.setblocking(1)
-        self.remote_addr = ':'.join(str(v) for v in address)
         self.say(SESSION_STARTED.format(self=self))
 
         # makefile ignores encoding if there's no buffering.
         raw_sock_file = self._client.makefile("rwb", 0)
         import codecs
 
-        if sys.version_info[0] < 3:
-            sock_file = codecs.StreamRecoder(
-                raw_sock_file,
-                codecs.getencoder("utf-8"),
-                codecs.getdecoder("utf-8"),
-                codecs.getreader("utf-8"),
-                codecs.getwriter("utf-8"))
-        else:
-            sock_file = codecs.StreamReaderWriter(
-                raw_sock_file,
-                codecs.getreader("utf-8"),
-                codecs.getwriter("utf-8"))
+        sock_file = codecs.StreamReaderWriter(
+            raw_sock_file, codecs.getreader("utf-8"), codecs.getwriter("utf-8"))
 
         self._handle = sys.stdin = sys.stdout = sock_file
 
-        import telnetlib as tn
+        # nc negotiation doesn't support telnet options
+        if not reverse:
+            import telnetlib as tn
 
-        raw_sock_file.write(tn.IAC + tn.WILL + tn.SGA)
-        resp = raw_sock_file.read(3)
-        assert resp == tn.IAC + tn.DO + tn.SGA
+            raw_sock_file.write(tn.IAC + tn.WILL + tn.SGA)
+            resp = raw_sock_file.read(3)
+            assert resp == tn.IAC + tn.DO + tn.SGA
 
-        raw_sock_file.write(tn.IAC + tn.WILL + tn.ECHO)
-        resp = raw_sock_file.read(3)
-        assert resp == tn.IAC + tn.DO + tn.ECHO
+            raw_sock_file.write(tn.IAC + tn.WILL + tn.ECHO)
+            resp = raw_sock_file.read(3)
+            assert resp == tn.IAC + tn.DO + tn.ECHO
 
-        Debugger.__init__(self, stdin=self._handle, stdout=self._handle,
-                term_size=term_size)
+        Debugger.__init__(
+            self, stdin=self._handle, stdout=self._handle, term_size=term_size
+        )
+
+    def get_client(self, host, port, search_limit=100, reverse=False):
+        if reverse:
+            self.host, self.port = host, port
+            client, address = self.get_reverse_socket_client(host, port)
+            self.ident = f"{self.me}:{self.port}"
+        else:
+            self._sock, conn_info = self.get_socket_client(
+                host, port, search_limit=search_limit,
+            )
+            self.host, self.port = conn_info
+            self.ident = f"{self.me}:{self.port}"
+            self.say(BANNER.format(self=self))
+            client, address = self._sock.accept()
+        client.setblocking(1)
+        return client, (address, self.port)
+
+    def get_reverse_socket_client(self, host, port):
+        _sock = socket.socket()
+        try:
+            _sock.connect((host, port))
+            _sock.setblocking(1)
+        except OSError as exc:
+            if exc.errno == errno.ECONNREFUSED:
+                raise ValueError(CONN_REFUSED.format(self=self))
+            raise exc
+        return _sock, _sock.getpeername()
+
+    def get_socket_client(self, host, port, search_limit):
+        _sock, this_port = self.get_avail_port(host, port, search_limit)
+        _sock.setblocking(1)
+        _sock.listen(1)
+        return _sock, (host, this_port)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
         this_port = None
@@ -135,7 +194,7 @@ class RemoteDebugger(Debugger):
             this_port = port + i
             try:
                 _sock.bind((host, this_port))
-            except socket.error as exc:
+            except OSError as exc:
                 if exc.errno in [errno.EADDRINUSE, errno.EINVAL]:
                     continue
                 raise
@@ -147,49 +206,57 @@ class RemoteDebugger(Debugger):
     def say(self, m):
         print(m, file=self.out)
 
-    def _close_session(self):
+    def close_remote_session(self):
         self.stdin, self.stdout = sys.stdin, sys.stdout = self._prev_handles
         self._handle.close()
         self._client.close()
-        self._sock.close()
-        self.active = False
+        if self._sock:
+            self._sock.close()
         self.say(SESSION_ENDED.format(self=self))
 
-    def do_continue(self, arg):
-        self._close_session()
-        self.set_continue()
-        return 1
-    do_c = do_cont = do_continue
 
-    def do_quit(self, arg):
-        self._close_session()
-        self.set_quit()
-        return 1
-
-    def set_quit(self):
-        # this raises a BdbQuit exception that we are unable to catch.
-        sys.settrace(None)
-
-
-def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT):
+def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False):
     """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
-    if rdb is None or not rdb.active:
-        rdb = _current[0] = RemoteDebugger(host=host, port=port, term_size=term_size)
+    if rdb is None:
+        rdb = _current[0] = RemoteDebugger(
+            host=host, port=port, term_size=term_size, reverse=reverse
+        )
+        atexit.register(lambda e: e.close_remote_session(), rdb)
     return rdb
 
 
-def set_trace(frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT):
+def set_trace(
+    frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False
+):
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:
         frame = _frame().f_back
-    if term_size is None:
-        try:
-            # Getting terminal size
-            s = struct.unpack('hh', fcntl.ioctl(1, termios.TIOCGWINSZ, '1234'))
-            term_size = (s[1], s[0])
-        except Exception:
-            term_size = (80, 24)
 
-    return debugger(term_size=term_size, host=host, port=port).set_trace(frame)
+    return debugger(
+        term_size=term_size, host=host, port=port, reverse=reverse
+    ).set_trace(frame)
+
+
+def debug_remote_on_single_rank(comm: Any, rank: int, func: Callable,
+                                *args: Any, **kwargs: Any) -> None:
+    """Run a remote debugger on a single rank of an ``mpi4py`` application.
+    *func* will be called on rank *rank* running in a :class:`RemoteDebugger`,
+    and will be called normally on all other ranks.
+
+    :param comm: an ``mpi4py`` ``Comm`` object.
+    :param rank: the rank to debug. All other ranks will spin until this rank exits.
+    :param func: the callable to debug.
+    :param args: the arguments passed to ``func``.
+    :param kwargs: the kwargs passed to ``func``.
+    """
+    if comm.rank == rank:
+        debugger().runcall(func, *args, **kwargs)
+    else:
+        try:
+            func(*args, **kwargs)
+        finally:
+            from time import sleep
+            while True:
+                sleep(1)

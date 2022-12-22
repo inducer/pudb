@@ -7,7 +7,7 @@ for display in the variables list.  The default is type()*, as this is fast and
 cannot fail.  PuDB also includes built-in options for using str() and repr().
 
 Note that str() and repr() will be slower than type(), which is especially
-noticable when you have many varialbes, or some of your variables have very
+noticable when you have many variables, or some of your variables have very
 large string/repr representations.
 
 Also note that if you just want to change the type for one or two variables,
@@ -58,14 +58,7 @@ def run_with_timeout(code, time, globals=None):
     """
     # Set the signal handler and a ``time``-second alarm
     signal.signal(signal.SIGALRM, lambda s, f: timeout(s, f, time))
-    if sys.version_info > (2, 5):
-        signal.setitimer(signal.ITIMER_REAL, time)
-    else:
-        # The above only exists in Python 2.6+
-        # Otherwise, we have to use this, which only supports integer arguments
-        # Use math.ceil to round a float up.
-        time = int(math.ceil(time))
-        signal.alarm(time)
+    signal.setitimer(signal.ITIMER_REAL, time)
     r = eval(code, globals)
     signal.alarm(0)          # Disable the alarm
     return r

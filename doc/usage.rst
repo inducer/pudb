@@ -36,7 +36,7 @@ Controlling How Values Get Shown
         def pudb_stringifier(obj):
             return "HI"
 
-*   Add a :meth:`safely_stringify_for_pudb` to the type.
+*   Add a method ``safely_stringify_for_pudb`` to the type.
 
 A stringifier is expected to *never* raise an exception.
 If an exception is raised, pudb will silently fall back
@@ -44,3 +44,27 @@ to its built-in stringification behavior.
 
 A stringifier that takes a long time will further stall
 the debugger UI while it runs.
+
+Configuring PuDB
+----------------
+
+Overriding default key bindings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Configure in the settings file (see :ref:`faq`).
+
+- Add the bindings under mentioned section in the config file
+  (see :ref:`urwid:keyboard-input`).
+
+- Only few actions are supported currently, coverage will increase with time.
+  (Contributions welcome!)
+
+.. code-block:: ini
+
+    [pudb]
+
+    # window chooser bindings
+    hotkeys_breakpoints = B
+    hotkeys_code = C
+    hotkeys_stack = S
+    hotkeys_variables = V

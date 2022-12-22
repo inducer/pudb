@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -26,21 +24,18 @@ THE SOFTWARE.
 """
 
 
-NUM_VERSION = (2017, 1, 4)
+from pudb.settings import load_config
+import sys
+
+
+NUM_VERSION = (2022, 1, 3)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
-from pudb.py3compat import raw_input, PY3
 
-from pudb.settings import load_config, save_config
-CONFIG = load_config()
-save_config(CONFIG)
-
-
-class PudbShortcuts(object):
+class PudbShortcuts:
     @property
     def db(self):
-        import sys
         dbg = _get_debugger()
 
         import threading
@@ -50,7 +45,6 @@ class PudbShortcuts(object):
 
     @property
     def go(self):
-        import sys
         dbg = _get_debugger()
 
         import threading
@@ -59,26 +53,46 @@ class PudbShortcuts(object):
         dbg.set_trace(sys._getframe().f_back, paused=False)
 
 
-if PY3:
-    import builtins
-    builtins.__dict__["pu"] = PudbShortcuts()
-else:
-    import __builtin__
-    __builtin__.__dict__["pu"] = PudbShortcuts()
+import builtins
+builtins.__dict__["pu"] = PudbShortcuts()
 
 
-CURRENT_DEBUGGER = []
+def _tty_override():
+    import os
+    return os.environ.get("PUDB_TTY")
+
+
+def _open_tty(tty_path):
+    import io
+    import os
+    tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))
+    term_size = os.get_terminal_size(tty_file.fileno())
+
+    return tty_file, term_size
 
 
 def _get_debugger(**kwargs):
-    if not CURRENT_DEBUGGER:
+    from pudb.debugger import Debugger
+    if not Debugger._current_debugger:
+        tty_path = _tty_override()
+        if tty_path and ("stdin" not in kwargs or "stdout" not in kwargs):
+            tty_file, term_size = _open_tty(tty_path)
+            kwargs.setdefault("stdin", tty_file)
+            kwargs.setdefault("stdout", tty_file)
+            kwargs.setdefault("term_size", term_size)
+            tty_file.close()
+
         from pudb.debugger import Debugger
         dbg = Debugger(**kwargs)
 
-        CURRENT_DEBUGGER.append(dbg)
         return dbg
     else:
-        return CURRENT_DEBUGGER[0]
+        return Debugger._current_debugger[0]
+
+
+def _have_debugger():
+    from pudb.debugger import Debugger
+    return bool(Debugger._current_debugger)
 
 
 import signal  # noqa
@@ -86,8 +100,17 @@ DEFAULT_SIGNAL = signal.SIGINT
 del signal
 
 
-def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
-    dbg = _get_debugger(steal_output=steal_output)
+def runmodule(*args, **kwargs):
+    kwargs["run_as_module"] = True
+    runscript(*args, **kwargs)
+
+
+def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
+              _continue_at_start=False, run_as_module=False):
+    dbg = _get_debugger(
+        steal_output=steal_output,
+        _continue_at_start=_continue_at_start,
+    )
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
@@ -95,32 +118,48 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
     # have a "restart" command which would allow explicit specification of
     # command line arguments.
 
-    import sys
     if args is not None:
         prev_sys_argv = sys.argv[:]
-        sys.argv = [mainpyfile] + args
+        if run_as_module:
+            sys.argv = args
+        else:
+            sys.argv = [mainpyfile] + args
 
     # replace pudb's dir with script's dir in front of module search path.
-    from os.path import dirname
+    from pathlib import Path
     prev_sys_path = sys.path[:]
-    sys.path[0] = dirname(mainpyfile)
+    sys.path[0] = str(Path(mainpyfile).resolve().parent)
+
+    import os
+    cwd = os.getcwd()
 
     while True:
+        # Script may have changed directory. Restore cwd before restart.
+        os.chdir(cwd)
+
         if pre_run:
             from subprocess import call
             retcode = call(pre_run, close_fds=True, shell=True)
             if retcode:
                 print("*** WARNING: pre-run process exited with code %d." % retcode)
-                raw_input("[Hit Enter]")
+                input("[Hit Enter]")
 
         status_msg = ""
 
         try:
-            dbg._runscript(mainpyfile)
-        except SystemExit:
-            se = sys.exc_info()[1]
-            status_msg = "The debuggee exited normally with " \
-                    "status code %s.\n\n" % se.code
+            if run_as_module:
+                try:
+                    dbg._runmodule(mainpyfile)
+                except ImportError as e:
+                    print(e, file=sys.stderr)
+                    sys.exit(1)
+            else:
+                try:
+                    dbg._runscript(mainpyfile)
+                except SystemExit:
+                    se = sys.exc_info()[1]
+                    status_msg = "The debuggee exited normally with " \
+                            "status code %s.\n\n" % se.code
         except Exception:
             dbg.post_mortem = True
             dbg.interaction(None, sys.exc_info())
@@ -129,7 +168,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
             import urwid
             pre_run_edit = urwid.Edit("", pre_run)
 
-            if not CONFIG["prompt_on_quit"]:
+            if not load_config()["prompt_on_quit"]:
                 return
 
             result = dbg.ui.call_with_ui(dbg.ui.dialog,
@@ -140,7 +179,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
                     % status_msg),
                     urwid.Text("\n\nIf you decide to restart, this command "
                     "will be run prior to actually restarting:"),
-                    urwid.AttrMap(pre_run_edit, "value")
+                    urwid.AttrMap(pre_run_edit, "input", "focused input")
                     ])),
                 [
                     ("Restart", "restart"),
@@ -176,15 +215,15 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False):
 
 
 def runstatement(statement, globals=None, locals=None):
-    _get_debugger().run(statement, globals, locals)
+    return _get_debugger().run(statement, globals, locals)
 
 
 def runeval(expression, globals=None, locals=None):
     return _get_debugger().runeval(expression, globals, locals)
 
 
-def runcall(*args, **kwds):
-    return _get_debugger().runcall(*args, **kwds)
+def runcall(*args, **kwargs):
+    return _get_debugger().runcall(*args, **kwargs)
 
 
 def set_trace(paused=True):
@@ -212,7 +251,7 @@ def _interrupt_handler(signum, frame):
     _get_debugger().set_trace(frame, as_breakpoint=False)
 
 
-def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
+def set_interrupt_handler(interrupt_signal=None):
     """
     Set up an interrupt handler, to activate PuDB when Python receives the
     signal `interrupt_signal`.  By default it is SIGINT (i.e., Ctrl-c).
@@ -232,6 +271,10 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
 
     Note, this only works when called from the main thread.
     """
+
+    if interrupt_signal is None:
+        interrupt_signal = DEFAULT_SIGNAL
+
     import signal
     old_handler = signal.getsignal(interrupt_signal)
 
@@ -242,7 +285,7 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
         from warnings import warn
         if old_handler is None:
             # This is the documented meaning of getsignal()->None.
-            old_handler = 'not installed from python'
+            old_handler = "not installed from python"
         return warn("A non-default handler for signal %d is already installed (%s). "
                 "Skipping pudb interrupt support."
                 % (interrupt_signal, old_handler))
@@ -257,11 +300,11 @@ def set_interrupt_handler(interrupt_signal=DEFAULT_SIGNAL):
     try:
         signal.signal(interrupt_signal, _interrupt_handler)
     except ValueError:
-        from pudb.lowlevel import format_exception
+        from traceback import format_exception
         import sys
         from warnings import warn
         warn("setting interrupt handler on signal %d failed: %s"
-                % (interrupt_signal, "".join(format_exception(sys.exc_info()))))
+                % (interrupt_signal, "".join(format_exception(*sys.exc_info()))))
 
 
 def post_mortem(tb=None, e_type=None, e_value=None):
@@ -271,25 +314,19 @@ def post_mortem(tb=None, e_type=None, e_value=None):
     else:
         exc_info = (e_type, e_value, tb)
 
-    tb = exc_info[2]
-    while tb.tb_next is not None:
-        tb = tb.tb_next
-
     dbg = _get_debugger()
     dbg.reset()
-    dbg.interaction(tb.tb_frame, exc_info)
+    dbg.interaction(None, exc_info)
 
 
 def pm():
     import sys
-    try:
-        e_type = sys.last_type
-        e_value = sys.last_value
-        tb = sys.last_traceback
-    except AttributeError:
+    exc_type, exc_val, tb = sys.exc_info()
+
+    if exc_type is None:
         # No exception on record. Do nothing.
         return
-    post_mortem(tb, e_type, e_value)
+    post_mortem()
 
 
 if __name__ == "__main__":

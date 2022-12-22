@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -25,53 +23,54 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-
 import os
 import sys
 
-from pudb.py3compat import ConfigParser
-from pudb.lowlevel import lookup_module, get_breakpoint_invalid_reason
+from configparser import ConfigParser
+from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
+                           settings_log)
 
-# minor LGPL violation: stolen from python-xdg
-
-_home = os.environ.get('HOME', None)
-xdg_data_home = os.environ.get('XDG_DATA_HOME',
-            os.path.join(_home, '.local', 'share') if _home else None)
-
-
-XDG_CONFIG_HOME = os.environ.get('XDG_CONFIG_HOME',
-                                 os.path.join(_home, '.config') if _home else None)
+# see https://github.com/inducer/pudb/pull/453 for context
+_home = os.environ.get("HOME", os.path.expanduser("~"))
+XDG_CONF_RESOURCE = "pudb"
+XDG_CONFIG_HOME = os.environ.get(
+    "XDG_CONFIG_HOME",
+    os.path.join(_home, ".config") if _home else None)
 
 if XDG_CONFIG_HOME:
     XDG_CONFIG_DIRS = [XDG_CONFIG_HOME]
 else:
-    XDG_CONFIG_DIRS = os.environ.get('XDG_CONFIG_DIRS', '/etc/xdg').split(':')
+    XDG_CONFIG_DIRS = os.environ.get("XDG_CONFIG_DIRS", "/etc/xdg").split(":")
 
 
-def get_save_config_path(*resource):
-    if XDG_CONFIG_HOME is None:
+def get_save_config_path():
+    # This may not raise, as it is called during import.
+    if not XDG_CONFIG_HOME:
         return None
-    if not resource:
-        resource = [XDG_CONF_RESOURCE]
-    resource = os.path.join(*resource)
-    assert not resource.startswith('/')
-    path = os.path.join(XDG_CONFIG_HOME, resource)
-    if not os.path.isdir(path):
-        os.makedirs(path, 448)  # 0o700
-    return path
 
-# end LGPL violation
+    path = os.path.join(XDG_CONFIG_HOME, XDG_CONF_RESOURCE)
+    os.makedirs(path, mode=0o700, exist_ok=True)
+
+    return path
 
 
 CONF_SECTION = "pudb"
-XDG_CONF_RESOURCE = "pudb"
 CONF_FILE_NAME = "pudb.cfg"
 
 SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
 BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
 
 
+_config_ = [None]
+
+
 def load_config():
+    # This may not raise, as it is called during import.
+
+    # Only ever do this once
+    if _config_[0] is not None:
+        return _config_[0]
+
     from os.path import join, isdir
 
     cparser = ConfigParser()
@@ -85,11 +84,11 @@ def load_config():
         if cparser.has_section(CONF_SECTION):
             conf_dict.update(dict(cparser.items(CONF_SECTION)))
     except Exception:
-        pass
+        settings_log.exception("Failed to load config")
 
     conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
-    conf_dict.setdefault("line_numbers", False)
+    conf_dict.setdefault("line_numbers", "False")
     conf_dict.setdefault("seen_welcome", "a")
 
     conf_dict.setdefault("sidebar_width", 0.5)
@@ -99,17 +98,26 @@ def load_config():
 
     conf_dict.setdefault("current_stack_frame", "top")
 
-    conf_dict.setdefault("stringifier", "type")
+    conf_dict.setdefault("stringifier", "default")
 
     conf_dict.setdefault("custom_theme", "")
     conf_dict.setdefault("custom_stringifier", "")
     conf_dict.setdefault("custom_shell", "")
 
-    conf_dict.setdefault("wrap_variables", True)
+    conf_dict.setdefault("wrap_variables", "True")
+    conf_dict.setdefault("default_variables_access_level", "public")
 
     conf_dict.setdefault("display", "auto")
 
-    conf_dict.setdefault("prompt_on_quit", True)
+    conf_dict.setdefault("prompt_on_quit", "True")
+
+    conf_dict.setdefault("hide_cmdline_win", "False")
+
+    # hotkeys
+    conf_dict.setdefault("hotkeys_code", "C")
+    conf_dict.setdefault("hotkeys_variables", "V")
+    conf_dict.setdefault("hotkeys_stack", "S")
+    conf_dict.setdefault("hotkeys_breakpoints", "B")
 
     def normalize_bool_inplace(name):
         try:
@@ -118,16 +126,20 @@ def load_config():
             else:
                 conf_dict[name] = True
         except Exception:
-            pass
+            settings_log.exception("Failed to process config")
 
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
     normalize_bool_inplace("prompt_on_quit")
+    normalize_bool_inplace("hide_cmdline_win")
 
+    _config_[0] = conf_dict
     return conf_dict
 
 
 def save_config(conf_dict):
+    # This may not raise, as it is called during import.
+
     from os.path import join
 
     cparser = ConfigParser()
@@ -144,7 +156,7 @@ def save_config(conf_dict):
         cparser.write(outf)
         outf.close()
     except Exception:
-        pass
+        settings_log.exception("Failed to save config")
 
 
 def edit_config(ui, conf_dict):
@@ -158,10 +170,13 @@ def edit_config(ui, conf_dict):
 
     def _update_line_numbers():
         for sl in ui.source:
-                sl._invalidate()
+            sl._invalidate()
 
     def _update_prompt_on_quit():
         pass
+
+    def _update_hide_cmdline_win():
+        ui.update_cmdline_win()
 
     def _update_current_stack_frame():
         ui.update_stack()
@@ -169,6 +184,9 @@ def edit_config(ui, conf_dict):
     def _update_stringifier():
         import pudb.var_view
         pudb.var_view.custom_stringifier_dict = {}
+        ui.update_var_view()
+
+    def _update_default_variables_access_level():
         ui.update_var_view()
 
     def _update_wrap_variables():
@@ -198,6 +216,11 @@ def edit_config(ui, conf_dict):
             conf_dict.update(new_conf_dict)
             _update_prompt_on_quit()
 
+        elif option == "hide_cmdline_win":
+            new_conf_dict["hide_cmdline_win"] = not check_box.get_state()
+            conf_dict.update(new_conf_dict)
+            _update_hide_cmdline_win()
+
         elif option == "current_stack_frame":
             # only activate if the new state of the radio button is 'on'
             if new_state:
@@ -213,6 +236,13 @@ def edit_config(ui, conf_dict):
 
                 conf_dict.update(stringifier=newvalue)
                 _update_stringifier()
+
+        elif option == "default_variables_access_level":
+            # only activate if the new state of the radio button is 'on'
+            if new_state:
+                conf_dict.update(default_variables_access_level=newvalue)
+                _update_default_variables_access_level()
+
         elif option == "wrap_variables":
             new_conf_dict["wrap_variables"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
@@ -233,14 +263,20 @@ def edit_config(ui, conf_dict):
             bool(conf_dict["prompt_on_quit"]), on_state_change=_update_config,
                 user_data=("prompt_on_quit", None))
 
+    hide_cmdline_win = urwid.CheckBox("Hide command line (Ctrl-X) window "
+                                      "when not in use",
+            bool(conf_dict["hide_cmdline_win"]), on_state_change=_update_config,
+                user_data=("hide_cmdline_win", None))
+
     # {{{ shells
 
     shell_info = urwid.Text("This is the shell that will be "
             "used when you hit '!'.\n")
-    shells = ["internal", "classic", "ipython", "bpython", "ptpython", "ptipython"]
+    shells = ["internal", "classic", "ipython", "ipython_kernel", "bpython",
+              "ptpython", "ptipython"]
     known_shell = conf_dict["shell"] in shells
     shell_edit = urwid.Edit(edit_text=conf_dict["custom_shell"])
-    shell_edit_list_item = urwid.AttrMap(shell_edit, "value")
+    shell_edit_list_item = urwid.AttrMap(shell_edit, "input", "focused input")
 
     shell_rb_group = []
     shell_rbs = [
@@ -251,7 +287,7 @@ def edit_config(ui, conf_dict):
                 not known_shell, on_state_change=_update_config,
                 user_data=("shell", None)),
                 shell_edit_list_item,
-                urwid.Text("\nTo use a custom shell, see example-shell.py "
+                urwid.Text("\nTo use a custom shell, see examples/shell.py "
                     "in the pudb distribution. Enter the full path to a "
                     "file like it in the box above. '~' will be expanded "
                     "to your home directory. The file should contain a "
@@ -270,7 +306,7 @@ def edit_config(ui, conf_dict):
 
     theme_rb_group = []
     theme_edit = urwid.Edit(edit_text=conf_dict["custom_theme"])
-    theme_edit_list_item = urwid.AttrMap(theme_edit, "value")
+    theme_edit_list_item = urwid.AttrMap(theme_edit, "input", "focused input")
     theme_rbs = [
             urwid.RadioButton(theme_rb_group, name,
                 conf_dict["theme"] == name, on_state_change=_update_config,
@@ -280,7 +316,7 @@ def edit_config(ui, conf_dict):
                     not known_theme, on_state_change=_update_config,
                     user_data=("theme", None)),
                 theme_edit_list_item,
-                urwid.Text("\nTo use a custom theme, see example-theme.py in the "
+                urwid.Text("\nTo use a custom theme, see examples/theme.py in the "
                     "pudb distribution. Enter the full path to a file like it in "
                     "the box above. '~' will be expanded to your home directory. "
                     "Note that a custom theme will not be applied until you close "
@@ -306,16 +342,19 @@ def edit_config(ui, conf_dict):
 
     # {{{ stringifier
 
-    stringifier_opts = ["type", "str", "repr"]
+    from pudb.var_view import STRINGIFIERS
+    stringifier_opts = list(STRINGIFIERS.keys())
     known_stringifier = conf_dict["stringifier"] in stringifier_opts
     stringifier_rb_group = []
     stringifier_edit = urwid.Edit(edit_text=conf_dict["custom_stringifier"])
-    stringifier_info = urwid.Text("This is the default function that will be "
-        "called on variables in the variables list.  Note that you can change "
-        "this on a per-variable basis by selecting a variable and hitting Enter "
-        "or by typing t/s/r.  Note that str and repr will be slower than type "
-        "and have the potential to crash PuDB.\n")
-    stringifier_edit_list_item = urwid.AttrMap(stringifier_edit, "value")
+    stringifier_info = urwid.Text(
+        "This is the default function that will be called on variables in the "
+        "variables list. You can also change this on a per-variable basis by "
+        "selecting a variable and typing 'e' to edit the variable's display "
+        "settings, or by typing one of d/t/r/s/i/c. Note that str and repr will "
+        "be slower than the default, type, or id stringifiers.\n")
+    stringifier_edit_list_item = urwid.AttrMap(stringifier_edit,
+                                               "input", "focused input")
     stringifier_rbs = [
             urwid.RadioButton(stringifier_rb_group, name,
                 conf_dict["stringifier"] == name,
@@ -328,7 +367,7 @@ def edit_config(ui, conf_dict):
                     user_data=("stringifier", None)),
                 stringifier_edit_list_item,
                 urwid.Text("\nTo use a custom stringifier, see "
-                    "example-stringifier.py in the pudb distribution. Enter the "
+                    "examples/stringifier.py in the pudb distribution. Enter the "
                     "full path to a file like it in the box above. "
                     "'~' will be expanded to your home directory. "
                     "The file should contain a function called pudb_stringifier() "
@@ -336,6 +375,26 @@ def edit_config(ui, conf_dict):
                     "return the desired string form of the object passed to it. "
                     "Note that if you choose a custom stringifier, the variables "
                     "view will not be updated until you close this dialog."),
+            ]
+
+    # }}}
+
+    # {{{ variables access level
+
+    default_variables_access_level_opts = ["public", "private", "all"]
+    default_variables_access_level_rb_group = []
+    default_variables_access_level_info = urwid.Text(
+            "Set the default attribute visibility "
+            "of variables in the variables list.\n"
+            "\nNote that you can change this option on "
+            "a per-variable basis by selecting the "
+            "variable and pressing '*'.")
+    default_variables_access_level_rbs = [
+            urwid.RadioButton(default_variables_access_level_rb_group, name,
+                conf_dict["default_variables_access_level"] == name,
+                on_state_change=_update_config,
+                user_data=("default_variables_access_level", name))
+            for name in default_variables_access_level_opts
             ]
 
     # }}}
@@ -376,11 +435,10 @@ def edit_config(ui, conf_dict):
 
     lb_contents = (
             [heading]
-            + [urwid.AttrMap(urwid.Text("Line Numbers:\n"), "group head")]
+            + [urwid.AttrMap(urwid.Text("General:\n"), "group head")]
             + [cb_line_numbers]
-
-            + [urwid.AttrMap(urwid.Text("\nPrompt on quit:\n"), "group head")]
             + [cb_prompt_on_quit]
+            + [hide_cmdline_win]
 
             + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
             + [shell_info]
@@ -396,6 +454,11 @@ def edit_config(ui, conf_dict):
             + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
             + [stringifier_info]
             + stringifier_rbs
+
+            + [urwid.AttrMap(urwid.Text("\nVariables Attribute Visibility:\n"),
+                "group head")]
+            + [default_variables_access_level_info]
+            + default_variables_access_level_rbs
 
             + [urwid.AttrMap(urwid.Text("\nWrap Variables:\n"), "group head")]
             + [cb_wrap_variables]
@@ -462,14 +525,14 @@ def parse_breakpoints(lines):
         filename = None
         lineno = None
         cond = None
-        comma = arg.find(',')
+        comma = arg.find(",")
 
         if comma > 0:
             # parse stuff after comma: "condition"
             cond = arg[comma+1:].lstrip()
             arg = arg[:comma].rstrip()
 
-        colon = arg.rfind(':')
+        colon = arg.rfind(":")
         funcname = None
 
         if colon > 0:
@@ -520,11 +583,11 @@ def load_breakpoints():
     lines = []
     for fname in file_names:
         try:
-            rc_file = open(fname, "rt")
-        except IOError:
+            rc_file = open(fname)
+        except OSError:
             pass
         else:
-            lines.extend([l.strip() for l in rc_file.readlines()])
+            lines.extend([line.strip() for line in rc_file.readlines()])
             rc_file.close()
 
     return parse_breakpoints(lines)
@@ -538,8 +601,8 @@ def save_breakpoints(bp_list):
     if not save_path:
         return
 
-    histfile = open(get_breakpoints_file_name(), 'w')
-    bp_list = set([(bp.file, bp.line, bp.cond) for bp in bp_list])
+    histfile = open(get_breakpoints_file_name(), "w")
+    bp_list = {(bp.file, bp.line, bp.cond) for bp in bp_list}
     for bp in bp_list:
         line = "b %s:%d" % (bp[0], bp[1])
         if bp[2]:

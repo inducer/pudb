@@ -1,3 +1,8 @@
+from collections import namedtuple
+
+Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
+
+
 class MyClass(object):
     def __init__(self, a, b):
         self.a = a
@@ -6,6 +11,8 @@ class MyClass(object):
 
 mc = MyClass(15, MyClass(12, None))
 
+
+from pudb import set_trace; set_trace()
 
 def simple_func(x):
     x += 1
@@ -17,6 +24,7 @@ def simple_func(x):
     y = dict((i, i**2) for i in s)
 
     k = set(range(5, 99))
+    c = Color(137, 214, 56, 88)
 
     try:
         x.invalid

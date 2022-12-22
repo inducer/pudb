@@ -9,6 +9,8 @@ If you are using Python 2.5, PuDB version 2013.5.1 is the last version to
 support that version of Python. urwid 1.1.1 works with Python 2.5, newer
 versions do not.
 
+.. _faq:
+
 FAQ
 ---
 
@@ -17,7 +19,7 @@ back to the source view?**
 
 A: Press your left arrow key.
 
-**Q: Where are breakpoints stored?**
+**Q: Where are breakpoints, PuDB settings file or shell history stored?**
 
 A: All PuDB information is stored in a location specified by the `XDG Base
 Directory Specification

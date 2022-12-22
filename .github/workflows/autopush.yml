@@ -1,0 +1,21 @@
+name: Gitlab mirror
+on:
+    push:
+        branches:
+        - main
+
+jobs:
+    autopush:
+        name: Automatic push to gitlab.tiker.net
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v3
+        -   run: |
+                mkdir ~/.ssh && echo -e "Host gitlab.tiker.net\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+                eval $(ssh-agent) && echo "$GITLAB_AUTOPUSH_KEY" | ssh-add -
+                git fetch --unshallow
+                git push "git@gitlab.tiker.net:inducer/$(basename $GITHUB_REPOSITORY).git"  main
+            env:
+                GITLAB_AUTOPUSH_KEY: ${{ secrets.GITLAB_AUTOPUSH_KEY }}
+
+# vim: sw=4

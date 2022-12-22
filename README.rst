@@ -1,22 +1,35 @@
-.. image:: https://travis-ci.org/inducer/pudb.svg?branch=master
-  :target: https://travis-ci.org/inducer/pudb
+PuDB: a console-based visual debugger for Python
+================================================
 
-.. image:: https://codecov.io/gh/inducer/pudb/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/inducer/pudb
-
-PuDB is a full-screen, console-based visual debugger for Python.
+.. image:: https://gitlab.tiker.net/inducer/pudb/badges/main/pipeline.svg
+    :alt: Gitlab Build Status
+    :target: https://gitlab.tiker.net/inducer/pudb/commits/main
+.. image:: https://github.com/inducer/pudb/workflows/CI/badge.svg?branch=main&event=push
+    :alt: Github Build Status
+    :target: https://github.com/inducer/pudb/actions?query=branch%3Amain+workflow%3ACI+event%3Apush
+.. image:: https://badge.fury.io/py/pudb.png
+    :alt: Python Package Index Release Page
+    :target: https://pypi.org/project/pudb/
 
 Its goal is to provide all the niceties of modern GUI-based debuggers in a
 more lightweight and keyboard-friendly package. PuDB allows you to debug code
-right where you write and test it--in a terminal. If you've worked with the
-excellent (but nowadays ancient) DOS-based Turbo Pascal or C tools, PuDB's UI
-might look familiar.
+right where you write and test it--in a terminal.
 
-Here's a screenshot:
+Here are some screenshots:
 
-.. image:: https://tiker.net/pub/pudb-screenshot.png
+* Light theme
 
-You may watch a `screencast <http://vimeo.com/5255125>`_, too.
+  .. image:: doc/images/pudb-screenshot-light.png
+
+* Dark theme
+
+  .. image:: doc/images/pudb-screenshot-dark.png
+
+You may watch screencasts too:
+
+* `Meet Pudb, a debugger for Python code (2020) <https://www.youtube.com/watch?v=bJYkCWPs_UU>`_
+
+* `PuDB Intro Screencast (2009) <http://vimeo.com/5255125>`_
 
 Features
 --------
@@ -25,6 +38,8 @@ Features
   visible at once and continuously updated. This helps you be more aware of
   what's going on in your program. Variable displays can be expanded, collapsed
   and have various customization options.
+
+* Pre-bundled themes, including dark themes via "Ctrl-P". Could set a custom theme also.
 
 * Simple, keyboard-based navigation using single keystrokes makes debugging
   quick and easy. PuDB understands cursor-keys and Vi shortcuts for navigation.
@@ -39,13 +54,17 @@ Features
   under the cursor.
 
 * Drop to a Python shell in the current environment by pressing "!".
+  Or open a command prompt alongside the source-code via "Ctrl-X".
 
 * PuDB places special emphasis on exception handling. A post-mortem mode makes
   it easy to retrace a crashing program's last steps.
 
+* Ability to control the debugger from a separate terminal.
+
 * IPython integration (see `wiki <http://wiki.tiker.net/PuDB>`_)
 
-* Should work with Python 2.6 and newer, including Python 3.
+* Should work with Python 3.6 and newer. (Versions 2019.2 and older continue
+  to support Python 2.7.)
 
 Links
 -----
@@ -62,8 +81,6 @@ Development Version
 You may obtain the development version using the `Git <http://git-scm.org/>`_
 version control tool.::
 
-    git clone http://git.tiker.net/trees/pudb.git
+    git clone https://github.com/inducer/pudb.git
 
-You may also `browse the code <http://git.tiker.net/pudb.git>`_ online.
-
-The repository is also mirrored at `GitHub <https://github.com/inducer/pudb>`_.
+You may also `browse the code <https://github.com/inducer/pudb>`_ online.

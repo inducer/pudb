@@ -1,6 +1,15 @@
 include debug_me.py
 include try-the-debugger.sh
-include example-theme.py
-include example-stringifier.py
+include example-*.py
 include README.rst
 include LICENSE
+
+include doc/*.rst
+include doc/Makefile
+include doc/*.py
+include doc/conf.py
+include doc/images/*.png
+
+include examples/*.py
+
+include manual-tests/*.py

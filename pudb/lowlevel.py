@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -26,7 +24,71 @@ THE SOFTWARE.
 """
 
 
-from pudb.py3compat import PY3
+import logging
+from datetime import datetime
+
+logfile = [None]
+
+
+def getlogfile():
+    return logfile[0]
+
+
+def setlogfile(destfile):
+    logfile[0] = destfile
+    with open(destfile, "a") as openfile:
+        openfile.write(
+            "\n*** Pudb session error log started at {date} ***\n".format(
+                date=datetime.now()
+            ))
+
+
+class TerminalOrStreamHandler(logging.StreamHandler):
+    """
+    Logging handler that sends errors either to the terminal window or to
+    stderr, depending on whether the debugger is active.
+    """
+    def emit(self, record):
+        from pudb import _have_debugger, _get_debugger
+        logfile = getlogfile()
+
+        self.acquire()
+        try:
+            if logfile is not None:
+                message = self.format(record)
+                with open(logfile, "a") as openfile:
+                    openfile.write("\n%s\n" % message)
+            elif _have_debugger():
+                dbg = _get_debugger()
+                message = self.format(record)
+                dbg.ui.add_cmdline_content(message, "command line error")
+            else:
+                super().emit(record)
+        finally:
+            self.release()
+
+
+def _init_loggers():
+    ui_handler = TerminalOrStreamHandler()
+    ui_formatter = logging.Formatter(
+        fmt="*** Pudb UI Exception Encountered: %(message)s ***\n"
+    )
+    ui_handler.setFormatter(ui_formatter)
+    ui_log = logging.getLogger("ui")
+    ui_log.addHandler(ui_handler)
+
+    settings_handler = TerminalOrStreamHandler()
+    settings_formatter = logging.Formatter(
+        fmt="*** Pudb Settings Exception Encountered: %(message)s ***\n"
+    )
+    settings_handler.setFormatter(settings_formatter)
+    settings_log = logging.getLogger("settings")
+    settings_log.addHandler(settings_handler)
+
+    return ui_log, settings_log
+
+
+ui_log, settings_log = _init_loggers()
 
 
 # {{{ breakpoint validity
@@ -34,21 +96,19 @@ from pudb.py3compat import PY3
 def generate_executable_lines_for_code(code):
     lineno = code.co_firstlineno
     yield lineno
-    if PY3:
-        for c in code.co_lnotab[1::2]:
-            lineno += c
-            yield lineno
-    else:
-        for c in code.co_lnotab[1::2]:
-            lineno += ord(c)
-            yield lineno
+    # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
+
+    for line_incr in code.co_lnotab[1::2]:
+        # NB: This code is specific to Python 3.6 and higher
+        # https://github.com/python/cpython/blob/v3.6.0/Objects/lnotab_notes.txt
+        if line_incr >= 0x80:
+            line_incr -= 0x100
+        lineno += line_incr
+        yield lineno
 
 
-def get_executable_lines_for_file(filename):
-    # inspired by rpdb2
-
-    from linecache import getlines
-    codes = [compile("".join(getlines(filename)), filename, "exec", dont_inherit=1)]
+def get_executable_lines_for_codes_recursive(codes):
+    codes = codes[:]
 
     from types import CodeType
 
@@ -62,6 +122,15 @@ def get_executable_lines_for_file(filename):
                 if isinstance(const, CodeType))
 
     return execable_lines
+
+
+def get_executable_lines_for_file(filename):
+    # inspired by rpdb2
+
+    from linecache import getlines
+    codes = [compile("".join(getlines(filename)), filename, "exec", dont_inherit=1)]
+
+    return get_executable_lines_for_codes_recursive(codes)
 
 
 def get_breakpoint_invalid_reason(filename, lineno):
@@ -97,8 +166,8 @@ def lookup_module(filename):
     if os.path.exists(f):  # and self.canonic(f) == self.mainpyfile:
         return f
     root, ext = os.path.splitext(filename)
-    if ext == '':
-        filename = filename + '.py'
+    if ext == "":
+        filename = filename + ".py"
     if os.path.isabs(filename):
         return filename
     for dirname in sys.path:
@@ -116,17 +185,15 @@ def lookup_module(filename):
 # the main idea stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 
 import re
-cookie_re = re.compile("^\s*#.*coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile(br"^\s*#.*coding[:=]\s*([-\w.]+)")
 from codecs import lookup, BOM_UTF8
-if PY3:
-    BOM_UTF8 = BOM_UTF8.decode()
 
 
-def detect_encoding(lines):
+def detect_encoding(line_iter):
     """
     The detect_encoding() function is used to detect the encoding that should
-    be used to decode a Python source file. It requires one argment, lines,
-    iterable lines stream.
+    be used to decode a Python source file. It requires one argment, line_iter,
+    an iterator on the lines to be read.
 
     It will read a maximum of two lines, and return the encoding used
     (as a string) and a list of any lines (left as bytes) it has read
@@ -140,44 +207,43 @@ def detect_encoding(lines):
     If no encoding is specified, then the default of 'utf-8' will be returned.
     """
     bom_found = False
-    line_iterator = iter(lines)
 
     def read_or_stop():
         try:
-            return next(line_iterator)
+            return next(line_iter)
         except StopIteration:
-            return ''
+            return ""
 
     def find_cookie(line):
         try:
-            if PY3:
-                line_string = line
-            else:
-                line_string = line.decode('ascii')
+            line_string = line
         except UnicodeDecodeError:
             return None
 
         matches = cookie_re.findall(line_string)
         if not matches:
             return None
-        encoding = matches[0]
+        encoding = matches[0].decode()
         try:
             codec = lookup(encoding)
         except LookupError:
             # This behaviour mimics the Python interpreter
             raise SyntaxError("unknown encoding: " + encoding)
 
-        if bom_found and codec.name != 'utf-8':
+        if bom_found and codec.name != "utf-8":
             # This behaviour mimics the Python interpreter
-            raise SyntaxError('encoding problem: utf-8')
+            raise SyntaxError("encoding problem: utf-8")
         return encoding
 
     first = read_or_stop()
+    if isinstance(first, str):
+        return None, [first]
+
     if first.startswith(BOM_UTF8):
         bom_found = True
         first = first[3:]
     if not first:
-        return 'utf-8', []
+        return "utf-8", []
 
     encoding = find_cookie(first)
     if encoding:
@@ -185,56 +251,26 @@ def detect_encoding(lines):
 
     second = read_or_stop()
     if not second:
-        return 'utf-8', [first]
+        return "utf-8", [first]
 
     encoding = find_cookie(second)
     if encoding:
         return encoding, [first, second]
 
-    return 'utf-8', [first, second]
+    return "utf-8", [first, second]
 
 
 def decode_lines(lines):
-    source_enc, _ = detect_encoding(lines)
+    line_iter = iter(lines)
+    source_enc, detection_read_lines = detect_encoding(line_iter)
 
-    for line in lines:
-        if hasattr(line, "decode"):
+    from itertools import chain
+
+    for line in chain(detection_read_lines, line_iter):
+        if hasattr(line, "decode") and source_enc is not None:
             yield line.decode(source_enc)
         else:
             yield line
-# }}}
-
-
-# {{{ traceback formatting
-
-class StringExceptionValueWrapper:
-    def __init__(self, string_val):
-        self.string_val = string_val
-
-    def __str__(self):
-        return self.string_val
-
-    __context__ = None
-    __cause__ = None
-
-
-def format_exception(exc_tuple):
-    # Work around http://bugs.python.org/issue17413
-    # See also https://github.com/inducer/pudb/issues/61
-
-    from traceback import format_exception
-    if PY3:
-        exc_type, exc_value, exc_tb = exc_tuple
-
-        if isinstance(exc_value, str):
-            exc_value = StringExceptionValueWrapper(exc_value)
-            exc_tuple = exc_type, exc_value, exc_tb
-
-        return format_exception(
-                *exc_tuple,
-                **dict(chain=hasattr(exc_value, "__context__")))
-    else:
-        return format_exception(*exc_tuple)
 
 # }}}
 

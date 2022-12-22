@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function, with_statement
-
 import sys
 import os
 
@@ -41,12 +39,12 @@ register_line_magic(pudb)
 
 def debugger(self, force=False):
     """Call the PuDB debugger."""
-    from IPython.utils.warn import error
+    from logging import error
     if not (force or self.call_pdb):
         return
 
-    if not hasattr(sys, 'last_traceback'):
-        error('No traceback has been produced, nothing to debug.')
+    if not hasattr(sys, "last_traceback"):
+        error("No traceback has been produced, nothing to debug.")
         return
 
     from pudb import pm

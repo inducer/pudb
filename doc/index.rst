@@ -1,7 +1,7 @@
 Welcome to pudb's documentation!
 ================================
 
-.. include:: ../README.rst
+.. include:: README.rst
 
 Table of Contents
 -----------------
@@ -14,7 +14,8 @@ Table of Contents
     usage
     shells
     misc
-
+    🚀 Github <https://github.com/inducer/pudb>
+    💾 Download Releases <https://pypi.org/project/pudb>
 
 Indices and Tables
 ------------------

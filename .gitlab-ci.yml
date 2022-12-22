@@ -1,66 +1,42 @@
-Python 2.7:
+Python 3:
   script:
-  - py_version=2.7
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - py_version=3
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
+  - export EXTRA_INSTALL="numpy"
   - export REQUIREMENTS_TXT=requirements.dev.txt
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python2.7
+  - python3
   - linux
   except:
   - tags
-
-Python 3.5:
-  script:
-  - py_version=3.5
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - export REQUIREMENTS_TXT=requirements.dev.txt
-  - ". ./build-and-test-py-project.sh"
-  tags:
-  - python3.5
-  - linux
-  except:
-  - tags
-
-Python 3.6:
-  script:
-  - py_version=3.6
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - export REQUIREMENTS_TXT=requirements.dev.txt
-  - ". ./build-and-test-py-project.sh"
-  tags:
-  - python3.6
-  - linux
-  except:
-  - tags
-
-Python 2.6:
-  script:
-  - py_version=2.6
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - export REQUIREMENTS_TXT=requirements.dev.txt
-  - ". ./build-and-test-py-project.sh"
-  tags:
-  - python2.6
-  - linux
-  except:
-  - tags
+  artifacts:
+    reports:
+      junit: test/pytest.xml
 
 Flake8:
   script:
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
   - ". ./prepare-and-run-flake8.sh pudb test"
   tags:
-  - python3.5
+  - python3
   except:
   - tags
 
 Documentation:
   script:
   - EXTRA_INSTALL="numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-docs.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-docs.sh
   - ". ./build-docs.sh"
   tags:
-  - python3.5
-  only:
-  - master
+  - python3
+
+Pylint:
+  script: |
+    export PY_EXE=python3
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+    . ./prepare-and-run-pylint.sh "$CI_PROJECT_NAME" test/test_*.py
+  tags:
+  - python3
+  except:
+  - tags

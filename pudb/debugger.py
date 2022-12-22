@@ -1,8 +1,3 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import, division, print_function
-
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -34,22 +29,22 @@ import bdb
 import gc
 import os
 import sys
+
+from itertools import count
 from functools import partial
 from types import TracebackType
 
-from pudb.lowlevel import decode_lines
-from pudb.settings import load_config, save_config
-from pudb.py3compat import PY3, raw_input, execfile
+from pudb.lowlevel import decode_lines, ui_log
+from pudb.settings import load_config, save_config, get_save_config_path
 
 CONFIG = load_config()
 save_config(CONFIG)
 
-HELP_TEXT = """\
-Welcome to PuDB, the Python Urwid debugger.
--------------------------------------------
+HELP_HEADER = r"""
+Key Assignments: Use Arrow Down/Up or Page Down/Up to scroll.
+"""
 
-(This help screen is scrollable. Hit Page Down to see more.)
-
+HELP_MAIN = r"""
 Keys:
     Ctrl-p - edit preferences
 
@@ -59,20 +54,22 @@ Keys:
     r/f - finish current function
     t - run to cursor
     e - show traceback [post-mortem or in exception state]
+    b - set/clear breakpoint
+    Ctrl-e - open file at current line to edit with $EDITOR
 
     H - move to current line (bottom of stack)
     u - move up one stack frame
     d - move down one stack frame
 
     o - show console/output screen
-
-    b - toggle breakpoint
     m - open module
 
-    j/k - up/down
-    Ctrl-u/d - page up/down
-    h/l - scroll left/right
-    g/G - start/end
+    j/k - down/up
+    l/h - right/left
+    Ctrl-f/b - page down/up
+    Ctrl-d/u - page down/up
+    G/g - end/home
+
     L - show (file/line) location / go to line
     / - search
     ,/. - search next/previous
@@ -82,11 +79,11 @@ Keys:
     B - focus breakpoint list
     C - focus code
 
-    f1/?/H - show this help screen
+    F1/? - show this help screen
     q - quit
 
+    Ctrl-r - reload breakpoints from saved-breakpoints file
     Ctrl-c - when in continue mode, break back to PuDB
-
     Ctrl-l - redraw screen
 
 Shell-related:
@@ -99,33 +96,57 @@ Shell-related:
     Ctrl-v - insert newline
     Ctrl-n/p - browse command line history
     Tab - yes, there is (simple) tab completion
+"""
 
+HELP_SIDE = r"""
 Sidebar-related (active in sidebar):
-    +/- - grow/shrink sidebar
-    _/= - minimize/maximize sidebar
-    [/] - grow/shrink relative size of active sidebar box
+    +/- - grow/shrink sidebar width
+    _/= - minimize/maximize sidebar width
+    [/] - grow/shrink relative height of active sidebar box
 
 Keys in variables list:
-    \ - expand/collapse
-    t/r/s/c - show type/repr/str/custom for this variable
-    h - toggle highlighting
+    \/enter/space - expand/collapse
+    h - collapse
+    l - expand
+    d/t/r/s/i/c - show default/type/repr/str/id/custom for this variable
+    H - toggle highlighting
     @ - toggle repetition at top
     * - cycle attribute visibility: public/_private/__dunder__
     m - toggle method visibility
     w - toggle line wrapping
     n/insert - add new watch expression
-    enter - edit options (also to delete)
+    delete - remove watch expression
+    e - edit options
 
 Keys in stack list:
-
     enter - jump to frame
+    Ctrl-e - open file at line to edit with $EDITOR
 
-Keys in breakpoints view:
-
-    enter - edit breakpoint
+Keys in breakpoints list:
+    enter - jump to breakpoint
+    b - toggle breakpoint
     d - delete breakpoint
-    e - enable/disable breakpoint
+    e - edit breakpoint
 
+Other keys:
+    j/k - down/up
+    l/h - right/left
+    Ctrl-f/b - page down/up
+    Ctrl-d/u - page down/up
+    G/g - end/home
+
+    V - focus variables
+    S - focus stack
+    B - focus breakpoint list
+    C - focus code
+
+    F1/? - show this help screen
+    q - quit
+
+    Ctrl-l - redraw screen
+"""
+
+HELP_LICENSE = r"""
 License:
 --------
 
@@ -159,25 +180,36 @@ OTHER DEALINGS IN THE SOFTWARE.
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
-    def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False):
-        bdb.Bdb.__init__(self)
+    _current_debugger = []
+
+    def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
+                 _continue_at_start=False, **kwargs):
+
+        if Debugger._current_debugger:
+            raise ValueError("a Debugger instance already exists")
+        self._current_debugger.append(self)
+
+        # Pass remaining kwargs to python debugger framework
+        bdb.Bdb.__init__(self, **kwargs)
         self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
         self.steal_output = steal_output
+        self._continue_at_start__setting = _continue_at_start
 
         self.setup_state()
 
         if steal_output:
             raise NotImplementedError("output stealing")
-            if PY3:
-                from io import StringIO
-            else:
-                from cStringIO import StringIO
+            from io import StringIO
             self.stolen_output = sys.stderr = sys.stdout = StringIO()
             sys.stdin = StringIO("")  # avoid spurious hangs
 
         from pudb.settings import load_breakpoints
         for bpoint_descr in load_breakpoints():
             self.set_break(*bpoint_descr)
+
+    def __del__(self):
+        assert self._current_debugger == [self]
+        self._current_debugger.pop()
 
     # These (dispatch_line and set_continue) are copied from bdb with the
     # patch from https://bugs.python.org/issue16482 applied. See
@@ -274,8 +306,9 @@ class Debugger(bdb.Bdb):
 
     def setup_state(self):
         self.bottom_frame = None
-        self.mainpyfile = ''
+        self.mainpyfile = ""
         self._wait_for_mainpyfile = False
+        self._continue_at_start = self._continue_at_start__setting
         self.current_bp = None
         self.post_mortem = False
         # Mapping of (filename, lineno) to bool. If True, will stop on the
@@ -320,6 +353,21 @@ class Debugger(bdb.Bdb):
 
         self.ui.stack_list._w.set_focus(self.ui.translate_ui_stack_index(index))
 
+    @staticmethod
+    def open_file_to_edit(filename, line_number):
+        if not os.path.isfile(filename):
+            raise FileNotFoundError(f"'{filename}' not found or is not a file.")
+
+        if not line_number:
+            line_number = 1
+
+        editor = os.environ.get("EDITOR", "nano")
+
+        import subprocess
+        subprocess.call([editor, f"+{line_number}", filename], shell=False)
+
+        return filename
+
     def move_up_frame(self):
         if self.curindex > 0:
             self.set_frame_index(self.curindex-1)
@@ -329,9 +377,11 @@ class Debugger(bdb.Bdb):
             self.set_frame_index(self.curindex+1)
 
     def get_shortened_stack(self, frame, tb):
+        if tb is not None:
+            frame = None
         stack, index = self.get_stack(frame, tb)
 
-        for i, (s_frame, lineno) in enumerate(stack):
+        for i, (s_frame, _lineno) in enumerate(stack):
             if s_frame is self.bottom_frame and index >= i:
                 stack = stack[i:]
                 index -= i
@@ -352,11 +402,13 @@ class Debugger(bdb.Bdb):
         else:
             tb = exc_tuple[2]
 
-        if frame is None and tb is not None:
-            frame = tb.tb_frame
+        if frame is None:
+            assert tb is not None
+            walk_frame = tb.tb_frame
+        else:
+            walk_frame = frame
 
         found_bottom_frame = False
-        walk_frame = frame
         while True:
             if walk_frame is self.bottom_frame:
                 found_bottom_frame = True
@@ -366,6 +418,7 @@ class Debugger(bdb.Bdb):
             walk_frame = walk_frame.f_back
 
         if not found_bottom_frame and not self.post_mortem:
+            # We aren't supposed to be debugging this.
             return
 
         self.stack, index = self.get_shortened_stack(frame, tb)
@@ -392,72 +445,136 @@ class Debugger(bdb.Bdb):
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
         if "__exc_tuple__" in frame.f_locals:
-            del frame.f_locals['__exc_tuple__']
+            del frame.f_locals["__exc_tuple__"]
 
-        if self._wait_for_mainpyfile:
-            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                    or frame.f_lineno <= 0):
-                return
-            self._wait_for_mainpyfile = False
-            self.bottom_frame = frame
+        if self._waiting_for_mainpyfile(frame):
+            return
 
         if self.get_break(self.canonic(frame.f_code.co_filename), frame.f_lineno):
             self.current_bp = (
                     self.canonic(frame.f_code.co_filename), frame.f_lineno)
         else:
             self.current_bp = None
-        self.ui.update_breakpoints()
 
-        self.interaction(frame)
+        try:
+            self.ui.update_breakpoints()
+            self.interaction(frame)
+        except Exception:
+            self.ui.show_internal_exc_dlg(sys.exc_info())
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
-        if frame.f_code.co_name != '<module>':
-            frame.f_locals['__return__'] = return_value
+        if frame.f_code.co_name != "<module>":
+            frame.f_locals["__return__"] = return_value
 
-        if self._wait_for_mainpyfile:
-            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                    or frame.f_lineno <= 0):
-                return
-            self._wait_for_mainpyfile = False
-            self.bottom_frame = frame
+        if self._waiting_for_mainpyfile(frame):
+            return
 
         if "__exc_tuple__" not in frame.f_locals:
             self.interaction(frame)
 
+    def _waiting_for_mainpyfile(self, frame):
+        if self._wait_for_mainpyfile:
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
+                    or frame.f_lineno <= 0):
+                return True
+            self._wait_for_mainpyfile = False
+            self.bottom_frame = frame
+            if self._continue_at_start:
+                self._continue_at_start = False
+                self.set_continue()
+                return True
+        return False
+
     def user_exception(self, frame, exc_tuple):
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
-        frame.f_locals['__exc_tuple__'] = exc_tuple
+        frame.f_locals["__exc_tuple__"] = exc_tuple
 
         if not self._wait_for_mainpyfile:
             self.interaction(frame, exc_tuple)
 
+    # {{{ entrypoints
+
     def _runscript(self, filename):
-        # Start with fresh empty copy of globals and locals and tell the script
-        # that it's being run as __main__ to avoid scripts being able to access
-        # the debugger's namespace.
-        globals_ = {"__name__": "__main__", "__file__": filename}
-        locals_ = globals_
+        # Provide separation from current __main__, which is likely
+        # pudb.__main__ run.  Preserving its namespace is not important, and
+        # having the script share it ensures that, e.g., pickle can find
+        # types defined there:
+        # https://github.com/inducer/pudb/issues/331
+
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update({
+            "__name__": "__main__",
+            "__file__": filename,
+            "__builtins__": __builtins__,
+            })
 
         # When bdb sets tracing, a number of call and line events happens
         # BEFORE debugger even reaches user's code (and the exact sequence of
         # events depends on python version). So we take special measures to
         # avoid stopping before we reach the main script (see user_line and
         # user_call for details).
-        self._wait_for_mainpyfile = 1
+        self._wait_for_mainpyfile = True
         self.mainpyfile = self.canonic(filename)
-        if PY3:
-            statement = 'exec(compile(open("%s").read(), "%s", "exec"))' % (
-                    filename, filename)
-        else:
-            statement = 'execfile( "%s")' % filename
+        statement = 'exec(compile(open("{}").read(), "{}", "exec"))'.format(
+                filename, filename)
 
         # Set up an interrupt handler
         from pudb import set_interrupt_handler
         set_interrupt_handler()
 
-        self.run(statement, globals=globals_, locals=locals_)
+        # Implicitly runs in the namespace of __main__.
+        self.run(statement)
+
+    def _runmodule(self, module_name):
+        # This is basically stolen from the pdb._runmodule from CPython 3.8
+        # https://github.com/python/cpython/blob/a1d3be4623c8ec7069bd34ccdce336be9cdeb644/Lib/pdb.py#L1530
+        import runpy
+        mod_name, mod_spec, code = runpy._get_module_details(module_name)
+
+        self.mainpyfile = self.canonic(code.co_filename)
+        import __main__
+        __main__.__dict__.clear()
+        __main__.__dict__.update({
+            "__name__": "__main__",
+            "__file__": self.mainpyfile,
+            "__spec__": mod_spec,
+            "__builtins__": __builtins__,
+            "__package__": mod_spec.parent,
+            "__loader__": mod_spec.loader,
+        })
+
+        self._wait_for_mainpyfile = True
+
+        self.run(code)
+
+    def runstatement(self, statement, globals=None, locals=None):
+        try:
+            return self.run(statement, globals, locals)
+        except Exception:
+            self.post_mortem = True
+            self.interaction(None, sys.exc_info())
+            raise
+
+    def runeval(self, expression, globals=None, locals=None):
+        try:
+            return super().runeval(expression, globals, locals)
+        except Exception:
+            self.post_mortem = True
+            self.interaction(None, sys.exc_info())
+            raise
+
+    def runcall(self, *args, **kwargs):
+        try:
+            return super().runcall(*args, **kwargs)
+        except Exception:
+            self.post_mortem = True
+            self.interaction(None, sys.exc_info())
+            raise
+
+    # }}}
 
 # }}}
 
@@ -485,20 +602,20 @@ except ImportError:
     CursesScreen = None
 
 
-class ThreadsafeScreenMixin(object):
-    "A Screen subclass that doesn't crash when running from a non-main thread."
+class ThreadsafeScreenMixin:
+    """A Screen subclass that doesn't crash when running from a non-main thread."""
 
     def signal_init(self):
-        "Initialize signal handler, ignoring errors silently."
+        """Initialize signal handler, ignoring errors silently."""
         try:
-            super(ThreadsafeScreenMixin, self).signal_init()
+            super().signal_init()
         except ValueError:
             pass
 
     def signal_restore(self):
-        "Restore default signal handler, ignoring errors silently."
+        """Restore default signal handler, ignoring errors silently."""
         try:
-            super(ThreadsafeScreenMixin, self).signal_restore()
+            super().signal_restore()
         except ValueError:
             pass
 
@@ -510,7 +627,7 @@ class ThreadsafeRawScreen(ThreadsafeScreenMixin, RawScreen):
 class ThreadsafeFixedSizeRawScreen(ThreadsafeScreenMixin, RawScreen):
     def __init__(self, **kwargs):
         self._term_size = kwargs.pop("term_size", None)
-        super(ThreadsafeFixedSizeRawScreen, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def get_cols_rows(self):
         if self._term_size is not None:
@@ -528,7 +645,7 @@ if curses is not None:
 
 # {{{ source code providers
 
-class SourceCodeProvider(object):
+class SourceCodeProvider:
     def __ne__(self, other):
         return not (self == other)
 
@@ -540,7 +657,7 @@ class NullSourceCodeProvider(SourceCodeProvider):
     def identifier(self):
         return "<no source code>"
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return None
 
     def clear_cache(self):
@@ -576,7 +693,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
     def identifier(self):
         return self.file_name
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return self.file_name
 
     def clear_cache(self):
@@ -602,7 +719,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
                     debugger_ui, list(decode_lines(lines)), set(breakpoints))
         except Exception:
             from pudb.lowlevel import format_exception
-            debugger_ui.message("Could not load source file '%s':\n\n%s" % (
+            debugger_ui.message("Could not load source file '{}':\n\n{}".format(
                 self.file_name, "".join(format_exception(sys.exc_info()))),
                 title="Source Code Load Error")
             return [SourceLine(debugger_ui,
@@ -617,15 +734,13 @@ class DirectSourceCodeProvider(SourceCodeProvider):
     def __eq__(self, other):
         return (
                 type(self) == type(other)
-                and
-                self.function_name == other.function_name
-                and
-                self.code is other.code)
+                and self.function_name == other.function_name
+                and self.code is other.code)
 
     def identifier(self):
         return "<source code of function %s>" % self.function_name
 
-    def get_breakpoint_source_identifier(self):
+    def get_source_identifier(self):
         return None
 
     def clear_cache(self):
@@ -638,6 +753,17 @@ class DirectSourceCodeProvider(SourceCodeProvider):
         return format_source(debugger_ui, list(decode_lines(lines)), set())
 
 # }}}
+
+
+class StoppedScreen:
+    def __init__(self, screen):
+        self.screen = screen
+
+    def __enter__(self):
+        self.screen.stop()
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.screen.start()
 
 
 class DebuggerUI(FrameVarInfoKeeper):
@@ -657,6 +783,50 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ build ui
 
+        # {{{ key bindings
+
+        def move_up(w, size, key):
+            w.keypress(size, "up")
+
+        def move_down(w, size, key):
+            w.keypress(size, "down")
+
+        def move_left(w, size, key):
+            w.keypress(size, "left")
+
+        def move_right(w, size, key):
+            w.keypress(size, "right")
+
+        def page_up(w, size, key):
+            w.keypress(size, "page up")
+
+        def page_down(w, size, key):
+            w.keypress(size, "page down")
+
+        def move_home(w, size, key):
+            w.keypress(size, "home")
+
+        def move_end(w, size, key):
+            w.keypress(size, "end")
+
+        def add_vi_nav_keys(widget):
+            widget.listen("k", move_up)
+            widget.listen("j", move_down)
+            widget.listen("h", move_left)
+            widget.listen("l", move_right)
+            widget.listen("ctrl b", page_up)
+            widget.listen("ctrl f", page_down)
+            widget.listen("ctrl u", page_up)
+            widget.listen("ctrl d", page_down)
+            widget.listen("g", move_home)
+            widget.listen("G", move_end)
+
+        def add_help_keys(widget, helpfunc):
+            widget.listen("f1", helpfunc)
+            widget.listen("?", helpfunc)
+
+        # }}}
+
         # {{{ left/source column
 
         self.source = urwid.SimpleListWalker([])
@@ -665,12 +835,10 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_attr = urwid.AttrMap(self.source_sigwrap, "source")
         self.source_hscroll_start = 0
 
-        self.cmdline_history = []
-        self.cmdline_history_position = -1
-
         self.cmdline_contents = urwid.SimpleFocusListWalker([])
         self.cmdline_list = urwid.ListBox(self.cmdline_contents)
-        self.cmdline_edit = urwid.Edit([
+        import urwid_readline
+        self.cmdline_edit = urwid_readline.ReadlineEdit([
             ("command line prompt", ">>> ")
             ])
         cmdline_edit_attr = urwid.AttrMap(self.cmdline_edit, "command line edit")
@@ -679,6 +847,22 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def clear_cmdline_history(btn):
             del self.cmdline_contents[:]
+
+        def initialize_cmdline_history(path):
+
+            try:
+                # Load global history if present
+                with open(path, "r") as histfile:
+                    return histfile.read().splitlines()
+            except FileNotFoundError:
+                return []
+
+        self.cmdline_history_path = os.path.join(get_save_config_path(),
+                                                 "internal-cmdline-history.txt")
+
+        self.cmdline_history = initialize_cmdline_history(self.cmdline_history_path)
+        self.cmdline_history_position = -1
+        self.cmdline_history_limit = 5000
 
         self.cmdline_edit_bar = urwid.Columns([
                 self.cmdline_edit_sigwrap,
@@ -695,10 +879,12 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_sigwrap = SignalWrap(
                 urwid.AttrMap(self.cmdline_pile, None, "focused sidebar")
                 )
-
+        self.cmdline_on = not CONFIG["hide_cmdline_win"]
+        self.cmdline_weight = float(CONFIG.get("cmdline_height", 1))
         self.lhs_col = urwid.Pile([
             ("weight", 5, self.source_attr),
-            ("weight", 1, self.cmdline_sigwrap),
+            ("weight", self.cmdline_weight if self.cmdline_on else 0,
+                self.cmdline_sigwrap),
             ])
 
         # }}}
@@ -733,6 +919,12 @@ class DebuggerUI(FrameVarInfoKeeper):
             ])
         self.rhs_col_sigwrap = SignalWrap(self.rhs_col)
 
+        def helpside(w, size, key):
+            help(HELP_HEADER + HELP_SIDE + HELP_MAIN + HELP_LICENSE)
+
+        add_vi_nav_keys(self.rhs_col_sigwrap)
+        add_help_keys(self.rhs_col_sigwrap, helpside)
+
         # }}}
 
         self.columns = urwid.Columns(
@@ -754,7 +946,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
 
-            _, weight = self.rhs_col.item_types[index]
+            weight = self.rhs_col.item_types[index][1]
 
             if direction < 0:
                 if weight > 1/5:
@@ -770,26 +962,50 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ variables listeners
 
+        def get_inspect_info(id_path, read_only=False):
+            return (self.get_frame_var_info(read_only)
+                    .get_inspect_info(id_path, read_only))
+
+        def collapse_current(var, pos, iinfo):
+            if iinfo.show_detail:
+                # collapse current variable
+                iinfo.show_detail = False
+            else:
+                # collapse parent/container variable
+                if var.parent is not None:
+                    p_iinfo = get_inspect_info(var.parent.id_path)
+                    p_iinfo.show_detail = False
+                    return self.locals.index(var.parent)
+            return None
+
         def change_var_state(w, size, key):
             var, pos = self.var_list._w.get_focus()
 
             if var is None:
                 return
 
-            iinfo = self.get_frame_var_info(read_only=False) \
-                    .get_inspect_info(var.id_path, read_only=False)
+            iinfo = get_inspect_info(var.id_path)
+            focus_index = None
 
-            if key == "\\":
+            if key == "enter" or key == "\\" or key == " ":
                 iinfo.show_detail = not iinfo.show_detail
+            elif key == "h":
+                focus_index = collapse_current(var, pos, iinfo)
+            elif key == "l":
+                iinfo.show_detail = True
+            elif key == "d":
+                iinfo.display_type = "default"
             elif key == "t":
                 iinfo.display_type = "type"
             elif key == "r":
                 iinfo.display_type = "repr"
             elif key == "s":
                 iinfo.display_type = "str"
+            elif key == "i":
+                iinfo.display_type = "id"
             elif key == "c":
                 iinfo.display_type = CONFIG["custom_stringifier"]
-            elif key == "h":
+            elif key == "H":
                 iinfo.highlighted = not iinfo.highlighted
             elif key == "@":
                 iinfo.repeated_at_top = not iinfo.repeated_at_top
@@ -800,8 +1016,13 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.wrap = not iinfo.wrap
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
+            elif key == "delete":
+                fvi = self.get_frame_var_info(read_only=False)
+                for i, watch_expr in enumerate(fvi.watches):
+                    if watch_expr is var.watch_expr:
+                        del fvi.watches[i]
 
-            self.update_var_view()
+            self.update_var_view(focus_index=focus_index)
 
         def edit_inspector_detail(w, size, key):
             var, pos = self.var_list._w.get_focus()
@@ -821,7 +1042,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                 watch_edit = urwid.Edit([
                     ("label", "Watch expression: ")
                     ], var.watch_expr.expression)
-                id_segment = [urwid.AttrMap(watch_edit, "value"), urwid.Text("")]
+                id_segment = [
+                        urwid.AttrMap(watch_edit, "input", "focused input"),
+                        urwid.Text(""),
+                        ]
 
                 buttons.extend([None, ("Delete", "del")])
 
@@ -835,12 +1059,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 title = "Variable Inspection Options"
 
             rb_grp_show = []
-            rb_show_type = urwid.RadioButton(rb_grp_show, "Show Type",
+            rb_show_default = urwid.RadioButton(rb_grp_show, "Default",
+                    iinfo.display_type == "default")
+            rb_show_type = urwid.RadioButton(rb_grp_show, "Show type()",
                     iinfo.display_type == "type")
             rb_show_repr = urwid.RadioButton(rb_grp_show, "Show repr()",
                     iinfo.display_type == "repr")
             rb_show_str = urwid.RadioButton(rb_grp_show, "Show str()",
                     iinfo.display_type == "str")
+            rb_show_id = urwid.RadioButton(rb_grp_show, "Show id()",
+                    iinfo.display_type == "id")
             rb_show_custom = urwid.RadioButton(
                     rb_grp_show, "Show custom (set in prefs)",
                     iinfo.display_type == CONFIG["custom_stringifier"])
@@ -864,10 +1092,10 @@ class DebuggerUI(FrameVarInfoKeeper):
                     "Show methods", iinfo.show_methods)
 
             lb = urwid.ListBox(urwid.SimpleListWalker(
-                id_segment +
-                rb_grp_show + [urwid.Text("")] +
-                rb_grp_access + [urwid.Text("")] +
-                [
+                id_segment
+                + rb_grp_show + [urwid.Text("")]
+                + rb_grp_access + [urwid.Text("")]
+                + [
                     wrap_checkbox,
                     expanded_checkbox,
                     highlighted_checkbox,
@@ -884,12 +1112,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
                 iinfo.show_methods = show_methods_checkbox.get_state()
 
-                if rb_show_type.get_state():
+                if rb_show_default.get_state():
+                    iinfo.display_type = "default"
+                elif rb_show_type.get_state():
                     iinfo.display_type = "type"
                 elif rb_show_repr.get_state():
                     iinfo.display_type = "repr"
                 elif rb_show_str.get_state():
                     iinfo.display_type = "str"
+                elif rb_show_id.get_state():
+                    iinfo.display_type = "id"
                 elif rb_show_custom.get_state():
                     iinfo.display_type = CONFIG["custom_stringifier"]
 
@@ -917,7 +1149,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             if self.dialog(
                     urwid.ListBox(urwid.SimpleListWalker([
-                        urwid.AttrMap(watch_edit, "value")
+                        urwid.AttrMap(watch_edit, "input", "focused input")
                         ])),
                     [
                         ("OK", True),
@@ -931,30 +1163,73 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.update_var_view()
 
         self.var_list.listen("\\", change_var_state)
+        self.var_list.listen(" ", change_var_state)
+        self.var_list.listen("h", change_var_state)
+        self.var_list.listen("l", change_var_state)
+        self.var_list.listen("d", change_var_state)
         self.var_list.listen("t", change_var_state)
         self.var_list.listen("r", change_var_state)
         self.var_list.listen("s", change_var_state)
+        self.var_list.listen("i", change_var_state)
         self.var_list.listen("c", change_var_state)
-        self.var_list.listen("h", change_var_state)
+        self.var_list.listen("H", change_var_state)
         self.var_list.listen("@", change_var_state)
         self.var_list.listen("*", change_var_state)
         self.var_list.listen("w", change_var_state)
         self.var_list.listen("m", change_var_state)
-        self.var_list.listen("enter", edit_inspector_detail)
+        self.var_list.listen("enter", change_var_state)
+        self.var_list.listen("e", edit_inspector_detail)
         self.var_list.listen("n", insert_watch)
         self.var_list.listen("insert", insert_watch)
+        self.var_list.listen("delete", change_var_state)
 
-        self.var_list.listen("[", partial(change_rhs_box, 'variables', 0, -1))
-        self.var_list.listen("]", partial(change_rhs_box, 'variables', 0, 1))
+        self.var_list.listen("[", partial(change_rhs_box, "variables", 0, -1))
+        self.var_list.listen("]", partial(change_rhs_box, "variables", 0, 1))
 
         # }}}
 
         # {{{ stack listeners
+
         def examine_frame(w, size, key):
             _, pos = self.stack_list._w.get_focus()
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.stack_list.listen("enter", examine_frame)
+
+        def open_file_editor(file_name, line_number):
+            file_changed = False
+
+            try:
+                original_modification_time = os.path.getmtime(file_name)
+                with StoppedScreen(self.screen):
+                    filename_edited = self.debugger.open_file_to_edit(file_name,
+                                                                      line_number)
+                new_modification_time = os.path.getmtime(file_name)
+                file_changed = new_modification_time - original_modification_time > 0
+            except Exception:
+                from traceback import format_exception
+                self.message("Exception happened when trying to edit the file:"
+                             "\n\n%s" % ("".join(format_exception(*sys.exc_info()))),
+                    title="File Edit Error")
+                return
+
+            if file_changed:
+                self.message("File is changed, but the execution is continued with"
+                             " the 'old' codebase.\n"
+                             f"Changed file: {filename_edited}\n\n"
+                             "Please quit and restart to see changes",
+                             title="File is changed")
+
+        def open_editor_on_stack_frame(w, size, key):
+            _, pos = self.stack_list._w.get_focus()
+            index = self.translate_ui_stack_index(pos)
+
+            curframe, line_number = self.debugger.stack[index]
+            file_name = curframe.f_code.co_filename
+
+            open_file_editor(file_name, line_number)
+
+        self.stack_list.listen("ctrl e", open_editor_on_stack_frame)
 
         def move_stack_top(w, size, key):
             self.debugger.set_frame_index(len(self.debugger.stack)-1)
@@ -969,51 +1244,48 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.stack_list.listen("u", move_stack_up)
         self.stack_list.listen("d", move_stack_down)
 
-        self.stack_list.listen("[", partial(change_rhs_box, 'stack', 1, -1))
-        self.stack_list.listen("]", partial(change_rhs_box, 'stack', 1, 1))
+        self.stack_list.listen("[", partial(change_rhs_box, "stack", 1, -1))
+        self.stack_list.listen("]", partial(change_rhs_box, "stack", 1, 1))
 
         # }}}
 
         # {{{ breakpoint listeners
+
+        def set_breakpoint_source(bp):
+            bp_source_identifier = \
+                    self.source_code_provider.get_source_identifier()
+            if (bp.file
+                    and bp_source_identifier == bp.file
+                    and bp.line-1 < len(self.source)):
+                self.source[bp.line-1].set_breakpoint(bp.enabled)
+
         def save_breakpoints(w, size, key):
             self.debugger.save_breakpoints()
 
-        def delete_breakpoint(w, size, key):
-            bp_source_identifier = \
-                    self.source_code_provider.get_breakpoint_source_identifier()
-
-            if bp_source_identifier is None:
-                self.message(
-                    "Cannot currently delete a breakpoint here--"
-                    "source code does not correspond to a file location. "
-                    "(perhaps this is generated code)")
-
+        def handle_delete_breakpoint(w, size, key):
             bp_list = self._get_bp_list()
             if bp_list:
                 _, pos = self.bp_list._w.get_focus()
                 bp = bp_list[pos]
-                if bp_source_identifier == bp.file and bp.line-1 < len(self.source):
-                    self.source[bp.line-1].set_breakpoint(False)
+                delete_breakpoint(bp)
 
-                err = self.debugger.clear_break(bp.file, bp.line)
-                if err:
-                    self.message("Error clearing breakpoint:\n" + err)
-                else:
-                    self.update_breakpoints()
+        def delete_breakpoint(bp):
+            err = self.debugger.clear_break(bp.file, bp.line)
+            if err:
+                self.message("Error clearing breakpoint:\n" + err)
+            else:
+                bp.enabled = False
+                self.update_breakpoints()
+                set_breakpoint_source(bp)
 
         def enable_disable_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
-
             if bp_entry is None:
                 return
-
             bp = self._get_bp_list()[pos]
             bp.enabled = not bp.enabled
-
-            sline = self.source[bp.line-1]
-            sline.set_breakpoint(bp.enabled)
-
             self.update_breakpoints()
+            set_breakpoint_source(bp)
 
         def examine_breakpoint(w, size, key):
             bp_entry, pos = self.bp_list._w.get_focus()
@@ -1043,8 +1315,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 labelled_value("Hits: ", bp.hits),
                 urwid.Text(""),
                 enabled_checkbox,
-                urwid.AttrMap(cond_edit, "value", "value"),
-                urwid.AttrMap(ign_count_edit, "value", "value"),
+                urwid.AttrMap(cond_edit, "input", "focused input"),
+                urwid.AttrMap(ign_count_edit, "input", "focused input"),
                 ]))
 
             result = self.dialog(lb, [
@@ -1068,31 +1340,28 @@ class DebuggerUI(FrameVarInfoKeeper):
                         FileSourceCodeProvider(self.debugger, bp.file))
                 self.columns.set_focus(0)
             elif result == "del":
-                bp_source_identifier = \
-                        self.source_code_provider.get_breakpoint_source_identifier()
+                delete_breakpoint(bp)
 
-                if bp_source_identifier is None:
-                    self.message(
-                        "Cannot currently delete a breakpoint here--"
-                        "source code does not correspond to a file location. "
-                        "(perhaps this is generated code)")
+            self.update_breakpoints()
+            set_breakpoint_source(bp)
 
-                if bp_source_identifier == bp.file:
-                    self.source[bp.line-1].set_breakpoint(False)
+        def show_breakpoint(w, size, key):
+            bp_entry, pos = self.bp_list._w.get_focus()
 
-                err = self.debugger.clear_break(bp.file, bp.line)
-                if err:
-                    self.message("Error clearing breakpoint:\n" + err)
-                else:
-                    self.update_breakpoints()
+            if bp_entry is not None:
+                bp = self._get_bp_list()[pos]
+                self.show_line(bp.line,
+                        FileSourceCodeProvider(self.debugger, bp.file))
 
-        self.bp_list.listen("enter", examine_breakpoint)
-        self.bp_list.listen("d", delete_breakpoint)
+        self.bp_list.listen("enter", show_breakpoint)
+        self.bp_list.listen("d", handle_delete_breakpoint)
         self.bp_list.listen("s", save_breakpoints)
-        self.bp_list.listen("e", enable_disable_breakpoint)
+        self.bp_list.listen("e", examine_breakpoint)
+        self.bp_list.listen("b", enable_disable_breakpoint)
+        self.bp_list.listen("H", move_stack_top)
 
-        self.bp_list.listen("[", partial(change_rhs_box, 'breakpoints', 2, -1))
-        self.bp_list.listen("]", partial(change_rhs_box, 'breakpoints', 2, 1))
+        self.bp_list.listen("[", partial(change_rhs_box, "breakpoints", 2, -1))
+        self.bp_list.listen("]", partial(change_rhs_box, "breakpoints", 2, 1))
 
         # }}}
 
@@ -1102,7 +1371,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.save_breakpoints()
             self.quit_event_loop = True
 
-        def next(w, size, key):
+        def next_line(w, size, key):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
@@ -1138,7 +1407,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 lineno = pos+1
 
                 bp_source_identifier = \
-                        self.source_code_provider.get_breakpoint_source_identifier()
+                        self.source_code_provider.get_source_identifier()
 
                 if bp_source_identifier is None:
                     self.message(
@@ -1206,12 +1475,6 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
                     end()
 
-        def move_home(w, size, key):
-            self.source.set_focus(0)
-
-        def move_end(w, size, key):
-            self.source.set_focus(len(self.source)-1)
-
         def go_to_line(w, size, key):
             _, line = self.source.get_focus()
 
@@ -1224,27 +1487,17 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                         labelled_value("File :",
                             self.source_code_provider.identifier()),
                         labelled_value("Current Line :", line+1),
-                        urwid.AttrMap(lineno_edit, "value")
+                        urwid.AttrMap(lineno_edit, "input", "focused input")
                         ])),
                     [
                         ("OK", True),
                         ("Cancel", False),
                         ], title="Go to Line Number"):
-                lineno = min(max(0, int(lineno_edit.value())-1), len(self.source)-1)
-                self.source.set_focus(lineno)
 
-
-        def move_down(w, size, key):
-            w.keypress(size, "down")
-
-        def move_up(w, size, key):
-            w.keypress(size, "up")
-
-        def page_down(w, size, key):
-            w.keypress(size, "page down")
-
-        def page_up(w, size, key):
-            w.keypress(size, "page up")
+                value = lineno_edit.value()
+                if value:
+                    lineno = min(max(0, int(value)-1), len(self.source)-1)
+                    self.source.set_focus(lineno)
 
         def scroll_left(w, size, key):
             self.source_hscroll_start = max(
@@ -1269,7 +1522,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         def toggle_breakpoint(w, size, key):
             bp_source_identifier = \
-                    self.source_code_provider.get_breakpoint_source_identifier()
+                    self.source_code_provider.get_source_identifier()
 
             if bp_source_identifier:
                 sline, pos = self.source.get_focus()
@@ -1342,6 +1595,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             def mod_exists(mod):
                 if not hasattr(mod, "__file__"):
                     return False
+                if mod.__file__ is None:
+                    return False
                 filename = mod.__file__
 
                 base, ext = splitext(filename)
@@ -1402,7 +1657,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             lb = urwid.ListBox(mod_list)
 
             w = urwid.Pile([
-                ("flow", urwid.AttrMap(filt_edit, "value")),
+                ("flow", urwid.AttrMap(filt_edit, "input", "focused input")),
                 ("fixed", 1, urwid.SolidFill()),
                 urwid.AttrMap(lb, "selectable")])
 
@@ -1422,12 +1677,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                         try:
                             __import__(str(new_mod_name))
                         except Exception:
-                            from pudb.lowlevel import format_exception
+                            from traceback import format_exception
 
-                            self.message("Could not import module '%s':\n\n%s" % (
-                                new_mod_name, "".join(
-                                    format_exception(sys.exc_info()))),
-                                title="Import Error")
+                            self.message(
+                                    "Could not import module '{}':\n\n{}".format(
+                                        new_mod_name, "".join(
+                                            format_exception(*sys.exc_info()))),
+                                    title="Import Error")
                         else:
                             show_mod(__import__(str(new_mod_name)))
                             break
@@ -1441,11 +1697,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     if widget is not new_mod_entry:
                         mod_name = widget.base_widget.get_text()[0]
                         mod = sys.modules[mod_name]
-                        if PY3:
-                            import importlib
-                            importlib.reload(mod)
-                        else:
-                            reload(mod)  # noqa (undef on Py3)
+                        import importlib
+                        importlib.reload(mod)
 
                         self.message("'%s' was successfully reloaded." % mod_name)
 
@@ -1459,7 +1712,10 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                         self.debugger.set_frame_index(
                                 self.translate_ui_stack_index(pos))
 
-        self.source_sigwrap.listen("n", next)
+        def helpmain(w, size, key):
+            help(HELP_HEADER + HELP_MAIN + HELP_SIDE + HELP_LICENSE)
+
+        self.source_sigwrap.listen("n", next_line)
         self.source_sigwrap.listen("s", step)
         self.source_sigwrap.listen("f", finish)
         self.source_sigwrap.listen("r", finish)
@@ -1467,24 +1723,10 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.source_sigwrap.listen("t", run_to_cursor)
         self.source_sigwrap.listen("J", jump_to_cursor)
 
-        self.source_sigwrap.listen("j", move_down)
-        self.source_sigwrap.listen("k", move_up)
-        self.source_sigwrap.listen("ctrl d", page_down)
-        self.source_sigwrap.listen("ctrl u", page_up)
-        self.source_sigwrap.listen("ctrl f", page_down)
-        self.source_sigwrap.listen("ctrl b", page_up)
-        self.source_sigwrap.listen("h", scroll_left)
-        self.source_sigwrap.listen("l", scroll_right)
-
+        self.source_sigwrap.listen("L", go_to_line)
         self.source_sigwrap.listen("/", search)
         self.source_sigwrap.listen(",", search_previous)
         self.source_sigwrap.listen(".", search_next)
-
-        self.source_sigwrap.listen("home", move_home)
-        self.source_sigwrap.listen("end", move_end)
-        self.source_sigwrap.listen("g", move_home)
-        self.source_sigwrap.listen("G", move_end)
-        self.source_sigwrap.listen("L", go_to_line)
 
         self.source_sigwrap.listen("b", toggle_breakpoint)
         self.source_sigwrap.listen("m", pick_module)
@@ -1492,6 +1734,14 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.source_sigwrap.listen("H", move_stack_top)
         self.source_sigwrap.listen("u", move_stack_up)
         self.source_sigwrap.listen("d", move_stack_down)
+
+        # left/right scrolling have to be handled specially, normal vi keys
+        # don't cut it
+        self.source_sigwrap.listen("h", scroll_left)
+        self.source_sigwrap.listen("l", scroll_right)
+
+        add_vi_nav_keys(self.source_sigwrap)
+        add_help_keys(self.source_sigwrap, helpmain)
 
         # }}}
 
@@ -1505,21 +1755,25 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     [curframe.f_locals, curframe.f_globals],
                     curframe.f_locals)
 
-        def add_cmdline_content(s, attr):
-            s = s.rstrip("\n")
-
-            from pudb.ui_tools import SelectableText
-            self.cmdline_contents.append(
-                    urwid.AttrMap(SelectableText(s),
-                        attr, "focused "+attr))
-
-            # scroll to end of last entry
-            self.cmdline_list.set_focus_valign("bottom")
-            self.cmdline_list.set_focus(len(self.cmdline_contents) - 1,
-                    coming_from="above")
-
         def cmdline_tab_complete(w, size, key):
-            from rlcompleter import Completer
+            try:
+                from jedi import Interpreter
+            except ImportError:
+                self.add_cmdline_content(
+                        "Tab completion requires jedi to be installed. ",
+                        "command line error")
+                return
+
+            try:
+                from packaging.version import parse as LooseVersion     # noqa: N812
+            except ImportError:
+                from distutils.version import LooseVersion
+
+            import jedi
+            if LooseVersion(jedi.__version__) < LooseVersion("0.16.0"):
+                self.add_cmdline_content(
+                        "jedi 0.16.0 is required for Tab completion",
+                        "command line error")
 
             text = self.cmdline_edit.edit_text
             pos = self.cmdline_edit.edit_pos
@@ -1527,30 +1781,19 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             chopped_text = text[:pos]
             suffix = text[pos:]
 
-            # stolen from readline in the Python interactive shell
-            delimiters = " \t\n`~!@#$%^&*()-=+[{]}\\|;:\'\",<>/?"
+            try:
+                completions = Interpreter(
+                        chopped_text,
+                        [cmdline_get_namespace()]).complete()
+            except Exception as e:
+                # Jedi sometimes produces errors. Ignore them.
+                self.add_cmdline_content(
+                        "Could not tab complete (Jedi error: '%s')" % e,
+                        "command line error")
+                return
 
-            complete_start_index = max(
-                    chopped_text.rfind(delim_i)
-                    for delim_i in delimiters)
-
-            if complete_start_index == -1:
-                prefix = ""
-            else:
-                prefix = chopped_text[:complete_start_index+1]
-                chopped_text = chopped_text[complete_start_index+1:]
-
-            state = 0
-            chopped_completions = []
-            completer = Completer(cmdline_get_namespace())
-            while True:
-                completion = completer.complete(chopped_text, state)
-
-                if not isinstance(completion, str):
-                    break
-
-                chopped_completions.append(completion)
-                state += 1
+            full_completions = [i.name_with_symbols for i in completions]
+            chopped_completions = [i.complete for i in completions]
 
             def common_prefix(a, b):
                 for i, (a_i, b_i) in enumerate(zip(a, b)):
@@ -1573,16 +1816,18 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 return
 
             if (
-                    len(completed_chopped_text) == len(chopped_text)
-                    and len(chopped_completions) > 1):
-                add_cmdline_content(
-                        "   ".join(chopped_completions),
+                    len(completed_chopped_text) == 0
+                    and len(completions) > 1):
+                self.add_cmdline_content(
+                        "   ".join(full_completions),
                         "command line output")
                 return
 
             self.cmdline_edit.edit_text = \
-                    prefix+completed_chopped_text+suffix
-            self.cmdline_edit.edit_pos = len(prefix) + len(completed_chopped_text)
+                    chopped_text+completed_chopped_text+suffix
+            self.cmdline_edit.edit_pos = (
+                    len(chopped_text)
+                    + len(completed_chopped_text))
 
         def cmdline_append_newline(w, size, key):
             self.cmdline_edit.insert_text("\n")
@@ -1593,10 +1838,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 # blank command -> refuse service
                 return
 
-            add_cmdline_content(">>> " + cmd, "command line input")
+            self.add_cmdline_content(">>> " + cmd, "command line input")
 
             if not self.cmdline_history or cmd != self.cmdline_history[-1]:
                 self.cmdline_history.append(cmd)
+                # Limit history size
+                if len(self.cmdline_history) > self.cmdline_history_limit:
+                    del self.cmdline_history[0]
 
             self.cmdline_history_position = -1
 
@@ -1604,19 +1852,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             prev_sys_stdout = sys.stdout
             prev_sys_stderr = sys.stderr
 
-            if PY3:
-                from io import StringIO
-            else:
-                from cStringIO import StringIO
+            from io import StringIO
 
             sys.stdin = None
             sys.stderr = sys.stdout = StringIO()
             try:
-                # Don't use cmdline_get_namespace() here, it breaks things in
-                # Python 2 (issue #166).
-                eval(compile(cmd, "<pudb command line>", 'single'),
-                        self.debugger.curframe.f_globals,
-                        self.debugger.curframe.f_locals)
+                eval(compile(cmd, "<pudb command line>", "single"),
+                     cmdline_get_namespace())
             except Exception:
                 tp, val, tb = sys.exc_info()
 
@@ -1629,12 +1871,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     tb_lines.insert(0, "Traceback (most recent call last):\n")
                 tb_lines[len(tb_lines):] = traceback.format_exception_only(tp, val)
 
-                add_cmdline_content("".join(tb_lines), "command line error")
+                self.add_cmdline_content("".join(tb_lines), "command line error")
             else:
                 self.cmdline_edit.set_edit_text("")
             finally:
                 if sys.stdout.getvalue():
-                    add_cmdline_content(sys.stdout.getvalue(), "command line output")
+                    self.add_cmdline_content(sys.stdout.getvalue(),
+                                             "command line output")
 
                 sys.stdin = prev_sys_stdin
                 sys.stdout = prev_sys_stdout
@@ -1660,39 +1903,17 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         def cmdline_history_next(w, size, key):
             cmdline_history_browse(1)
 
-        def cmdline_start_of_line(w, size, key):
-            self.cmdline_edit.edit_pos = 0
-
-        def cmdline_end_of_line(w, size, key):
-            self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
-
-        def cmdline_del_word(w, size, key):
-            pos = self.cmdline_edit.edit_pos
-            before, after = (
-                    self.cmdline_edit.edit_text[:pos],
-                    self.cmdline_edit.edit_text[pos:])
-            before = before[::-1]
-            before = before.lstrip()
-            i = 0
-            while i < len(before):
-                if not before[i].isspace():
-                    i += 1
-                else:
-                    break
-
-            self.cmdline_edit.edit_text = before[i:][::-1] + after
-            self.cmdline_edit.edit_post = len(before[i:])
-
-        def cmdline_del_to_start_of_line(w, size, key):
-            pos = self.cmdline_edit.edit_pos
-            self.cmdline_edit.edit_text = self.cmdline_edit.edit_text[pos:]
-            self.cmdline_edit.edit_pos = 0
-
         def toggle_cmdline_focus(w, size, key):
             self.columns.set_focus(self.lhs_col)
             if self.lhs_col.get_focus() is self.cmdline_sigwrap:
-                self.lhs_col.set_focus(self.source_attr)
+                if CONFIG["hide_cmdline_win"]:
+                    self.set_cmdline_state(False)
+                self.lhs_col.set_focus(self.search_controller.search_AttrMap
+                        if self.search_controller.search_box else
+                        self.source_attr)
             else:
+                if CONFIG["hide_cmdline_win"]:
+                    self.set_cmdline_state(True)
                 self.cmdline_pile.set_focus(self.cmdline_edit_bar)
                 self.lhs_col.set_focus(self.cmdline_sigwrap)
 
@@ -1702,39 +1923,37 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.cmdline_edit_sigwrap.listen("ctrl n", cmdline_history_next)
         self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
-        self.cmdline_edit_sigwrap.listen("ctrl d", toggle_cmdline_focus)
-        self.cmdline_edit_sigwrap.listen("ctrl a", cmdline_start_of_line)
-        self.cmdline_edit_sigwrap.listen("ctrl e", cmdline_end_of_line)
-        self.cmdline_edit_sigwrap.listen("ctrl w", cmdline_del_word)
-        self.cmdline_edit_sigwrap.listen("ctrl u", cmdline_del_to_start_of_line)
 
         self.top.listen("ctrl x", toggle_cmdline_focus)
 
         # {{{ command line sizing
+        def set_cmdline_default_size(weight):
+            from pudb.settings import save_config
+
+            self.cmdline_weight = weight
+            CONFIG["cmdline_height"] = weight
+            save_config(CONFIG)
+            self.set_cmdline_size()
 
         def max_cmdline(w, size, key):
-            self.lhs_col.item_types[-1] = "weight", 5
-            self.lhs_col._invalidate()
+            set_cmdline_default_size(5)
 
         def min_cmdline(w, size, key):
-            self.lhs_col.item_types[-1] = "weight", 1/2
-            self.lhs_col._invalidate()
+            set_cmdline_default_size(1/2)
 
         def grow_cmdline(w, size, key):
-            _, weight = self.lhs_col.item_types[-1]
+            weight = self.cmdline_weight
 
             if weight < 5:
                 weight *= 1.25
-                self.lhs_col.item_types[-1] = "weight", weight
-                self.lhs_col._invalidate()
+                set_cmdline_default_size(weight)
 
         def shrink_cmdline(w, size, key):
-            _, weight = self.lhs_col.item_types[-1]
+            weight = self.cmdline_weight
 
             if weight > 1/2:
                 weight /= 1.25
-                self.lhs_col.item_types[-1] = "weight", weight
-                self.lhs_col._invalidate()
+                set_cmdline_default_size(weight)
 
         self.cmdline_sigwrap.listen("=", max_cmdline)
         self.cmdline_sigwrap.listen("+", grow_cmdline)
@@ -1770,7 +1989,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         def grow_sidebar(w, size, key):
             from pudb.settings import save_config
 
-            _, weight = self.columns.column_types[1]
+            weight = self.columns.column_types[1][1]
 
             if weight < 5:
                 weight *= 1.25
@@ -1782,7 +2001,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         def shrink_sidebar(w, size, key):
             from pudb.settings import save_config
 
-            _, weight = self.columns.column_types[1]
+            weight = self.columns.column_types[1][1]
 
             if weight > 1/5:
                 weight /= 1.25
@@ -1801,11 +2020,19 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         # {{{ top-level listeners
 
         def show_output(w, size, key):
-            self.screen.stop()
-            raw_input("Hit Enter to return:")
-            self.screen.start()
+            with StoppedScreen(self.screen):
+                input("Hit Enter to return:")
 
-        def reload_breakpoints(w, size, key):
+        def reload_breakpoints_and_redisplay():
+            reload_breakpoints()
+            curr_line = self.current_line
+            self.set_source_code_provider(self.source_code_provider,
+                                          force_update=True)
+            if curr_line is not None:
+                self.current_line = self.source[int(curr_line.line_nr)-1]
+                self.current_line.set_current(True)
+
+        def reload_breakpoints():
             self.debugger.clear_all_breaks()
             from pudb.settings import load_breakpoints
             for bpoint_descr in load_breakpoints():
@@ -1814,11 +2041,11 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         def show_traceback(w, size, key):
             if self.current_exc_tuple is not None:
-                from pudb.lowlevel import format_exception
+                from traceback import format_exception
 
                 result = self.dialog(
                         urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
-                            "".join(format_exception(self.current_exc_tuple)))])),
+                            "".join(format_exception(*self.current_exc_tuple)))])),
                         [
                             ("Close", "close"),
                             ("Location", "location")
@@ -1834,45 +2061,54 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.message("No exception available.")
 
         def run_external_cmdline(w, size, key):
-            self.screen.stop()
+            with StoppedScreen(self.screen):
+                curframe = self.debugger.curframe
 
-            curframe = self.debugger.curframe
-
-            import pudb.shell as shell
-            if CONFIG["shell"] == "ipython" and shell.have_ipython():
-                runner = shell.run_ipython_shell
-            elif CONFIG["shell"] == "bpython" and shell.HAVE_BPYTHON:
-                runner = shell.run_bpython_shell
-            elif CONFIG["shell"] == "ptpython" and shell.HAVE_PTPYTHON:
-                runner = shell.run_ptpython_shell
-            elif CONFIG["shell"] == "ptipython" and shell.HAVE_PTIPYTHON:
-                runner = shell.run_ptipython_shell
-            elif CONFIG["shell"] == "classic":
-                runner = shell.run_classic_shell
-            else:
-                try:
-                    if not shell.custom_shell_dict:  # Only execfile once
-                        from os.path import expanduser
-                        execfile(
-                                expanduser(CONFIG["shell"]), shell.custom_shell_dict)
-                except Exception:
-                    print("Error when importing custom shell:")
-                    from traceback import print_exc
-                    print_exc()
-                    print("Falling back to classic shell")
+                import pudb.shell as shell
+                if CONFIG["shell"] == "ipython" and shell.have_ipython():
+                    runner = shell.run_ipython_shell
+                elif CONFIG["shell"] == "ipython_kernel" and shell.have_ipython():
+                    runner = shell.run_ipython_kernel
+                elif CONFIG["shell"] == "bpython" and shell.HAVE_BPYTHON:
+                    runner = shell.run_bpython_shell
+                elif CONFIG["shell"] == "ptpython" and shell.HAVE_PTPYTHON:
+                    runner = shell.run_ptpython_shell
+                elif CONFIG["shell"] == "ptipython" and shell.HAVE_PTIPYTHON:
+                    runner = shell.run_ptipython_shell
+                elif CONFIG["shell"] == "classic":
                     runner = shell.run_classic_shell
                 else:
-                    if "pudb_shell" not in shell.custom_shell_dict:
-                        print("%s does not contain a function named pudb_shell at "
-                              "the module level." % CONFIG["shell"])
-                        print("Falling back to classic shell")
-                        runner = shell.run_classic_shell
+                    def fallback(error_message):
+                        fallback_message = "Falling back to classic shell."
+                        message = f"{error_message} {fallback_message}"
+                        ui_log.error(message)
+                        return partial(shell.run_classic_shell, message=message)
+
+                    try:
+                        if not shell.custom_shell_dict:  # Only execfile once
+                            from os.path import expanduser, expandvars
+                            cshell_fname = expanduser(expandvars(CONFIG["shell"]))
+                            with open(cshell_fname) as inf:
+                                exec(compile(inf.read(), cshell_fname, "exec"),
+                                        shell.custom_shell_dict,
+                                        shell.custom_shell_dict)
+                    except FileNotFoundError:
+                        runner = fallback(
+                            "Unable to locate custom shell file {!r}."
+                            .format(CONFIG["shell"])
+                        )
+                    except Exception:
+                        runner = fallback("Error when importing custom shell.")
                     else:
-                        runner = shell.custom_shell_dict['pudb_shell']
+                        if "pudb_shell" not in shell.custom_shell_dict:
+                            runner = fallback(
+                                "%s does not contain a function named pudb_shell at "
+                                "the module level." % CONFIG["shell"]
+                            )
+                        else:
+                            runner = shell.custom_shell_dict["pudb_shell"]
 
-            runner(curframe.f_globals, curframe.f_locals)
-
-            self.screen.start()
+                runner(curframe.f_globals, curframe.f_locals)
 
             self.update_var_view()
 
@@ -1890,11 +2126,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             def __init__(self, idx):
                 self.idx = idx
 
-            def __call__(subself, w, size, key):  # noqa
+            def __call__(subself, w, size, key):  # noqa # pylint: disable=no-self-argument
                 self.columns.set_focus(self.rhs_col_sigwrap)
                 self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
 
         def quit(w, size, key):
+            with open(self.cmdline_history_path, "w") as history:
+                history.write("\n".join((self.cmdline_history)))
             self.debugger.set_quit()
             end()
 
@@ -1904,24 +2142,37 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         def redraw_screen(w, size, key):
             self.screen.clear()
 
-        def help(w, size, key):
-            self.message(HELP_TEXT, title="PuDB Help")
+        def help(pages):
+            self.message(pages, title="PuDB - The Python Urwid Debugger")
+
+        def edit_current_frame(w, size, key):
+            _, pos = self.source.get_focus()
+            source_identifier = \
+                    self.source_code_provider.get_source_identifier()
+
+            if source_identifier is None:
+                self.message(
+                    "Cannot edit the current file--"
+                    "source code does not correspond to a file location. "
+                    "(perhaps this is generated code)")
+            open_file_editor(source_identifier, pos+1)
 
         self.top.listen("o", show_output)
-        self.top.listen("ctrl r", reload_breakpoints)
+        self.top.listen("ctrl r",
+                        lambda w, size, key: reload_breakpoints_and_redisplay())
         self.top.listen("!", run_cmdline)
         self.top.listen("e", show_traceback)
 
-        self.top.listen("C", focus_code)
-        self.top.listen("V", RHColumnFocuser(0))
-        self.top.listen("S", RHColumnFocuser(1))
-        self.top.listen("B", RHColumnFocuser(2))
+        self.top.listen(CONFIG["hotkeys_code"], focus_code)
+        self.top.listen(CONFIG["hotkeys_variables"], RHColumnFocuser(0))
+        self.top.listen(CONFIG["hotkeys_stack"], RHColumnFocuser(1))
+        self.top.listen(CONFIG["hotkeys_breakpoints"], RHColumnFocuser(2))
 
         self.top.listen("q", quit)
         self.top.listen("ctrl p", do_edit_config)
         self.top.listen("ctrl l", redraw_screen)
-        self.top.listen("f1", help)
-        self.top.listen("?", help)
+
+        self.top.listen("ctrl e", edit_current_frame)
 
         # }}}
 
@@ -1931,11 +2182,9 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 CONFIG["display"] == "curses"
                 or (
                     CONFIG["display"] == "auto"
-                    and
-                    not (
+                    and not (
                         os.environ.get("TERM", "").startswith("xterm")
-                        or
-                        os.environ.get("TERM", "").startswith("rxvt")
+                        or os.environ.get("TERM", "").startswith("rxvt")
                     )))
 
         if (want_curses_display
@@ -1967,7 +2216,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 # https://github.com/inducer/pudb/issues/78
                 pass
             else:
-                color_support = curses.tigetnum('colors')
+                color_support = curses.tigetnum("colors")
 
                 if color_support == 256 and isinstance(self.screen, RawScreen):
                     self.screen.set_terminal_properties(256)
@@ -1986,6 +2235,36 @@ Error with jump. Note that jumping only works on the topmost stack frame.
     # }}}
 
     # {{{ UI helpers
+    def add_cmdline_content(self, s, attr):
+        s = s.rstrip("\n")
+
+        from pudb.ui_tools import SelectableText
+        self.cmdline_contents.append(
+                urwid.AttrMap(SelectableText(s), attr, "focused "+attr))
+
+        # scroll to end of last entry
+        self.cmdline_list.set_focus_valign("bottom")
+        self.cmdline_list.set_focus(len(self.cmdline_contents) - 1,
+                coming_from="above")
+
+        # Force the commandline to be visible
+        self.set_cmdline_state(True)
+
+    def reset_cmdline_size(self):
+        self.lhs_col.item_types[-1] = "weight", \
+                self.cmdline_weight if self.cmdline_on else 0
+
+    def set_cmdline_size(self, weight=None):
+        if weight is None:
+            weight = self.cmdline_weight
+
+        self.lhs_col.item_types[-1] = "weight", weight
+        self.lhs_col._invalidate()
+
+    def set_cmdline_state(self, state_on):
+        if state_on != self.cmdline_on:
+            self.cmdline_on = state_on
+            self.set_cmdline_size(None if state_on else 0)
 
     def translate_ui_stack_index(self, index):
         # note: self-inverse
@@ -2009,12 +2288,15 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     def dialog(self, content, buttons_and_results,
             title=None, bind_enter_esc=True, focus_buttons=False,
-            extra_bindings=[]):
+            extra_bindings=None):
+        if extra_bindings is None:
+            extra_bindings = []
+
         class ResultSetter:
-            def __init__(subself, res):  # noqa
+            def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 subself.res = res
 
-            def __call__(subself, btn):  # noqa
+            def __call__(subself, btn):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 self.quit_event_loop = [subself.res]
 
         Attr = urwid.AttrMap  # noqa
@@ -2057,17 +2339,17 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 ("fixed", 1, urwid.SolidFill()),
                 w])
 
-        class ResultSetter:
-            def __init__(subself, res):  # noqa
+        class ResultSettingEventHandler:
+            def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 subself.res = res
 
-            def __call__(subself, w, size, key):  # noqa
+            def __call__(subself, w, size, key):  # noqa: N805, E501 # pylint: disable=no-self-argument
                 self.quit_event_loop = [subself.res]
 
         w = SignalWrap(w)
         for key, binding in extra_bindings:
             if isinstance(binding, str):
-                w.listen(key, ResultSetter(binding))
+                w.listen(key, ResultSettingEventHandler(binding))
             else:
                 w.listen(key, binding)
 
@@ -2076,8 +2358,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         w = urwid.Overlay(w, self.top,
                 align="center",
                 valign="middle",
-                width=('relative', 75),
-                height=('relative', 75),
+                width=("relative", 75),
+                height=("relative", 75),
                 )
         w = Attr(w, "background")
 
@@ -2088,63 +2370,98 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         may_use_fancy_formats = not hasattr(urwid.escape, "_fg_attr_xterm")
 
         from pudb.theme import get_palette
-        screen.register_palette(
-                get_palette(may_use_fancy_formats, CONFIG["theme"]))
+        palette = get_palette(may_use_fancy_formats, CONFIG["theme"])
+        if palette:
+            screen.register_palette(palette)
 
     def show_exception_dialog(self, exc_tuple):
-        from pudb.lowlevel import format_exception
+        from traceback import format_exception
 
-        tb_txt = "".join(format_exception(exc_tuple))
-        while True:
-            res = self.dialog(
-                    urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
-                        "The program has terminated abnormally because of "
-                        "an exception.\n\n"
-                        "A full traceback is below. You may recall this "
-                        "traceback at any time using the 'e' key. "
-                        "The debugger has entered post-mortem mode and will "
-                        "prevent further state changes.\n\n"
-                        + tb_txt)])),
-                    title="Program Terminated for Uncaught Exception",
-                    buttons_and_results=[
-                        ("OK", True),
-                        ("Save traceback", "save"),
-                        ])
+        desc = (
+            "The program has terminated abnormally because of an exception.\n\n"
+            "A full traceback is below. You may recall this traceback at any "
+            "time using the 'e' key. The debugger has entered post-mortem mode "
+            "and will prevent further state changes."
+        )
+        tb_txt = "".join(format_exception(*exc_tuple))
+        self._show_exception_dialog(
+            description=desc,
+            error_info=tb_txt,
+            title="Program Terminated for Uncaught Exception",
+            exit_loop_on_ok=True,
+        )
 
-            if res in [True, False]:
-                break
+    def show_internal_exc_dlg(self, exc_tuple):
+        try:
+            self._show_internal_exc_dlg(exc_tuple)
+        except Exception:
+            ui_log.exception("Error while showing error dialog")
 
-            if res == "save":
-                try:
-                    n = 0
-                    from os.path import exists
-                    while True:
-                        if n:
-                            fn = "traceback-%d.txt" % n
-                        else:
-                            fn = "traceback.txt"
+    def _show_internal_exc_dlg(self, exc_tuple):
+        from traceback import format_exception
+        from pudb import VERSION
 
-                        if not exists(fn):
-                            outf = open(fn, "w")
-                            try:
-                                outf.write(tb_txt)
-                            finally:
-                                outf.close()
+        desc = (
+            "Pudb has encountered and safely caught an internal exception.\n\n"
+            "The full traceback and some other information can be found "
+            "below. Please report this information, along with details on "
+            "what you were doing at the time the exception occurred, at: "
+            "https://github.com/inducer/pudb/issues"
+        )
+        error_info = (
+            "python version: {python}\n"
+            "pudb version: {pudb}\n"
+            "urwid version: {urwid}\n"
+            "{tb}\n"
+        ).format(
+            python=sys.version.replace("\n", " "),
+            pudb=VERSION,
+            urwid=".".join(map(str, urwid.version.VERSION)),
+            tb="".join(format_exception(*exc_tuple))
+        )
 
-                            self.message("Traceback saved as %s." % fn,
-                                    title="Success")
+        self._show_exception_dialog(
+            description=desc,
+            error_info=error_info,
+            title="Pudb Internal Exception Encountered",
+        )
 
-                            break
+    def _show_exception_dialog(self, description, error_info, title,
+                               exit_loop_on_ok=False):
+        res = self.dialog(
+            urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
+                "\n\n".join([description, error_info])
+            )])),
+            title=title,
+            buttons_and_results=[
+                ("OK", exit_loop_on_ok),
+                ("Save traceback", "save"),
+            ],
+        )
+        if res == "save":
+            self._save_traceback(error_info)
 
-                        n += 1
+    def _save_traceback(self, error_info):
+        try:
+            from os.path import exists
+            filename = next(
+                fname for n in count()
+                for fname in ["traceback-%d.txt" % n if n else "traceback.txt"]
+                if not exists(fname)
+            )
 
-                except Exception:
-                    io_tb_txt = "".join(format_exception(sys.exc_info()))
-                    self.message(
-                            "An error occurred while trying to write "
-                            "the traceback:\n\n" + io_tb_txt,
-                            title="I/O error")
+            with open(filename, "w") as outf:
+                outf.write(error_info)
 
+            self.message("Traceback saved as %s." % filename, title="Success")
+
+        except Exception:
+            from traceback import format_exception
+            io_tb_txt = "".join(format_exception(*sys.exc_info()))
+            self.message(
+                    "An error occurred while trying to write "
+                    "the traceback:\n\n" + io_tb_txt,
+                    title="I/O error")
     # }}}
 
     # {{{ UI enter/exit
@@ -2168,7 +2485,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     # }}}
 
-    # {{{ interaction
+    # {{{ event loop
 
     def event_loop(self, toplevel=None):
         prev_quit_loop = self.quit_event_loop
@@ -2181,7 +2498,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e033"  # noqa
+        WELCOME_LEVEL = "e044"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2197,6 +2514,68 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2022.1.3:\n\n"
+                    "- Fix finding executable lines for Python 3.11 (Lumir Balhar)\n"
+                    "- Fix the midnight theme (Aaron Meurer)\n"
+                    "- Add a --continue flag (Michael van der Kamp)\n"
+                    "- Various fixes\n"
+
+                    "\nChanges in version 2022.1.2:\n\n"
+                    "- Various fixes\n"
+
+                    "\nChanges in version 2022.1.1:\n\n"
+                    "- Fix ptpython shell invocation with nonempty argv (gh-510)\n"
+                    "- Make some key bindings configurable (Cibin Mathew)\n"
+                    "- Various cleanups (Michael van der Kamp)\n"
+
+                    "\nChanges in version 2022.1:\n\n"
+                    "- Add debug_remote_on_single_rank "
+                    "(PR #498 by Matthias Diener)\n"
+                    "- Improve remote debugging usability\n"
+                    "- Bug fixes\n"
+
+                    "\nChanges in version 2021.2:\n\n"
+                    "- Remaster themes (Michael van der Kamp)\n"
+                    "- Add more internal shell shortcuts (Huy Nguyen Quang)\n"
+                    "- Save internal shell history between sessions "
+                    "(Diego Velazquez)\n"
+                    "- Various bug fixes\n"
+
+                    "\nChanges in version 2021.1:\n\n"
+                    "- Add shortcut to edit files in source and stack view "
+                    "(Gábor Vecsei)\n"
+                    "- Major improvements to the variable view "
+                    "(Michael van der Kamp)\n"
+                    "- Better internal error reporting (Michael van der Kamp)\n"
+
+                    "\nChanges in version 2020.1:\n\n"
+                    "- Add vi keys for the sidebar (Asbjørn Apeland)\n"
+                    "- Add -m command line switch (Elias Dorneles)\n"
+                    "- Debug forked processes (Jonathan Striebel)\n"
+                    "- Robustness and logging for internal errors "
+                    "(Michael Vanderkamp)\n"
+                    "- 'Reverse' remote debugging (jen6)\n"
+
+                    "\nChanges in version 2019.2:\n\n"
+                    "- Auto-hide the command line (Mark Blakeney)\n"
+                    "- Improve help and add jump to breakpoint (Mark Blakeney)\n"
+                    "- Drop Py2.6 support\n"
+                    "- Show callable attributes in var view\n"
+                    "- Allow scrolling sidebar with j/k\n"
+                    "- Fix setting breakpoints in Py3.8 (Aaron Meurer)\n"
+
+                    "\nChanges in version 2019.1:\n\n"
+                    "- Allow 'space' as a key to expand variables (Enrico Troeger)\n"
+                    "- Have a persistent setting on variable visibility \n"
+                    "  (Enrico Troeger)\n"
+                    "- Enable/partially automate opening the debugger in another \n"
+                    "  terminal (Anton Barkovsky)\n"
+                    "- Make sidebar scrollable with j/k (Clayton Craft)\n"
+                    "- Bug fixes.\n"
+
+                    "\nChanges in version 2018.1:\n\n"
+                    "- Bug fixes.\n"
 
                     "\nChanges in version 2017.1.4:\n\n"
                     "- Bug fixes.\n"
@@ -2369,7 +2748,10 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     if k == "window resize":
                         self.size = self.screen.get_cols_rows()
                     else:
-                        toplevel.keypress(self.size, k)
+                        try:
+                            toplevel.keypress(self.size, k)
+                        except Exception:
+                            self.show_internal_exc_dlg(sys.exc_info())
 
             return self.quit_event_loop
         finally:
@@ -2394,12 +2776,12 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
             caption.extend([
                 (None, " "),
-                ("warning", "[POST-MORTEM MODE]")
+                ("header warning", "[POST-MORTEM MODE]")
                 ])
         elif exc_tuple is not None:
             caption.extend([
                 (None, " "),
-                ("warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
+                ("header warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
                 ])
 
         self.caption.set_text(caption)
@@ -2438,7 +2820,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
-    def update_var_view(self, locals=None, globals=None):
+    def update_var_view(self, locals=None, globals=None, focus_index=None):
         if locals is None:
             locals = self.debugger.curframe.f_locals
         if globals is None:
@@ -2448,6 +2830,16 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.locals[:] = make_var_view(
                 self.get_frame_var_info(read_only=True),
                 locals, globals)
+        if focus_index is not None:
+            # Have to set the focus _after_ updating the locals list, as there
+            # appears to be a brief moment while reseting the list when the
+            # list is empty but urwid will attempt to set the focus anyway,
+            # which causes problems.
+            try:
+                self.var_list._w.set_focus(focus_index)
+            except IndexError:
+                # sigh oh well we tried
+                pass
 
     def _get_bp_list(self):
         return [bp
@@ -2471,7 +2863,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 for bp in self._get_bp_list()]
 
     def update_stack(self):
-        def make_frame_ui(frame_lineno):
+        def make_frame_ui(i, frame_lineno):
             frame, lineno = frame_lineno
 
             code = frame.f_code
@@ -2481,13 +2873,17 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 try:
                     class_name = frame.f_locals["self"].__class__.__name__
                 except Exception:
-                    pass
+                    from pudb.lowlevel import ui_log
+                    message = "Failed to determine class name"
+                    ui_log.exception(message)
+                    class_name = "!! %s !!" % message
 
-            return StackFrame(frame is self.debugger.curframe,
+            return StackFrame(i == self.debugger.curindex,
                     code.co_name, class_name,
                     self._format_fname(code.co_filename), lineno)
 
-        frame_uis = [make_frame_ui(fl) for fl in self.debugger.stack]
+        frame_uis = [make_frame_ui(i, fl)
+                for i, fl in enumerate(self.debugger.stack)]
         if CONFIG["current_stack_frame"] == "top":
             frame_uis = frame_uis[::-1]
         elif CONFIG["current_stack_frame"] == "bottom":
@@ -2496,6 +2892,9 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             raise ValueError("invalid value for 'current_stack_frame' pref")
 
         self.stack_walker[:] = frame_uis
+
+    def update_cmdline_win(self):
+        self.set_cmdline_state(not CONFIG["hide_cmdline_win"])
 
     # }}}
 
