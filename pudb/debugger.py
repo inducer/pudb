@@ -327,6 +327,13 @@ class Debugger(bdb.Bdb):
             return
 
         self.curframe, lineno = self.stack[index]
+        # f_locals is a write-through proxy, meaning we can update local
+        # variables in the shell and those changes will be reflected in the
+        # running program. However, every time curframe.f_locals is accessed,
+        # it gets reset to a snapshot of its original value. So we need to
+        # save a copy of it to avoid this (this is the same trick used by
+        # pdb). See https://peps.python.org/pep-0558/ and the discussion on
+        # #571 for more details.
         self.curframe_locals = self.curframe.f_locals
 
         filename = self.curframe.f_code.co_filename
