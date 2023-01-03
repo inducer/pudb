@@ -1434,7 +1434,6 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.debugger.set_continue()
                     end()
 
-
         def jump_to_cursor(w, size, key):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
@@ -1464,7 +1463,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     try:
                         self.debugger.set_jump(
                             self.debugger.curframe, lineno)
-                        self.debugger.stack[self.debugger.curindex] = self.debugger.stack[self.debugger.curindex][0], lineno
+                        self.debugger.stack[self.debugger.curindex] = \
+                            self.debugger.stack[self.debugger.curindex][0], lineno
                         self.debugger.set_step()
                     except ValueError as e:
                         self.message("""\
