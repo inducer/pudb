@@ -53,6 +53,7 @@ Keys:
     c - continue
     r/f - finish current function
     t - run to cursor
+    J - jump to line
     e - show traceback [post-mortem or in exception state]
     b - set/clear breakpoint
     Ctrl-e - open file at current line to edit with $EDITOR
@@ -237,6 +238,9 @@ class Debugger(bdb.Bdb):
                 if frame is self.botframe:
                     break
                 frame = frame.f_back
+
+    def set_jump(self, frame, line):
+        frame.f_lineno = line
 
     def set_trace(self, frame=None, as_breakpoint=None, paused=True):
         """Start debugging from `frame`.
@@ -1431,6 +1435,47 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.debugger.set_continue()
                     end()
 
+        def jump_to_cursor(w, size, key):
+            if self.debugger.post_mortem:
+                self.message("Post-mortem mode: Can't modify state.")
+            else:
+                sline, pos = self.source.get_focus()
+                lineno = pos+1
+
+                bp_source_identifier = \
+                        self.source_code_provider.get_source_identifier()
+
+                if bp_source_identifier is None:
+                    self.message(
+                        "Cannot jump here--"
+                        "source code does not correspond to a file location. "
+                        "(perhaps this is generated code)")
+
+                from pudb.lowlevel import get_breakpoint_invalid_reason
+                invalid_reason = get_breakpoint_invalid_reason(
+                        bp_source_identifier, lineno)
+
+                if invalid_reason is not None:
+                    self.message(
+                        "Cannot jump to the line you indicated, "
+                        "for the following reason:\n\n"
+                        + invalid_reason)
+                else:
+                    try:
+                        self.debugger.set_jump(
+                            self.debugger.curframe, lineno)
+                        self.debugger.stack[self.debugger.curindex] = \
+                            self.debugger.stack[self.debugger.curindex][0], lineno
+                        self.debugger.set_step()
+                    except ValueError as e:
+                        self.message("""\
+Error with jump. Note that jumping only works on the topmost stack frame.
+(The error was: %s)""" % (e.args[0],))
+
+                    # Update UI. end() will run past the line
+                    self.set_current_line(lineno, self.source_code_provider)
+                    self.update_stack()
+
         def go_to_line(w, size, key):
             _, line = self.source.get_focus()
 
@@ -1677,6 +1722,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("r", finish)
         self.source_sigwrap.listen("c", cont)
         self.source_sigwrap.listen("t", run_to_cursor)
+        self.source_sigwrap.listen("J", jump_to_cursor)
 
         self.source_sigwrap.listen("L", go_to_line)
         self.source_sigwrap.listen("/", search)
