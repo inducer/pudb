@@ -44,7 +44,7 @@ HELP_HEADER = r"""
 Key Assignments: Use Arrow Down/Up or Page Down/Up to scroll.
 """
 
-HELP_MAIN = r"""
+HELP_MAIN = rf"""
 Keys:
     Ctrl-p - edit preferences
 
@@ -75,10 +75,10 @@ Keys:
     / - search
     ,/. - search next/previous
 
-    V - focus variables
-    S - focus stack
-    B - focus breakpoint list
-    C - focus code
+    {CONFIG["hotkeys_variables"]} - focus variables
+    {CONFIG["hotkeys_stack"]} - focus stack
+    {CONFIG["hotkeys_breakpoints"]} - focus breakpoint list
+    {CONFIG["hotkeys_code"]} - focus code
 
     F1/? - show this help screen
     q - quit
@@ -89,7 +89,7 @@ Keys:
 
 Shell-related:
     ! - open the external shell (configured in the settings)
-    Ctrl-x - toggle the internal shell focus
+    {CONFIG["hotkeys_toggle_cmdline_focus"]} - toggle the internal shell focus
 
     +/- - grow/shrink inline shell (active in command line history)
     _/= - minimize/maximize inline shell (active in command line history)
@@ -99,7 +99,7 @@ Shell-related:
     Tab - yes, there is (simple) tab completion
 """
 
-HELP_SIDE = r"""
+HELP_SIDE = rf"""
 Sidebar-related (active in sidebar):
     +/- - grow/shrink sidebar width
     _/= - minimize/maximize sidebar width
@@ -136,10 +136,10 @@ Other keys:
     Ctrl-d/u - page down/up
     G/g - end/home
 
-    V - focus variables
-    S - focus stack
-    B - focus breakpoint list
-    C - focus code
+    {CONFIG["hotkeys_variables"]} - focus variables
+    {CONFIG["hotkeys_stack"]} - focus stack
+    {CONFIG["hotkeys_breakpoints"]} - focus breakpoint list
+    {CONFIG["hotkeys_code"]} - focus code
 
     F1/? - show this help screen
     q - quit
@@ -873,7 +873,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ])
 
         self.cmdline_pile = urwid.Pile([
-            ("flow", urwid.Text("Command line: [Ctrl-X]")),
+            ("flow", urwid.Text(
+                f"Command line: [{CONFIG['hotkeys_toggle_cmdline_focus']}]")),
             ("weight", 1, urwid.AttrMap(self.cmdline_list, "command line output")),
             ("flow", self.cmdline_edit_bar),
             ])
@@ -1924,7 +1925,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
 
-        self.top.listen("ctrl x", toggle_cmdline_focus)
+        self.top.listen(CONFIG["hotkeys_toggle_cmdline_focus"], toggle_cmdline_focus)
 
         # {{{ command line sizing
         def set_cmdline_default_size(weight):

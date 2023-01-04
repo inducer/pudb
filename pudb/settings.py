@@ -118,6 +118,7 @@ def load_config():
     conf_dict.setdefault("hotkeys_variables", "V")
     conf_dict.setdefault("hotkeys_stack", "S")
     conf_dict.setdefault("hotkeys_breakpoints", "B")
+    conf_dict.setdefault("hotkeys_toggle_cmdline_focus", "ctrl x")
 
     def normalize_bool_inplace(name):
         try:
@@ -263,7 +264,8 @@ def edit_config(ui, conf_dict):
             bool(conf_dict["prompt_on_quit"]), on_state_change=_update_config,
                 user_data=("prompt_on_quit", None))
 
-    hide_cmdline_win = urwid.CheckBox("Hide command line (Ctrl-X) window "
+    hide_cmdline_win = urwid.CheckBox("Hide command line",
+            f"({conf_dict['hotkeys_toggle_cmdline_focus']}) window "
                                       "when not in use",
             bool(conf_dict["hide_cmdline_win"]), on_state_change=_update_config,
                 user_data=("hide_cmdline_win", None))
