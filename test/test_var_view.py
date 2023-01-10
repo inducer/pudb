@@ -376,10 +376,10 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         self.assert_walks_contents(set())
 
     def test_empty_dict(self):
-        self.assert_walks_contents(dict())
+        self.assert_walks_contents({})
 
     def test_empty_list(self):
-        self.assert_walks_contents(list())
+        self.assert_walks_contents([])
 
     def test_reasonable_class(self):
         """
