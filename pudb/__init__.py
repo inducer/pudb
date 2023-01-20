@@ -165,8 +165,9 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
             dbg.interaction(None, sys.exc_info())
 
         while True:
+            from urwid_readline import ReadlineEdit
             import urwid
-            pre_run_edit = urwid.Edit("", pre_run)
+            pre_run_edit = ReadlineEdit("", pre_run)
 
             if not load_config()["prompt_on_quit"]:
                 return

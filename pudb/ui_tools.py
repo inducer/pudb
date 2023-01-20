@@ -1,5 +1,6 @@
 import urwid
 from urwid.util import calc_width, calc_text_pos
+from urwid_readline import ReadlineEdit
 
 
 # generic urwid helpers -------------------------------------------------------
@@ -302,13 +303,13 @@ class SearchController:
         return False
 
 
-class SearchBox(urwid.Edit):
+class SearchBox(ReadlineEdit):
     def __init__(self, controller):
-        urwid.Edit.__init__(self, [("label", "Search: ")], "")
+        ReadlineEdit.__init__(self, [("label", "Search: ")], "")
         self.controller = controller
 
     def keypress(self, size, key):
-        result = urwid.Edit.keypress(self, size, key)
+        result = ReadlineEdit.keypress(self, size, key)
         txt = self.get_edit_text()
 
         if result is not None:

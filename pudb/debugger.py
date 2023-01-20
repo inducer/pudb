@@ -33,6 +33,7 @@ import sys
 from itertools import count
 from functools import partial
 from types import TracebackType
+from urwid_readline import ReadlineEdit
 
 from pudb.lowlevel import decode_lines, ui_log
 from pudb.settings import load_config, save_config, get_save_config_path
@@ -1041,7 +1042,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ]
 
             if var.watch_expr is not None:
-                watch_edit = urwid.Edit([
+                watch_edit = ReadlineEdit([
                     ("label", "Watch expression: ")
                     ], var.watch_expr.expression)
                 id_segment = [
@@ -1145,7 +1146,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.update_var_view()
 
         def insert_watch(w, size, key):
-            watch_edit = urwid.Edit([
+            watch_edit = ReadlineEdit([
                 ("label", "Watch expression: ")
                 ])
 
@@ -1304,7 +1305,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             enabled_checkbox = urwid.CheckBox(
                     "Enabled", bp.enabled)
-            cond_edit = urwid.Edit([
+            cond_edit = ReadlineEdit([
                 ("label", "Condition:               ")
                 ], cond)
             ign_count_edit = urwid.IntEdit([
@@ -1640,9 +1641,9 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                         FileSourceCodeProvider(self.debugger, filename))
                 self.source_list.set_focus(0)
 
-            class FilterEdit(urwid.Edit):
+            class FilterEdit(ReadlineEdit):
                 def keypress(self, size, key):
-                    result = urwid.Edit.keypress(self, size, key)
+                    result = ReadlineEdit.keypress(self, size, key)
 
                     if result is None:
                         mod_list[:] = build_filtered_mod_list(

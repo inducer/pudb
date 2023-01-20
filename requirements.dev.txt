@@ -3,5 +3,5 @@ Pygments
 pytest
 pytest-cov
 pytest-mock
-urwid
+urwid-readline
 numpy
