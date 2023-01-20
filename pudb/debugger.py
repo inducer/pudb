@@ -24,6 +24,7 @@ THE SOFTWARE.
 """
 
 
+import logging
 import urwid
 import bdb
 import gc
@@ -39,6 +40,8 @@ from pudb.settings import load_config, save_config, get_save_config_path
 
 CONFIG = load_config()
 save_config(CONFIG)
+
+logger = logging.getLogger(__name__)
 
 HELP_HEADER = r"""
 Key Assignments: Use Arrow Down/Up or Page Down/Up to scroll.
@@ -2109,6 +2112,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                         else:
                             runner = shell.custom_shell_dict["pudb_shell"]
 
+                pythonstartup = os.getenv("PYTHONSTARTUP", os.devnull)
+                try:
+                    with open(pythonstartup, "r") as f:
+                        code = f.read()
+                    exec(code, curframe.f_globals, curframe.f_locals)
+                except Exception as e:
+                    logger.warning("skip $PYTHONSTARTUP due to " + " ".join(e.args))
                 runner(curframe.f_globals, curframe.f_locals)
 
             self.update_var_view()
