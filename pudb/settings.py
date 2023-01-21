@@ -26,6 +26,7 @@ THE SOFTWARE.
 import os
 import sys
 
+from urwid_readline import ReadlineEdit
 from configparser import ConfigParser
 from pudb.lowlevel import (lookup_module, get_breakpoint_invalid_reason,
                            settings_log)
@@ -277,7 +278,7 @@ def edit_config(ui, conf_dict):
     shells = ["internal", "classic", "ipython", "ipython_kernel", "bpython",
               "ptpython", "ptipython"]
     known_shell = conf_dict["shell"] in shells
-    shell_edit = urwid.Edit(edit_text=conf_dict["custom_shell"])
+    shell_edit = ReadlineEdit(edit_text=conf_dict["custom_shell"])
     shell_edit_list_item = urwid.AttrMap(shell_edit, "input", "focused input")
 
     shell_rb_group = []
@@ -307,7 +308,7 @@ def edit_config(ui, conf_dict):
     known_theme = conf_dict["theme"] in THEMES
 
     theme_rb_group = []
-    theme_edit = urwid.Edit(edit_text=conf_dict["custom_theme"])
+    theme_edit = ReadlineEdit(edit_text=conf_dict["custom_theme"])
     theme_edit_list_item = urwid.AttrMap(theme_edit, "input", "focused input")
     theme_rbs = [
             urwid.RadioButton(theme_rb_group, name,
@@ -348,7 +349,7 @@ def edit_config(ui, conf_dict):
     stringifier_opts = list(STRINGIFIERS.keys())
     known_stringifier = conf_dict["stringifier"] in stringifier_opts
     stringifier_rb_group = []
-    stringifier_edit = urwid.Edit(edit_text=conf_dict["custom_stringifier"])
+    stringifier_edit = ReadlineEdit(edit_text=conf_dict["custom_stringifier"])
     stringifier_info = urwid.Text(
         "This is the default function that will be called on variables in the "
         "variables list. You can also change this on a per-variable basis by "
