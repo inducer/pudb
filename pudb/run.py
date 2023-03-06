@@ -2,7 +2,16 @@ COMMAND = {"zsh": "{_command_names -e}"}
 PREAMBLE = {
     "zsh": """\
 _script_args() {
-  _arguments -S -s '(-)1:script_args:_files -g "*.py"' '*: :_files'
+  # pudb -m <TAB>
+  if (($words[(I)-m] == $#words - 1)); then
+    _python_modules
+  # pudb -m XXX <TAB>
+  elif (($words[(I)-m])); then
+    _files
+  # pudb <TAB>
+  else
+    _arguments -S -s '(-)1:script_args:_files -g "*.py"' '*: :_files'
+  fi
 }
 """,
 }
