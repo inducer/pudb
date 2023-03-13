@@ -264,7 +264,7 @@ def edit_config(ui, conf_dict):
             bool(conf_dict["prompt_on_quit"]), on_state_change=_update_config,
                 user_data=("prompt_on_quit", None))
 
-    hide_cmdline_win = urwid.CheckBox("Hide command line",
+    hide_cmdline_win = urwid.CheckBox("Hide command line"
             f"({conf_dict['hotkeys_toggle_cmdline_focus']}) window "
                                       "when not in use",
             bool(conf_dict["hide_cmdline_win"]), on_state_change=_update_config,
