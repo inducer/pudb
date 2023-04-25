@@ -96,7 +96,7 @@ Shell-related:
     _/= - minimize/maximize inline shell (active in command line history)
 
     Ctrl-v - insert newline
-    Ctrl-n/p - browse command line history
+    Ctrl-n/p - browse command history or clear/recall prompt
     Tab - yes, there is (simple) tab completion
 """
 
@@ -851,6 +851,10 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def clear_cmdline_history(btn):
             del self.cmdline_contents[:]
+            # clear the command input text too,
+            # but save it to be retrieved on cmdline_history_prev()
+            self.cmdline_history_position = -1
+            cmdline_history_browse(1)
 
         def initialize_cmdline_history(path):
             dq = partial(deque, maxlen=5000)
@@ -865,6 +869,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                                                  "internal-cmdline-history.txt")
 
         self.cmdline_history = initialize_cmdline_history(self.cmdline_history_path)
+        self.cmdline_saved_edit_text = ""
         self.cmdline_history_position = -1
 
         self.cmdline_edit_bar = urwid.Columns([
@@ -1895,17 +1900,40 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 sys.stderr = prev_sys_stderr
 
         def cmdline_history_browse(direction):
-            if self.cmdline_history_position == -1:
-                self.cmdline_history_position = len(self.cmdline_history)
+            # Browsing the command line history can be illustrated by moving up/down
+            # in the following table (no wrap-around).
+            # The first column shows what is written in the command input text field,
+            # the second one the corresponding value of self.cmdline_history_position
+            # The actual index into the history list is given by the last column.
+            #                             | history  |   history
+            #      command line text      | position | list index
+            # ----------------------------|----------|-----------
+            # oldest_command              |    2     |     0
+            # medium_command              |    1     |     1
+            # recent_command              |    0     |     2
+            # <current / saved edit text> |   -1     |
+            #     <edit text cleared>     |   -1     |
+            def pos_text(pos, text):
+                if pos == -1:
+                    if text:
+                        # currently editing a command, save it to return to it later
+                        self.cmdline_saved_edit_text = text
+                    if direction > 0:
+                        # clear command to be able to write a different one
+                        return -1, ""
+                    if direction < 0 and not text and self.cmdline_saved_edit_text:
+                        # return to last saved command
+                        return -1, self.cmdline_saved_edit_text
 
-            self.cmdline_history_position += direction
+                max_hist_index = len(self.cmdline_history) - 1
+                pos = max(-1, min(pos - direction, max_hist_index))
 
-            if 0 <= self.cmdline_history_position < len(self.cmdline_history):
-                self.cmdline_edit.edit_text = \
-                        self.cmdline_history[self.cmdline_history_position]
-            else:
-                self.cmdline_history_position = -1
-                self.cmdline_edit.edit_text = ""
+                if pos == -1:
+                    return -1, self.cmdline_saved_edit_text
+                return pos, self.cmdline_history[max_hist_index - pos]
+
+            self.cmdline_history_position, self.cmdline_edit.edit_text = pos_text(
+                self.cmdline_history_position, self.cmdline_edit.edit_text)
             self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
 
         def cmdline_history_prev(w, size, key):
