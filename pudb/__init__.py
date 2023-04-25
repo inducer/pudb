@@ -91,8 +91,12 @@ def _get_debugger(**kwargs):
 
 
 def _have_debugger():
-    from pudb.debugger import Debugger
-    return bool(Debugger._current_debugger)
+    try:
+        from pudb.debugger import Debugger
+        return bool(Debugger._current_debugger)
+    except ImportError:
+        # Import cycles may happen if function is called during early startup
+        return False
 
 
 import signal  # noqa
