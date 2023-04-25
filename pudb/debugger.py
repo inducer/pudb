@@ -32,6 +32,7 @@ import sys
 
 from itertools import count
 from functools import partial
+from collections import deque
 from types import TracebackType
 
 from pudb.lowlevel import decode_lines, ui_log
@@ -852,20 +853,19 @@ class DebuggerUI(FrameVarInfoKeeper):
             del self.cmdline_contents[:]
 
         def initialize_cmdline_history(path):
-
+            dq = partial(deque, maxlen=5000)
             try:
                 # Load global history if present
                 with open(path, "r") as histfile:
-                    return histfile.read().splitlines()
+                    return dq(histfile.read().splitlines())
             except FileNotFoundError:
-                return []
+                return dq()
 
         self.cmdline_history_path = os.path.join(get_save_config_path(),
                                                  "internal-cmdline-history.txt")
 
         self.cmdline_history = initialize_cmdline_history(self.cmdline_history_path)
         self.cmdline_history_position = -1
-        self.cmdline_history_limit = 5000
 
         self.cmdline_edit_bar = urwid.Columns([
                 self.cmdline_edit_sigwrap,
@@ -1856,9 +1856,6 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
             if not self.cmdline_history or cmd != self.cmdline_history[-1]:
                 self.cmdline_history.append(cmd)
-                # Limit history size
-                if len(self.cmdline_history) > self.cmdline_history_limit:
-                    del self.cmdline_history[0]
 
             self.cmdline_history_position = -1
 
