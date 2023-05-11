@@ -868,16 +868,17 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.cmdline_edit_bar = urwid.Columns([
                 self.cmdline_edit_sigwrap,
-                ("fixed", 10, AttrMap(
+                (urwid.FIXED, 10, AttrMap(
                     urwid.Button("Clear", clear_cmdline_history),
                     "command line clear button", "command line focused button"))
                 ])
 
         self.cmdline_pile = urwid.Pile([
-            ("flow", urwid.Text(
+            (urwid.FLOW, urwid.Text(
                 f"Command line: [{CONFIG['hotkeys_toggle_cmdline_focus']}]")),
-            ("weight", 1, urwid.AttrMap(self.cmdline_list, "command line output")),
-            ("flow", self.cmdline_edit_bar),
+            (urwid.WEIGHT, 1, urwid.AttrMap(
+                self.cmdline_list, "command line output")),
+            (urwid.FLOW, self.cmdline_edit_bar),
             ])
         self.cmdline_sigwrap = SignalWrap(
                 urwid.AttrMap(self.cmdline_pile, None, "focused sidebar")
@@ -885,8 +886,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_on = not CONFIG["hide_cmdline_win"]
         self.cmdline_weight = float(CONFIG.get("cmdline_height", 1))
         self.lhs_col = urwid.Pile([
-            ("weight", 5, self.source_attr),
-            ("weight", self.cmdline_weight if self.cmdline_on else 0,
+            (urwid.WEIGHT, 5, self.source_attr),
+            (urwid.WEIGHT, self.cmdline_weight if self.cmdline_on else 0,
                 self.cmdline_sigwrap),
             ])
 
@@ -907,16 +908,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 urwid.ListBox(self.bp_walker))
 
         self.rhs_col = urwid.Pile([
-            ("weight", float(CONFIG["variables_weight"]), AttrMap(urwid.Pile([
-                ("flow", urwid.Text(make_hotkey_markup("_Variables:"))),
+            (urwid.WEIGHT, float(CONFIG["variables_weight"]), AttrMap(urwid.Pile([
+                (urwid.FLOW, urwid.Text(make_hotkey_markup("_Variables:"))),
                 AttrMap(self.var_list, "variables"),
                 ]), None, "focused sidebar"),),
-            ("weight", float(CONFIG["stack_weight"]), AttrMap(urwid.Pile([
-                ("flow", urwid.Text(make_hotkey_markup("_Stack:"))),
+            (urwid.WEIGHT, float(CONFIG["stack_weight"]), AttrMap(urwid.Pile([
+                (urwid.FLOW, urwid.Text(make_hotkey_markup("_Stack:"))),
                 AttrMap(self.stack_list, "stack"),
                 ]), None, "focused sidebar"),),
-            ("weight", float(CONFIG["breakpoints_weight"]), AttrMap(urwid.Pile([
-                ("flow", urwid.Text(make_hotkey_markup("_Breakpoints:"))),
+            (urwid.WEIGHT, float(CONFIG["breakpoints_weight"]), AttrMap(urwid.Pile([
+                (urwid.FLOW, urwid.Text(make_hotkey_markup("_Breakpoints:"))),
                 AttrMap(self.bp_list, "breakpoint"),
                 ]), None, "focused sidebar"),),
             ])
@@ -932,8 +933,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.columns = urwid.Columns(
                     [
-                        ("weight", 1, self.lhs_col),
-                        ("weight", float(CONFIG["sidebar_width"]),
+                        (urwid.WEIGHT, 1, self.lhs_col),
+                        (urwid.WEIGHT, float(CONFIG["sidebar_width"]),
                             self.rhs_col_sigwrap),
                         ],
                     dividechars=1)
@@ -1666,8 +1667,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             lb = urwid.ListBox(mod_list)
 
             w = urwid.Pile([
-                ("flow", urwid.AttrMap(filt_edit, "input", "focused input")),
-                ("fixed", 1, urwid.SolidFill()),
+                (urwid.FLOW, urwid.AttrMap(filt_edit, "input", "focused input")),
+                (urwid.FIXED, 1, urwid.SolidFill()),
                 urwid.AttrMap(lb, "selectable")])
 
             while True:
@@ -2347,7 +2348,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         w = urwid.Columns([
             content,
-            ("fixed", 15, urwid.ListBox(urwid.SimpleListWalker(button_widgets))),
+            (urwid.FIXED, 15, urwid.ListBox(urwid.SimpleListWalker(button_widgets))),
             ], dividechars=1)
 
         if focus_buttons:
@@ -2355,10 +2356,10 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         if title is not None:
             w = urwid.Pile([
-                ("flow", urwid.AttrMap(
+                (urwid.FLOW, urwid.AttrMap(
                     urwid.Text(title, align="center"),
                     "dialog title")),
-                ("fixed", 1, urwid.SolidFill()),
+                (urwid.FIXED, 1, urwid.SolidFill()),
                 w])
 
         class ResultSettingEventHandler:
@@ -2858,7 +2859,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             # list is empty but urwid will attempt to set the focus anyway,
             # which causes problems.
             try:
-                self.var_list._w.focus = focus_index
+                self.var_list._w.focus_position = focus_index
             except IndexError:
                 # sigh oh well we tried
                 pass
