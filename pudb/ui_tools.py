@@ -89,6 +89,14 @@ def labelled_value(label, value):
         "fixed value", "fixed value")
 
 
+def find_widget_in_container(container, widget) -> int:
+    for i, (w, _) in enumerate(container.contents):
+        if w == widget:
+            return i
+
+    raise ValueError(f"Widget not found in '{type(container).__name__}': {widget!r}")
+
+
 class SelectableText(urwid.Text):
     def selectable(self):
         return True

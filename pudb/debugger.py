@@ -582,7 +582,8 @@ class Debugger(bdb.Bdb):
 
 # UI stuff --------------------------------------------------------------------
 
-from pudb.ui_tools import make_hotkey_markup, labelled_value, \
+from pudb.ui_tools import \
+        make_hotkey_markup, labelled_value, find_widget_in_container, \
         SelectableText, SignalWrap, StackFrame, BreakpointFrame
 
 from pudb.var_view import FrameVarInfoKeeper
@@ -948,7 +949,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
 
-            weight = self.rhs_col.item_types[index][1]
+            weight = self.rhs_col.contents[index][1][1]
 
             if direction < 0:
                 if weight > 1/5:
@@ -959,7 +960,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             CONFIG[name+"_weight"] = weight
             save_config(CONFIG)
-            self.rhs_col.item_types[index] = "weight", weight
+            self.rhs_col.contents[index] = (
+                self.rhs_col.contents[index][0],
+                (urwid.WEIGHT, weight))
             self.rhs_col._invalidate()
 
         # {{{ variables listeners
@@ -981,7 +984,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             return None
 
         def change_var_state(w, size, key):
-            var, pos = self.var_list._w.get_focus()
+            pos = self.var_list._w.focus_position
+            var = self.var_list._w.focus
 
             if var is None:
                 return
@@ -1027,7 +1031,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.update_var_view(focus_index=focus_index)
 
         def edit_inspector_detail(w, size, key):
-            var, pos = self.var_list._w.get_focus()
+            var = self.var_list._w.focus
 
             if var is None:
                 return
@@ -1193,7 +1197,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         # {{{ stack listeners
 
         def examine_frame(w, size, key):
-            _, pos = self.stack_list._w.get_focus()
+            pos = self.stack_list._w.focus_position
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.stack_list.listen("enter", examine_frame)
@@ -1223,7 +1227,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                              title="File is changed")
 
         def open_editor_on_stack_frame(w, size, key):
-            _, pos = self.stack_list._w.get_focus()
+            pos = self.stack_list._w.focus_position
             index = self.translate_ui_stack_index(pos)
 
             curframe, line_number = self.debugger.stack[index]
@@ -1267,7 +1271,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def handle_delete_breakpoint(w, size, key):
             bp_list = self._get_bp_list()
             if bp_list:
-                _, pos = self.bp_list._w.get_focus()
+                pos = self.bp_list._w.focus_position
                 bp = bp_list[pos]
                 delete_breakpoint(bp)
 
@@ -1281,7 +1285,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 set_breakpoint_source(bp)
 
         def enable_disable_breakpoint(w, size, key):
-            bp_entry, pos = self.bp_list._w.get_focus()
+            pos = self.bp_list._w.focus_position
+            bp_entry = self.bp_list._w.focus
             if bp_entry is None:
                 return
             bp = self._get_bp_list()[pos]
@@ -1290,7 +1295,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             set_breakpoint_source(bp)
 
         def examine_breakpoint(w, size, key):
-            bp_entry, pos = self.bp_list._w.get_focus()
+            pos = self.bp_list._w.focus_position
+            bp_entry = self.bp_list._w.focus
 
             if bp_entry is None:
                 return
@@ -1340,7 +1346,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif result == "loc":
                 self.show_line(bp.line,
                         FileSourceCodeProvider(self.debugger, bp.file))
-                self.columns.set_focus(0)
+                self.columns.focus_position = 0
             elif result == "del":
                 delete_breakpoint(bp)
 
@@ -1348,7 +1354,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             set_breakpoint_source(bp)
 
         def show_breakpoint(w, size, key):
-            bp_entry, pos = self.bp_list._w.get_focus()
+            pos = self.bp_list._w.focus_position
+            bp_entry = self.bp_list._w.focus
 
             if bp_entry is not None:
                 bp = self._get_bp_list()[pos]
@@ -1405,7 +1412,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
-                sline, pos = self.source.get_focus()
+                pos = self.source.focus
                 lineno = pos+1
 
                 bp_source_identifier = \
@@ -1439,7 +1446,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
-                sline, pos = self.source.get_focus()
+                pos = self.source.focus
                 lineno = pos+1
 
                 bp_source_identifier = \
@@ -1477,7 +1484,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     self.update_stack()
 
         def go_to_line(w, size, key):
-            _, line = self.source.get_focus()
+            line = self.source.focus
 
             lineno_edit = urwid.IntEdit([
                 ("label", "Go to Line   :")
@@ -1498,7 +1505,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 value = lineno_edit.value()
                 if value:
                     lineno = min(max(0, int(value)-1), len(self.source)-1)
-                    self.source.set_focus(lineno)
+                    self.source.focus = lineno
 
         def scroll_left(w, size, key):
             self.source_hscroll_start = max(
@@ -1526,7 +1533,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     self.source_code_provider.get_source_identifier()
 
             if bp_source_identifier:
-                sline, pos = self.source.get_focus()
+                pos = self.source.focus
+                sline = self.source[pos]
                 lineno = pos+1
 
                 existing_breaks = self.debugger.get_breaks(
@@ -1672,7 +1680,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.last_module_filter = filt_edit.get_edit_text()
 
                 if result is True:
-                    widget, pos = lb.get_focus()
+                    pos = lb.focus_position
+                    widget = lb.focus
                     if widget is new_mod_entry:
                         new_mod_name = filt_edit.get_edit_text()
                         try:
@@ -1694,7 +1703,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 elif result is False:
                     break
                 elif result == "reload":
-                    widget, pos = lb.get_focus()
+                    pos = lb.focus_position
+                    widget = lb.focus
                     if widget is not new_mod_entry:
                         mod_name = widget.base_widget.get_text()[0]
                         mod = sys.modules[mod_name]
@@ -1709,7 +1719,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                         self.set_source_code_provider(self.source_code_provider,
                                 force_update=True)
 
-                        _, pos = self.stack_list._w.get_focus()
+                        pos = self.stack_list._w.focus_position
                         self.debugger.set_frame_index(
                                 self.translate_ui_stack_index(pos))
 
@@ -1905,18 +1915,20 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             cmdline_history_browse(1)
 
         def toggle_cmdline_focus(w, size, key):
-            self.columns.set_focus(self.lhs_col)
-            if self.lhs_col.get_focus() is self.cmdline_sigwrap:
+            self.columns.focus_position = \
+                    find_widget_in_container(self.columns, self.lhs_col)
+            if self.lhs_col.focus is self.cmdline_sigwrap:
                 if CONFIG["hide_cmdline_win"]:
                     self.set_cmdline_state(False)
-                self.lhs_col.set_focus(self.search_controller.search_AttrMap
+                self.lhs_col.focus = (
+                        self.search_controller.search_AttrMap
                         if self.search_controller.search_box else
                         self.source_attr)
             else:
                 if CONFIG["hide_cmdline_win"]:
                     self.set_cmdline_state(True)
-                self.cmdline_pile.set_focus(self.cmdline_edit_bar)
-                self.lhs_col.set_focus(self.cmdline_sigwrap)
+                self.cmdline_pile.focus = self.cmdline_edit_bar
+                self.lhs_col.focus = self.cmdline_sigwrap
 
         self.cmdline_edit_sigwrap.listen("tab", cmdline_tab_complete)
         self.cmdline_edit_sigwrap.listen("ctrl v", cmdline_append_newline)
@@ -1974,7 +1986,9 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             CONFIG["sidebar_width"] = weight
             save_config(CONFIG)
 
-            self.columns.column_types[1] = "weight", weight
+            self.columns.contents[1] = (
+                    self.columns.contents[1][0],
+                    (urwid.WEIGHT, weight))
             self.columns._invalidate()
 
         def min_sidebar(w, size, key):
@@ -1984,7 +1998,9 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             CONFIG["sidebar_width"] = weight
             save_config(CONFIG)
 
-            self.columns.column_types[1] = "weight", weight
+            self.columns.contents[1] = (
+                    self.columns.contents[1][0],
+                    (urwid.WEIGHT, weight))
             self.columns._invalidate()
 
         def grow_sidebar(w, size, key):
@@ -1996,7 +2012,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 weight *= 1.25
                 CONFIG["sidebar_width"] = weight
                 save_config(CONFIG)
-                self.columns.column_types[1] = "weight", weight
+                self.columns.column_types[1] = urwid.WEIGHT, weight
                 self.columns._invalidate()
 
         def shrink_sidebar(w, size, key):
@@ -2008,7 +2024,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 weight /= 1.25
                 CONFIG["sidebar_width"] = weight
                 save_config(CONFIG)
-                self.columns.column_types[1] = "weight", weight
+                self.columns.column_types[1] = urwid.WEIGHT, weight
                 self.columns._invalidate()
 
         self.rhs_col_sigwrap.listen("=", max_sidebar)
@@ -2120,16 +2136,18 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 return run_external_cmdline(w, size, key)
 
         def focus_code(w, size, key):
-            self.columns.set_focus(self.lhs_col)
-            self.lhs_col.set_focus(self.source_attr)
+            self.columns.focus_position = \
+                    find_widget_in_container(self.columns, self.lhs_col)
+            self.lhs_col.focus = self.source_attr
 
         class RHColumnFocuser:
             def __init__(self, idx):
                 self.idx = idx
 
             def __call__(subself, w, size, key):  # noqa # pylint: disable=no-self-argument
-                self.columns.set_focus(self.rhs_col_sigwrap)
-                self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
+                self.columns.focus_position = \
+                        find_widget_in_container(self.columns, self.rhs_col_sigwrap)
+                self.rhs_col.focus = subself.idx
 
         def quit(w, size, key):
             with open(self.cmdline_history_path, "w") as history:
@@ -2147,7 +2165,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             self.message(pages, title="PuDB - The Python Urwid Debugger")
 
         def edit_current_frame(w, size, key):
-            _, pos = self.source.get_focus()
+            pos = self.source.focus
             source_identifier = \
                     self.source_code_provider.get_source_identifier()
 
@@ -2252,14 +2270,17 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.set_cmdline_state(True)
 
     def reset_cmdline_size(self):
-        self.lhs_col.item_types[-1] = "weight", \
-                self.cmdline_weight if self.cmdline_on else 0
+        self.lhs_col.contents[-1] = (
+                self.lhs_col.contents[-1][0],
+                (urwid.WEIGHT, self.cmdline_weight if self.cmdline_on else 0))
 
     def set_cmdline_size(self, weight=None):
         if weight is None:
             weight = self.cmdline_weight
 
-        self.lhs_col.item_types[-1] = "weight", weight
+        self.lhs_col.contents[-1] = (
+                self.lhs_col.contents[-1][0],
+                (urwid.WEIGHT, weight))
         self.lhs_col._invalidate()
 
     def set_cmdline_state(self, state_on):
@@ -2330,7 +2351,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             ], dividechars=1)
 
         if focus_buttons:
-            w.set_focus_column(1)
+            w.focus_position = 1
 
         if title is not None:
             w = urwid.Pile([
@@ -2837,7 +2858,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             # list is empty but urwid will attempt to set the focus anyway,
             # which causes problems.
             try:
-                self.var_list._w.set_focus(focus_index)
+                self.var_list._w.focus = focus_index
             except IndexError:
                 # sigh oh well we tried
                 pass
