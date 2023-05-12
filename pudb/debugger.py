@@ -92,8 +92,8 @@ Shell-related:
     ! - open the external shell (configured in the settings)
     {CONFIG["hotkeys_toggle_cmdline_focus"]} - toggle the internal shell focus
 
-    +/- - grow/shrink inline shell (active in command line history)
-    _/= - minimize/maximize inline shell (active in command line history)
+    +/- - grow/shrink inline shell (active in results scrollback)
+    _/= - minimize/maximize inline shell (active in results scrollback)
 
     Ctrl-v - insert newline
     Ctrl-n/p, Arrow down/up - browse command history or clear/recall prompt
