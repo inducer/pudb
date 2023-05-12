@@ -96,7 +96,7 @@ Shell-related:
     _/= - minimize/maximize inline shell (active in command line history)
 
     Ctrl-v - insert newline
-    Ctrl-n/p - browse command history or clear/recall prompt
+    Ctrl-n/p, Arrow down/up - browse command history or clear/recall prompt
     Tab - yes, there is (simple) tab completion
 """
 
@@ -1961,6 +1961,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.cmdline_edit_sigwrap.listen("tab", cmdline_tab_complete)
         self.cmdline_edit_sigwrap.listen("ctrl v", cmdline_append_newline)
         self.cmdline_edit_sigwrap.listen("enter", cmdline_exec)
+        self.cmdline_edit_sigwrap.listen("down", cmdline_history_next)
+        self.cmdline_edit_sigwrap.listen("up", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("ctrl n", cmdline_history_next)
         self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
