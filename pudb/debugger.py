@@ -1863,6 +1863,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.cmdline_history.append(cmd)
 
             self.cmdline_history_position = -1
+            self.cmdline_saved_edit_text = ""
 
             prev_sys_stdin = sys.stdin
             prev_sys_stdout = sys.stdout
