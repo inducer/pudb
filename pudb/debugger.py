@@ -582,9 +582,10 @@ class Debugger(bdb.Bdb):
 
 # UI stuff --------------------------------------------------------------------
 
-from pudb.ui_tools import \
-        make_hotkey_markup, labelled_value, find_widget_in_container, \
-        SelectableText, SignalWrap, StackFrame, BreakpointFrame
+from pudb.ui_tools import (
+        make_hotkey_markup, labelled_value,
+        focus_widget_in_container,
+        SelectableText, SignalWrap, StackFrame, BreakpointFrame)
 
 from pudb.var_view import FrameVarInfoKeeper
 
@@ -1362,6 +1363,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 bp = self._get_bp_list()[pos]
                 self.show_line(bp.line,
                         FileSourceCodeProvider(self.debugger, bp.file))
+                self.columns.focus_position = 0
 
         self.bp_list.listen("enter", show_breakpoint)
         self.bp_list.listen("d", handle_delete_breakpoint)
@@ -1506,7 +1508,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 value = lineno_edit.value()
                 if value:
                     lineno = min(max(0, int(value)-1), len(self.source)-1)
-                    self.source.focus = lineno
+                    self.source_list.focus_position = lineno
 
         def scroll_left(w, size, key):
             self.source_hscroll_start = max(
@@ -1534,7 +1536,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     self.source_code_provider.get_source_identifier()
 
             if bp_source_identifier:
-                pos = self.source.focus
+                pos = self.source_list.focus_position
                 sline = self.source[pos]
                 lineno = pos+1
 
@@ -1916,20 +1918,20 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             cmdline_history_browse(1)
 
         def toggle_cmdline_focus(w, size, key):
-            self.columns.focus_position = \
-                    find_widget_in_container(self.columns, self.lhs_col)
+            focus_widget_in_container(self.columns, self.lhs_col)
             if self.lhs_col.focus is self.cmdline_sigwrap:
                 if CONFIG["hide_cmdline_win"]:
                     self.set_cmdline_state(False)
-                self.lhs_col.focus = (
+                focus_widget_in_container(
+                        self.lhs_col,
                         self.search_controller.search_AttrMap
                         if self.search_controller.search_box else
                         self.source_attr)
             else:
                 if CONFIG["hide_cmdline_win"]:
                     self.set_cmdline_state(True)
-                self.cmdline_pile.focus = self.cmdline_edit_bar
-                self.lhs_col.focus = self.cmdline_sigwrap
+                focus_widget_in_container(self.cmdline_pile, self.cmdline_edit_bar)
+                focus_widget_in_container(self.lhs_col, self.cmdline_sigwrap)
 
         self.cmdline_edit_sigwrap.listen("tab", cmdline_tab_complete)
         self.cmdline_edit_sigwrap.listen("ctrl v", cmdline_append_newline)
@@ -2137,18 +2139,16 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 return run_external_cmdline(w, size, key)
 
         def focus_code(w, size, key):
-            self.columns.focus_position = \
-                    find_widget_in_container(self.columns, self.lhs_col)
-            self.lhs_col.focus = self.source_attr
+            focus_widget_in_container(self.columns, self.lhs_col)
+            focus_widget_in_container(self.lhs_col, self.source_attr)
 
         class RHColumnFocuser:
             def __init__(self, idx):
                 self.idx = idx
 
             def __call__(subself, w, size, key):  # noqa # pylint: disable=no-self-argument
-                self.columns.focus_position = \
-                        find_widget_in_container(self.columns, self.rhs_col_sigwrap)
-                self.rhs_col.focus = subself.idx
+                focus_widget_in_container(self.columns, self.rhs_col_sigwrap)
+                self.rhs_col.focus_position = subself.idx
 
         def quit(w, size, key):
             with open(self.cmdline_history_path, "w") as history:
@@ -2826,7 +2826,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         line -= 1
         if line >= 0 and line < len(self.source):
-            self.source_list.set_focus(line)
+            self.source_list.focus_position = line
             if changed_file:
                 self.source_list.set_focus_valign("middle")
 
