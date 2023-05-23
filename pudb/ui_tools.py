@@ -97,6 +97,10 @@ def find_widget_in_container(container, widget) -> int:
     raise ValueError(f"Widget not found in '{type(container).__name__}': {widget!r}")
 
 
+def focus_widget_in_container(container, widget) -> None:
+    container.focus_position = find_widget_in_container(container, widget)
+
+
 class SelectableText(urwid.Text):
     def selectable(self):
         return True
