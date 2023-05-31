@@ -1999,10 +1999,16 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 weight /= 1.25
                 set_cmdline_default_size(weight)
 
+        def cmdline_results_scroll(w, size, key):
+            size = self.cmdline_pile.get_item_size(size, 1, True)
+            self.cmdline_list.keypress(size, key.lstrip("shift "))
+
         self.cmdline_sigwrap.listen("=", max_cmdline)
         self.cmdline_sigwrap.listen("+", grow_cmdline)
         self.cmdline_sigwrap.listen("_", min_cmdline)
         self.cmdline_sigwrap.listen("-", shrink_cmdline)
+        for key in ("page up", "page down"):
+            self.cmdline_sigwrap.listen("shift " + key, cmdline_results_scroll)
 
         # }}}
 
