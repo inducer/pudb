@@ -655,7 +655,7 @@ class SourceCodeProvider:
 
 class NullSourceCodeProvider(SourceCodeProvider):
     def __eq__(self, other):
-        return type(self) == type(other)
+        return type(self) is type(other)
 
     def identifier(self):
         return "<no source code>"
@@ -691,7 +691,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         self.file_name = debugger.canonic(file_name)
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.file_name == other.file_name
+        return type(self) is type(other) and self.file_name == other.file_name
 
     def identifier(self):
         return self.file_name
@@ -736,7 +736,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 
     def __eq__(self, other):
         return (
-                type(self) == type(other)
+                type(self) is type(other)
                 and self.function_name == other.function_name
                 and self.code is other.code)
 
