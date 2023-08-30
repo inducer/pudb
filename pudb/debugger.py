@@ -186,8 +186,6 @@ class Debugger(bdb.Bdb):
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
                  _continue_at_start=False, **kwargs):
 
-        if Debugger._current_debugger:
-            raise ValueError("a Debugger instance already exists")
         self._current_debugger.append(self)
 
         # Pass remaining kwargs to python debugger framework
