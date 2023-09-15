@@ -97,6 +97,7 @@ Shell-related:
 
     Ctrl-v - insert newline
     Ctrl-n/p, Arrow down/up - browse command history or clear/recall prompt
+    Shift-Page down/up - browse in the results scrollback
     Tab - yes, there is (simple) tab completion
 """
 
