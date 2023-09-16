@@ -2,8 +2,8 @@ from pudb.themes.utils import add_setting, link
 
 # ------------------------------------------------------------------------------
 # Colors are approximations of https://www.nordtheme.com/docs/colors-and-palettes
-# Polar Night is made up of four darker colors (nord 0, nord1, nord2, and nord3) 
-# that are commonly used for base elements like backgrounds or text color in 
+# Polar Night is made up of four darker colors (nord 0, nord1, nord2, and nord3)
+# that are commonly used for base elements like backgrounds or text color in
 # bright ambiance designs.
 # ------------------------------------------------------------------------------
 
@@ -29,16 +29,13 @@ nord5 = "h255"
 # We don't use nord 6 because it is not representable.
 # nord6 = "h256"
 
-
 # nord7 is a calm and highly contrasted color reminiscent of
 # frozen polar water.
 nord7 = "h109"
 
-
 # nord8 is a bright and shiny primary accent color reminiscent of pure
 # and clear ice.
 nord8 = "h110"
-
 
 # nord9 is a more darkened and less saturated color reminiscent of
 # arctic waters.
