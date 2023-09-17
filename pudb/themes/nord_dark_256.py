@@ -2,6 +2,9 @@ from pudb.themes.utils import add_setting, link
 
 # ------------------------------------------------------------------------------
 # Colors are approximations of https://www.nordtheme.com/docs/colors-and-palettes
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 # Polar Night is made up of four darker colors (nord 0, nord1, nord2, and nord3)
 # that are commonly used for base elements like backgrounds or text color in
 # bright ambiance designs.
@@ -17,17 +20,27 @@ nord1 = "h238"
 nord2 = "h239"
 
 # nord3 is the brightest shade color based on nord0.
-nord3 = "h240"
+nord3 = "h243"
+
+# ------------------------------------------------------------------------------
+# Snow Storm is made up of three bright colors that are commonly used for text
+# colors or base UI elements in bright ambiance designs.
+# ------------------------------------------------------------------------------
 
 # nord4 is the origin color or the Snow Storm palette.
 nord4 = "h253"
 
 # nord5 is a brighter shade color of nord4.
-nord5 = "h255"
+nord5 = "h254"
 
 # nord6 is the brightest shade color based on nord4.
-# We don't use nord 6 because it is not representable.
-# nord6 = "h256"
+nord6 = "h255"
+
+# ------------------------------------------------------------------------------
+# Frost can be described as the heart palette of Nord, a group of four bluish
+# colors that are commonly used for primary UI component and text highlighting
+# and essential code syntax elements.
+# ------------------------------------------------------------------------------
 
 # nord7 is a calm and highly contrasted color reminiscent of
 # frozen polar water.
@@ -39,13 +52,30 @@ nord8 = "h110"
 
 # nord9 is a more darkened and less saturated color reminiscent of
 # arctic waters.
-nord9 = "h109"
+nord9 = "h111"
 
 # nord10 is a dark and intensive color reminiscent of the deep arctic ocean.
 nord10 = "h67"
 
+# ------------------------------------------------------------------------------
+# Aurora consists of five colorful components reminiscent of the "Aurora
+# borealis", sometimes referred to as polar lights or northern lights.
+# ------------------------------------------------------------------------------
+
 # nord11 is a reddish color.
-nord11 = "h131"
+nord11 = "h138"
+
+# nord12 is an orangey color.
+nord12 = "h174"
+
+# nord13 is a yellowy color.
+nord13 = "h216"
+
+# nord14 is a greenish color.
+nord14 = "h150"
+
+# nord15 is a purplish color.
+nord15 = "h139"
 
 link("current breakpoint", "current frame name")
 link("focused current breakpoint", "focused current frame name")
