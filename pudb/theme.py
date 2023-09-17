@@ -968,36 +968,36 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "input": (nord4, nord0),
             "button": (add_setting(nord4, "bold"), nord0),
             "focused button": (add_setting(nord4, "bold"), nord2),
-            "focused sidebar": (nord0, nord11),
+            "focused sidebar": (nord0, nord7),
             "warning": (nord12, nord2),
-            "group head": (add_setting(nord0, "bold"), nord1),
+            "group head": (add_setting(nord0, "bold"), nord7),
             "dialog title": (add_setting(nord4, "bold"), nord1),
             # }}}
             # {{{ source view
             "source": (nord4, nord0),
-            "current source": (nord11, nord0),
-            "breakpoint source": (nord4, nord0),
+            "current source": (nord13, nord1),
+            "current focused source": (nord13, nord2),
             "breakpoint source": (nord12, nord0),
             "line number": (nord2, nord0),
-            "current line marker": (add_setting(nord11, "bold"), nord0),
-            "breakpoint marker": (add_setting(nord11, "bold"), nord0),
+            "current line marker": (add_setting(nord13, "bold"), nord0),
+            "breakpoint marker": (add_setting(nord13, "bold"), nord0),
             # }}}
             # {{{ sidebar
-            "sidebar two": (nord9, nord1),
-            "focused sidebar two": (nord0, nord2),
-            "sidebar three": (nord0, nord1),
-            "focused sidebar three": (nord5, nord2),
+            "sidebar two": (nord7, nord1),
+            "focused sidebar two": (nord7, nord2),
+            "sidebar three": (nord10, nord1),
+            "focused sidebar three": (nord10, nord2),
             # }}}
             # {{{ variables view
             "highlighted var label": (nord14, nord1),
             "focused highlighted var label": (nord14, nord2),
             "focused highlighted var value": (nord14, nord2),
-            "return label": (nord9, nord8),
-            "focused return label": (nord9, nord8),
+            "return label": (nord0, nord8),
+            "focused return label": (nord0, nord8),
             # }}}
             # {{{ stack
-            "current frame name": (nord9, nord1),
-            "focused current frame name": (nord9, nord2),
+            "current frame name": (nord14, nord1),
+            "focused current frame name": (nord14, nord2),
             # }}}
             # {{{ shell
             "command line prompt": (
