@@ -131,19 +131,17 @@ palette_dict = {
     "focused command line error": (nord12, nord2),
     # }}}
     # {{{ Code syntax
-    "literal":     (nord8, nord0),
-    "builtin":     (nord8, nord0),
-    "exception":   (nord8, nord0),
-    "keyword2":    (nord9, nord0),
-    "function":    (nord8, nord0),
+    "literal":     (nord15, nord0),
+    "builtin":     (add_setting(nord7, "bold"), nord0),
+    "pseudo":      (nord7, nord0),
+    "exception":   (nord11, nord0),
+    "function":    (nord7, nord0),
     "class":       (add_setting(nord9, "underline"), nord0),
     "keyword":     (nord8, nord0),
-    "operator":    (nord5, nord0),
-    "comment":     (nord2, nord0),
-    "docstring":   (nord2, nord0),
-    "argument":    (nord11, nord0),
-    "pseudo":      (nord5, nord0),
-    "string":      (nord5, nord0),
+    "keyword2":    (nord9, nord0),
+    "operator":    (nord8, nord0),
+    "comment":     (nord3, nord0),
+    "string":      (nord14, nord0),
     # }}}
 }
 
