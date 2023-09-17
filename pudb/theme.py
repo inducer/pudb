@@ -961,7 +961,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "background": (nord0, nord7),
             "selectable": (nord4, nord1),
             "focused selectable": (nord4, nord2),
-            "highlighted": (nord4, nord3),
+            "highlighted": (nord14, nord1),
             "hotkey": (add_setting(nord0, "underline"), nord7),
             # }}}
             # {{{ general ui
@@ -988,7 +988,9 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             "focused sidebar three": (nord5, nord2),
             # }}}
             # {{{ variables view
-            "highlighted var label": (nord8, nord9),
+            "highlighted var label": (nord14, nord1),
+            "focused highlighted var label": (nord14, nord2),
+            "focused highlighted var value": (nord14, nord2),
             "return label": (nord9, nord8),
             "focused return label": (nord9, nord8),
             # }}}
