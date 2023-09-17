@@ -93,14 +93,14 @@ palette_dict = {
     "button": (add_setting(nord4, "bold"), nord0),
     "focused button": (add_setting(nord4, "bold"), nord2),
     "focused sidebar": (nord0, nord11),
-    "warning": (add_setting(nord4, "bold"), nord4),
+    "warning": (nord12, nord2),
     "group head": (add_setting(nord0, "bold"), nord1),
     "dialog title": (add_setting(nord4, "bold"), nord1),
     # }}}
     # {{{ source view
     "source": (nord4, nord0),
     "current source": (nord11, nord0),
-    "breakpoint source": (nord4, nord0),
+    "breakpoint source": (nord12, nord0),
     "line number": (nord2, nord0),
     "current line marker": (add_setting(nord11, "bold"), nord0),
     "breakpoint marker": (add_setting(nord11, "bold"), nord0),
@@ -123,13 +123,11 @@ palette_dict = {
     "focused current frame name": (nord9, nord2),
     # }}}
     # {{{ shell
-    "command line prompt": (
-        add_setting(nord5, "bold"), nord0),
+    "command line prompt": (add_setting(nord5, "bold"), nord0),
     "command line output": (nord7, nord0),
-    "command line error": (nord3, nord0),
+    "command line error": (nord12, nord0),
     "focused command line output": (nord7, nord2),
-    "focused command line error": (
-        add_setting(nord3, "bold"), nord2),
+    "focused command line error": (nord12, nord2),
     # }}}
     # {{{ Code syntax
     "literal":     (nord8, nord0),
