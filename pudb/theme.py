@@ -37,7 +37,7 @@ THEMES = [
     "monokai",
     "monokai-256",
     "mono",
-    "nord-256",
+    "nord-dark-256",
 ]
 
 
@@ -873,8 +873,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
 
         # }}}
 
-    elif theme == "nord-256":
-        # {{{ nord-256
+    elif theme == "nord-dark-256":
+        # {{{ nord-dark-256
 
         # ------------------------------------------------------------------------------
         # Colors are approximations of https://www.nordtheme.com/docs/colors-and-palettes
