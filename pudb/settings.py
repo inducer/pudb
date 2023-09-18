@@ -302,7 +302,7 @@ def edit_config(ui, conf_dict):
 
     # {{{ themes
 
-    from pudb.theme import THEMES
+    from pudb.themes import THEMES
 
     known_theme = conf_dict["theme"] in THEMES
 
