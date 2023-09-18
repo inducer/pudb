@@ -32,6 +32,7 @@ import sys
 
 from itertools import count
 from functools import partial
+from collections import deque
 from types import TracebackType
 
 from pudb.lowlevel import decode_lines, ui_log
@@ -44,7 +45,7 @@ HELP_HEADER = r"""
 Key Assignments: Use Arrow Down/Up or Page Down/Up to scroll.
 """
 
-HELP_MAIN = r"""
+HELP_MAIN = rf"""
 Keys:
     Ctrl-p - edit preferences
 
@@ -53,6 +54,7 @@ Keys:
     c - continue
     r/f - finish current function
     t - run to cursor
+    J - jump to line
     e - show traceback [post-mortem or in exception state]
     b - set/clear breakpoint
     Ctrl-e - open file at current line to edit with $EDITOR
@@ -74,10 +76,10 @@ Keys:
     / - search
     ,/. - search next/previous
 
-    V - focus variables
-    S - focus stack
-    B - focus breakpoint list
-    C - focus code
+    {CONFIG["hotkeys_variables"]} - focus variables
+    {CONFIG["hotkeys_stack"]} - focus stack
+    {CONFIG["hotkeys_breakpoints"]} - focus breakpoint list
+    {CONFIG["hotkeys_code"]} - focus code
 
     F1/? - show this help screen
     q - quit
@@ -88,17 +90,18 @@ Keys:
 
 Shell-related:
     ! - open the external shell (configured in the settings)
-    Ctrl-x - toggle the internal shell focus
+    {CONFIG["hotkeys_toggle_cmdline_focus"]} - toggle the internal shell focus
 
-    +/- - grow/shrink inline shell (active in command line history)
-    _/= - minimize/maximize inline shell (active in command line history)
+    +/- - grow/shrink inline shell (active in results scrollback)
+    _/= - minimize/maximize inline shell (active in results scrollback)
 
     Ctrl-v - insert newline
-    Ctrl-n/p - browse command line history
+    Ctrl-n/p, Arrow down/up - browse command history or clear/recall prompt
+    Shift-Page down/up - browse in the results scrollback
     Tab - yes, there is (simple) tab completion
 """
 
-HELP_SIDE = r"""
+HELP_SIDE = rf"""
 Sidebar-related (active in sidebar):
     +/- - grow/shrink sidebar width
     _/= - minimize/maximize sidebar width
@@ -135,10 +138,10 @@ Other keys:
     Ctrl-d/u - page down/up
     G/g - end/home
 
-    V - focus variables
-    S - focus stack
-    B - focus breakpoint list
-    C - focus code
+    {CONFIG["hotkeys_variables"]} - focus variables
+    {CONFIG["hotkeys_stack"]} - focus stack
+    {CONFIG["hotkeys_breakpoints"]} - focus breakpoint list
+    {CONFIG["hotkeys_code"]} - focus code
 
     F1/? - show this help screen
     q - quit
@@ -237,6 +240,9 @@ class Debugger(bdb.Bdb):
                 if frame is self.botframe:
                     break
                 frame = frame.f_back
+
+    def set_jump(self, frame, line):
+        frame.f_lineno = line
 
     def set_trace(self, frame=None, as_breakpoint=None, paused=True):
         """Start debugging from `frame`.
@@ -578,8 +584,10 @@ class Debugger(bdb.Bdb):
 
 # UI stuff --------------------------------------------------------------------
 
-from pudb.ui_tools import make_hotkey_markup, labelled_value, \
-        SelectableText, SignalWrap, StackFrame, BreakpointFrame
+from pudb.ui_tools import (
+        make_hotkey_markup, labelled_value,
+        focus_widget_in_container,
+        SelectableText, SignalWrap, StackFrame, BreakpointFrame)
 
 from pudb.var_view import FrameVarInfoKeeper
 
@@ -649,7 +657,7 @@ class SourceCodeProvider:
 
 class NullSourceCodeProvider(SourceCodeProvider):
     def __eq__(self, other):
-        return type(self) == type(other)
+        return type(self) is type(other)
 
     def identifier(self):
         return "<no source code>"
@@ -685,7 +693,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         self.file_name = debugger.canonic(file_name)
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.file_name == other.file_name
+        return type(self) is type(other) and self.file_name == other.file_name
 
     def identifier(self):
         return self.file_name
@@ -730,7 +738,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 
     def __eq__(self, other):
         return (
-                type(self) == type(other)
+                type(self) is type(other)
                 and self.function_name == other.function_name
                 and self.code is other.code)
 
@@ -844,34 +852,40 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         def clear_cmdline_history(btn):
             del self.cmdline_contents[:]
+            # clear the command input text too,
+            # but save it to be retrieved on cmdline_history_prev()
+            self.cmdline_history_position = -1
+            cmdline_history_browse(1)
 
         def initialize_cmdline_history(path):
-
+            dq = partial(deque, maxlen=5000)
             try:
                 # Load global history if present
                 with open(path, "r") as histfile:
-                    return histfile.read().splitlines()
+                    return dq(histfile.read().splitlines())
             except FileNotFoundError:
-                return []
+                return dq()
 
         self.cmdline_history_path = os.path.join(get_save_config_path(),
                                                  "internal-cmdline-history.txt")
 
         self.cmdline_history = initialize_cmdline_history(self.cmdline_history_path)
+        self.cmdline_saved_edit_text = ""
         self.cmdline_history_position = -1
-        self.cmdline_history_limit = 5000
 
         self.cmdline_edit_bar = urwid.Columns([
                 self.cmdline_edit_sigwrap,
-                ("fixed", 10, AttrMap(
+                (urwid.FIXED, 10, AttrMap(
                     urwid.Button("Clear", clear_cmdline_history),
                     "command line clear button", "command line focused button"))
                 ])
 
         self.cmdline_pile = urwid.Pile([
-            ("flow", urwid.Text("Command line: [Ctrl-X]")),
-            ("weight", 1, urwid.AttrMap(self.cmdline_list, "command line output")),
-            ("flow", self.cmdline_edit_bar),
+            (urwid.FLOW, urwid.Text(
+                f"Command line: [{CONFIG['hotkeys_toggle_cmdline_focus']}]")),
+            (urwid.WEIGHT, 1, urwid.AttrMap(
+                self.cmdline_list, "command line output")),
+            (urwid.FLOW, self.cmdline_edit_bar),
             ])
         self.cmdline_sigwrap = SignalWrap(
                 urwid.AttrMap(self.cmdline_pile, None, "focused sidebar")
@@ -879,8 +893,8 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_on = not CONFIG["hide_cmdline_win"]
         self.cmdline_weight = float(CONFIG.get("cmdline_height", 1))
         self.lhs_col = urwid.Pile([
-            ("weight", 5, self.source_attr),
-            ("weight", self.cmdline_weight if self.cmdline_on else 0,
+            (urwid.WEIGHT, 5, self.source_attr),
+            (urwid.WEIGHT, self.cmdline_weight if self.cmdline_on else 0,
                 self.cmdline_sigwrap),
             ])
 
@@ -901,16 +915,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 urwid.ListBox(self.bp_walker))
 
         self.rhs_col = urwid.Pile([
-            ("weight", float(CONFIG["variables_weight"]), AttrMap(urwid.Pile([
-                ("flow", urwid.Text(make_hotkey_markup("_Variables:"))),
+            (urwid.WEIGHT, float(CONFIG["variables_weight"]), AttrMap(urwid.Pile([
+                (urwid.FLOW, urwid.Text(make_hotkey_markup("_Variables:"))),
                 AttrMap(self.var_list, "variables"),
                 ]), None, "focused sidebar"),),
-            ("weight", float(CONFIG["stack_weight"]), AttrMap(urwid.Pile([
-                ("flow", urwid.Text(make_hotkey_markup("_Stack:"))),
+            (urwid.WEIGHT, float(CONFIG["stack_weight"]), AttrMap(urwid.Pile([
+                (urwid.FLOW, urwid.Text(make_hotkey_markup("_Stack:"))),
                 AttrMap(self.stack_list, "stack"),
                 ]), None, "focused sidebar"),),
-            ("weight", float(CONFIG["breakpoints_weight"]), AttrMap(urwid.Pile([
-                ("flow", urwid.Text(make_hotkey_markup("_Breakpoints:"))),
+            (urwid.WEIGHT, float(CONFIG["breakpoints_weight"]), AttrMap(urwid.Pile([
+                (urwid.FLOW, urwid.Text(make_hotkey_markup("_Breakpoints:"))),
                 AttrMap(self.bp_list, "breakpoint"),
                 ]), None, "focused sidebar"),),
             ])
@@ -926,8 +940,8 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.columns = urwid.Columns(
                     [
-                        ("weight", 1, self.lhs_col),
-                        ("weight", float(CONFIG["sidebar_width"]),
+                        (urwid.WEIGHT, 1, self.lhs_col),
+                        (urwid.WEIGHT, float(CONFIG["sidebar_width"]),
                             self.rhs_col_sigwrap),
                         ],
                     dividechars=1)
@@ -943,7 +957,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
 
-            weight = self.rhs_col.item_types[index][1]
+            weight = self.rhs_col.contents[index][1][1]
 
             if direction < 0:
                 if weight > 1/5:
@@ -954,7 +968,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             CONFIG[name+"_weight"] = weight
             save_config(CONFIG)
-            self.rhs_col.item_types[index] = "weight", weight
+            self.rhs_col.contents[index] = (
+                self.rhs_col.contents[index][0],
+                (urwid.WEIGHT, weight))
             self.rhs_col._invalidate()
 
         # {{{ variables listeners
@@ -976,7 +992,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             return None
 
         def change_var_state(w, size, key):
-            var, pos = self.var_list._w.get_focus()
+            pos = self.var_list._w.focus_position
+            var = self.var_list._w.focus
 
             if var is None:
                 return
@@ -1022,7 +1039,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.update_var_view(focus_index=focus_index)
 
         def edit_inspector_detail(w, size, key):
-            var, pos = self.var_list._w.get_focus()
+            var = self.var_list._w.focus
 
             if var is None:
                 return
@@ -1188,7 +1205,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         # {{{ stack listeners
 
         def examine_frame(w, size, key):
-            _, pos = self.stack_list._w.get_focus()
+            pos = self.stack_list._w.focus_position
             self.debugger.set_frame_index(self.translate_ui_stack_index(pos))
 
         self.stack_list.listen("enter", examine_frame)
@@ -1218,7 +1235,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                              title="File is changed")
 
         def open_editor_on_stack_frame(w, size, key):
-            _, pos = self.stack_list._w.get_focus()
+            pos = self.stack_list._w.focus_position
             index = self.translate_ui_stack_index(pos)
 
             curframe, line_number = self.debugger.stack[index]
@@ -1262,7 +1279,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         def handle_delete_breakpoint(w, size, key):
             bp_list = self._get_bp_list()
             if bp_list:
-                _, pos = self.bp_list._w.get_focus()
+                pos = self.bp_list._w.focus_position
                 bp = bp_list[pos]
                 delete_breakpoint(bp)
 
@@ -1276,7 +1293,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 set_breakpoint_source(bp)
 
         def enable_disable_breakpoint(w, size, key):
-            bp_entry, pos = self.bp_list._w.get_focus()
+            pos = self.bp_list._w.focus_position
+            bp_entry = self.bp_list._w.focus
             if bp_entry is None:
                 return
             bp = self._get_bp_list()[pos]
@@ -1285,7 +1303,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             set_breakpoint_source(bp)
 
         def examine_breakpoint(w, size, key):
-            bp_entry, pos = self.bp_list._w.get_focus()
+            pos = self.bp_list._w.focus_position
+            bp_entry = self.bp_list._w.focus
 
             if bp_entry is None:
                 return
@@ -1335,7 +1354,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif result == "loc":
                 self.show_line(bp.line,
                         FileSourceCodeProvider(self.debugger, bp.file))
-                self.columns.set_focus(0)
+                self.columns.focus_position = 0
             elif result == "del":
                 delete_breakpoint(bp)
 
@@ -1343,12 +1362,14 @@ class DebuggerUI(FrameVarInfoKeeper):
             set_breakpoint_source(bp)
 
         def show_breakpoint(w, size, key):
-            bp_entry, pos = self.bp_list._w.get_focus()
+            pos = self.bp_list._w.focus_position
+            bp_entry = self.bp_list._w.focus
 
             if bp_entry is not None:
                 bp = self._get_bp_list()[pos]
                 self.show_line(bp.line,
                         FileSourceCodeProvider(self.debugger, bp.file))
+                self.columns.focus_position = 0
 
         self.bp_list.listen("enter", show_breakpoint)
         self.bp_list.listen("d", handle_delete_breakpoint)
@@ -1400,7 +1421,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
-                sline, pos = self.source.get_focus()
+                pos = self.source.focus
                 lineno = pos+1
 
                 bp_source_identifier = \
@@ -1430,8 +1451,49 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.debugger.set_continue()
                     end()
 
+        def jump_to_cursor(w, size, key):
+            if self.debugger.post_mortem:
+                self.message("Post-mortem mode: Can't modify state.")
+            else:
+                pos = self.source.focus
+                lineno = pos+1
+
+                bp_source_identifier = \
+                        self.source_code_provider.get_source_identifier()
+
+                if bp_source_identifier is None:
+                    self.message(
+                        "Cannot jump here--"
+                        "source code does not correspond to a file location. "
+                        "(perhaps this is generated code)")
+
+                from pudb.lowlevel import get_breakpoint_invalid_reason
+                invalid_reason = get_breakpoint_invalid_reason(
+                        bp_source_identifier, lineno)
+
+                if invalid_reason is not None:
+                    self.message(
+                        "Cannot jump to the line you indicated, "
+                        "for the following reason:\n\n"
+                        + invalid_reason)
+                else:
+                    try:
+                        self.debugger.set_jump(
+                            self.debugger.curframe, lineno)
+                        self.debugger.stack[self.debugger.curindex] = \
+                            self.debugger.stack[self.debugger.curindex][0], lineno
+                        self.debugger.set_step()
+                    except ValueError as e:
+                        self.message("""\
+Error with jump. Note that jumping only works on the topmost stack frame.
+(The error was: %s)""" % (e.args[0],))
+
+                    # Update UI. end() will run past the line
+                    self.set_current_line(lineno, self.source_code_provider)
+                    self.update_stack()
+
         def go_to_line(w, size, key):
-            _, line = self.source.get_focus()
+            line = self.source.focus
 
             lineno_edit = urwid.IntEdit([
                 ("label", "Go to Line   :")
@@ -1452,7 +1514,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 value = lineno_edit.value()
                 if value:
                     lineno = min(max(0, int(value)-1), len(self.source)-1)
-                    self.source.set_focus(lineno)
+                    self.source_list.focus_position = lineno
 
         def scroll_left(w, size, key):
             self.source_hscroll_start = max(
@@ -1480,7 +1542,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     self.source_code_provider.get_source_identifier()
 
             if bp_source_identifier:
-                sline, pos = self.source.get_focus()
+                pos = self.source_list.focus_position
+                sline = self.source[pos]
                 lineno = pos+1
 
                 existing_breaks = self.debugger.get_breaks(
@@ -1612,8 +1675,8 @@ class DebuggerUI(FrameVarInfoKeeper):
             lb = urwid.ListBox(mod_list)
 
             w = urwid.Pile([
-                ("flow", urwid.AttrMap(filt_edit, "input", "focused input")),
-                ("fixed", 1, urwid.SolidFill()),
+                (urwid.FLOW, urwid.AttrMap(filt_edit, "input", "focused input")),
+                (urwid.FIXED, 1, urwid.SolidFill()),
                 urwid.AttrMap(lb, "selectable")])
 
             while True:
@@ -1626,7 +1689,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 self.last_module_filter = filt_edit.get_edit_text()
 
                 if result is True:
-                    widget, pos = lb.get_focus()
+                    pos = lb.focus_position
+                    widget = lb.focus
                     if widget is new_mod_entry:
                         new_mod_name = filt_edit.get_edit_text()
                         try:
@@ -1648,7 +1712,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 elif result is False:
                     break
                 elif result == "reload":
-                    widget, pos = lb.get_focus()
+                    pos = lb.focus_position
+                    widget = lb.focus
                     if widget is not new_mod_entry:
                         mod_name = widget.base_widget.get_text()[0]
                         mod = sys.modules[mod_name]
@@ -1663,7 +1728,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         self.set_source_code_provider(self.source_code_provider,
                                 force_update=True)
 
-                        _, pos = self.stack_list._w.get_focus()
+                        pos = self.stack_list._w.focus_position
                         self.debugger.set_frame_index(
                                 self.translate_ui_stack_index(pos))
 
@@ -1676,6 +1741,7 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.source_sigwrap.listen("r", finish)
         self.source_sigwrap.listen("c", cont)
         self.source_sigwrap.listen("t", run_to_cursor)
+        self.source_sigwrap.listen("J", jump_to_cursor)
 
         self.source_sigwrap.listen("L", go_to_line)
         self.source_sigwrap.listen("/", search)
@@ -1796,11 +1862,9 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             if not self.cmdline_history or cmd != self.cmdline_history[-1]:
                 self.cmdline_history.append(cmd)
-                # Limit history size
-                if len(self.cmdline_history) > self.cmdline_history_limit:
-                    del self.cmdline_history[0]
 
             self.cmdline_history_position = -1
+            self.cmdline_saved_edit_text = ""
 
             prev_sys_stdin = sys.stdin
             prev_sys_stdout = sys.stdout
@@ -1838,17 +1902,40 @@ class DebuggerUI(FrameVarInfoKeeper):
                 sys.stderr = prev_sys_stderr
 
         def cmdline_history_browse(direction):
-            if self.cmdline_history_position == -1:
-                self.cmdline_history_position = len(self.cmdline_history)
+            # Browsing the command line history can be illustrated by moving up/down
+            # in the following table (no wrap-around).
+            # The first column shows what is written in the command input text field,
+            # the second one the corresponding value of self.cmdline_history_position
+            # The actual index into the history list is given by the last column.
+            #                             | history  |   history
+            #      command line text      | position | list index
+            # ----------------------------|----------|-----------
+            # oldest_command              |    2     |     0
+            # medium_command              |    1     |     1
+            # recent_command              |    0     |     2
+            # <current / saved edit text> |   -1     |
+            #     <edit text cleared>     |   -1     |
+            def pos_text(pos, text):
+                if pos == -1:
+                    if text:
+                        # currently editing a command, save it to return to it later
+                        self.cmdline_saved_edit_text = text
+                    if direction > 0:
+                        # clear command to be able to write a different one
+                        return -1, ""
+                    if direction < 0 and not text and self.cmdline_saved_edit_text:
+                        # return to last saved command
+                        return -1, self.cmdline_saved_edit_text
 
-            self.cmdline_history_position += direction
+                max_hist_index = len(self.cmdline_history) - 1
+                pos = max(-1, min(pos - direction, max_hist_index))
 
-            if 0 <= self.cmdline_history_position < len(self.cmdline_history):
-                self.cmdline_edit.edit_text = \
-                        self.cmdline_history[self.cmdline_history_position]
-            else:
-                self.cmdline_history_position = -1
-                self.cmdline_edit.edit_text = ""
+                if pos == -1:
+                    return -1, self.cmdline_saved_edit_text
+                return pos, self.cmdline_history[max_hist_index - pos]
+
+            self.cmdline_history_position, self.cmdline_edit.edit_text = pos_text(
+                self.cmdline_history_position, self.cmdline_edit.edit_text)
             self.cmdline_edit.edit_pos = len(self.cmdline_edit.edit_text)
 
         def cmdline_history_prev(w, size, key):
@@ -1858,27 +1945,31 @@ class DebuggerUI(FrameVarInfoKeeper):
             cmdline_history_browse(1)
 
         def toggle_cmdline_focus(w, size, key):
-            self.columns.set_focus(self.lhs_col)
-            if self.lhs_col.get_focus() is self.cmdline_sigwrap:
+            focus_widget_in_container(self.columns, self.lhs_col)
+            if self.lhs_col.focus is self.cmdline_sigwrap:
                 if CONFIG["hide_cmdline_win"]:
                     self.set_cmdline_state(False)
-                self.lhs_col.set_focus(self.search_controller.search_AttrMap
+                focus_widget_in_container(
+                        self.lhs_col,
+                        self.search_controller.search_AttrMap
                         if self.search_controller.search_box else
                         self.source_attr)
             else:
                 if CONFIG["hide_cmdline_win"]:
                     self.set_cmdline_state(True)
-                self.cmdline_pile.set_focus(self.cmdline_edit_bar)
-                self.lhs_col.set_focus(self.cmdline_sigwrap)
+                focus_widget_in_container(self.cmdline_pile, self.cmdline_edit_bar)
+                focus_widget_in_container(self.lhs_col, self.cmdline_sigwrap)
 
         self.cmdline_edit_sigwrap.listen("tab", cmdline_tab_complete)
         self.cmdline_edit_sigwrap.listen("ctrl v", cmdline_append_newline)
         self.cmdline_edit_sigwrap.listen("enter", cmdline_exec)
+        self.cmdline_edit_sigwrap.listen("down", cmdline_history_next)
+        self.cmdline_edit_sigwrap.listen("up", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("ctrl n", cmdline_history_next)
         self.cmdline_edit_sigwrap.listen("ctrl p", cmdline_history_prev)
         self.cmdline_edit_sigwrap.listen("esc", toggle_cmdline_focus)
 
-        self.top.listen("ctrl x", toggle_cmdline_focus)
+        self.top.listen(CONFIG["hotkeys_toggle_cmdline_focus"], toggle_cmdline_focus)
 
         # {{{ command line sizing
         def set_cmdline_default_size(weight):
@@ -1909,10 +2000,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 weight /= 1.25
                 set_cmdline_default_size(weight)
 
+        def cmdline_results_scroll(w, size, key):
+            size = self.cmdline_pile.get_item_size(size, 1, True)
+            self.cmdline_list.keypress(size, key.lstrip("shift "))
+
         self.cmdline_sigwrap.listen("=", max_cmdline)
         self.cmdline_sigwrap.listen("+", grow_cmdline)
         self.cmdline_sigwrap.listen("_", min_cmdline)
         self.cmdline_sigwrap.listen("-", shrink_cmdline)
+        for key in ("page up", "page down"):
+            self.cmdline_sigwrap.listen("shift " + key, cmdline_results_scroll)
 
         # }}}
 
@@ -1927,7 +2024,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             CONFIG["sidebar_width"] = weight
             save_config(CONFIG)
 
-            self.columns.column_types[1] = "weight", weight
+            self.columns.contents[1] = (
+                    self.columns.contents[1][0],
+                    (urwid.WEIGHT, weight))
             self.columns._invalidate()
 
         def min_sidebar(w, size, key):
@@ -1937,7 +2036,9 @@ class DebuggerUI(FrameVarInfoKeeper):
             CONFIG["sidebar_width"] = weight
             save_config(CONFIG)
 
-            self.columns.column_types[1] = "weight", weight
+            self.columns.contents[1] = (
+                    self.columns.contents[1][0],
+                    (urwid.WEIGHT, weight))
             self.columns._invalidate()
 
         def grow_sidebar(w, size, key):
@@ -1949,7 +2050,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 weight *= 1.25
                 CONFIG["sidebar_width"] = weight
                 save_config(CONFIG)
-                self.columns.column_types[1] = "weight", weight
+                self.columns.column_types[1] = urwid.WEIGHT, weight
                 self.columns._invalidate()
 
         def shrink_sidebar(w, size, key):
@@ -1961,7 +2062,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 weight /= 1.25
                 CONFIG["sidebar_width"] = weight
                 save_config(CONFIG)
-                self.columns.column_types[1] = "weight", weight
+                self.columns.column_types[1] = urwid.WEIGHT, weight
                 self.columns._invalidate()
 
         self.rhs_col_sigwrap.listen("=", max_sidebar)
@@ -2032,9 +2133,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                 elif CONFIG["shell"] == "classic":
                     runner = shell.run_classic_shell
                 else:
-                    def fallback():
-                        ui_log.error("Falling back to classic shell")
-                        return shell.run_classic_shell
+                    def fallback(error_message):
+                        fallback_message = "Falling back to classic shell."
+                        message = f"{error_message} {fallback_message}"
+                        ui_log.error(message)
+                        return partial(shell.run_classic_shell, message=message)
 
                     try:
                         if not shell.custom_shell_dict:  # Only execfile once
@@ -2045,18 +2148,18 @@ class DebuggerUI(FrameVarInfoKeeper):
                                         shell.custom_shell_dict,
                                         shell.custom_shell_dict)
                     except FileNotFoundError:
-                        ui_log.error("Unable to locate custom shell file {!r}"
-                                     .format(CONFIG["shell"]))
-                        runner = fallback()
+                        runner = fallback(
+                            "Unable to locate custom shell file {!r}."
+                            .format(CONFIG["shell"])
+                        )
                     except Exception:
-                        ui_log.exception("Error when importing custom shell")
-                        runner = fallback()
+                        runner = fallback("Error when importing custom shell.")
                     else:
                         if "pudb_shell" not in shell.custom_shell_dict:
-                            ui_log.error(
+                            runner = fallback(
                                 "%s does not contain a function named pudb_shell at "
-                                "the module level." % CONFIG["shell"])
-                            runner = fallback()
+                                "the module level." % CONFIG["shell"]
+                            )
                         else:
                             runner = shell.custom_shell_dict["pudb_shell"]
 
@@ -2071,16 +2174,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                 return run_external_cmdline(w, size, key)
 
         def focus_code(w, size, key):
-            self.columns.set_focus(self.lhs_col)
-            self.lhs_col.set_focus(self.source_attr)
+            focus_widget_in_container(self.columns, self.lhs_col)
+            focus_widget_in_container(self.lhs_col, self.source_attr)
 
         class RHColumnFocuser:
             def __init__(self, idx):
                 self.idx = idx
 
             def __call__(subself, w, size, key):  # noqa # pylint: disable=no-self-argument
-                self.columns.set_focus(self.rhs_col_sigwrap)
-                self.rhs_col.set_focus(self.rhs_col.widget_list[subself.idx])
+                focus_widget_in_container(self.columns, self.rhs_col_sigwrap)
+                self.rhs_col.focus_position = subself.idx
 
         def quit(w, size, key):
             with open(self.cmdline_history_path, "w") as history:
@@ -2098,7 +2201,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.message(pages, title="PuDB - The Python Urwid Debugger")
 
         def edit_current_frame(w, size, key):
-            _, pos = self.source.get_focus()
+            pos = self.source.focus
             source_identifier = \
                     self.source_code_provider.get_source_identifier()
 
@@ -2203,14 +2306,17 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.set_cmdline_state(True)
 
     def reset_cmdline_size(self):
-        self.lhs_col.item_types[-1] = "weight", \
-                self.cmdline_weight if self.cmdline_on else 0
+        self.lhs_col.contents[-1] = (
+                self.lhs_col.contents[-1][0],
+                (urwid.WEIGHT, self.cmdline_weight if self.cmdline_on else 0))
 
     def set_cmdline_size(self, weight=None):
         if weight is None:
             weight = self.cmdline_weight
 
-        self.lhs_col.item_types[-1] = "weight", weight
+        self.lhs_col.contents[-1] = (
+                self.lhs_col.contents[-1][0],
+                (urwid.WEIGHT, weight))
         self.lhs_col._invalidate()
 
     def set_cmdline_state(self, state_on):
@@ -2277,18 +2383,18 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         w = urwid.Columns([
             content,
-            ("fixed", 15, urwid.ListBox(urwid.SimpleListWalker(button_widgets))),
+            (urwid.FIXED, 15, urwid.ListBox(urwid.SimpleListWalker(button_widgets))),
             ], dividechars=1)
 
         if focus_buttons:
-            w.set_focus_column(1)
+            w.focus_position = 1
 
         if title is not None:
             w = urwid.Pile([
-                ("flow", urwid.AttrMap(
+                (urwid.FLOW, urwid.AttrMap(
                     urwid.Text(title, align="center"),
                     "dialog title")),
-                ("fixed", 1, urwid.SolidFill()),
+                (urwid.FIXED, 1, urwid.SolidFill()),
                 w])
 
         class ResultSettingEventHandler:
@@ -2755,7 +2861,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         line -= 1
         if line >= 0 and line < len(self.source):
-            self.source_list.set_focus(line)
+            self.source_list.focus_position = line
             if changed_file:
                 self.source_list.set_focus_valign("middle")
 
@@ -2788,7 +2894,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             # list is empty but urwid will attempt to set the focus anyway,
             # which causes problems.
             try:
-                self.var_list._w.set_focus(focus_index)
+                self.var_list._w.focus_position = focus_index
             except IndexError:
                 # sigh oh well we tried
                 pass

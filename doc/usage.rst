@@ -68,3 +68,4 @@ Overriding default key bindings
     hotkeys_code = C
     hotkeys_stack = S
     hotkeys_variables = V
+    hotkeys_toggle_cmdline_focus = ctrl x

@@ -66,12 +66,15 @@ custom_shell_dict = {}
 SHELL_FIRST_TIME = [True]
 
 
-def run_classic_shell(globals, locals):
+def run_classic_shell(globals, locals, message=""):
     if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
         SHELL_FIRST_TIME.pop()
     else:
         banner = ""
+
+    if message:
+        banner = f"{message}\n{banner}"
 
     ns = SetPropagatingDict([locals, globals], locals)
 

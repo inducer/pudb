@@ -22,6 +22,6 @@ version = ver_dic["VERSION"]
 release = version
 
 intersphinx_mapping = {
-    "https://docs.python.org/3": None,
-    "urwid": ("https://urwid.org/", None),
-    }
+        "python": ("https://docs.python.org/3", None),
+        "urwid": ("https://urwid.org/", None),
+        }
