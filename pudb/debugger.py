@@ -190,7 +190,6 @@ class Debugger(bdb.Bdb):
 
         if Debugger._current_debugger:
             raise ValueError("a Debugger instance already exists")
-        self._current_debugger.append(self)
 
         # Pass remaining kwargs to python debugger framework
         bdb.Bdb.__init__(self, **kwargs)
@@ -209,6 +208,9 @@ class Debugger(bdb.Bdb):
         from pudb.settings import load_breakpoints
         for bpoint_descr in load_breakpoints():
             self.set_break(*bpoint_descr)
+
+        # Okay, now we have a debugger
+        self._current_debugger.append(self)
 
     def __del__(self):
         assert self._current_debugger == [self]
