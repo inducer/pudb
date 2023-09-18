@@ -9,6 +9,7 @@ palette_dict = {
     "hotkey": (add_setting("h232", "underline"), "h248"),
     # }}}
     # {{{ general ui
+    "focused sidebar": (add_setting("h232", "bold"), "h248"),
     "warning": (add_setting("h232", "bold"), "h253"),
     "group head": (add_setting("h232", "bold"), "h248"),
     "dialog title": (add_setting("h232", "underline, bold"), "h248"),
