@@ -1,4 +1,4 @@
-from pudb.themes.utils import add_setting, link
+from pudb.themes.utils import add_setting
 
 palette_dict = {
     # {{{ base styles
