@@ -23,13 +23,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import urwid
-
-from dataclasses import dataclass, astuple, replace
+from dataclasses import astuple, dataclass, replace
 from typing import Optional
+
 from pudb.lowlevel import ui_log
-from pudb.themes.utils import add_setting, link, inheritance_overrides, reset_inheritance_overrides
 from pudb.themes import THEMES
+from pudb.themes.utils import (
+    add_setting,
+    inheritance_overrides,
+    link,
+    reset_inheritance_overrides,
+)
+
 
 @dataclass
 class PaletteEntry:
