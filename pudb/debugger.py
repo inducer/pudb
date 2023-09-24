@@ -2474,7 +2474,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         ).format(
             python=sys.version.replace("\n", " "),
             pudb=VERSION,
-            urwid=".".join(map(str, urwid.version.VERSION)),
+            urwid=".".join(map(str, urwid.version.version)),
             tb="".join(format_exception(*exc_tuple))
         )
 
@@ -2802,7 +2802,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.screen.draw_screen(self.size, canvas)
                 keys = self.screen.get_input()
 
-                for k in keys:
+                for k in keys:  # pylint: disable=not-an-iterable
                     if k == "window resize":
                         self.size = self.screen.get_cols_rows()
                     else:
