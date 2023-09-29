@@ -947,14 +947,16 @@ class DebuggerUI(FrameVarInfoKeeper):
                             self.rhs_col_sigwrap),
                         ],
                     dividechars=1)
+        
+        background = urwid.AttrMap(self.columns, "background")
 
         self.caption = urwid.Text("")
-        header = urwid.AttrMap(self.caption, "header")
-        self.top = SignalWrap(urwid.Frame(
-            urwid.AttrMap(self.columns, "background"),
-            header))
-
-        # }}}
+        self.header = urwid.AttrMap(self.caption, "header")
+        
+        self.top = SignalWrap(urwid.Frame(background, self.header))
+        
+        if CONFIG["hide_header"]:
+            self.top._w.header = None
 
         def change_rhs_box(name, index, direction, w, size, key):
             from pudb.settings import save_config
@@ -2421,6 +2423,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 width=("relative", 75),
                 height=("relative", 75),
                 )
+        
         w = Attr(w, "background")
 
         return self.event_loop(w)[0]
@@ -2838,11 +2841,17 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 (None, " "),
                 ("header warning", "[POST-MORTEM MODE]")
                 ])
+            self.update_header(override=True)
+            CONFIG["hide_header"] = False
+
         elif exc_tuple is not None:
             caption.extend([
                 (None, " "),
                 ("header warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
                 ])
+            self.update_header(override=True)
+            CONFIG["hide_header"] = False
+
 
         self.caption.set_text(caption)
         self.event_loop()
@@ -2955,6 +2964,11 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     def update_cmdline_win(self):
         self.set_cmdline_state(not CONFIG["hide_cmdline_win"])
+        
+    def update_header(self, override=None):
+        if override is not None:
+            self.top._w.header = self.header if override else None
+        self.top._w.header = self.header if not CONFIG["hide_header"] else None
 
     # }}}
 

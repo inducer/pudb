@@ -112,6 +112,7 @@ def load_config():
     conf_dict.setdefault("prompt_on_quit", "True")
 
     conf_dict.setdefault("hide_cmdline_win", "False")
+    conf_dict.setdefault("hide_header", "False")
 
     # hotkeys
     conf_dict.setdefault("hotkeys_code", "C")
@@ -133,6 +134,7 @@ def load_config():
     normalize_bool_inplace("wrap_variables")
     normalize_bool_inplace("prompt_on_quit")
     normalize_bool_inplace("hide_cmdline_win")
+    normalize_bool_inplace("hide_header")
 
     _config_[0] = conf_dict
     return conf_dict
@@ -178,6 +180,9 @@ def edit_config(ui, conf_dict):
 
     def _update_hide_cmdline_win():
         ui.update_cmdline_win()
+        
+    def _update_hide_header():
+        ui.update_header()
 
     def _update_current_stack_frame():
         ui.update_stack()
@@ -221,6 +226,11 @@ def edit_config(ui, conf_dict):
             new_conf_dict["hide_cmdline_win"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
             _update_hide_cmdline_win()
+            
+        elif option == "hide_header":
+            new_conf_dict["hide_header"] = not check_box.get_state()
+            conf_dict.update(new_conf_dict)
+            _update_hide_header()
 
         elif option == "current_stack_frame":
             # only activate if the new state of the radio button is 'on'
@@ -269,6 +279,10 @@ def edit_config(ui, conf_dict):
                                       "when not in use",
             bool(conf_dict["hide_cmdline_win"]), on_state_change=_update_config,
                 user_data=("hide_cmdline_win", None))
+    
+    hide_header = urwid.CheckBox("Hide header from top of window",
+            bool(conf_dict["hide_header"]), on_state_change=_update_config,
+                user_data=("hide_header", None))
 
     # {{{ shells
 
@@ -441,6 +455,7 @@ def edit_config(ui, conf_dict):
             + [cb_line_numbers]
             + [cb_prompt_on_quit]
             + [hide_cmdline_win]
+            + [hide_header]
 
             + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
             + [shell_info]
