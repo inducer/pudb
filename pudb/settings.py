@@ -180,7 +180,7 @@ def edit_config(ui, conf_dict):
 
     def _update_hide_cmdline_win():
         ui.update_cmdline_win()
-        
+
     def _update_hide_header():
         ui.update_header()
 
@@ -226,7 +226,7 @@ def edit_config(ui, conf_dict):
             new_conf_dict["hide_cmdline_win"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
             _update_hide_cmdline_win()
-            
+
         elif option == "hide_header":
             new_conf_dict["hide_header"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
@@ -279,7 +279,7 @@ def edit_config(ui, conf_dict):
                                       "when not in use",
             bool(conf_dict["hide_cmdline_win"]), on_state_change=_update_config,
                 user_data=("hide_cmdline_win", None))
-    
+
     hide_header = urwid.CheckBox("Hide header from top of window",
             bool(conf_dict["hide_header"]), on_state_change=_update_config,
                 user_data=("hide_header", None))

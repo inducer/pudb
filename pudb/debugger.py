@@ -947,14 +947,14 @@ class DebuggerUI(FrameVarInfoKeeper):
                             self.rhs_col_sigwrap),
                         ],
                     dividechars=1)
-        
+
         background = urwid.AttrMap(self.columns, "background")
 
         self.caption = urwid.Text("")
         self.header = urwid.AttrMap(self.caption, "header")
-        
+
         self.top = SignalWrap(urwid.Frame(background, self.header))
-        
+
         if CONFIG["hide_header"]:
             self.top._w.header = None
 
@@ -2423,7 +2423,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 width=("relative", 75),
                 height=("relative", 75),
                 )
-        
+
         w = Attr(w, "background")
 
         return self.event_loop(w)[0]
@@ -2852,7 +2852,6 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             self.show_header()
             CONFIG["hide_header"] = False
 
-
         self.caption.set_text(caption)
         self.event_loop()
 
@@ -2964,7 +2963,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     def update_cmdline_win(self):
         self.set_cmdline_state(not CONFIG["hide_cmdline_win"])
-        
+
     def update_header(self):
         """Update the header to reflect the current settings."""
         self.top._w.header = self.header if not CONFIG["hide_header"] else None
