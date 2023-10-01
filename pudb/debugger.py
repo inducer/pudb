@@ -2841,7 +2841,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 (None, " "),
                 ("header warning", "[POST-MORTEM MODE]")
                 ])
-            self.update_header(override=True)
+            self.show_header()
             CONFIG["hide_header"] = False
 
         elif exc_tuple is not None:
@@ -2849,7 +2849,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 (None, " "),
                 ("header warning", "[PROCESSING EXCEPTION - hit 'e' to examine]")
                 ])
-            self.update_header(override=True)
+            self.show_header()
             CONFIG["hide_header"] = False
 
 
@@ -2965,10 +2965,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
     def update_cmdline_win(self):
         self.set_cmdline_state(not CONFIG["hide_cmdline_win"])
         
-    def update_header(self, override=None):
-        if override is not None:
-            self.top._w.header = self.header if override else None
+    def update_header(self):
+        """Update the header to reflect the current settings."""
         self.top._w.header = self.header if not CONFIG["hide_header"] else None
+
+    def show_header(self):
+        """Show the header."""
+        self.top._w.header = self.header
 
     # }}}
 
