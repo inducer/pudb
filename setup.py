@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import find_packages, setup
 from pudb import VERSION
 
 with open("README.rst") as readme:
@@ -45,7 +45,7 @@ setup(
         "Topic :: Terminals",
         "Topic :: Utilities",
     ],
-    packages=["pudb"],
+    packages=find_packages(),
     entry_points={
         "console_scripts": [
             # Deprecated. Should really use python -m pudb.
