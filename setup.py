@@ -45,7 +45,7 @@ setup(
         "Topic :: Terminals",
         "Topic :: Utilities",
     ],
-    packages=find_packages(),
+    packages=find_packages(exclude=["test"]),
     entry_points={
         "console_scripts": [
             # Deprecated. Should really use python -m pudb.
