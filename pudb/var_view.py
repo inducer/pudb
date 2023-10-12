@@ -32,6 +32,7 @@ import warnings
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sized
+from itertools import chain
 from typing import Tuple, List
 from pudb.lowlevel import ui_log
 from pudb.ui_tools import text_width
@@ -169,11 +170,14 @@ CONTAINER_CLASSES = (
 # {{{ data
 
 class FrameVarInfo:
-    def __init__(self):
+    def __init__(self, global_watch_iinfo):
         self.id_path_to_iinfo = {}
         self.watches = []
+        self.global_watch_iinfo = global_watch_iinfo
 
     def get_inspect_info(self, id_path, read_only):
+        if id_path in self.global_watch_iinfo:
+            return self.global_watch_iinfo[id_path]
         if read_only:
             return self.id_path_to_iinfo.get(
                     id_path, InspectInfo())
@@ -197,8 +201,60 @@ class InspectInfo:
 
 
 class WatchExpression:
-    def __init__(self, expression):
+    NOT_EVALUATED = object()
+
+    def __init__(self, expression="", scope="local", method="expression"):
         self.expression = expression
+        self.scope = scope
+        self.method = method
+        self._value = self.NOT_EVALUATED
+
+    def id_path(self):
+        return str(id(self))
+
+    def eval(self, frame_globals, frame_locals):
+        if (self.method == "expression"
+                or self._value is self.NOT_EVALUATED):
+            try:
+                self._value = eval(self.expression, frame_globals, frame_locals)
+            except Exception:
+                return WatchEvalError()
+        return self._value
+
+    def label(self, value, frame_globals, frame_locals):
+        scope_str = self.scope[0]
+        expression = self.expression
+        if self.method == "reference":
+            found = False
+            # locals first as that's the context the user is more likely to be
+            # interested in re: seeing renames.
+            for mapping in (frame_locals, frame_globals):
+                for k, v in mapping.items():
+                    if v is value:
+                        expression = f"{expression} ({k})"
+                        found = True
+                        break
+                if found:
+                    break
+            method_str = "*"
+        else:
+            method_str = "="
+        return f"[{scope_str}{method_str}] {expression}"
+
+    def set_expression(self, expression):
+        if expression != self.expression:
+            self.expression = expression
+            self._value = self.NOT_EVALUATED
+
+    def set_method(self, method):
+        self.method = method
+        self._value = self.NOT_EVALUATED
+
+    def set_scope(self, scope):
+        self.scope = scope
+
+    def reset_value(self):
+        self._value = self.NOT_EVALUATED
 
 
 class WatchEvalError:
@@ -717,30 +773,28 @@ class TopAndMainVariableWalker(ValueWalker):
 SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 
-def make_var_view(frame_var_info, locals, globals):
-    vars = list(locals.keys())
+def make_var_view(global_watches, frame_var_info, frame_globals, frame_locals):
+    vars = list(frame_locals.keys())
     vars.sort(key=str.lower)
 
     tmv_walker = TopAndMainVariableWalker(frame_var_info)
     ret_walker = BasicValueWalker(frame_var_info)
     watch_widget_list = []
 
-    for watch_expr in frame_var_info.watches:
-        try:
-            value = eval(watch_expr.expression, globals, locals)
-        except Exception:
-            value = WatchEvalError()
-
+    for watch_expr in chain(global_watches, frame_var_info.watches):
+        value = watch_expr.eval(frame_globals, frame_locals)
+        label = watch_expr.label(value, frame_globals, frame_locals)
+        id_path = watch_expr.id_path()
         WatchValueWalker(frame_var_info, watch_widget_list, watch_expr) \
-                .walk_value(None, watch_expr.expression, value)
+                .walk_value(None, label, value, id_path)
 
     if "__return__" in vars:
-        ret_walker.walk_value(None, "Return", locals["__return__"],
+        ret_walker.walk_value(None, "Return", frame_locals["__return__"],
                 attr_prefix="return")
 
     for var in vars:
         if not (var.startswith("__") and var.endswith("__")):
-            tmv_walker.walk_value(None, var, locals[var])
+            tmv_walker.walk_value(None, var, frame_locals[var])
 
     result = tmv_walker.main_widget_list
 
@@ -759,15 +813,58 @@ def make_var_view(frame_var_info, locals, globals):
 class FrameVarInfoKeeper:
     def __init__(self):
         self.frame_var_info = {}
+        self.global_watches = []
+
+        # In order to have the global watch expression presented the same way in
+        # all frames, we need persistent storage for global InspectInfo.
+        self.global_watch_iinfo = {}
 
     def get_frame_var_info(self, read_only, ssid=None):
         if ssid is None:
             # self.debugger set by subclass
             ssid = self.debugger.get_stack_situation_id()  # noqa: E501 # pylint: disable=no-member
         if read_only:
-            return self.frame_var_info.get(ssid, FrameVarInfo())
+            return self.frame_var_info.get(
+                ssid,
+                FrameVarInfo(self.global_watch_iinfo),
+            )
         else:
-            return self.frame_var_info.setdefault(ssid, FrameVarInfo())
+            return self.frame_var_info.setdefault(
+                ssid,
+                FrameVarInfo(self.global_watch_iinfo),
+            )
+
+    def add_watch(self, watch_expr: WatchExpression, fvi=None):
+        if watch_expr.scope == "local":
+            if fvi is None:
+                fvi = self.get_frame_var_info(read_only=False)
+            fvi.watches.append(watch_expr)
+        elif watch_expr.scope == "global":
+            self.global_watches.append(watch_expr)
+            self.global_watch_iinfo[watch_expr.id_path()] = InspectInfo()
+
+    def delete_watch(self, watch_expr: WatchExpression, fvi=None):
+        if fvi is None:
+            fvi = self.get_frame_var_info(read_only=False)
+        # Need to delete both locally and globally- could be in either!
+        # (The watch_expr.scope attribute may have changed)
+        try:
+            fvi.watches.remove(watch_expr)
+        except ValueError:
+            pass
+        try:
+            self.global_watches.remove(watch_expr)
+            self.global_watch_iinfo.pop(watch_expr.id_path())
+        except ValueError:
+            pass
+
+    def change_watch_scope(self, watch_expr, fvi=None):
+        self.delete_watch(watch_expr, fvi)
+        self.add_watch(watch_expr, fvi)
+
+    def reset_global_watch_values(self):
+        for watch_expr in self.global_watches:
+            watch_expr.reset_value()
 
 # }}}
 

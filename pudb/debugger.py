@@ -323,6 +323,7 @@ class Debugger(bdb.Bdb):
     def restart(self):
         from linecache import checkcache
         checkcache()
+        self.ui.reset_global_watch_values()
         self.ui.set_source_code_provider(NullSourceCodeProvider())
         self.setup_state()
 
@@ -1033,12 +1034,58 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
             elif key == "delete":
-                fvi = self.get_frame_var_info(read_only=False)
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
+                self.delete_watch(var.watch_expr)
 
             self.update_var_view(focus_index=focus_index)
+
+        def _watch_editors(watch_expr):
+            """
+            Create widgets for editing the given expression.
+            """
+            def set_watch_scope(radio_button, new_state, user_data):
+                if new_state:
+                    watch_expr.set_scope(user_data)
+
+            def set_watch_method(radio_button, new_state, user_data):
+                if new_state:
+                    watch_expr.set_method(user_data)
+
+            watch_edit = urwid.Edit([("label", "Watch expression: ")],
+                                    watch_expr.expression)
+
+            scope_rbs = []
+            urwid.RadioButton(
+                group=scope_rbs,
+                label="Local: watch in current frame only",
+                state=watch_expr.scope == "local",
+                on_state_change=set_watch_scope,
+                user_data="local",
+            )
+            urwid.RadioButton(
+                group=scope_rbs,
+                label="Global: watch in all frames",
+                state=watch_expr.scope == "global",
+                on_state_change=set_watch_scope,
+                user_data="global",
+            )
+
+            method_rbs = []
+            urwid.RadioButton(
+                group=method_rbs,
+                label="Expression: always re-evaluate the expression",
+                state=watch_expr.method == "expression",
+                on_state_change=set_watch_method,
+                user_data="expression",
+            )
+            urwid.RadioButton(
+                group=method_rbs,
+                label="Reference: evaluate once, watch the resulting value",
+                state=watch_expr.method == "reference",
+                on_state_change=set_watch_method,
+                user_data="reference",
+            )
+
+            return watch_edit, scope_rbs, method_rbs
 
         def edit_inspector_detail(w, size, key):
             var = self.var_list._w.focus
@@ -1055,13 +1102,17 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ]
 
             if var.watch_expr is not None:
-                watch_edit = urwid.Edit([
-                    ("label", "Watch expression: ")
-                    ], var.watch_expr.expression)
+                watch_edit, scope_rbs, method_rbs = _watch_editors(var.watch_expr)
                 id_segment = [
-                        urwid.AttrMap(watch_edit, "input", "focused input"),
-                        urwid.Text(""),
-                        ]
+                    urwid.AttrMap(watch_edit, "input", "focused input"),
+                    urwid.Text(""),
+                    urwid.Text("Scope:"),
+                ] + scope_rbs + [
+                    urwid.Text(""),
+                    urwid.Text("Method:"),
+                ] + method_rbs + [
+                    urwid.Text("")
+                ]
 
                 buttons.extend([None, ("Delete", "del")])
 
@@ -1109,8 +1160,11 @@ class DebuggerUI(FrameVarInfoKeeper):
 
             lb = urwid.ListBox(urwid.SimpleListWalker(
                 id_segment
+                + [urwid.Text("Stringifier:")]
                 + rb_grp_show + [urwid.Text("")]
+                + [urwid.Text("Access:")]
                 + rb_grp_access + [urwid.Text("")]
+                + [urwid.Text("Options:")]
                 + [
                     wrap_checkbox,
                     expanded_checkbox,
@@ -1149,33 +1203,36 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.access_level = "all"
 
                 if var.watch_expr is not None:
-                    var.watch_expr.expression = watch_edit.get_edit_text()
+                    var.watch_expr.set_expression(watch_edit.get_edit_text())
+                    self.change_watch_scope(var.watch_expr, fvi)
 
             elif result == "del":
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
+                self.delete_watch(var.watch_expr, fvi)
 
             self.update_var_view()
 
         def insert_watch(w, size, key):
-            watch_edit = urwid.Edit([
-                ("label", "Watch expression: ")
-                ])
+            from pudb.var_view import WatchExpression
+            watch_expr = WatchExpression()
+            watch_edit, scope_rbs, method_rbs = _watch_editors(watch_expr)
 
             if self.dialog(
-                    urwid.ListBox(urwid.SimpleListWalker([
-                        urwid.AttrMap(watch_edit, "input", "focused input")
-                        ])),
-                    [
-                        ("OK", True),
-                        ("Cancel", False),
-                        ], title="Add Watch Expression"):
-
-                from pudb.var_view import WatchExpression
-                we = WatchExpression(watch_edit.get_edit_text())
-                fvi = self.get_frame_var_info(read_only=False)
-                fvi.watches.append(we)
+                urwid.ListBox(urwid.SimpleListWalker([
+                    urwid.AttrMap(watch_edit, "input", "focused input"),
+                    urwid.Text(""),
+                    urwid.Text("Scope:"),
+                ] + scope_rbs + [
+                    urwid.Text(""),
+                    urwid.Text("Method:"),
+                ] + method_rbs)),
+                [
+                    ("OK", True),
+                    ("Cancel", False),
+                ],
+                title="Add Watch Expression"
+            ):
+                watch_expr.expression = watch_edit.get_edit_text()
+                self.add_watch(watch_expr)
                 self.update_var_view()
 
         self.var_list.listen("\\", change_var_state)
@@ -2890,16 +2947,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             self.current_line = self.source[line]
             self.current_line.set_current(True)
 
-    def update_var_view(self, locals=None, globals=None, focus_index=None):
-        if locals is None:
-            locals = self.debugger.curframe.f_locals
-        if globals is None:
-            globals = self.debugger.curframe.f_globals
-
+    def update_var_view(self, focus_index=None):
         from pudb.var_view import make_var_view
         self.locals[:] = make_var_view(
+                self.global_watches,
                 self.get_frame_var_info(read_only=True),
-                locals, globals)
+                self.debugger.curframe.f_globals,
+                self.debugger.curframe.f_locals)
         if focus_index is not None:
             # Have to set the focus _after_ updating the locals list, as there
             # appears to be a brief moment while reseting the list when the

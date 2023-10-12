@@ -49,7 +49,7 @@ def test_get_stringifier():
 
 class FrameVarInfoForTesting(FrameVarInfo):
     def __init__(self, paths_to_expand=None):
-        super().__init__()
+        super().__init__(global_watch_iinfo={})
         if paths_to_expand is None:
             paths_to_expand = set()
         self.paths_to_expand = paths_to_expand
