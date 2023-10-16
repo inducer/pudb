@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+
+addopts = [
+        "--ignore=pudb/b.py",
+        "--ignore=pudb/ipython.py",
+        ]

@@ -23,7 +23,7 @@ jobs:
         -   name: "Main Script"
             run: |
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
-                . ./prepare-and-run-flake8.sh ./pudb ./test
+                . ./prepare-and-run-flake8.sh ./pudb
 
     pylint:
         name: Pylint
@@ -37,7 +37,7 @@ jobs:
         -   name: "Main Script"
             run: |
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
-                . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)" test/test_*.py
+                . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)"
 
     pytest:
         name: Pytest on Py${{ matrix.python-version }}

@@ -17,7 +17,7 @@ Python 3:
 Flake8:
   script:
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
-  - ". ./prepare-and-run-flake8.sh pudb test"
+  - ". ./prepare-and-run-flake8.sh pudb"
   tags:
   - python3
   except:
@@ -35,7 +35,7 @@ Pylint:
   script: |
     export PY_EXE=python3
     curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
-    . ./prepare-and-run-pylint.sh "$CI_PROJECT_NAME" test/test_*.py
+    . ./prepare-and-run-pylint.sh "$CI_PROJECT_NAME"
   tags:
   - python3
   except:
