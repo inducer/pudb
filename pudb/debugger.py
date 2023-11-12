@@ -196,6 +196,7 @@ class Debugger(bdb.Bdb):
         self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
         self.steal_output = steal_output
         self._continue_at_start__setting = _continue_at_start
+        self.__restart = False
 
         self.setup_state()
 
@@ -296,6 +297,15 @@ class Debugger(bdb.Bdb):
             sys.settrace(self.trace_dispatch)
         else:
             return
+
+    def clear_restart(self):
+        self.__restart = False
+
+    def request_restart(self):
+        self.__restart = True
+
+    def restart_requested(self):
+        return self.__restart
 
     def save_breakpoints(self):
         from pudb.settings import save_breakpoints
@@ -1740,7 +1750,6 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.source_sigwrap.listen("n", next_line)
         self.source_sigwrap.listen("s", step)
         self.source_sigwrap.listen("f", finish)
-        self.source_sigwrap.listen("r", finish)
         self.source_sigwrap.listen("c", cont)
         self.source_sigwrap.listen("t", run_to_cursor)
         self.source_sigwrap.listen("J", jump_to_cursor)
@@ -2214,6 +2223,11 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "(perhaps this is generated code)")
             open_file_editor(source_identifier, pos+1)
 
+        def restart(w, size, key):
+            self.debugger.set_quit()
+            self.debugger.request_restart()
+            end()
+
         self.top.listen("o", show_output)
         self.top.listen("ctrl r",
                         lambda w, size, key: reload_breakpoints_and_redisplay())
@@ -2226,6 +2240,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.top.listen(CONFIG["hotkeys_breakpoints"], RHColumnFocuser(2))
 
         self.top.listen("q", quit)
+        self.top.listen("r", restart)
         self.top.listen("ctrl p", do_edit_config)
         self.top.listen("ctrl l", redraw_screen)
 

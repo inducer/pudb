@@ -172,6 +172,10 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
             import urwid
             pre_run_edit = urwid.Edit("", pre_run)
 
+            if dbg.restart_requested():
+                dbg.clear_restart()
+                break
+
             if not load_config()["prompt_on_quit"]:
                 return
 
