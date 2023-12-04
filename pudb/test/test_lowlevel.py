@@ -89,10 +89,13 @@ def test_executable_lines():
     test_code = "a = 3*5\n" + 333 * "\n" + "b = 15"
     expected = {
         1,
-        128,  # bogus,
-        255,  # bogus,
         335
     }
+    if sys.version_info < (3, 12):
+        expected.update([
+            128,  # bogus,
+            255,  # bogus,
+        ])
     if sys.version_info >= (3, 11):
         # See https://github.com/python/cpython/pull/94562 and
         # https://peps.python.org/pep-0626/
