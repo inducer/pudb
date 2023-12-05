@@ -91,7 +91,8 @@ def test_executable_lines():
         1,
         335
     }
-    if sys.version_info < (3, 12):
+    if sys.version_info < (3, 10):
+        # if co_lines is unavailable, we appear to see these
         expected.update([
             128,  # bogus,
             255,  # bogus,
