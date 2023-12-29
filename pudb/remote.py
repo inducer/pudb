@@ -98,14 +98,14 @@ class TelnetCharacters:
         This class is not intended to be instantiated.
     """
     # Telnet protocol characters
-    IAC = bytes([255])  # "Interpret As Command"
-    DO = bytes([253])
-    WILL = bytes([251])
+    IAC = b"\xff"  # "Interpret As Command"
+    DO = b"\xfd"
+    WILL = b"\xfb"
 
     # Telnet protocol options codes
     # These ones all come from arpa/telnet.h
-    ECHO = bytes([1])  # echo
-    SGA = bytes([3])  # suppress go ahead
+    ECHO = b"\x01"  # echo
+    SGA = b"\x03"  # suppress go ahead
 
 
 class RemoteDebugger(Debugger):
