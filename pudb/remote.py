@@ -84,6 +84,30 @@ Please specify one using the PUDB_RDB_PORT environment variable.
 """
 
 
+class TelnetCharacters:
+    """Collection of characters from the telnet protocol RFC 854
+
+    This format for the telnet characters was adapted from the telnetlib module
+    which was removed from the C Python standard library in version 3.13. Only
+    the characters needed by pudb have been copied here. Additional characters
+    can be found by looking in the telnetlib code in Python 3.12 or in the
+    telnet RFC.
+
+    .. note::
+
+        This class is not intended to be instantiated.
+    """
+    # Telnet protocol characters
+    IAC = b"\xff"  # "Interpret As Command"
+    DO = b"\xfd"
+    WILL = b"\xfb"
+
+    # Telnet protocol options codes
+    # These ones all come from arpa/telnet.h
+    ECHO = b"\x01"  # echo
+    SGA = b"\x03"  # suppress go ahead
+
+
 class RemoteDebugger(Debugger):
     """
     .. automethod:: __init__
@@ -139,7 +163,7 @@ class RemoteDebugger(Debugger):
 
         # nc negotiation doesn't support telnet options
         if not reverse:
-            import telnetlib as tn
+            tn = TelnetCharacters
 
             raw_sock_file.write(tn.IAC + tn.WILL + tn.SGA)
             resp = raw_sock_file.read(3)
