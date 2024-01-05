@@ -602,9 +602,9 @@ except ImportError:
     curses = None
 
 
-from urwid.raw_display import Screen as RawScreen
+from urwid.display.raw import Screen as RawScreen
 try:
-    from urwid.curses_display import Screen as CursesScreen
+    from urwid.display.curses import Screen as CursesScreen
 except ImportError:
     CursesScreen = None
 

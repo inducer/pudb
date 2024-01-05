@@ -17,7 +17,7 @@ def text_width(txt):
 
 
 def encode_like_urwid(s):
-    from urwid import escape
+    from urwid.display import escape
     from urwid.util import _target_encoding
 
     # Consistent with
