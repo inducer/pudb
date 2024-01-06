@@ -76,6 +76,10 @@ enabling you to connect via ``telnet``, use the following code::
     from pudb.remote import set_trace
     set_trace(term_size=(80, 24))
 
+The terminal size can be defined via the environment variable as well::
+
+    export PUDB_TERM_SIZE=80x24
+
 At this point, the debugger will look for a free port and wait for a telnet
 connection::
 
