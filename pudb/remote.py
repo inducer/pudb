@@ -45,13 +45,15 @@ from typing import Callable, Any
 
 from pudb.debugger import Debugger
 
-__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace",
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "PUDB_TERM_SIZE",
+           "default_port", "debugger", "set_trace",
            "debug_remote_on_single_rank"]
 
 default_port = 6899
 
 PUDB_RDB_HOST = os.environ.get("PUDB_RDB_HOST") or "127.0.0.1"
 PUDB_RDB_PORT = int(os.environ.get("PUDB_RDB_PORT") or default_port)
+PUDB_TERM_SIZE = os.environ.get("PUDB_TERM_SIZE", "")
 
 #: Holds the currently active debugger.
 _current = [None]
@@ -139,8 +141,10 @@ class RemoteDebugger(Debugger):
 
         if term_size is None:
             try:
-                s = os.get_terminal_size()
-                term_size = (s.columns, s.lines)
+                term_size = tuple(map(int, PUDB_TERM_SIZE.split("x")))
+                if len(term_size) != 2:
+                    s = os.get_terminal_size()
+                    term_size = (s.columns, s.lines)
             except Exception:
                 term_size = (80, 24)
 
