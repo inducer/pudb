@@ -87,8 +87,7 @@ the terminal size:
 #. ``PUDB_TERM_SIZE`` environment variable
 #. Size of the terminal in which the debugged program is running
    (as returned by ``os.get_terminal_size()``)
-#. Default fallback value of ``(80, 20)`` if one of the previous steps
-   fails with an exception
+#. Default fallback value of ``(80, 20)``
 
 At this point, the debugger will look for a free port and wait for a telnet
 connection::
