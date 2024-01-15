@@ -138,11 +138,17 @@ class RemoteDebugger(Debugger):
         self.out = out
 
         if term_size is None:
-            try:
-                s = os.get_terminal_size()
-                term_size = (s.columns, s.lines)
-            except Exception:
-                term_size = (80, 24)
+            term_size = os.environ.get("PUDB_TERM_SIZE")
+            if term_size is not None:
+                term_size = tuple(map(int, term_size.split("x")))
+                if len(term_size) != 2:
+                    raise ValueError("PUDB_TERM_SIZE should have two dimensions")
+            else:
+                try:
+                    s = os.get_terminal_size()
+                    term_size = (s.columns, s.lines)
+                except Exception:
+                    term_size = (80, 24)
 
         self._prev_handles = sys.stdin, sys.stdout
         self._client, (address, port) = self.get_client(
