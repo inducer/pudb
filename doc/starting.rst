@@ -80,6 +80,16 @@ The terminal size can be defined via the environment variable as well::
 
     export PUDB_TERM_SIZE=80x24
 
+The following precedence (from highest to lowest) is used to determine
+the terminal size:
+
+#. ``term_size`` keyword argument
+#. ``PUDB_TERM_SIZE`` environment variable
+#. Size of the terminal in which the debugged program is running
+   (as returned by ``os.get_terminal_size()``)
+#. Default fallback value of ``(80, 20)`` if one of the previous steps
+   fails with an exception
+
 At this point, the debugger will look for a free port and wait for a telnet
 connection::
 
