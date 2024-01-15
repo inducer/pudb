@@ -97,6 +97,9 @@ connection::
     telnet 127.0.0.1 6899
     pudb:6899: Waiting for client...
 
+The host and port can be specified as keyword arguments to ``set_trace()``,
+or via the ``PUDB_RDB_HOST`` and ``PUDB_RDB_PORT`` env vars.
+
 To debug a function in a remote debugger (and examine any exceptions that
 may occur), use code like the following:
 
