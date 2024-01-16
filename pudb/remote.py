@@ -248,7 +248,10 @@ class RemoteDebugger(Debugger):
 
 
 def debugger(
-        term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=PUDB_RDB_REVERSE
+    term_size=None,
+    host=PUDB_RDB_HOST,
+    port=PUDB_RDB_PORT,
+    reverse=PUDB_RDB_REVERSE
 ):
     """Return the current debugger instance (if any),
     or creates a new one."""
@@ -262,7 +265,11 @@ def debugger(
 
 
 def set_trace(
-    frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=PUDB_RDB_REVERSE
+    frame=None,
+    term_size=None,
+    host=PUDB_RDB_HOST,
+    port=PUDB_RDB_PORT,
+    reverse=PUDB_RDB_REVERSE
 ):
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:
