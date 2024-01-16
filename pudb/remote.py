@@ -45,13 +45,15 @@ from typing import Callable, Any
 
 from pudb.debugger import Debugger
 
-__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace",
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "PUDB_RDB_REVERSE",
+           "default_port", "debugger", "set_trace",
            "debug_remote_on_single_rank"]
 
 default_port = 6899
 
 PUDB_RDB_HOST = os.environ.get("PUDB_RDB_HOST") or "127.0.0.1"
 PUDB_RDB_PORT = int(os.environ.get("PUDB_RDB_PORT") or default_port)
+PUDB_RDB_REVERSE = bool(os.environ.get("PUDB_RDB_REVERSE"))
 
 #: Holds the currently active debugger.
 _current = [None]
@@ -124,7 +126,7 @@ class RemoteDebugger(Debugger):
         port_search_limit=100,
         out=sys.stdout,
         term_size=None,
-        reverse=False,
+        reverse=PUDB_RDB_REVERSE,
     ):
         """
         :arg term_size: A two-tuple ``(columns, rows)``, or *None*. If *None*,
@@ -245,7 +247,9 @@ class RemoteDebugger(Debugger):
         self.say(SESSION_ENDED.format(self=self))
 
 
-def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False):
+def debugger(
+        term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=PUDB_RDB_REVERSE
+):
     """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
@@ -258,7 +262,7 @@ def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=Fal
 
 
 def set_trace(
-    frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False
+    frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=PUDB_RDB_REVERSE
 ):
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:

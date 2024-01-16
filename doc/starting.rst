@@ -131,6 +131,11 @@ Specify host and port in set_trace and set the *reverse* parameter to *True*::
     from pudb.remote import set_trace
     set_trace(reverse=True)
 
+The "reverse" mode can also be enabled by setting the environment variable to a
+non-empty value (the keyword argument has priority over the env var)::
+
+    export PUDB_RDB_REVERSE=1
+
 Then watch the debugger connect to netcat::
 
     pudb:9999: Now in session with 127.0.0.1:6899.
