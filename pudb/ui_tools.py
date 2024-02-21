@@ -1,5 +1,5 @@
 import urwid
-from urwid.util import calc_width, calc_text_pos
+from urwid import calc_width, calc_text_pos
 
 
 # generic urwid helpers -------------------------------------------------------
