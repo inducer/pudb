@@ -725,6 +725,23 @@ def make_var_view(frame_var_info, locals, globals):
     ret_walker = BasicValueWalker(frame_var_info)
     watch_widget_list = []
 
+    if CONFIG["persist_watches"]:
+        from pudb.settings import load_watches, save_watches
+        stored_expressions = [expr.strip() for expr in load_watches()]
+
+        # As watch expressions are stored in a list, simply appending stored
+        # expressions to that list will add duplicates. This part is to avoid that.
+        from pudb.var_view import WatchExpression
+        existing_expressions = [expr.expression
+                                for expr in frame_var_info.watches]
+
+        for stored_expr in stored_expressions:
+            if stored_expr not in existing_expressions:
+                frame_var_info.watches.append(WatchExpression(stored_expr))
+
+        # Save watches because new ones may have added to a list
+        save_watches([expr.expression for expr in frame_var_info.watches])
+
     for watch_expr in frame_var_info.watches:
         try:
             value = eval(watch_expr.expression, globals, locals)
