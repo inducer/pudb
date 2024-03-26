@@ -196,6 +196,7 @@ def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
                 extra_bindings=[
                     ("q", "quit"),
                     ("esc", "examine"),
+                    ("r", "restart"),
                     ])
 
             if result == "quit":
