@@ -2526,22 +2526,36 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     # {{{ UI enter/exit
 
-    def show(self):
+    def _show(self):
         if self.show_count == 0:
             self.screen.start()
         self.show_count += 1
 
-    def hide(self):
+    def _hide(self):
         self.show_count -= 1
         if self.show_count == 0:
             self.screen.stop()
 
     def call_with_ui(self, f, *args, **kwargs):
-        self.show()
-        try:
-            return f(*args, **kwargs)
-        finally:
-            self.hide()
+        import warnings
+
+        def myshowwarning(
+                  message, category, filename, lineno, file=None, line=None
+              ) -> None:
+            msg = warnings.formatwarning(
+                     message=message, category=category,
+                     filename=filename, lineno=lineno, line=line)
+            self.add_cmdline_content(msg, "command line error")
+
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.showwarning = myshowwarning
+
+            self._show()
+            try:
+                return f(*args, **kwargs)
+            finally:
+                self._hide()
 
     # }}}
 
