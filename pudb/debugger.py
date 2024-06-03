@@ -994,9 +994,12 @@ class DebuggerUI(FrameVarInfoKeeper):
             return None
 
         def change_var_state(w, size, key):
-            pos = self.var_list._w.focus_position
-            var = self.var_list._w.focus
+            try:
+                pos = self.var_list._w.focus_position
+            except IndexError:
+                return
 
+            var = self.var_list._w.focus
             if var is None:
                 return
 
