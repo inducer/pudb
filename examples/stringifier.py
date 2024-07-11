@@ -38,16 +38,17 @@ expanded view, etc.
     a handful of "safe" types for which it is guaranteed to be fast and not to
     fail.
 """
-import time
 import signal
-import sys
-import math
+import time
+
 
 class TimeOutError(Exception):
     pass
 
+
 def timeout(signum, frame, time):
     raise TimeOutError("Timed out after %d seconds" % time)
+
 
 def run_with_timeout(code, time, globals=None):
     """
@@ -63,6 +64,7 @@ def run_with_timeout(code, time, globals=None):
     signal.alarm(0)          # Disable the alarm
     return r
 
+
 def pudb_stringifier(obj):
     """
     This is the custom stringifier.
@@ -71,20 +73,23 @@ def pudb_stringifier(obj):
     in which case it falls back to type(obj).
     """
     try:
-        return run_with_timeout("str(obj)", 0.5, {'obj':obj})
+        return run_with_timeout("str(obj)", 0.5, {"obj": obj})
     except TimeOutError:
         return (type(obj), "(str too slow to compute)")
 
 # Example usage
 
+
 class FastString(object):
     def __str__(self):
         return "This was fast to compute."
 
+
 class SlowString(object):
     def __str__(self):
-        time.sleep(10) # Return the string value after ten seconds
+        time.sleep(10)  # Return the string value after ten seconds
         return "This was slow to compute."
+
 
 fast = FastString()
 slow = SlowString()

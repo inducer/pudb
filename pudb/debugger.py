@@ -24,19 +24,20 @@ THE SOFTWARE.
 """
 
 
-import urwid
 import bdb
 import gc
 import os
 import sys
-
-from itertools import count
-from functools import partial
 from collections import deque
+from functools import partial
+from itertools import count
 from types import TracebackType
 
+import urwid
+
 from pudb.lowlevel import decode_lines, ui_log
-from pudb.settings import load_config, save_config, get_save_config_path
+from pudb.settings import get_save_config_path, load_config, save_config
+
 
 CONFIG = load_config()
 save_config(CONFIG)
@@ -273,7 +274,7 @@ class Debugger(bdb.Bdb):
             thisframe = frame
         # See pudb issue #52. If this works well enough we should upstream to
         # stdlib bdb.py.
-        #self.reset()
+        # self.reset()
 
         while frame:
             frame.f_trace = self.trace_dispatch
@@ -537,7 +538,7 @@ class Debugger(bdb.Bdb):
         # This is basically stolen from the pdb._runmodule from CPython 3.8
         # https://github.com/python/cpython/blob/a1d3be4623c8ec7069bd34ccdce336be9cdeb644/Lib/pdb.py#L1530
         import runpy
-        mod_name, mod_spec, code = runpy._get_module_details(module_name)
+        _mod_name, mod_spec, code = runpy._get_module_details(module_name)
 
         self.mainpyfile = self.canonic(code.co_filename)
         import __main__
@@ -587,10 +588,14 @@ class Debugger(bdb.Bdb):
 # UI stuff --------------------------------------------------------------------
 
 from pudb.ui_tools import (
-        make_hotkey_markup, labelled_value,
-        focus_widget_in_container,
-        SelectableText, SignalWrap, StackFrame, BreakpointFrame)
-
+    BreakpointFrame,
+    SelectableText,
+    SignalWrap,
+    StackFrame,
+    focus_widget_in_container,
+    labelled_value,
+    make_hotkey_markup,
+)
 from pudb.var_view import FrameVarInfoKeeper
 
 
@@ -603,6 +608,8 @@ except ImportError:
 
 
 from urwid.display.raw import Screen as RawScreen
+
+
 try:
     from urwid.display.curses import Screen as CursesScreen
 except ImportError:
@@ -1611,9 +1618,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "(perhaps this is generated code)")
 
         def pick_module(w, size, key):
-            from os.path import splitext
-
             import sys
+            from os.path import splitext
 
             def mod_exists(mod):
                 if not hasattr(mod, "__file__"):
@@ -1790,7 +1796,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 return
 
             try:
-                from packaging.version import parse as LooseVersion     # noqa: N812
+                from packaging.version import parse as LooseVersion  # noqa: N812
             except ImportError:
                 from distutils.version import LooseVersion
 
@@ -2462,6 +2468,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     def _show_internal_exc_dlg(self, exc_tuple):
         from traceback import format_exception
+
         from pudb import VERSION
 
         desc = (
@@ -2949,7 +2956,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 if not bp.temporary]
 
     def _format_fname(self, fname):
-        from os.path import dirname, basename
+        from os.path import basename, dirname
         name = basename(fname)
 
         if name == "__init__.py":

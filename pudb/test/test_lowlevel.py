@@ -1,6 +1,6 @@
 import sys
 
-from pudb.lowlevel import detect_encoding, decode_lines
+from pudb.lowlevel import decode_lines, detect_encoding
 
 
 def test_detect_encoding_nocookie():

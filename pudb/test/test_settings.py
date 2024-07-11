@@ -1,5 +1,5 @@
-import collections
 import builtins
+import collections
 
 import pytest  # noqa: F401
 

@@ -24,8 +24,9 @@ THE SOFTWARE.
 """
 
 
-from pudb.settings import load_config
 import sys
+
+from pudb.settings import load_config
 
 
 NUM_VERSION = (2024, 1, 1)
@@ -54,6 +55,8 @@ class PudbShortcuts:
 
 
 import builtins
+
+
 builtins.__dict__["pu"] = PudbShortcuts()
 
 
@@ -292,23 +295,26 @@ def set_interrupt_handler(interrupt_signal=None):
             old_handler = "not installed from python"
         return warn("A non-default handler for signal %d is already installed (%s). "
                 "Skipping pudb interrupt support."
-                % (interrupt_signal, old_handler))
+                % (interrupt_signal, old_handler),
+                stacklevel=2)
 
     import threading
     if not isinstance(threading.current_thread(), threading._MainThread):
         from warnings import warn
         # Setting signals from a non-main thread will not work
         return warn("Setting the interrupt handler can only be done on the main "
-                "thread. The interrupt handler was NOT installed.")
+                "thread. The interrupt handler was NOT installed.",
+                stacklevel=2)
 
     try:
         signal.signal(interrupt_signal, _interrupt_handler)
     except ValueError:
-        from traceback import format_exception
         import sys
+        from traceback import format_exception
         from warnings import warn
         warn("setting interrupt handler on signal %d failed: %s"
-                % (interrupt_signal, "".join(format_exception(*sys.exc_info()))))
+                % (interrupt_signal, "".join(format_exception(*sys.exc_info()))),
+                stacklevel=2)
 
 
 def post_mortem(tb=None, e_type=None, e_value=None):
@@ -325,7 +331,7 @@ def post_mortem(tb=None, e_type=None, e_value=None):
 
 def pm():
     import sys
-    exc_type, exc_val, tb = sys.exc_info()
+    exc_type, _exc_val, _tb = sys.exc_info()
 
     if exc_type is None:
         # No exception on record. Do nothing.
