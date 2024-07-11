@@ -1,5 +1,8 @@
 def f():
-    fail
+    fail  # noqa: B018, F821
+
 
 from pudb import runcall
+
+
 runcall(f)

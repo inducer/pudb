@@ -1,6 +1,7 @@
 from collections import namedtuple
 
-Color = namedtuple('Color', ['red', 'green', 'blue', 'alpha'])
+
+Color = namedtuple("Color", ["red", "green", "blue", "alpha"])
 
 
 class MyClass(object):
@@ -9,30 +10,35 @@ class MyClass(object):
         self.b = b
         self._b = [b]
 
+
 mc = MyClass(15, MyClass(12, None))
 
 
-from pudb import set_trace; set_trace()
+from pudb import set_trace
+
+
+set_trace()
+
 
 def simple_func(x):
     x += 1
 
     s = range(20)
-    z = None
-    w = ()
+    z = None  # noqa: F841
+    w = ()  # noqa: F841
 
-    y = dict((i, i**2) for i in s)
+    y = {i: i**2 for i in s}  # noqa: F841
 
-    k = set(range(5, 99))
-    c = Color(137, 214, 56, 88)
+    k = set(range(5, 99))  # noqa: F841
+    c = Color(137, 214, 56, 88)  # noqa: F841
 
     try:
-        x.invalid
+        x.invalid  # noqa: B018
     except AttributeError:
         pass
 
-    #import sys
-    #sys.exit(1)
+    # import sys
+    # sys.exit(1)
 
     return 2*x
 
@@ -51,6 +57,7 @@ def fermat(n):
             for z in range(1, x**n+y**n + 1):
                 if x**n + y**n == z**n:
                     yield x, y, z
+
 
 print("SF %s" % simple_func(10))
 

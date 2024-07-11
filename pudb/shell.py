@@ -3,7 +3,7 @@ try:
     # Access a property to verify module exists in case
     # there's a demand loader wrapping module imports
     # See https://github.com/inducer/pudb/issues/177
-    bpython.__version__
+    bpython.__version__  # noqa: B018
 except ImportError:
     HAVE_BPYTHON = False
 else:
@@ -78,8 +78,9 @@ def run_classic_shell(globals, locals, message=""):
 
     ns = SetPropagatingDict([locals, globals], locals)
 
-    from pudb.settings import get_save_config_path
     from os.path import join
+
+    from pudb.settings import get_save_config_path
     hist_file = join(
             get_save_config_path(),
             "shell-history")
@@ -130,7 +131,7 @@ def have_ipython():
         # Access a property to verify module exists in case
         # there's a demand loader wrapping module imports
         # See https://github.com/inducer/pudb/issues/177
-        IPython.core
+        IPython.core  # noqa: B018
     except (ImportError, ValueError):
         # Old IPythons versions (0.12?) may fail to import with
         # ValueError: fallback required, but not specified
@@ -199,8 +200,7 @@ def run_ipython_shell_v11(globals, locals):
         from IPython.terminal.interactiveshell import TerminalInteractiveShell
         from IPython.terminal.ipapp import load_default_config
     except ImportError:
-        from IPython.frontend.terminal.interactiveshell import \
-                TerminalInteractiveShell
+        from IPython.frontend.terminal.interactiveshell import TerminalInteractiveShell
         from IPython.frontend.terminal.ipapp import load_default_config
     # XXX: in the future it could be useful to load a 'pudb' config for the
     # user (if it exists) that could contain the user's macros and other
@@ -262,8 +262,10 @@ def run_ipython_kernel(globals, locals):
 
 def get_ptpython_history_file():
     from argparse import ArgumentParser
+
     from ptpython.entry_points.run_ptpython import (  # pylint: disable=import-error
-            get_config_and_history_file)
+        get_config_and_history_file,
+    )
     parser = ArgumentParser()
     parser.add_argument("--history_file")
     parser.add_argument("--config_file")

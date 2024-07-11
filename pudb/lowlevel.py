@@ -24,9 +24,10 @@ THE SOFTWARE.
 """
 
 
-import sys
 import logging
+import sys
 from datetime import datetime
+
 
 logfile = [None]
 
@@ -50,7 +51,7 @@ class TerminalOrStreamHandler(logging.StreamHandler):
     stderr, depending on whether the debugger is active.
     """
     def emit(self, record):
-        from pudb import _have_debugger, _get_debugger
+        from pudb import _get_debugger, _have_debugger
         logfile = getlogfile()
 
         self.acquire()
@@ -171,7 +172,7 @@ def lookup_module(filename):
     f = os.path.join(sys.path[0], filename)
     if os.path.exists(f):  # and self.canonic(f) == self.mainpyfile:
         return f
-    root, ext = os.path.splitext(filename)
+    _root, ext = os.path.splitext(filename)
     if ext == "":
         filename = filename + ".py"
     if os.path.isabs(filename):
@@ -191,8 +192,10 @@ def lookup_module(filename):
 # the main idea stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 
 import re
+
+
 cookie_re = re.compile(br"^\s*#.*coding[:=]\s*([-\w.]+)")
-from codecs import lookup, BOM_UTF8
+from codecs import BOM_UTF8, lookup
 
 
 def detect_encoding(line_iter):
@@ -232,9 +235,9 @@ def detect_encoding(line_iter):
         encoding = matches[0].decode()
         try:
             codec = lookup(encoding)
-        except LookupError:
+        except LookupError as err:
             # This behaviour mimics the Python interpreter
-            raise SyntaxError("unknown encoding: " + encoding)
+            raise SyntaxError("unknown encoding: " + encoding) from err
 
         if bom_found and codec.name != "utf-8":
             # This behaviour mimics the Python interpreter

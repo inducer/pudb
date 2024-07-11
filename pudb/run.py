@@ -19,9 +19,9 @@ SCRIPT_ARGS = {"zsh": "_script_args"}
 
 
 def get_argparse_parser():
+    import argparse
     import os
     import sys
-    import argparse
     try:
         import shtab
     except ImportError:

@@ -1,5 +1,6 @@
 from pudb.themes.utils import add_setting
 
+
 palette_dict = {
     # {{{ base styles
     "background": ("light green", "light gray"),

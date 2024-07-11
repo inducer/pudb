@@ -1,6 +1,5 @@
-from .classic import palette_dict as classic
 from .agr_256 import palette_dict as agr256
-from .solarized import palette_dict as solarized
+from .classic import palette_dict as classic
 from .dark_vim import palette_dict as darkvim
 from .gray_light_256 import palette_dict as graylight256
 from .midnight import palette_dict as midnight
@@ -8,7 +7,9 @@ from .mono import palette_dict as mono
 from .monokai import palette_dict as monokai
 from .monokai_256 import palette_dict as monokai256
 from .nord_dark_256 import palette_dict as norddark256
+from .solarized import palette_dict as solarized
 from .vim import palette_dict as vim
+
 
 THEMES = {
     "classic": classic,

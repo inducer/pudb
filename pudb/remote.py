@@ -36,14 +36,15 @@ THE SOFTWARE.
 # mostly stolen from celery.contrib.rdb
 
 
+import atexit
 import errno
 import os
 import socket
 import sys
-import atexit
-from typing import Callable, Any
+from typing import Any, Callable
 
 from pudb.debugger import Debugger
+
 
 __all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "PUDB_RDB_REVERSE",
            "default_port", "debugger", "set_trace",
@@ -208,7 +209,7 @@ class RemoteDebugger(Debugger):
             _sock.setblocking(1)
         except OSError as exc:
             if exc.errno == errno.ECONNREFUSED:
-                raise ValueError(CONN_REFUSED.format(self=self))
+                raise ValueError(CONN_REFUSED.format(self=self)) from exc
             raise exc
         return _sock, _sock.getpeername()
 

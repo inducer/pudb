@@ -224,10 +224,10 @@ except ImportError:
             for i, line in enumerate(lines)
         ]
 else:
-    from pygments import highlight
-    from pygments.lexers import PythonLexer
-    from pygments.formatter import Formatter
     import pygments.token as t
+    from pygments import highlight
+    from pygments.formatter import Formatter
+    from pygments.lexers import PythonLexer
 
     argument_parser = ArgumentParser(t)
 

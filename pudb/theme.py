@@ -76,11 +76,11 @@ class PaletteEntry:
 
 # {{{ style inheritance
 BASE_STYLES = {
-    "background":         None,
-    "selectable":         None,
+    "background": None,
+    "selectable": None,
     "focused selectable": None,
-    "highlighted":        None,
-    "hotkey":             None,
+    "highlighted": None,
+    "hotkey": None,
 }
 
 

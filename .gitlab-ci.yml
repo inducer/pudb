@@ -14,12 +14,12 @@ Python 3:
     reports:
       junit: test/pytest.xml
 
-Flake8:
+ruff:
   script:
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
-  - ". ./prepare-and-run-flake8.sh pudb"
+  - pipx install ruff
+  - ruff check
   tags:
-  - python3
+  - docker-runner
   except:
   - tags
 

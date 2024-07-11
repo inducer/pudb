@@ -1,5 +1,6 @@
 from pudb.themes.utils import add_setting, link
 
+
 link("current breakpoint", "current frame name")
 link("focused current breakpoint", "focused current frame name")
 
