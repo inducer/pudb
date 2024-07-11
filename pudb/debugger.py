@@ -2575,7 +2575,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e046"  # noqa
+        WELCOME_LEVEL = "e047"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2591,6 +2591,12 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2024.1.1:\n\n"
+                    "- Fix some urwid.util deprecation warnings\n"
+                    "- Redirect pudb warnings to console\n"
+                    "- Catch IndexError on empty Variables state "
+                    "(Michael van der Kamp)\n"
 
                     "\nChanges in version 2024.1:\n\n"
                     "- Control remote debugging via env vars (Max Arnold)\n"
