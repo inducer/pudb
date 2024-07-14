@@ -187,7 +187,7 @@ class Debugger(bdb.Bdb):
     _current_debugger = []
 
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
-                 _continue_at_start=False, **kwargs):
+                 _continue_at_start=False, tty_file=None, **kwargs):
 
         if Debugger._current_debugger:
             raise ValueError("a Debugger instance already exists")
@@ -197,6 +197,7 @@ class Debugger(bdb.Bdb):
         self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
         self.steal_output = steal_output
         self._continue_at_start__setting = _continue_at_start
+        self._tty_file = tty_file
 
         self.setup_state()
 
@@ -214,8 +215,17 @@ class Debugger(bdb.Bdb):
         self._current_debugger.append(self)
 
     def __del__(self):
-        assert self._current_debugger == [self]
-        self._current_debugger.pop()
+        # according to https://stackoverflow.com/a/1481512/1054322, the garbage
+        # collector cannot be relied on to  call this, so we call it explicitly
+        # in a finally (see __init__.py:runscript). But then, the garbage
+        # collector *might* call it, so it should tolerate being called twice.
+
+        if self._current_debugger:
+            assert self._current_debugger == [self]
+            self._current_debugger.pop()
+        if self._tty_file:
+            self._tty_file.close()
+            self._tty_file = None
 
     # These (dispatch_line and set_continue) are copied from bdb with the
     # patch from https://bugs.python.org/issue16482 applied. See

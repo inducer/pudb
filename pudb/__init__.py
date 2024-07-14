@@ -83,6 +83,7 @@ def _get_debugger(**kwargs):
             kwargs.setdefault("stdin", tty_file)
             kwargs.setdefault("stdout", tty_file)
             kwargs.setdefault("term_size", term_size)
+            kwargs.setdefault("tty_file", tty_file)
 
         from pudb.debugger import Debugger
         dbg = Debugger(**kwargs)
@@ -111,12 +112,19 @@ def runmodule(*args, **kwargs):
     runscript(*args, **kwargs)
 
 
-def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
-              _continue_at_start=False, run_as_module=False):
-    dbg = _get_debugger(
-        steal_output=steal_output,
-        _continue_at_start=_continue_at_start,
-    )
+def runscript(mainpyfile, steal_output=False, _continue_at_start=False,
+              **kwargs):
+    try:
+        dbg = _get_debugger(
+            steal_output=steal_output,
+            _continue_at_start=_continue_at_start,
+        )
+        _runscript(mainpyfile, dbg, **kwargs)
+    finally:
+        dbg.__del__()
+
+
+def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
