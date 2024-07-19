@@ -1047,6 +1047,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 for i, watch_expr in enumerate(fvi.watches):
                     if watch_expr is var.watch_expr:
                         del fvi.watches[i]
+                        break
 
             self.update_var_view(focus_index=focus_index)
 
@@ -1165,6 +1166,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 for i, watch_expr in enumerate(fvi.watches):
                     if watch_expr is var.watch_expr:
                         del fvi.watches[i]
+                        break
 
             self.update_var_view()
 
