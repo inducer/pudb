@@ -25,7 +25,7 @@ def pudb_shell(_globals, _locals):
     # Many shells only let you pass in a single locals dictionary, rather than
     # separate globals and locals dictionaries. In this case, you can use
     # pudb.shell.SetPropagatingDict to automatically merge the two into a
-    # single dictionary. It does this in such a way that assignments propogate
+    # single dictionary. It does this in such a way that assignments propagate
     # to _locals, so that when the debugger is at the module level, variables
     # can be reassigned in the shell.
     from pudb.shell import SetPropagatingDict

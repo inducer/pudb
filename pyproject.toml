@@ -40,3 +40,17 @@ addopts = [
         "--ignore=pudb/b.py",
         "--ignore=pudb/ipython.py",
         ]
+
+
+[tool.typos.default]
+extend-ignore-re = [
+  "(?Rm)^.*(#|//)\\s*spellchecker:\\s*disable-line$"
+]
+
+[tool.typos.default.extend-words]
+# Ned Batchelder, person
+Ned = "Ned"
+
+[tool.typos.files]
+extend-exclude = [
+]

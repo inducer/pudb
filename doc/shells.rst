@@ -52,7 +52,7 @@ PuDB supports the following external shells.
 - Internal (same as pressing ``Ctrl-x``). This is the default.
 - Classic (similar to the default ``python`` interactive shell)
 - `IPython <https://ipython.org/>`_
-   The `IPython` shell can also be used in a server-client fasion, which is
+   The `IPython` shell can also be used in a server-client fashion, which is
    enabled by selecting the shell `ipython_kernel` in the settings. When set,
    the ``!`` key will start an `IPython` kernel and wait for connection from,
    e.g., `qtconsole`. Like other shells, `ipython_kernel` blocks the debugger

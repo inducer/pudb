@@ -2828,7 +2828,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "- Size changes in sidebar boxes (contributed by Aaron Meurer)\n"
                     "- New theme 'midnight' (contributed by Aaron Meurer)\n"
                     "- Support for IPython 0.11 (contributed by Chris Farrow)\n"
-                    "- Suport for custom stringifiers "
+                    "- Support for custom stringifiers "
                     "(contributed by Aaron Meurer)\n"
                     "- Line wrapping in variables view "
                     "(contributed by Aaron Meurer)\n"
@@ -2951,7 +2951,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 locals, globals)
         if focus_index is not None:
             # Have to set the focus _after_ updating the locals list, as there
-            # appears to be a brief moment while reseting the list when the
+            # appears to be a brief moment while resetting the list when the
             # list is empty but urwid will attempt to set the focus anyway,
             # which causes problems.
             try:
