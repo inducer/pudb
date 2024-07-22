@@ -74,7 +74,7 @@ def test_executable_lines():
             conf = ''. \\
                 replace('', '')
 
-            conf_tpl = ''  # <-- imposible to set breakpoint here
+            conf_tpl = ''  # <-- impossible to set breakpoint here
 
         main()
         """

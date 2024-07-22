@@ -201,7 +201,7 @@ from codecs import BOM_UTF8, lookup
 def detect_encoding(line_iter):
     """
     The detect_encoding() function is used to detect the encoding that should
-    be used to decode a Python source file. It requires one argment, line_iter,
+    be used to decode a Python source file. It requires one argument, line_iter,
     an iterator on the lines to be read.
 
     It will read a maximum of two lines, and return the encoding used
