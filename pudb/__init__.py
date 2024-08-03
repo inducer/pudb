@@ -206,6 +206,7 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
                 extra_bindings=[
                     ("q", "quit"),
                     ("esc", "examine"),
+                    ("r", "restart"),
                     ])
 
             if result == "quit":
