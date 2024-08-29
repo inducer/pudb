@@ -49,7 +49,10 @@ def get_save_config_path():
         return None
 
     path = os.path.join(XDG_CONFIG_HOME, XDG_CONF_RESOURCE)
-    os.makedirs(path, mode=0o700, exist_ok=True)
+    try:
+        os.makedirs(path, mode=0o700, exist_ok=True)
+    except Exception:
+        settings_log.exception("Failed to make config dir")
 
     return path
 
