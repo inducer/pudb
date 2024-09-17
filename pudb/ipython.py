@@ -1,8 +1,8 @@
-import sys
 import os
+import sys
 
-from IPython.core.magic import register_line_magic
 from IPython import get_ipython
+from IPython.core.magic import register_line_magic
 
 
 def pudb(line):

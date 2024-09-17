@@ -26,15 +26,17 @@ THE SOFTWARE.
 
 # {{{ constants and imports
 
-import urwid
 import inspect
 import warnings
-
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sized
-from typing import Tuple, List
+from typing import List, Tuple
+
+import urwid
+
 from pudb.lowlevel import ui_log
 from pudb.ui_tools import text_width
+
 
 try:
     import numpy
@@ -298,7 +300,7 @@ class VariableWidget(urwid.FlowWidget):
 
             extralabel_full, extralabel_rem = divmod(
                     text_width(var_label[maxcol:]), maxcol)
-            totallen = sum([text_width(i) for i in text])
+            totallen = sum(text_width(i) for i in text)
             labellen = (
                     len(self.prefix)  # Padding of first line
 
@@ -353,7 +355,7 @@ class VariableWidget(urwid.FlowWidget):
             attr = [[(apfx+"label", lprefix + text_width(self.var_label)), ]]
 
         # Ellipses to show text was cut off
-        #encoding = urwid.util.detected_encoding
+        # encoding = urwid.util.detected_encoding
 
         for i in range(len(text)):
             if text_width(text[i]) > maxcol:

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 from setuptools import find_packages, setup
+
 from pudb import VERSION
+
 
 with open("README.rst") as readme:
     long_description = str(readme.read())
@@ -15,7 +17,7 @@ setup(
     author_email="inform@tiker.net",
     python_requires="~=3.8",
     install_requires=[
-        "urwid>=1.1.1",
+        "urwid>=2.4",
         "pygments>=2.7.4",
         "jedi>=0.18,<1",
         "urwid_readline",

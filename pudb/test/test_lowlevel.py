@@ -1,6 +1,6 @@
 import sys
 
-from pudb.lowlevel import detect_encoding, decode_lines
+from pudb.lowlevel import decode_lines, detect_encoding
 
 
 def test_detect_encoding_nocookie():
@@ -74,7 +74,7 @@ def test_executable_lines():
             conf = ''. \\
                 replace('', '')
 
-            conf_tpl = ''  # <-- imposible to set breakpoint here
+            conf_tpl = ''  # <-- impossible to set breakpoint here
 
         main()
         """
@@ -89,10 +89,14 @@ def test_executable_lines():
     test_code = "a = 3*5\n" + 333 * "\n" + "b = 15"
     expected = {
         1,
-        128,  # bogus,
-        255,  # bogus,
         335
     }
+    if sys.version_info < (3, 10):
+        # if co_lines is unavailable, we appear to see these
+        expected.update([
+            128,  # bogus,
+            255,  # bogus,
+        ])
     if sys.version_info >= (3, 11):
         # See https://github.com/python/cpython/pull/94562 and
         # https://peps.python.org/pep-0626/

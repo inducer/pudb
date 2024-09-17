@@ -4,13 +4,13 @@ import string
 import unittest
 
 from pudb.var_view import (
+    STRINGIFIERS,
     BasicValueWalker,
     FrameVarInfo,
     InspectInfo,
     PudbCollection,
     PudbMapping,
     PudbSequence,
-    STRINGIFIERS,
     ValueWalker,
     get_stringifier,
     ui_log,
@@ -102,7 +102,7 @@ def method_factory(method_name):
             # sort of case. Frustrating, I know.
             if (method_name == "__getitem__"
                     and args and isinstance(args[0], int)):
-                raise IndexError
+                raise IndexError from None
             raise
     return method
 
@@ -324,8 +324,8 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         self.assert_walks_contents({
             0:                   42,
             "a":                 "foo",
-            "":                  None,
-            True:                False,
+            "": None,
+            True: False,
             frozenset(range(3)): "abc",
             ():                  "empty tuple",
             (1, 2, "c", ()):     "tuple",

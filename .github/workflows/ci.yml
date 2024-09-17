@@ -10,28 +10,30 @@ on:
         - cron:  '17 3 * * 0'
 
 jobs:
-    flake8:
-        name: Flake8
+    ruff:
+        name: Ruff
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
-        -
-            uses: actions/setup-python@v4
-            with:
-                # matches compat target in setup.py
-                python-version: '3.8'
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
-                . ./prepare-and-run-flake8.sh ./pudb
+                pipx install ruff
+                ruff check
+
+    typos:
+        name: Typos
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v4
+        -   uses: crate-ci/typos@master
 
     pylint:
         name: Pylint
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
-            uses: actions/setup-python@v4
+            uses: actions/setup-python@v5
             with:
                 python-version: '3.x'
         -   name: "Main Script"
@@ -46,9 +48,9 @@ jobs:
             matrix:
                 python-version: ["3.8", "3.9", "3.x", "pypy3.8"]
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
-            uses: actions/setup-python@v4
+            uses: actions/setup-python@v5
             with:
                 python-version: ${{ matrix.python-version }}
         -   name: "Main Script"
@@ -62,9 +64,9 @@ jobs:
         name: Pytest with Coverage Test
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
-            uses: actions/setup-python@v4
+            uses: actions/setup-python@v5
             with:
                 python-version: '3.x'
         -   name: "Main Script"
@@ -81,9 +83,9 @@ jobs:
         name: Documentation
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
-            uses: actions/setup-python@v4
+            uses: actions/setup-python@v5
             with:
                 python-version: '3.x'
         -   name: "Main Script"

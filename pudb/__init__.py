@@ -24,11 +24,12 @@ THE SOFTWARE.
 """
 
 
-from pudb.settings import load_config
 import sys
 
+from pudb.settings import load_config
 
-NUM_VERSION = (2023, 1)
+
+NUM_VERSION = (2024, 1, 2)
 VERSION = ".".join(str(nv) for nv in NUM_VERSION)
 __version__ = VERSION
 
@@ -54,6 +55,8 @@ class PudbShortcuts:
 
 
 import builtins
+
+
 builtins.__dict__["pu"] = PudbShortcuts()
 
 
@@ -80,7 +83,7 @@ def _get_debugger(**kwargs):
             kwargs.setdefault("stdin", tty_file)
             kwargs.setdefault("stdout", tty_file)
             kwargs.setdefault("term_size", term_size)
-            tty_file.close()
+            kwargs.setdefault("tty_file", tty_file)
 
         from pudb.debugger import Debugger
         dbg = Debugger(**kwargs)
@@ -109,12 +112,19 @@ def runmodule(*args, **kwargs):
     runscript(*args, **kwargs)
 
 
-def runscript(mainpyfile, args=None, pre_run="", steal_output=False,
-              _continue_at_start=False, run_as_module=False):
-    dbg = _get_debugger(
-        steal_output=steal_output,
-        _continue_at_start=_continue_at_start,
-    )
+def runscript(mainpyfile, steal_output=False, _continue_at_start=False,
+              **kwargs):
+    try:
+        dbg = _get_debugger(
+            steal_output=steal_output,
+            _continue_at_start=_continue_at_start,
+        )
+        _runscript(mainpyfile, dbg, **kwargs)
+    finally:
+        dbg.__del__()
+
+
+def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
@@ -293,23 +303,26 @@ def set_interrupt_handler(interrupt_signal=None):
             old_handler = "not installed from python"
         return warn("A non-default handler for signal %d is already installed (%s). "
                 "Skipping pudb interrupt support."
-                % (interrupt_signal, old_handler))
+                % (interrupt_signal, old_handler),
+                stacklevel=2)
 
     import threading
     if not isinstance(threading.current_thread(), threading._MainThread):
         from warnings import warn
         # Setting signals from a non-main thread will not work
         return warn("Setting the interrupt handler can only be done on the main "
-                "thread. The interrupt handler was NOT installed.")
+                "thread. The interrupt handler was NOT installed.",
+                stacklevel=2)
 
     try:
         signal.signal(interrupt_signal, _interrupt_handler)
     except ValueError:
-        from traceback import format_exception
         import sys
+        from traceback import format_exception
         from warnings import warn
         warn("setting interrupt handler on signal %d failed: %s"
-                % (interrupt_signal, "".join(format_exception(*sys.exc_info()))))
+                % (interrupt_signal, "".join(format_exception(*sys.exc_info()))),
+                stacklevel=2)
 
 
 def post_mortem(tb=None, e_type=None, e_value=None):
@@ -326,7 +339,7 @@ def post_mortem(tb=None, e_type=None, e_value=None):
 
 def pm():
     import sys
-    exc_type, exc_val, tb = sys.exc_info()
+    exc_type, _exc_val, _tb = sys.exc_info()
 
     if exc_type is None:
         # No exception on record. Do nothing.

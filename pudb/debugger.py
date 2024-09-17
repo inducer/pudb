@@ -24,19 +24,20 @@ THE SOFTWARE.
 """
 
 
-import urwid
 import bdb
 import gc
 import os
 import sys
-
-from itertools import count
-from functools import partial
 from collections import deque
+from functools import partial
+from itertools import count
 from types import TracebackType
 
+import urwid
+
 from pudb.lowlevel import decode_lines, ui_log
-from pudb.settings import load_config, save_config, get_save_config_path
+from pudb.settings import get_save_config_path, load_config, save_config
+
 
 CONFIG = load_config()
 save_config(CONFIG)
@@ -186,7 +187,7 @@ class Debugger(bdb.Bdb):
     _current_debugger = []
 
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
-                 _continue_at_start=False, **kwargs):
+                 _continue_at_start=False, tty_file=None, **kwargs):
 
         if Debugger._current_debugger:
             raise ValueError("a Debugger instance already exists")
@@ -196,6 +197,7 @@ class Debugger(bdb.Bdb):
         self.ui = DebuggerUI(self, stdin=stdin, stdout=stdout, term_size=term_size)
         self.steal_output = steal_output
         self._continue_at_start__setting = _continue_at_start
+        self._tty_file = tty_file
 
         self.setup_state()
 
@@ -213,8 +215,17 @@ class Debugger(bdb.Bdb):
         self._current_debugger.append(self)
 
     def __del__(self):
-        assert self._current_debugger == [self]
-        self._current_debugger.pop()
+        # according to https://stackoverflow.com/a/1481512/1054322, the garbage
+        # collector cannot be relied on to  call this, so we call it explicitly
+        # in a finally (see __init__.py:runscript). But then, the garbage
+        # collector *might* call it, so it should tolerate being called twice.
+
+        if self._current_debugger:
+            assert self._current_debugger == [self]
+            self._current_debugger.pop()
+        if self._tty_file:
+            self._tty_file.close()
+            self._tty_file = None
 
     # These (dispatch_line and set_continue) are copied from bdb with the
     # patch from https://bugs.python.org/issue16482 applied. See
@@ -273,7 +284,7 @@ class Debugger(bdb.Bdb):
             thisframe = frame
         # See pudb issue #52. If this works well enough we should upstream to
         # stdlib bdb.py.
-        #self.reset()
+        # self.reset()
 
         while frame:
             frame.f_trace = self.trace_dispatch
@@ -537,7 +548,7 @@ class Debugger(bdb.Bdb):
         # This is basically stolen from the pdb._runmodule from CPython 3.8
         # https://github.com/python/cpython/blob/a1d3be4623c8ec7069bd34ccdce336be9cdeb644/Lib/pdb.py#L1530
         import runpy
-        mod_name, mod_spec, code = runpy._get_module_details(module_name)
+        _mod_name, mod_spec, code = runpy._get_module_details(module_name)
 
         self.mainpyfile = self.canonic(code.co_filename)
         import __main__
@@ -587,10 +598,14 @@ class Debugger(bdb.Bdb):
 # UI stuff --------------------------------------------------------------------
 
 from pudb.ui_tools import (
-        make_hotkey_markup, labelled_value,
-        focus_widget_in_container,
-        SelectableText, SignalWrap, StackFrame, BreakpointFrame)
-
+    BreakpointFrame,
+    SelectableText,
+    SignalWrap,
+    StackFrame,
+    focus_widget_in_container,
+    labelled_value,
+    make_hotkey_markup,
+)
 from pudb.var_view import FrameVarInfoKeeper
 
 
@@ -602,9 +617,11 @@ except ImportError:
     curses = None
 
 
-from urwid.raw_display import Screen as RawScreen
+from urwid.display.raw import Screen as RawScreen
+
+
 try:
-    from urwid.curses_display import Screen as CursesScreen
+    from urwid.display.curses import Screen as CursesScreen
 except ImportError:
     CursesScreen = None
 
@@ -994,9 +1011,12 @@ class DebuggerUI(FrameVarInfoKeeper):
             return None
 
         def change_var_state(w, size, key):
-            pos = self.var_list._w.focus_position
-            var = self.var_list._w.focus
+            try:
+                pos = self.var_list._w.focus_position
+            except IndexError:
+                return
 
+            var = self.var_list._w.focus
             if var is None:
                 return
 
@@ -1037,6 +1057,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 for i, watch_expr in enumerate(fvi.watches):
                     if watch_expr is var.watch_expr:
                         del fvi.watches[i]
+                        break
 
             self.update_var_view(focus_index=focus_index)
 
@@ -1155,6 +1176,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 for i, watch_expr in enumerate(fvi.watches):
                     if watch_expr is var.watch_expr:
                         del fvi.watches[i]
+                        break
 
             self.update_var_view()
 
@@ -1608,9 +1630,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "(perhaps this is generated code)")
 
         def pick_module(w, size, key):
-            from os.path import splitext
-
             import sys
+            from os.path import splitext
 
             def mod_exists(mod):
                 if not hasattr(mod, "__file__"):
@@ -1787,7 +1808,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 return
 
             try:
-                from packaging.version import parse as LooseVersion     # noqa: N812
+                from packaging.version import parse as LooseVersion  # noqa: N812
             except ImportError:
                 from distutils.version import LooseVersion
 
@@ -2459,6 +2480,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     def _show_internal_exc_dlg(self, exc_tuple):
         from traceback import format_exception
+
         from pudb import VERSION
 
         desc = (
@@ -2526,22 +2548,36 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     # {{{ UI enter/exit
 
-    def show(self):
+    def _show(self):
         if self.show_count == 0:
             self.screen.start()
         self.show_count += 1
 
-    def hide(self):
+    def _hide(self):
         self.show_count -= 1
         if self.show_count == 0:
             self.screen.stop()
 
     def call_with_ui(self, f, *args, **kwargs):
-        self.show()
-        try:
-            return f(*args, **kwargs)
-        finally:
-            self.hide()
+        import warnings
+
+        def myshowwarning(
+                  message, category, filename, lineno, file=None, line=None
+              ) -> None:
+            msg = warnings.formatwarning(
+                     message=message, category=category,
+                     filename=filename, lineno=lineno, line=line)
+            self.add_cmdline_content(msg, "command line error")
+
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.showwarning = myshowwarning
+
+            self._show()
+            try:
+                return f(*args, **kwargs)
+            finally:
+                self._hide()
 
     # }}}
 
@@ -2558,7 +2594,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e045"  # noqa
+        WELCOME_LEVEL = "e048"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2574,6 +2610,22 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2024.1.2:\n\n"
+                    "- Fix separate-terminal debugging (Matt Rixman)\n"
+
+                    "\nChanges in version 2024.1.1:\n\n"
+                    "- Fix some urwid.util deprecation warnings\n"
+                    "- Redirect pudb warnings to console\n"
+                    "- Catch IndexError on empty Variables state "
+                    "(Michael van der Kamp)\n"
+
+                    "\nChanges in version 2024.1:\n\n"
+                    "- Control remote debugging via env vars (Max Arnold)\n"
+                    "- Adapt to, depend on urwid 2.4\n"
+                    "- Make compatible with Python 3.13 (Will Shanks)\n"
+                    "- Use co_lines mechanism for line finding executable lines"
+                    "when available\n"
 
                     "\nChanges in version 2023.1:\n\n"
                     "- Add nord-256 theme (Jorge Gomez, Michael van der Kamp)\n"
@@ -2779,7 +2831,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "- Size changes in sidebar boxes (contributed by Aaron Meurer)\n"
                     "- New theme 'midnight' (contributed by Aaron Meurer)\n"
                     "- Support for IPython 0.11 (contributed by Chris Farrow)\n"
-                    "- Suport for custom stringifiers "
+                    "- Support for custom stringifiers "
                     "(contributed by Aaron Meurer)\n"
                     "- Line wrapping in variables view "
                     "(contributed by Aaron Meurer)\n"
@@ -2902,7 +2954,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 locals, globals)
         if focus_index is not None:
             # Have to set the focus _after_ updating the locals list, as there
-            # appears to be a brief moment while reseting the list when the
+            # appears to be a brief moment while resetting the list when the
             # list is empty but urwid will attempt to set the focus anyway,
             # which causes problems.
             try:
@@ -2919,7 +2971,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 if not bp.temporary]
 
     def _format_fname(self, fname):
-        from os.path import dirname, basename
+        from os.path import basename, dirname
         name = basename(fname)
 
         if name == "__init__.py":

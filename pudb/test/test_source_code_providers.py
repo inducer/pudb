@@ -1,7 +1,10 @@
 import pytest  # noqa: F401
 
 from pudb.debugger import (
-        NullSourceCodeProvider, FileSourceCodeProvider, DirectSourceCodeProvider)
+    DirectSourceCodeProvider,
+    FileSourceCodeProvider,
+    NullSourceCodeProvider,
+)
 from pudb.source_view import SourceLine
 
 

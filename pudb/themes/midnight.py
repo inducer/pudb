@@ -1,5 +1,6 @@
 from pudb.themes.utils import add_setting, link
 
+
 # Based on XCode's midnight theme
 # Looks best in a console with green text against black background
 link("current breakpoint", "current frame name")

@@ -76,12 +76,28 @@ enabling you to connect via ``telnet``, use the following code::
     from pudb.remote import set_trace
     set_trace(term_size=(80, 24))
 
+The terminal size can be defined via the environment variable as well::
+
+    export PUDB_TERM_SIZE=80x24
+
+The following precedence (from highest to lowest) is used to determine
+the terminal size:
+
+#. ``term_size`` keyword argument
+#. ``PUDB_TERM_SIZE`` environment variable
+#. Size of the terminal in which the debugged program is running
+   (as returned by ``os.get_terminal_size()``)
+#. Default fallback value of ``(80, 20)``
+
 At this point, the debugger will look for a free port and wait for a telnet
 connection::
 
     pudb:6899: Please start a telnet session using a command like:
     telnet 127.0.0.1 6899
     pudb:6899: Waiting for client...
+
+The host and port can be specified as keyword arguments to ``set_trace()``,
+or via the ``PUDB_RDB_HOST`` and ``PUDB_RDB_PORT`` env vars.
 
 To debug a function in a remote debugger (and examine any exceptions that
 may occur), use code like the following:
@@ -114,6 +130,11 @@ Specify host and port in set_trace and set the *reverse* parameter to *True*::
 
     from pudb.remote import set_trace
     set_trace(reverse=True)
+
+The "reverse" mode can also be enabled by setting the environment variable to a
+non-empty value (the keyword argument has priority over the env var)::
+
+    export PUDB_RDB_REVERSE=1
 
 Then watch the debugger connect to netcat::
 

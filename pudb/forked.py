@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 from pudb.debugger import Debugger
 
@@ -14,12 +14,18 @@ def set_trace(paused=True, frame=None, term_size=None):
     if frame is None:
         frame = sys._getframe().f_back
     if term_size is None:
-        try:
-            # Getting terminal size
-            s = os.get_terminal_size()
-            term_size = (s.columns, s.lines)
-        except Exception:
-            term_size = (80, 24)
+        term_size = os.environ.get("PUDB_TERM_SIZE")
+        if term_size is not None:
+            term_size = tuple(map(int, term_size.split("x")))
+            if len(term_size) != 2:
+                raise ValueError("PUDB_TERM_SIZE should have two dimensions")
+        else:
+            try:
+                # Getting terminal size
+                s = os.get_terminal_size()
+                term_size = (s.columns, s.lines)
+            except Exception:
+                term_size = (80, 24)
 
     Debugger(
         stdin=open("/dev/stdin"),

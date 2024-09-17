@@ -1,5 +1,5 @@
 import urwid
-from urwid.util import calc_width, calc_text_pos
+from urwid import calc_text_pos, calc_width
 
 
 # generic urwid helpers -------------------------------------------------------
@@ -17,7 +17,7 @@ def text_width(txt):
 
 
 def encode_like_urwid(s):
-    from urwid import escape
+    from urwid.display import escape
     from urwid.util import _target_encoding
 
     # Consistent with
@@ -35,7 +35,7 @@ def make_canvas(txt, attr, maxcol, fill_attr=None):
 
     for line, line_attr in zip(txt, attr):
         # filter out zero-length attrs
-        line_attr = [(aname, l) for aname, l in line_attr if l > 0]
+        line_attr = [(aname, la) for aname, la in line_attr if la > 0]
 
         diff = maxcol - text_width(line)
         if diff > 0:

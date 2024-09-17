@@ -25,7 +25,9 @@ THE SOFTWARE.
 
 
 import logging
+import sys
 from datetime import datetime
+
 
 logfile = [None]
 
@@ -49,7 +51,7 @@ class TerminalOrStreamHandler(logging.StreamHandler):
     stderr, depending on whether the debugger is active.
     """
     def emit(self, record):
-        from pudb import _have_debugger, _get_debugger
+        from pudb import _get_debugger, _have_debugger
         logfile = getlogfile()
 
         self.acquire()
@@ -94,17 +96,22 @@ ui_log, settings_log = _init_loggers()
 # {{{ breakpoint validity
 
 def generate_executable_lines_for_code(code):
-    lineno = code.co_firstlineno
-    yield lineno
-    # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
-
-    for line_incr in code.co_lnotab[1::2]:
-        # NB: This code is specific to Python 3.6 and higher
-        # https://github.com/python/cpython/blob/v3.6.0/Objects/lnotab_notes.txt
-        if line_incr >= 0x80:
-            line_incr -= 0x100
-        lineno += line_incr
+    if sys.version_info >= (3, 10):
+        for _start, _end, lineno in code.co_lines():
+            if lineno is not None:
+                yield lineno
+    else:
+        lineno = code.co_firstlineno
         yield lineno
+        # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
+
+        for line_incr in code.co_lnotab[1::2]:
+            # NB: This code is specific to Python 3.6 and higher
+            # https://github.com/python/cpython/blob/v3.6.0/Objects/lnotab_notes.txt
+            if line_incr >= 0x80:
+                line_incr -= 0x100
+            lineno += line_incr
+            yield lineno
 
 
 def get_executable_lines_for_codes_recursive(codes):
@@ -165,7 +172,7 @@ def lookup_module(filename):
     f = os.path.join(sys.path[0], filename)
     if os.path.exists(f):  # and self.canonic(f) == self.mainpyfile:
         return f
-    root, ext = os.path.splitext(filename)
+    _root, ext = os.path.splitext(filename)
     if ext == "":
         filename = filename + ".py"
     if os.path.isabs(filename):
@@ -185,14 +192,16 @@ def lookup_module(filename):
 # the main idea stolen from Python 3.1's tokenize.py, by Ka-Ping Yee
 
 import re
+
+
 cookie_re = re.compile(br"^\s*#.*coding[:=]\s*([-\w.]+)")
-from codecs import lookup, BOM_UTF8
+from codecs import BOM_UTF8, lookup
 
 
 def detect_encoding(line_iter):
     """
     The detect_encoding() function is used to detect the encoding that should
-    be used to decode a Python source file. It requires one argment, line_iter,
+    be used to decode a Python source file. It requires one argument, line_iter,
     an iterator on the lines to be read.
 
     It will read a maximum of two lines, and return the encoding used
@@ -226,9 +235,9 @@ def detect_encoding(line_iter):
         encoding = matches[0].decode()
         try:
             codec = lookup(encoding)
-        except LookupError:
+        except LookupError as err:
             # This behaviour mimics the Python interpreter
-            raise SyntaxError("unknown encoding: " + encoding)
+            raise SyntaxError("unknown encoding: " + encoding) from err
 
         if bom_found and codec.name != "utf-8":
             # This behaviour mimics the Python interpreter

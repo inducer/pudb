@@ -1,5 +1,6 @@
 from pudb.themes.utils import add_setting, link
 
+
 # ------------------------------------------------------------------------------
 # Colors are approximations of https://www.nordtheme.com/docs/colors-and-palettes
 # ------------------------------------------------------------------------------

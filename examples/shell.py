@@ -14,6 +14,7 @@ The example in this file
 
 """
 
+
 # Define this a function with this name and signature at the module level.
 def pudb_shell(_globals, _locals):
     """
@@ -24,7 +25,7 @@ def pudb_shell(_globals, _locals):
     # Many shells only let you pass in a single locals dictionary, rather than
     # separate globals and locals dictionaries. In this case, you can use
     # pudb.shell.SetPropagatingDict to automatically merge the two into a
-    # single dictionary. It does this in such a way that assignments propogate
+    # single dictionary. It does this in such a way that assignments propagate
     # to _locals, so that when the debugger is at the module level, variables
     # can be reassigned in the shell.
     from pudb.shell import SetPropagatingDict
@@ -33,11 +34,11 @@ def pudb_shell(_globals, _locals):
     try:
         import readline
         import rlcompleter
-        HAVE_READLINE = True
+        have_readline = True
     except ImportError:
-        HAVE_READLINE = False
+        have_readline = False
 
-    if HAVE_READLINE:
+    if have_readline:
         readline.set_completer(
                 rlcompleter.Completer(ns).complete)
         readline.parse_and_bind("tab: complete")

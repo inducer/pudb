@@ -1,5 +1,6 @@
 from pudb.themes.utils import add_setting, link
 
+
 # Give the colors some comprehensible names
 black = "h236"
 blacker = "h234"

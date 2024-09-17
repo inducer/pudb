@@ -36,22 +36,25 @@ THE SOFTWARE.
 # mostly stolen from celery.contrib.rdb
 
 
+import atexit
 import errno
 import os
 import socket
 import sys
-import atexit
-from typing import Callable, Any
+from typing import Any, Callable
 
 from pudb.debugger import Debugger
 
-__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "default_port", "debugger", "set_trace",
+
+__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "PUDB_RDB_REVERSE",
+           "default_port", "debugger", "set_trace",
            "debug_remote_on_single_rank"]
 
 default_port = 6899
 
 PUDB_RDB_HOST = os.environ.get("PUDB_RDB_HOST") or "127.0.0.1"
 PUDB_RDB_PORT = int(os.environ.get("PUDB_RDB_PORT") or default_port)
+PUDB_RDB_REVERSE = bool(os.environ.get("PUDB_RDB_REVERSE"))
 
 #: Holds the currently active debugger.
 _current = [None]
@@ -84,6 +87,30 @@ Please specify one using the PUDB_RDB_PORT environment variable.
 """
 
 
+class TelnetCharacters:
+    """Collection of characters from the telnet protocol RFC 854
+
+    This format for the telnet characters was adapted from the telnetlib module
+    which was removed from the C Python standard library in version 3.13. Only
+    the characters needed by pudb have been copied here. Additional characters
+    can be found by looking in the telnetlib code in Python 3.12 or in the
+    telnet RFC.
+
+    .. note::
+
+        This class is not intended to be instantiated.
+    """
+    # Telnet protocol characters
+    IAC = b"\xff"  # "Interpret As Command"
+    DO = b"\xfd"
+    WILL = b"\xfb"
+
+    # Telnet protocol options codes
+    # These ones all come from arpa/telnet.h
+    ECHO = b"\x01"  # echo
+    SGA = b"\x03"  # suppress go ahead
+
+
 class RemoteDebugger(Debugger):
     """
     .. automethod:: __init__
@@ -100,7 +127,7 @@ class RemoteDebugger(Debugger):
         port_search_limit=100,
         out=sys.stdout,
         term_size=None,
-        reverse=False,
+        reverse=PUDB_RDB_REVERSE,
     ):
         """
         :arg term_size: A two-tuple ``(columns, rows)``, or *None*. If *None*,
@@ -114,11 +141,17 @@ class RemoteDebugger(Debugger):
         self.out = out
 
         if term_size is None:
-            try:
-                s = os.get_terminal_size()
-                term_size = (s.columns, s.lines)
-            except Exception:
-                term_size = (80, 24)
+            term_size = os.environ.get("PUDB_TERM_SIZE")
+            if term_size is not None:
+                term_size = tuple(map(int, term_size.split("x")))
+                if len(term_size) != 2:
+                    raise ValueError("PUDB_TERM_SIZE should have two dimensions")
+            else:
+                try:
+                    s = os.get_terminal_size()
+                    term_size = (s.columns, s.lines)
+                except Exception:
+                    term_size = (80, 24)
 
         self._prev_handles = sys.stdin, sys.stdout
         self._client, (address, port) = self.get_client(
@@ -139,7 +172,7 @@ class RemoteDebugger(Debugger):
 
         # nc negotiation doesn't support telnet options
         if not reverse:
-            import telnetlib as tn
+            tn = TelnetCharacters
 
             raw_sock_file.write(tn.IAC + tn.WILL + tn.SGA)
             resp = raw_sock_file.read(3)
@@ -176,7 +209,7 @@ class RemoteDebugger(Debugger):
             _sock.setblocking(1)
         except OSError as exc:
             if exc.errno == errno.ECONNREFUSED:
-                raise ValueError(CONN_REFUSED.format(self=self))
+                raise ValueError(CONN_REFUSED.format(self=self)) from exc
             raise exc
         return _sock, _sock.getpeername()
 
@@ -215,7 +248,12 @@ class RemoteDebugger(Debugger):
         self.say(SESSION_ENDED.format(self=self))
 
 
-def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False):
+def debugger(
+    term_size=None,
+    host=PUDB_RDB_HOST,
+    port=PUDB_RDB_PORT,
+    reverse=PUDB_RDB_REVERSE
+):
     """Return the current debugger instance (if any),
     or creates a new one."""
     rdb = _current[0]
@@ -228,7 +266,11 @@ def debugger(term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=Fal
 
 
 def set_trace(
-    frame=None, term_size=None, host=PUDB_RDB_HOST, port=PUDB_RDB_PORT, reverse=False
+    frame=None,
+    term_size=None,
+    host=PUDB_RDB_HOST,
+    port=PUDB_RDB_PORT,
+    reverse=PUDB_RDB_REVERSE
 ):
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:
