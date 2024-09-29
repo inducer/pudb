@@ -1043,6 +1043,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                         del fvi.watches[i]
                         break
 
+                from pudb.settings import save_watches
+                save_watches([expr.expression for expr in fvi.watches])
+
             self.update_var_view(focus_index=focus_index)
 
         def edit_inspector_detail(w, size, key):
