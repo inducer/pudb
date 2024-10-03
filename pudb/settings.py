@@ -650,31 +650,4 @@ def get_watches_file_name():
     from os.path import join
     return join(get_save_config_path(), SAVED_WATCHES_FILE_NAME)
 
-
-def save_watches(w_list):
-    """
-    :arg w_list: a list of strings
-    """
-
-    try:
-        with open(get_watches_file_name(), 'w+') as histfile:
-            for watch in w_list:
-                histfile.write(watch + '\n')
-    except:
-        pass
-
-
-def load_watches():
-    if os.path.exists(get_watches_file_name()):
-        try:
-            with open(get_watches_file_name(), 'r') as histfile:
-                watches = histfile.readlines()
-                for line in watches:
-                    line = line.strip()
-            return watches
-        except:
-            pass
-
-    return []
-
 # vim:foldmethod=marker

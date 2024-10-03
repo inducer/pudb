@@ -590,7 +590,7 @@ from pudb.ui_tools import (
     labelled_value,
     make_hotkey_markup,
 )
-from pudb.var_view import FrameVarInfoKeeper
+from pudb.var_view import FrameVarInfoKeeper, WatchExpression, Watches
 
 
 # {{{ display setup
@@ -1037,14 +1037,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
             elif key == "delete":
-                fvi = self.get_frame_var_info(read_only=False)
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
-                        break
-
-                from pudb.settings import save_watches
-                save_watches([expr.expression for expr in fvi.watches])
+                Watches.remove(var.watch_expr)
 
             self.update_var_view(focus_index=focus_index)
 
@@ -1160,24 +1153,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                     var.watch_expr.expression = watch_edit.get_edit_text()
 
             elif result == "del":
-                if CONFIG["persist_watches"]:
-                    from pudb.settings import load_watches, save_watches
-                    stored_expressions = [expr.strip()
-                                          for expr in load_watches()]
-
-                    # Remove saved expression
-                    for i, stored_expr in enumerate(stored_expressions):
-                        if stored_expr == var.watch_expr.expression:
-                            del stored_expressions[i]
-
-                    # Save it here because self.update_var_view() is going to
-                    # read saved watches again
-                    save_watches(stored_expressions)
-
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
-                        break
+                # Remove saved expression
+                Watches.remove(var.watch_expr)
 
             self.update_var_view()
 
@@ -1195,11 +1172,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                         ("Cancel", False),
                         ], title="Add Watch Expression"):
 
-                from pudb.var_view import WatchExpression
-                we = WatchExpression(watch_edit.get_edit_text())
-                fvi = self.get_frame_var_info(read_only=False)
-                fvi.watches.append(we)
-                self.update_var_view()
+                # Add new watch expression, if not empty
+                watch_text = watch_edit.get_edit_text()
+                if watch_text and watch_text.strip():
+                    Watches.add(WatchExpression(watch_text))
+                    self.update_var_view()
 
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen(" ", change_var_state)

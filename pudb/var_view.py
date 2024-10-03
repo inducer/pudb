@@ -30,13 +30,14 @@ import inspect
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sized
-from typing import List, Tuple
+import os
+from typing import List, Tuple, Set
 
 import urwid
 
-from pudb.lowlevel import ui_log
+from pudb.lowlevel import ui_log, settings_log
 from pudb.ui_tools import text_width
-
+from pudb.settings import get_watches_file_name
 
 try:
     import numpy
@@ -173,7 +174,6 @@ CONTAINER_CLASSES = (
 class FrameVarInfo:
     def __init__(self):
         self.id_path_to_iinfo = {}
-        self.watches = []
 
     def get_inspect_info(self, id_path, read_only):
         if read_only:
@@ -199,13 +199,39 @@ class InspectInfo:
 
 
 class WatchExpression:
-    def __init__(self, expression):
-        self.expression = expression
+    def __init__(self, expression: str):
+        self._expression = expression.strip()
+
+    @property
+    def expression(self):
+        return self._expression
+
+    @expression.setter
+    def expression(self, value):
+        self._expression = value.strip()
+
+    def __hash__(self):
+        return hash(self._expression)
+
+    def __lt__(self, other):
+        return self._expression < other
+
+    def __gt__(self, other):
+        return self._expression > other
+
+    def __eq__(self, other):
+        return self._expression == other
+
+    def __str__(self):
+        return self._expression
+
+    __repr__ = __str__
 
 
 class WatchEvalError:
     def __str__(self):
         return "<error>"
+    __repr__ = __str__
 
 # }}}
 
@@ -727,26 +753,7 @@ def make_var_view(frame_var_info, locals, globals):
     ret_walker = BasicValueWalker(frame_var_info)
     watch_widget_list = []
 
-    from pudb.debugger import CONFIG
-
-    if CONFIG["persist_watches"]:
-        from pudb.settings import load_watches, save_watches
-        stored_expressions = [expr.strip() for expr in load_watches()]
-
-        # As watch expressions are stored in a list, simply appending stored
-        # expressions to that list will add duplicates. This part is to avoid that.
-        from pudb.var_view import WatchExpression
-        existing_expressions = [expr.expression
-                                for expr in frame_var_info.watches]
-
-        for stored_expr in stored_expressions:
-            if stored_expr not in existing_expressions:
-                frame_var_info.watches.append(WatchExpression(stored_expr))
-
-        # Save watches because new ones may have added to a list
-        save_watches([expr.expression for expr in frame_var_info.watches])
-
-    for watch_expr in frame_var_info.watches:
+    for watch_expr in Watches.all():
         try:
             value = eval(watch_expr.expression, globals, locals)
         except Exception:
@@ -789,6 +796,64 @@ class FrameVarInfoKeeper:
             return self.frame_var_info.get(ssid, FrameVarInfo())
         else:
             return self.frame_var_info.setdefault(ssid, FrameVarInfo())
+
+
+class Watches:
+    _expressions: Set[WatchExpression] = set()
+
+    def __init__(self):
+        raise RuntimeError("This class is not meant to be instantiated.")
+
+    @classmethod
+    def add(cls, expression: WatchExpression):
+        if expression not in cls._expressions:
+            cls._expressions.add(expression)
+            cls.save()
+
+    @classmethod
+    def remove(cls, expression: WatchExpression):
+        if expression in cls._expressions:
+            cls._expressions.remove(expression)
+            cls.save()
+
+    @classmethod
+    def save(cls):
+        from pudb.debugger import CONFIG
+        if CONFIG.get("persist_watches", False):
+            return
+
+        try:
+            with open(get_watches_file_name(), 'w+') as histfile:
+                for watch in cls._expressions:
+                    histfile.write(watch.expression + '\n')
+
+        except Exception as save_exc:
+            settings_log.exception("Failed to save watches", save_exc)
+            raise save_exc
+
+    @classmethod
+    def load(cls):
+        from pudb.debugger import CONFIG
+        if CONFIG.get("persist_watches", False):
+            return
+
+        watch_fn = get_watches_file_name()
+        if os.path.exists(watch_fn):
+            try:
+                with open(watch_fn, 'r') as histfile:
+                    cls._expressions = set()
+                    for line in histfile.readlines():
+                        cls._expressions.add(WatchExpression(line.strip()))
+            except Exception as load_exc:
+                settings_log.exception("Failed to load watches", load_exc)
+                raise load_exc
+
+    @classmethod
+    def all(cls):
+        if not cls._expressions:
+            cls.load()
+
+        return sorted(cls._expressions, key=lambda x: x.expression)
 
 # }}}
 
