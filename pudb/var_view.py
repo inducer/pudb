@@ -199,16 +199,17 @@ class InspectInfo:
 
 
 class WatchExpression:
+    """
+    A few requirements for WatchExpression:
+    - must be sortable, hashable and comparable
+    - encloses a string, and is immutable
+    """
     def __init__(self, expression: str):
         self._expression = expression.strip()
 
     @property
     def expression(self):
         return self._expression
-
-    @expression.setter
-    def expression(self, value):
-        self._expression = value.strip()
 
     def __hash__(self):
         return hash(self._expression)
@@ -799,19 +800,40 @@ class FrameVarInfoKeeper:
 
 
 class Watches:
+    """
+    Watches encloses a set of WatchExpression objects, and exports
+    its entry to a canonical file whenever altered.  It also acts as a
+    runtime cache so that we don't have to reload and reparse the file
+    every time we want to refresh the var view.
+    """
     _expressions: Set[WatchExpression] = set()
 
     def __init__(self):
         raise RuntimeError("This class is not meant to be instantiated.")
 
     @classmethod
+    def clear(cls):
+        cls._expressions.clear()
+        cls.save()
+
+    @classmethod
+    def has(cls, expression: WatchExpression):
+        if not isinstance(expression, WatchExpression):
+            raise TypeError("expression must be a WatchExpression object")
+        return expression in cls._expressions
+
+    @classmethod
     def add(cls, expression: WatchExpression):
+        if not isinstance(expression, WatchExpression):
+            raise TypeError("expression must be a WatchExpression object")
         if expression not in cls._expressions:
             cls._expressions.add(expression)
             cls.save()
 
     @classmethod
     def remove(cls, expression: WatchExpression):
+        if not isinstance(expression, WatchExpression):
+            raise TypeError("expression must be a WatchExpression object")
         if expression in cls._expressions:
             cls._expressions.remove(expression)
             cls.save()
@@ -819,13 +841,14 @@ class Watches:
     @classmethod
     def save(cls):
         from pudb.debugger import CONFIG
-        if CONFIG.get("persist_watches", False):
+        if not CONFIG.get("persist_watches", False):
             return
 
         try:
             with open(get_watches_file_name(), 'w+') as histfile:
-                for watch in cls._expressions:
-                    histfile.write(watch.expression + '\n')
+                for watch in cls.all():
+                    if watch:
+                        histfile.write(watch.expression + '\n')
 
         except Exception as save_exc:
             settings_log.exception("Failed to save watches", save_exc)
@@ -834,7 +857,7 @@ class Watches:
     @classmethod
     def load(cls):
         from pudb.debugger import CONFIG
-        if CONFIG.get("persist_watches", False):
+        if not CONFIG.get("persist_watches", False):
             return
 
         watch_fn = get_watches_file_name()
