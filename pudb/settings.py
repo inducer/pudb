@@ -111,7 +111,7 @@ def load_config():
     conf_dict.setdefault("wrap_variables", "True")
     conf_dict.setdefault("default_variables_access_level", "public")
 
-    conf_dict.setdefault("persist_watches", False)
+    conf_dict.setdefault("persist_watches", True)
 
     conf_dict.setdefault("display", "auto")
 
