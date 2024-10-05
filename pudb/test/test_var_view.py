@@ -5,6 +5,8 @@ import unittest
 
 from unittest.mock import patch, mock_open
 
+import pytest
+
 from pudb.var_view import (
     STRINGIFIERS,
     BasicValueWalker,
@@ -472,6 +474,12 @@ class WatchExpressionTests(unittest.TestCase):
         # test adding a duplicate
         test_set2.add(WatchExpression("a"))
         self.assertEqual(test_set1, test_set2)
+
+    def test_immutability(self):
+        Watches.clear()
+        we_a = WatchExpression("a")
+        with pytest.raises(AttributeError):
+            we_a.expression = "b"
 
 
 class WatchesTests(unittest.TestCase):

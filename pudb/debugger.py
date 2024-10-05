@@ -1150,7 +1150,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.access_level = "all"
 
                 if var.watch_expr is not None:
-                    var.watch_expr.expression = watch_edit.get_edit_text()
+                    # Remove old expression and add new one, to avoid rehashing
+                    Watches.remove(var.watch_expr)
+                    var.watch_expr = WatchExpression(
+                        watch_edit.get_edit_text())
+                    Watches.add(var.watch_expr)
 
             elif result == "del":
                 # Remove saved expression
