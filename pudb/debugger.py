@@ -456,7 +456,7 @@ class Debugger(bdb.Bdb):
         if self._waiting_for_mainpyfile(frame):
             return
 
-        if "__exc_tuple__" not in frame.f_locals:
+        if "__exception__" not in frame.f_locals:
             self.interaction(frame)
 
     def _waiting_for_mainpyfile(self, frame):
@@ -472,13 +472,15 @@ class Debugger(bdb.Bdb):
                 return True
         return False
 
-    def user_exception(self, frame, exc_tuple):
+    def user_exception(self, frame, exc_info):
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
-        frame.f_locals["__exc_tuple__"] = exc_tuple
+
+        exc_type, exc_value, _exc_traceback = exc_info
+        frame.f_locals["__exception__"] = exc_type, exc_value
 
         if not self._wait_for_mainpyfile:
-            self.interaction(frame, exc_tuple)
+            self.interaction(frame, exc_info)
 
     # {{{ entrypoints
 
