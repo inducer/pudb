@@ -252,29 +252,41 @@ class Debugger(bdb.Bdb):
                 as_breakpoint = True
 
         if frame is None:
-            frame = thisframe = sys._getframe().f_back
-        else:
-            thisframe = frame
+            frame = sys._getframe().f_back
+            assert frame is not None
+
         # See pudb issue #52. If this works well enough we should upstream to
         # stdlib bdb.py.
         # self.reset()
 
-        while frame:
-            frame.f_trace = self.trace_dispatch
-            self.botframe = frame
-            frame = frame.f_back
+        if paused:
+            self.enterframe = frame
 
-        thisframe_info = (
-                self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
-        if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
+            thisframe = frame
+            while thisframe:
+                thisframe.f_trace = self.trace_dispatch
+                self.botframe = thisframe
+                if sys.version_info >= (3, 13):
+                    # save trace flags, to be restored by set_continue
+                    self.frame_trace_lines_opcodes[thisframe] = (  # pylint: disable=no-member
+                        thisframe.f_trace_lines,
+                        thisframe.f_trace_opcodes)
+
+                    # We need f_trace_lines == True for the debugger to work
+                    thisframe.f_trace_lines = True
+
+                thisframe = thisframe.f_back
+
+        frame_info = (self.canonic(frame.f_code.co_filename), frame.f_lineno)
+        if frame_info not in self.set_traces or self.set_traces[frame_info]:
             if as_breakpoint:
-                self.set_traces[thisframe_info] = True
+                self.set_traces[frame_info] = True
                 if self.ui.source_code_provider is not None:
                     self.ui.set_source_code_provider(
                             self.ui.source_code_provider, force_update=True)
 
             if paused:
-                self.set_step()
+                self._set_stopinfo(frame, None)
             else:
                 self.set_continue()
             sys.settrace(self.trace_dispatch)
