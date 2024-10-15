@@ -433,9 +433,6 @@ class Debugger(bdb.Bdb):
 
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
-        if "__exc_tuple__" in frame.f_locals:
-            del frame.f_locals["__exc_tuple__"]
-
         if self._waiting_for_mainpyfile(frame):
             return
 
