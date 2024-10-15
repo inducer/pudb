@@ -227,33 +227,6 @@ class Debugger(bdb.Bdb):
             self._tty_file.close()
             self._tty_file = None
 
-    # These (dispatch_line and set_continue) are copied from bdb with the
-    # patch from https://bugs.python.org/issue16482 applied. See
-    # https://github.com/inducer/pudb/pull/90.
-    def dispatch_line(self, frame):
-        if self.stop_here(frame) or self.break_here(frame):
-            self.user_line(frame)
-            if self.quitting:
-                raise bdb.BdbQuit
-            # Do not re-install the local trace when we are finished debugging,
-            # see issues 16482 and 7238.
-            if not sys.gettrace():
-                return None
-        return self.trace_dispatch
-
-    def set_continue(self):
-        # Don't stop except at breakpoints or when finished
-        self._set_stopinfo(self.botframe, None, -1)
-        if not self.breaks:
-            # no breakpoints; run without debugger overhead
-            sys.settrace(None)
-            frame = sys._getframe().f_back
-            while frame:
-                del frame.f_trace
-                if frame is self.botframe:
-                    break
-                frame = frame.f_back
-
     def set_jump(self, frame, line):
         frame.f_lineno = line
 
