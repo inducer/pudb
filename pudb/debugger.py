@@ -590,7 +590,7 @@ from pudb.ui_tools import (
     labelled_value,
     make_hotkey_markup,
 )
-from pudb.var_view import FrameVarInfoKeeper, WatchExpression, Watches
+from pudb.var_view import FrameVarInfoKeeper, Watches, WatchExpression
 
 
 # {{{ display setup
