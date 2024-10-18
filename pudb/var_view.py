@@ -846,10 +846,10 @@ class Watches:
             return
 
         try:
-            with open(get_watches_file_name(), 'w+') as histfile:
+            with open(get_watches_file_name(), "w+") as histfile:
                 for watch in cls.all():
                     if watch:
-                        histfile.write(watch.expression + '\n')
+                        histfile.write(watch.expression + "\n")
 
         except Exception as save_exc:
             settings_log.exception("Failed to save watches", save_exc)
@@ -864,7 +864,7 @@ class Watches:
         watch_fn = get_watches_file_name()
         if os.path.exists(watch_fn):
             try:
-                with open(watch_fn, 'r') as histfile:
+                with open(watch_fn, "r") as histfile:
                     cls._expressions = set()
                     for line in histfile.readlines():
                         cls._expressions.add(WatchExpression(line.strip()))

@@ -520,7 +520,7 @@ class WatchesTests(unittest.TestCase):
             for expr in expressions[:i + 1]:
                 expected_file_log.append((f"{str(expr)}\n", ))
 
-        with patch('builtins.open', mocked_open):
+        with patch("builtins.open", mocked_open):
             Watches.add(we_a)
             Watches.add(we_b)
             Watches.add(we_c)
