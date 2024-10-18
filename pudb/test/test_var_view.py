@@ -456,17 +456,17 @@ class WatchExpressionTests(unittest.TestCase):
         and more or less equivalent to class str
         """
         expr = WatchExpression("a")
-        self.assertIn(expr, set(["a"]))
+        self.assertIn(expr, {"a"})
 
         # test set membership
         we_a = WatchExpression("a")
         we_b = WatchExpression("b")
-        test_set1 = set([we_a, we_b])
+        test_set1 = {we_a, we_b}
         self.assertIn(we_a, test_set1)
         self.assertIn(we_b, test_set1)
 
         # test equivalent sets
-        test_set2 = set([we_b, we_a])
+        test_set2 = {we_b, we_a}
         self.assertEqual(test_set1, test_set2)
         self.assertIn(we_a, test_set2)
         self.assertIn(we_b, test_set2)
