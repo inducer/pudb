@@ -27,17 +27,18 @@ THE SOFTWARE.
 # {{{ constants and imports
 
 import inspect
+import os
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sized
-import os
-from typing import List, Tuple, Set
+from typing import List, Set, Tuple
 
 import urwid
 
-from pudb.lowlevel import ui_log, settings_log
-from pudb.ui_tools import text_width
+from pudb.lowlevel import settings_log, ui_log
 from pudb.settings import get_watches_file_name
+from pudb.ui_tools import text_width
+
 
 try:
     import numpy
