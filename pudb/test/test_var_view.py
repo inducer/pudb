@@ -2,8 +2,7 @@ import contextlib
 import itertools
 import string
 import unittest
-
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 import pytest
 
@@ -16,9 +15,10 @@ from pudb.var_view import (
     PudbMapping,
     PudbSequence,
     ValueWalker,
+    Watches,
+    WatchExpression,
     get_stringifier,
     ui_log,
-    WatchExpression, Watches,
 )
 
 
