@@ -24,13 +24,17 @@ THE SOFTWARE.
 """
 
 
+import re
 import sys
+from importlib import metadata
 
 from pudb.settings import load_config
 
 
-NUM_VERSION = (2024, 1, 2)
-VERSION = ".".join(str(nv) for nv in NUM_VERSION)
+VERSION = metadata.version("pudb")
+_ver_match = re.match("^([0-9.]+)([a-z0-9]*?)$", VERSION)
+assert _ver_match
+NUM_VERSION = tuple(int(nr) for nr in _ver_match.group(1).split("."))
 __version__ = VERSION
 
 

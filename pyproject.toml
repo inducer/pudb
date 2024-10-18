@@ -1,3 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pudb"
+version = "2024.1.2"
+description = "A full-screen, console-based Python debugger"
+readme = "README.rst"
+license = "MIT"
+requires-python = "~=3.8"
+authors = [
+    { name = "Andreas Kloeckner", email = "inform@tiker.net" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Environment :: Console :: Curses",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: System :: Recovery Tools",
+    "Topic :: System :: Software Distribution",
+    "Topic :: Terminals",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "jedi>=0.18,<1",
+    "packaging>=20.0",
+    "pygments>=2.7.4",
+    "urwid>=2.4",
+    "urwid_readline",
+]
+
+[project.optional-dependencies]
+completion = [
+    "shtab",
+]
+
+[project.scripts]
+pudb = "pudb.run:main"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/pudb",
+    "/doc",
+    "/try-the-debugger.sh",
+    "/debug_me.py",
+    "/examples",
+]
+
 [tool.ruff]
 preview = true
 
