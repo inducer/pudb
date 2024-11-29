@@ -183,14 +183,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 # {{{ debugger interface
 
-class Debugger(bdb.Bdb):
+class Singleton(type):
+    _instance = None
+
+    def __call__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instance
+
+
+class Debugger(bdb.Bdb, metaclass=Singleton):
     _current_debugger = []
 
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
                  _continue_at_start=False, tty_file=None, **kwargs):
-
-        if Debugger._current_debugger:
-            raise ValueError("a Debugger instance already exists")
 
         # Pass remaining kwargs to python debugger framework
         bdb.Bdb.__init__(self, **kwargs)
@@ -213,6 +219,30 @@ class Debugger(bdb.Bdb):
 
         # Okay, now we have a debugger
         self._current_debugger.append(self)
+
+    def reset(self):
+        """Set values of attributes as ready to start debugging.
+
+        Override from Bdb.reset()
+
+        When pytest starts a postmortem analysis, but the debugger is already active,
+        calling .reset() in src/_pytest/debugging.py::post_mortem
+        causes the self.stopframe to be set to None.
+        This pauses the debugger somewhere in the source code of the debugger. See #67
+
+        We detect using _current_debugger that this is the case and do not set the
+        stopframe to None then.
+
+        Related #607, #52
+        """
+        import linecache
+        linecache.checkcache()
+        self.botframe = None
+        if not self._current_debugger:
+            self.stopframe = None
+        self.returnframe = None
+        self.quitting = False
+        self.stoplineno = 0
 
     def __del__(self):
         # according to https://stackoverflow.com/a/1481512/1054322, the garbage
