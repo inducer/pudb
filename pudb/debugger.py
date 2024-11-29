@@ -189,11 +189,14 @@ class Singleton(type):
     def __call__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
+        else:
+            cls._pytest_postmortem = True
         return cls._instance
 
 
 class Debugger(bdb.Bdb, metaclass=Singleton):
     _current_debugger = []
+    _pytest_postmortem = False
 
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
                  _continue_at_start=False, tty_file=None, **kwargs):
@@ -230,7 +233,7 @@ class Debugger(bdb.Bdb, metaclass=Singleton):
         causes the self.stopframe to be set to None.
         This pauses the debugger somewhere in the source code of the debugger. See #67
 
-        We detect using _current_debugger that this is the case and do not set the
+        We detect using _pytest_postmortem that this is the case and do not set the
         stopframe to None then.
 
         Related #607, #52
@@ -238,8 +241,10 @@ class Debugger(bdb.Bdb, metaclass=Singleton):
         import linecache
         linecache.checkcache()
         self.botframe = None
-        if not self._current_debugger:
+        if not self._pytest_postmortem:
             self.stopframe = None
+        else:
+            self._pytest_postmortem = False
         self.returnframe = None
         self.quitting = False
         self.stoplineno = 0
