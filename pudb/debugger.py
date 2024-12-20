@@ -190,6 +190,11 @@ class Singleton(type):
         if not cls._instance:
             cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
         else:
+            # Instantiating the debugger again is a pytest problem
+            # when starting a postmortem.
+            # Otherwise calling _get_debugger should be called.
+            # This flag keeps track of the pytest postmortem situation to disable
+            # a problematic line in Bbd.reset()
             cls._pytest_postmortem = True
         return cls._instance
 
@@ -229,22 +234,28 @@ class Debugger(bdb.Bdb, metaclass=Singleton):
         Override from Bdb.reset()
 
         When pytest starts a postmortem analysis, but the debugger is already active,
-        calling .reset() in src/_pytest/debugging.py::post_mortem
-        causes the self.stopframe to be set to None.
-        This pauses the debugger somewhere in the source code of the debugger. See #67
+        .reset() in src/_pytest/debugging.py::post_mortem is called.
+        https://github.com/pytest-dev/pytest/blob/868e1d225e443984a6aa29cfde2d1231eb03ed41/src/_pytest/debugging.py#L396
+
+        When Bdb.reset() is called this causes the self.stopframe to be set to None.
+        That immidiatly pauses the debugger somewhere in the source code of the debugger.
+        The exact same problem as for #67.
 
         We detect using _pytest_postmortem that this is the case and do not set the
-        stopframe to None then.
+        stopframe to None in that specific scenario.
 
         Related #607, #52
         """
         import linecache
         linecache.checkcache()
         self.botframe = None
+
         if not self._pytest_postmortem:
+            # The problematic line of Bbd.reset:
             self.stopframe = None
         else:
             self._pytest_postmortem = False
+
         self.returnframe = None
         self.quitting = False
         self.stoplineno = 0
