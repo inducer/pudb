@@ -283,4 +283,73 @@ def decode_lines(lines):
 
 # }}}
 
+
+# {{{ non-buffered console
+
+# Local platform dependent helper to get single key presses from a
+# terminal in unbuffered mode. Eliminates the necessity to press ENTER
+# before other input also becomes available. Also avoids the accumulation
+# of prompts on the screen as was the case with Python's input() call.
+# Is used in situations where urwid is disabled and curses calls are
+# not available.
+
+_nbc_use_input = True
+_nbc_use_getch = False
+_nbc_use_select = False
+if sys.platform in ("emscripten", "wasi"):
+    pass
+elif sys.platform in ("win32",):
+    import msvcrt
+    _nbc_use_input = False
+    _nbc_use_getch = True
+else:
+    import select
+    import termios
+    import tty
+    _nbc_use_input = False
+    _nbc_use_select = True
+
+
+class NonBufferedConsole(object):
+
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        if _nbc_use_select:
+            self.prev_settings = termios.tcgetattr(sys.stdin)
+            tty.setcbreak(sys.stdin.fileno())
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if _nbc_use_select:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
+
+    def get_data(self):
+        if _nbc_use_getch:
+            c = msvcrt.getch()
+            if c in ('\x00', '\xe0'):
+                c = msvcrt.getch()
+            return c
+
+        if _nbc_use_select:
+            rset, _, _ = select.select([sys.stdin], [], [], None)
+            if sys.stdin in rset:
+                return sys.stdin.read(1)
+            return None
+
+        # Strictly speaking putting the fallback here which requires
+        # pressing ENTER is not correct, this is the "non buffered"
+        # console support code. But it simplifies call sites. And is
+        # easy to tell by users because a prompt is provided. This is
+        # the most portable approach, and backwards compatible with
+        # earlier PuDB releases. It's a most appropriate default for
+        # otherwise unsupported platforms. Or when users choose to
+        # not accept single key presses, or keys other than ENTER.
+        if _nbc_use_input:
+            input("Hit Enter to return:")
+        return None
+
+# }}}
+
 # vim: foldmethod=marker

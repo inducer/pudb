@@ -35,7 +35,7 @@ from types import TracebackType
 
 import urwid
 
-from pudb.lowlevel import decode_lines, ui_log
+from pudb.lowlevel import decode_lines, NonBufferedConsole, ui_log
 from pudb.settings import get_save_config_path, load_config, save_config
 
 
@@ -769,9 +769,14 @@ class StoppedScreen:
 
     def __enter__(self):
         self.screen.stop()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.screen.start()
+
+    def press_key_to_return(self):
+        with NonBufferedConsole() as nbc:
+            key = nbc.get_data()
 
 
 class DebuggerUI(FrameVarInfoKeeper):
@@ -2082,8 +2087,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         # {{{ top-level listeners
 
         def show_output(w, size, key):
-            with StoppedScreen(self.screen):
-                input("Hit Enter to return:")
+            with StoppedScreen(self.screen) as s:
+                s.press_key_to_return()
 
         def reload_breakpoints_and_redisplay():
             reload_breakpoints()
