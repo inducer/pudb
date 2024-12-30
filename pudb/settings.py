@@ -113,6 +113,7 @@ def load_config():
     conf_dict.setdefault("display", "auto")
 
     conf_dict.setdefault("prompt_on_quit", "True")
+    conf_dict.setdefault("show_output", "python_input")
 
     conf_dict.setdefault("hide_cmdline_win", "False")
 
@@ -220,6 +221,8 @@ def edit_config(ui, conf_dict):
             conf_dict.update(new_conf_dict)
             _update_prompt_on_quit()
 
+# XXX need to handle "show_output" here?
+
         elif option == "hide_cmdline_win":
             new_conf_dict["hide_cmdline_win"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
@@ -266,6 +269,8 @@ def edit_config(ui, conf_dict):
     cb_prompt_on_quit = urwid.CheckBox("Prompt before quitting",
             bool(conf_dict["prompt_on_quit"]), on_state_change=_update_config,
                 user_data=("prompt_on_quit", None))
+
+# XXX need to handle "show_output" here?
 
     hide_cmdline_win = urwid.CheckBox("Hide command line"
             f"({conf_dict['hotkeys_toggle_cmdline_focus']}) window "

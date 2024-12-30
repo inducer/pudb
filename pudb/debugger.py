@@ -27,7 +27,10 @@ THE SOFTWARE.
 import bdb
 import gc
 import os
+import select
 import sys
+import termios
+import tty
 from collections import deque
 from functools import partial
 from itertools import count
@@ -762,17 +765,78 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 
 # }}}
 
+class NonBlockingConsole(object):
+
+    def __init__(self, timeout = 0):
+        self.timeout = timeout
+
+    def __enter__(self):
+        self.old_settings = termios.tcgetattr(sys.stdin)
+        tty.setcbreak(sys.stdin.fileno())
+        return self
+
+    def __exit__(self, type, value, traceback):
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
+
+    def get_data(self):
+        rset, wset, eset = select.select([ sys.stdin, ], [], [], self.timeout)
+        if sys.stdin in rset:
+            return sys.stdin.read(1)
+        return None
 
 class StoppedScreen:
-    def __init__(self, screen):
+    def __init__(self, screen, show_output = None):
+        # print("config option: {}".format(show_output), flush = True, file = sys.stderr)
         self.screen = screen
+        self.show_output = show_output
+        if "single_key" in show_output:
+            show_output = self.show_output.replace("single_key", "")
+            self.with_prompt = "silent" not in show_output
+            show_output = show_output.replace("silent", "")
+            show_output = show_output.strip()
+            # TODO Alternatively pick key names from remaining bare words?
+            # Could be perceived as more intuitive by users.
+            self.term_keys = {
+                "o_space_enter": "o \n",
+                "any_key": None,
+                "enter_only": "\n",
+            }.get(show_output, None)
+        else:
+            self.show_output = "python_input"
 
     def __enter__(self):
         self.screen.stop()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.screen.start()
 
+    def press_key_to_return(self):
+        if "single_key" in self.show_output:
+            # Locally modified behaviour.
+            # BEWARE! The urwid screen is stopped when this method
+            # executes. Curses calls are not available, neither are
+            # urwid widgets nor key event handlers. This is why the
+            # default activity is to invoke Python's input(3).
+            # That's why something non-portable is done, fiddling
+            # with terminal settings. Which get restored afterwards.
+            if self.with_prompt:
+                print("Hit a key to return ", end = "", flush = True)
+            with NonBlockingConsole(timeout = None) as nbc:
+                while True:
+                    key = nbc.get_data()
+                    if not self.term_keys:
+                        break
+                    if key in self.term_keys:
+                        break
+            if self.with_prompt:
+                print("")
+            return
+        # The default behaviour, requires pressing ENTER.
+        # Also the fall through for unmigrated configurations.
+        if "python_input" in self.show_output or not self.show_output:
+            input("Hit Enter to return:")
+            return
 
 class DebuggerUI(FrameVarInfoKeeper):
     # {{{ constructor
@@ -2082,8 +2146,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         # {{{ top-level listeners
 
         def show_output(w, size, key):
-            with StoppedScreen(self.screen):
-                input("Hit Enter to return:")
+            with StoppedScreen(self.screen, CONFIG["show_output"]) as s:
+                s.press_key_to_return()
 
         def reload_breakpoints_and_redisplay():
             reload_breakpoints()
