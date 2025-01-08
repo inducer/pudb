@@ -765,6 +765,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 
 # }}}
 
+
 # Local helper to get single key presses from a terminal in unbuffered
 # mode. Eliminates the necessity to press ENTER before other input also
 # becomes available.
@@ -784,13 +785,14 @@ class NonBufferedConsole(object):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
 
     def get_data(self):
-        rset, wset, eset = select.select([ sys.stdin, ], [], [], None)
+        rset, _, _ = select.select([sys.stdin], [], [], None)
         if sys.stdin in rset:
             return sys.stdin.read(1)
         return None
 
+
 class StoppedScreen:
-    def __init__(self, screen, show_output = None):
+    def __init__(self, screen, show_output=None):
         self.screen = screen
         self.single_key = bool(show_output)
 
@@ -816,6 +818,7 @@ class StoppedScreen:
         # The default behaviour, requires pressing ENTER.
         # Also the fall through for unmigrated configurations.
         input("Hit Enter to return:")
+
 
 class DebuggerUI(FrameVarInfoKeeper):
     # {{{ constructor
