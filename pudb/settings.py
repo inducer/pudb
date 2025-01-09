@@ -113,7 +113,6 @@ def load_config():
     conf_dict.setdefault("display", "auto")
 
     conf_dict.setdefault("prompt_on_quit", "True")
-    conf_dict.setdefault("output_any_key", "False")
 
     conf_dict.setdefault("hide_cmdline_win", "False")
 
@@ -136,7 +135,6 @@ def load_config():
     normalize_bool_inplace("line_numbers")
     normalize_bool_inplace("wrap_variables")
     normalize_bool_inplace("prompt_on_quit")
-    normalize_bool_inplace("output_any_key")
     normalize_bool_inplace("hide_cmdline_win")
 
     _config_[0] = conf_dict
@@ -181,9 +179,6 @@ def edit_config(ui, conf_dict):
     def _update_prompt_on_quit():
         pass
 
-    def _update_output_any_key():
-        pass
-
     def _update_hide_cmdline_win():
         ui.update_cmdline_win()
 
@@ -224,11 +219,6 @@ def edit_config(ui, conf_dict):
             new_conf_dict["prompt_on_quit"] = not check_box.get_state()
             conf_dict.update(new_conf_dict)
             _update_prompt_on_quit()
-
-        elif option == "output_any_key":
-            new_conf_dict["output_any_key"] = not check_box.get_state()
-            conf_dict.update(new_conf_dict)
-            _update_output_any_key()
 
         elif option == "hide_cmdline_win":
             new_conf_dict["hide_cmdline_win"] = not check_box.get_state()
@@ -276,10 +266,6 @@ def edit_config(ui, conf_dict):
     cb_prompt_on_quit = urwid.CheckBox("Prompt before quitting",
             bool(conf_dict["prompt_on_quit"]), on_state_change=_update_config,
                 user_data=("prompt_on_quit", None))
-
-    cb_output_any_key = urwid.CheckBox("Any key press exits output screen",
-            bool(conf_dict["output_any_key"]), on_state_change=_update_config,
-                user_data=("output_any_key", None))
 
     hide_cmdline_win = urwid.CheckBox("Hide command line"
             f"({conf_dict['hotkeys_toggle_cmdline_focus']}) window "
@@ -457,7 +443,6 @@ def edit_config(ui, conf_dict):
             + [urwid.AttrMap(urwid.Text("General:\n"), "group head")]
             + [cb_line_numbers]
             + [cb_prompt_on_quit]
-            + [cb_output_any_key]
             + [hide_cmdline_win]
 
             + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
