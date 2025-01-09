@@ -27,10 +27,7 @@ THE SOFTWARE.
 import bdb
 import gc
 import os
-import select
 import sys
-import termios
-import tty
 from collections import deque
 from functools import partial
 from itertools import count
@@ -38,7 +35,7 @@ from types import TracebackType
 
 import urwid
 
-from pudb.lowlevel import decode_lines, ui_log
+from pudb.lowlevel import decode_lines, NonBufferedConsole, ui_log
 from pudb.settings import get_save_config_path, load_config, save_config
 
 
@@ -766,35 +763,9 @@ class DirectSourceCodeProvider(SourceCodeProvider):
 # }}}
 
 
-# Local helper to get single key presses from a terminal in unbuffered
-# mode. Eliminates the necessity to press ENTER before other input also
-# becomes available.
-# TODO Adjust for Windows when Python's select(3) doesn't suffice for
-# terminal input. That extension remains local, callers won't notice.
-class NonBufferedConsole(object):
-
-    def __init__(self):
-        pass
-
-    def __enter__(self):
-        self.prev_settings = termios.tcgetattr(sys.stdin)
-        tty.setcbreak(sys.stdin.fileno())
-        return self
-
-    def __exit__(self, type, value, traceback):
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
-
-    def get_data(self):
-        rset, _, _ = select.select([sys.stdin], [], [], None)
-        if sys.stdin in rset:
-            return sys.stdin.read(1)
-        return None
-
-
 class StoppedScreen:
-    def __init__(self, screen, show_output=None):
+    def __init__(self, screen):
         self.screen = screen
-        self.single_key = bool(show_output)
 
     def __enter__(self):
         self.screen.stop()
@@ -804,20 +775,8 @@ class StoppedScreen:
         self.screen.start()
 
     def press_key_to_return(self):
-        if self.single_key:
-            # BEWARE! The urwid screen is stopped when this method
-            # executes. Curses calls are not available, neither are
-            # urwid widgets nor key event handlers. This is why the
-            # default activity is to invoke Python's input(3).
-            # That's why a potentially platform dependent entity will
-            # provide single key presses in unbuffered mode (no need
-            # to wait for ENTER before other keys become available).
-            with NonBufferedConsole() as nbc:
-                key = nbc.get_data()
-            return
-        # The default behaviour, requires pressing ENTER.
-        # Also the fall through for unmigrated configurations.
-        input("Hit Enter to return:")
+        with NonBufferedConsole() as nbc:
+            key = nbc.get_data()
 
 
 class DebuggerUI(FrameVarInfoKeeper):
@@ -2128,7 +2087,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         # {{{ top-level listeners
 
         def show_output(w, size, key):
-            with StoppedScreen(self.screen, CONFIG["output_any_key"]) as s:
+            with StoppedScreen(self.screen) as s:
                 s.press_key_to_return()
 
         def reload_breakpoints_and_redisplay():
