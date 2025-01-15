@@ -286,67 +286,67 @@ def decode_lines(lines):
 
 # {{{ non-buffered console
 
-# TODO Put these under try/except and fall back to input() when neither
-# can be loaded? All modules are Python builtins, but there are platforms
-# like non-POSIX Unix systems and Webassembly which this implementation
-# may not cover. Can some platforms succeed to load yet fail to operate,
-# like Windows which only supports select() on socket type descriptors?
-_use_input = True
-_use_getch = False
-_use_select = False
+# Local platform dependent helper to get single key presses from a
+# terminal in unbuffered mode. Eliminates the necessity to press ENTER
+# before other input also becomes available. Also avoids the accumulation
+# of prompts on the screen as was the case with Python's input() call.
+# Is used in situations where urwid is disabled and curses calls are
+# not available.
+
+_nbc_use_input = True
+_nbc_use_getch = False
+_nbc_use_select = False
 if sys.platform in ("emscripten", "wasi"):
     pass
-elif sys.platform in ("win32", "cygwin"):
+elif sys.platform in ("win32",):
     import msvcrt
-    _use_input = False
-    _use_getch = True
+    _nbc_use_input = False
+    _nbc_use_getch = True
 else:
     import select
-    import tty
     import termios
-    _use_input = False
-    _use_select = True
+    import tty
+    _nbc_use_input = False
+    _nbc_use_select = True
 
 
-# Local helper to get single key presses from a terminal in unbuffered
-# mode. Eliminates the necessity to press ENTER before other input also
-# becomes available.
-# Is used in situations where urwid is disabled and curses calls are
-# not available. Platform dependent gathering of a single key press
-# without an echo to the console.
 class NonBufferedConsole(object):
 
     def __init__(self):
         pass
 
     def __enter__(self):
-        if _use_select:
+        if _nbc_use_select:
             self.prev_settings = termios.tcgetattr(sys.stdin)
             tty.setcbreak(sys.stdin.fileno())
         return self
 
     def __exit__(self, type, value, traceback):
-        if _use_select:
+        if _nbc_use_select:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
 
     def get_data(self):
-        if _use_getch:
+        if _nbc_use_getch:
             c = msvcrt.getch()
             if c in ('\x00', '\xe0'):
                 c = msvcrt.getch()
             return c
-        if _use_select:
+
+        if _nbc_use_select:
             rset, _, _ = select.select([sys.stdin], [], [], None)
             if sys.stdin in rset:
                 return sys.stdin.read(1)
+            return None
+
         # Strictly speaking putting the fallback here which requires
         # pressing ENTER is not correct, this is the "non buffered"
         # console support code. But it simplifies call sites. And is
         # easy to tell by users because a prompt is provided. This is
         # the most portable approach, and backwards compatible with
-        # earlier PuDB releases. May not even be conditional, just
-        # the fallback.
-        if _use_input:
+        # earlier PuDB releases. It's a most appropriate default for
+        # otherwise unsupported platforms. Or when users choose to
+        # not accept single key presses, or keys other than ENTER.
+        if _nbc_use_input:
             input("Hit Enter to return:")
         return None
 
