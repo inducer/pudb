@@ -286,18 +286,18 @@ def decode_lines(lines):
 
 # {{{ get single key press from console outside of curses
 
-( _NBC_IMPL_INPUT, _NBC_IMPL_GETCH, _NBC_IMPL_SELECT, ) = range(3)
-_nbc_impl = _NBC_IMPL_INPUT
+( _KEYREAD_IMPL_INPUT, _KEYREAD_IMPL_GETCH, _KEYREAD_IMPL_SELECT, ) = range(3)
+_keyread_impl = _KEYREAD_IMPL_INPUT
 if sys.platform in ("emscripten", "wasi"):
     pass
 elif sys.platform in ("win32",):
     import msvcrt
-    _nbc_impl = _NBC_IMPL_GETCH
+    _keyread_impl = _KEYREAD_IMPL_GETCH
 else:
     import select
     import termios
     import tty
-    _nbc_impl = _NBC_IMPL_SELECT
+    _keyread_impl = _KEYREAD_IMPL_SELECT
 
 
 class ConsoleSingleKeyReader(object):
@@ -318,23 +318,23 @@ class ConsoleSingleKeyReader(object):
         pass
 
     def __enter__(self):
-        if _nbc_impl == _NBC_IMPL_SELECT:
+        if _keyread_impl == _KEYREAD_IMPL_SELECT:
             self.prev_settings = termios.tcgetattr(sys.stdin)
             tty.setcbreak(sys.stdin.fileno())
         return self
 
     def __exit__(self, type, value, traceback):
-        if _nbc_impl == _NBC_IMPL_SELECT:
+        if _keyread_impl == _KEYREAD_IMPL_SELECT:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
 
     def get_single_key(self):
-        if _nbc_impl == _NBC_IMPL_GETCH:
+        if _keyread_impl == _KEYREAD_IMPL_GETCH:
             c = msvcrt.getch()
             if c in ('\x00', '\xe0'):
                 c = msvcrt.getch()
             return c
 
-        elif _nbc_impl == _NBC_IMPL_SELECT:
+        elif _keyread_impl == _KEYREAD_IMPL_SELECT:
             rset, _, _ = select.select([sys.stdin], [], [], None)
             assert sys.stdin in rset
             return sys.stdin.read(1)
