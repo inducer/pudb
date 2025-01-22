@@ -776,7 +776,7 @@ class StoppedScreen:
 
     def press_key_to_return(self):
         with ConsoleSingleKeyReader() as key_reader:
-            key = key_reader.get_single_key()
+            key_reader.get_single_key()
 
 
 class DebuggerUI(FrameVarInfoKeeper):

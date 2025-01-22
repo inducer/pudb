@@ -334,7 +334,7 @@ class ConsoleSingleKeyReader(object):
             # special keys (function keys, cursor, keypad) require
             # another call when the first returned '\0' or '\xe0'.
             c = msvcrt.getch()
-            if c in ('\x00', '\xe0'):
+            if c in ("\x00", "\xe0"):
                 c = msvcrt.getch()
             return c
 
