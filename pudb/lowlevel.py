@@ -1,6 +1,7 @@
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
+Copyright (C) 2024 Gerhard Sittig
 """
 
 __license__ = """
@@ -27,6 +28,7 @@ THE SOFTWARE.
 import logging
 import sys
 from datetime import datetime
+from enum import Enum, auto
 
 
 logfile = [None]
@@ -286,21 +288,22 @@ def decode_lines(lines):
 
 # {{{ get single key press from console outside of curses
 
-( _KEYREAD_IMPL_INPUT, _KEYREAD_IMPL_GETCH, _KEYREAD_IMPL_SELECT, ) = range(3)
-_keyread_impl = _KEYREAD_IMPL_INPUT
+class KeyReadImpl(Enum):
+    INPUT = auto()
+    GETCH = auto()
+    SELECT = auto()
+
+
+_keyread_impl = KeyReadImpl.INPUT
 if sys.platform in ("emscripten", "wasi"):
     pass
 elif sys.platform in ("win32",):
-    import msvcrt
-    _keyread_impl = _KEYREAD_IMPL_GETCH
+    _keyread_impl = KeyReadImpl.GETCH
 else:
-    import select
-    import termios
-    import tty
-    _keyread_impl = _KEYREAD_IMPL_SELECT
+    _keyread_impl = KeyReadImpl.SELECT
 
 
-class ConsoleSingleKeyReader(object):
+class ConsoleSingleKeyReader:
     """
     Get a single key press from a terminal without a prompt.
 
@@ -314,21 +317,22 @@ class ConsoleSingleKeyReader(object):
     method. Call sites remain simple and straight forward.
     """
 
-    def __init__(self):
-        pass
-
     def __enter__(self):
-        if _keyread_impl == _KEYREAD_IMPL_SELECT:
+        if _keyread_impl == KeyReadImpl.SELECT:
+            import termios
+            import tty
             self.prev_settings = termios.tcgetattr(sys.stdin)
             tty.setcbreak(sys.stdin.fileno())
         return self
 
     def __exit__(self, type, value, traceback):
-        if _keyread_impl == _KEYREAD_IMPL_SELECT:
+        if _keyread_impl == KeyReadImpl.SELECT:
+            import termios
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
 
     def get_single_key(self):
-        if _keyread_impl == _KEYREAD_IMPL_GETCH:
+        if _keyread_impl == KeyReadImpl.GETCH:
+            import msvcrt
             # https://docs.python.org/3/library/msvcrt.html#msvcrt.getch
             # Most keys are returned in the first getch() call. Some
             # special keys (function keys, cursor, keypad) require
@@ -338,7 +342,8 @@ class ConsoleSingleKeyReader(object):
                 c = msvcrt.getch()
             return c
 
-        elif _keyread_impl == _KEYREAD_IMPL_SELECT:
+        elif _keyread_impl == KeyReadImpl.SELECT:
+            import select
             rset, _, _ = select.select([sys.stdin], [], [], None)
             assert sys.stdin in rset
             return sys.stdin.read(1)

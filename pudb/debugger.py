@@ -35,7 +35,7 @@ from types import TracebackType
 
 import urwid
 
-from pudb.lowlevel import decode_lines, ConsoleSingleKeyReader, ui_log
+from pudb.lowlevel import ConsoleSingleKeyReader, decode_lines, ui_log
 from pudb.settings import get_save_config_path, load_config, save_config
 
 
