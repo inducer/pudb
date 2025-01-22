@@ -293,21 +293,18 @@ def decode_lines(lines):
 # Is used in situations where urwid is disabled and curses calls are
 # not available.
 
-_nbc_use_input = True
-_nbc_use_getch = False
-_nbc_use_select = False
+( _NBC_IMPL_INPUT, _NBC_IMPL_GETCH, _NBC_IMPL_SELECT, ) = range(3)
+_nbc_impl = _NBC_IMPL_INPUT
 if sys.platform in ("emscripten", "wasi"):
     pass
 elif sys.platform in ("win32",):
     import msvcrt
-    _nbc_use_input = False
-    _nbc_use_getch = True
+    _nbc_impl = _NBC_IMPL_GETCH
 else:
     import select
     import termios
     import tty
-    _nbc_use_input = False
-    _nbc_use_select = True
+    _nbc_impl = _NBC_IMPL_SELECT
 
 
 class NonBufferedConsole(object):
@@ -316,27 +313,26 @@ class NonBufferedConsole(object):
         pass
 
     def __enter__(self):
-        if _nbc_use_select:
+        if _nbc_impl == _NBC_IMPL_SELECT:
             self.prev_settings = termios.tcgetattr(sys.stdin)
             tty.setcbreak(sys.stdin.fileno())
         return self
 
     def __exit__(self, type, value, traceback):
-        if _nbc_use_select:
+        if _nbc_impl == _NBC_IMPL_SELECT:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
 
     def get_data(self):
-        if _nbc_use_getch:
+        if _nbc_impl == _NBC_IMPL_GETCH:
             c = msvcrt.getch()
             if c in ('\x00', '\xe0'):
                 c = msvcrt.getch()
             return c
 
-        if _nbc_use_select:
+        elif _nbc_impl == _NBC_IMPL_SELECT:
             rset, _, _ = select.select([sys.stdin], [], [], None)
-            if sys.stdin in rset:
-                return sys.stdin.read(1)
-            return None
+            assert sys.stdin in rset
+            return sys.stdin.read(1)
 
         # Strictly speaking putting the fallback here which requires
         # pressing ENTER is not correct, this is the "non buffered"
@@ -346,9 +342,9 @@ class NonBufferedConsole(object):
         # earlier PuDB releases. It's a most appropriate default for
         # otherwise unsupported platforms. Or when users choose to
         # not accept single key presses, or keys other than ENTER.
-        if _nbc_use_input:
+        else:
             input("Hit Enter to return:")
-        return None
+            return None
 
 # }}}
 
