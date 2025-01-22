@@ -329,6 +329,10 @@ class ConsoleSingleKeyReader(object):
 
     def get_single_key(self):
         if _keyread_impl == _KEYREAD_IMPL_GETCH:
+            # https://docs.python.org/3/library/msvcrt.html#msvcrt.getch
+            # Most keys are returned in the first getch() call. Some
+            # special keys (function keys, cursor, keypad) require
+            # another call when the first returned '\0' or '\xe0'.
             c = msvcrt.getch()
             if c in ('\x00', '\xe0'):
                 c = msvcrt.getch()
