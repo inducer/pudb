@@ -284,14 +284,7 @@ def decode_lines(lines):
 # }}}
 
 
-# {{{ non-buffered console
-
-# Local platform dependent helper to get single key presses from a
-# terminal in unbuffered mode. Eliminates the necessity to press ENTER
-# before other input also becomes available. Also avoids the accumulation
-# of prompts on the screen as was the case with Python's input() call.
-# Is used in situations where urwid is disabled and curses calls are
-# not available.
+# {{{ get single key press from console outside of curses
 
 ( _NBC_IMPL_INPUT, _NBC_IMPL_GETCH, _NBC_IMPL_SELECT, ) = range(3)
 _nbc_impl = _NBC_IMPL_INPUT
@@ -307,7 +300,19 @@ else:
     _nbc_impl = _NBC_IMPL_SELECT
 
 
-class NonBufferedConsole(object):
+class ConsoleSingleKeyReader(object):
+    """
+    Get a single key press from a terminal without a prompt.
+
+    Eliminates the necessity to press ENTER before other input also
+    becomes available. Avoids the accumulation of prompts on the screen
+    as was the case with Python's input() call. Is used in situations
+    where urwid is disabled and curses calls are not available.
+
+    Supports major desktop platforms with special cases (msvcrt getch(),
+    termios and select). Transparently falls back to Python's input()
+    method. Call sites remain simple and straight forward.
+    """
 
     def __init__(self):
         pass
@@ -322,7 +327,7 @@ class NonBufferedConsole(object):
         if _nbc_impl == _NBC_IMPL_SELECT:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
 
-    def get_data(self):
+    def get_single_key(self):
         if _nbc_impl == _NBC_IMPL_GETCH:
             c = msvcrt.getch()
             if c in ('\x00', '\xe0'):

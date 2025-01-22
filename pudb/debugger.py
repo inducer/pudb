@@ -35,7 +35,7 @@ from types import TracebackType
 
 import urwid
 
-from pudb.lowlevel import decode_lines, NonBufferedConsole, ui_log
+from pudb.lowlevel import decode_lines, ConsoleSingleKeyReader, ui_log
 from pudb.settings import get_save_config_path, load_config, save_config
 
 
@@ -775,8 +775,8 @@ class StoppedScreen:
         self.screen.start()
 
     def press_key_to_return(self):
-        with NonBufferedConsole() as nbc:
-            key = nbc.get_data()
+        with ConsoleSingleKeyReader() as nbc:
+            key = nbc.get_single_key()
 
 
 class DebuggerUI(FrameVarInfoKeeper):
