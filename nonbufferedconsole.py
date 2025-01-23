@@ -5,62 +5,62 @@ on any computer that has Python available. Does not depend on 3rd party
 libraries, exclusively uses core features.
 """
 
-_nbc_use_input = True
-_nbc_use_getch = False
-_nbc_use_select = False
-
+from enum import Enum, auto
 import sys
+
+class KeyReadImpl(Enum):
+	INPUT = auto()
+	GETCH = auto()
+	SELECT = auto()
+
+_keyread_impl = KeyReadImpl.INPUT
+
 if sys.platform in ("emscripten", "wasi"):
 	pass
 elif sys.platform in ("win32",):
-	import msvcrt
-	_nbc_use_input = False
-	_nbc_use_getch = True
+	_keyread_impl = KeyReadImpl.GETCH
 else:
-	import select
-	import termios
-	import tty
-	_nbc_use_input = False
-	_nbc_use_select = True
+	_keyread_impl = KeyReadImpl.SELECT
 
-class NonBufferedConsole(object):
-
-	def __init__(self):
-		pass
+class ConsoleSingleKeyReader:
 
 	def __enter__(self):
-		if _nbc_use_select:
+		if _keyread_impl == KeyReadImpl.SELECT:
+			import termios
+			import tty
 			self.prev_settings = termios.tcgetattr(sys.stdin)
 			tty.setcbreak(sys.stdin.fileno())
 		return self
 
 	def __exit__(self, type, value, traceback):
-		if _nbc_use_select:
+		if _keyread_impl == KeyReadImpl.SELECT:
+			import termios
 			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
 
-	def get_data(self):
-		if _nbc_use_getch:
+	def get_single_key(self):
+		if _keyread_impl == KeyReadImpl.GETCH:
+			import msvcrt
 			c = msvcrt.getch()
 			if c in ('\x00', '\xe0'):
 				c = msvcrt.getch()
 			return c
 
-		if _nbc_use_select:
+		elif _keyread_impl == KeyReadImpl.SELECT:
+			import select
 			rset, _, _ = select.select([sys.stdin], [], [], None)
-			if sys.stdin in rset:
-				return sys.stdin.read(1)
-			return None
+			assert sys.stdin in rset
+			return sys.stdin.read(1)
 
 		# The Python input() call strictly speaking is not a
 		# terminal in non-buffered mode and without a prompt.
 		# But supporting this fallback here is most appropriate
 		# and simplifies call sites.
-		if _nbc_use_input:
+		else:
 			input("Hit Enter to return:")
-		return None
+			return None
 
 if __name__ == "__main__":
 	print("waiting for key press")
-	with NonBufferedConsole() as nbc:
-		key = nbc.get_data()
+	with ConsoleSingleKeyReader() as keyreader:
+		keyreader.get_single_key()
 	print("key press seen")
