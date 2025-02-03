@@ -179,7 +179,7 @@ like so::
 
     $ pytest --pdbcls pudb.debugger:Debugger --pdb --capture=no
 
-More persistantly, it's possible to add the option to the ``adopts =`` settings in one of pytest's `configuration files <https://docs.pytest.org/en/stable/reference/customize.html#configuration-file-formats>`_.
+To make this persistent, it is possible to add the option to the ``adopts =`` settings in one of pytest's `configuration files <https://docs.pytest.org/en/stable/reference/customize.html#configuration-file-formats>`_.
 
 Note the need to pass --capture=no (or its synonym -s) as otherwise
 pytest tries to manage the standard streams itself. (contributed by Antony Lee)
