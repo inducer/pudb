@@ -2029,53 +2029,37 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         # {{{ sidebar sizing
 
-        def max_sidebar(w, size, key):
+        def _set_sidebar_weight(weight: float) -> None:
             from pudb.settings import save_config
 
-            weight = 5
             CONFIG["sidebar_width"] = weight
             save_config(CONFIG)
 
             self.columns.contents[1] = (
                     self.columns.contents[1][0],
-                    (urwid.WEIGHT, weight))
-            self.columns._invalidate()
+                    self.columns.options("weight", weight))
+
+        def max_sidebar(w, size, key):
+            _set_sidebar_weight(5)
 
         def min_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            weight = 1/5
-            CONFIG["sidebar_width"] = weight
-            save_config(CONFIG)
-
-            self.columns.contents[1] = (
-                    self.columns.contents[1][0],
-                    (urwid.WEIGHT, weight))
-            self.columns._invalidate()
+            _set_sidebar_weight(1/5)
 
         def grow_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            weight = self.columns.column_types[1][1]
+            _widget, (_weight_literal, weight, _flag) = self.columns.contents[1]
+            assert weight is not None
 
             if weight < 5:
                 weight *= 1.25
-                CONFIG["sidebar_width"] = weight
-                save_config(CONFIG)
-                self.columns.column_types[1] = urwid.WEIGHT, weight
-                self.columns._invalidate()
+                _set_sidebar_weight(weight)
 
         def shrink_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            weight = self.columns.column_types[1][1]
+            _widget, (_weight_literal, weight, _flag) = self.columns.contents[1]
+            assert weight is not None
 
             if weight > 1/5:
                 weight /= 1.25
-                CONFIG["sidebar_width"] = weight
-                save_config(CONFIG)
-                self.columns.column_types[1] = urwid.WEIGHT, weight
-                self.columns._invalidate()
+                _set_sidebar_weight(weight)
 
         self.rhs_col_sigwrap.listen("=", max_sidebar)
         self.rhs_col_sigwrap.listen("+", grow_sidebar)
