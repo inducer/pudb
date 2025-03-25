@@ -201,7 +201,6 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
                     ])),
                 [
                     ("Restart", "restart"),
-                    ("Examine", "examine"),
                     ("Quit", "quit"),
                     ],
                 focus_buttons=True,
@@ -209,15 +208,10 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
                 title="Finished",
                 extra_bindings=[
                     ("q", "quit"),
-                    ("esc", "examine"),
                     ])
 
             if result == "quit":
                 return
-
-            if result == "examine":
-                dbg.post_mortem = True
-                dbg.interaction(None, sys.exc_info(), show_exc_dialog=False)
 
             if result == "restart":
                 break
