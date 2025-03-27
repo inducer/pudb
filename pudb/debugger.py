@@ -183,14 +183,28 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 # {{{ debugger interface
 
-class Debugger(bdb.Bdb):
+class Singleton(type):
+    _instance = None
+
+    def __call__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
+        else:
+            # Instantiating the debugger again is a pytest problem
+            # when starting a postmortem.
+            # Otherwise calling _get_debugger should be called.
+            # This flag keeps track of the pytest postmortem situation to disable
+            # a problematic line in Bbd.reset()
+            cls._pytest_postmortem = True
+        return cls._instance
+
+
+class Debugger(bdb.Bdb, metaclass=Singleton):
     _current_debugger = []
+    _pytest_postmortem = False
 
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
                  _continue_at_start=False, tty_file=None, **kwargs):
-
-        if Debugger._current_debugger:
-            raise ValueError("a Debugger instance already exists")
 
         # Pass remaining kwargs to python debugger framework
         bdb.Bdb.__init__(self, **kwargs)
@@ -213,6 +227,38 @@ class Debugger(bdb.Bdb):
 
         # Okay, now we have a debugger
         self._current_debugger.append(self)
+
+    def reset(self):
+        """Set values of attributes as ready to start debugging.
+
+        Override from Bdb.reset()
+
+        When pytest starts a postmortem analysis, but the debugger is already active,
+        .reset() in src/_pytest/debugging.py::post_mortem is called.
+        https://github.com/pytest-dev/pytest/blob/868e1d225e443984a6aa29cfde2d1231eb03ed41/src/_pytest/debugging.py#L396
+
+        When Bdb.reset() is called this causes the self.stopframe to be set to None.
+        That immidiatly pauses the debugger somewhere in the source code of the debugger.
+        The exact same problem as for #67.
+
+        We detect using _pytest_postmortem that this is the case and do not set the
+        stopframe to None in that specific scenario.
+
+        Related #607, #52
+        """
+        import linecache
+        linecache.checkcache()
+        self.botframe = None
+
+        if not self._pytest_postmortem:
+            # The problematic line of Bbd.reset:
+            self.stopframe = None
+        else:
+            self._pytest_postmortem = False
+
+        self.returnframe = None
+        self.quitting = False
+        self.stoplineno = 0
 
     def __del__(self):
         # according to https://stackoverflow.com/a/1481512/1054322, the garbage
