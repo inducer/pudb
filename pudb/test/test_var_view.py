@@ -2,6 +2,9 @@ import contextlib
 import itertools
 import string
 import unittest
+from unittest.mock import mock_open, patch
+
+import pytest
 
 from pudb.var_view import (
     STRINGIFIERS,
@@ -12,6 +15,8 @@ from pudb.var_view import (
     PudbMapping,
     PudbSequence,
     ValueWalker,
+    Watches,
+    WatchExpression,
     get_stringifier,
     ui_log,
 )
@@ -402,3 +407,135 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
         # This effectively makes sure that class definitions aren't considered
         # containers.
         self.assert_class_counts_equal({"other": 2048})
+
+
+class WatchExpressionTests(unittest.TestCase):
+    """
+    Test class WatchExpression for expected behaviors
+    """
+
+    def test_watch_expression_sorting(self):
+        alpha_watches = [
+            WatchExpression("a"),
+            WatchExpression("c"),
+            WatchExpression("b"),
+            WatchExpression("d"),
+            WatchExpression("f"),
+            WatchExpression("e"),
+        ]
+        self.assertEqual(
+            "".join(sorted(str(watch_expr)
+                           for watch_expr in alpha_watches)),
+            "abcdef")
+
+    def test_hashing(self):
+        we_a = WatchExpression("a")
+        we_b = WatchExpression("b")
+        self.assertEqual(hash(we_a), hash("a"))
+        self.assertEqual(hash(we_b), hash("b"))
+        self.assertNotEqual(hash(we_a), hash(we_b))
+
+    def test_equality(self):
+        we_a = WatchExpression("a")
+        we_a2 = WatchExpression("a")
+        we_b = WatchExpression("b")
+        self.assertEqual(we_a, we_a2)
+        self.assertNotEqual(we_a, we_b)
+
+    def test_repr(self):
+        expr = WatchExpression("a")
+        self.assertEqual(repr(expr), "a")
+
+    def test_str(self):
+        expr = WatchExpression("a")
+        self.assertEqual(str(expr), "a")
+
+    def test_set(self):
+        """
+        watch expressions should be hashable and comparable,
+        and more or less equivalent to class str
+        """
+        expr = WatchExpression("a")
+        self.assertIn(expr, {"a"})
+
+        # test set membership
+        we_a = WatchExpression("a")
+        we_b = WatchExpression("b")
+        test_set1 = {we_a, we_b}
+        self.assertIn(we_a, test_set1)
+        self.assertIn(we_b, test_set1)
+
+        # test equivalent sets
+        test_set2 = {we_b, we_a}
+        self.assertEqual(test_set1, test_set2)
+        self.assertIn(we_a, test_set2)
+        self.assertIn(we_b, test_set2)
+
+        # test adding a duplicate
+        test_set2.add(WatchExpression("a"))
+        self.assertEqual(test_set1, test_set2)
+
+    def test_immutability(self):
+        Watches.clear()
+        we_a = WatchExpression("a")
+        with pytest.raises(AttributeError):
+            we_a.expression = "b"
+
+
+class WatchesTests(unittest.TestCase):
+    """
+    Test class Watches for expected behavior
+    """
+
+    def tearDown(self):
+        # Since Watches is a global object, we must clear out after each test
+        Watches.clear()
+
+    def test_add_watch(self):
+        we_z = WatchExpression("z")
+        Watches.add(we_z)
+        self.assertIn(we_z, Watches.all())
+
+    def test_add_watches(self):
+        watch_expressions_file_log = []
+
+        def mocked_file_write(*args):
+            watch_expressions_file_log.append(args)
+
+        mocked_open = mock_open()
+        # mock the write method of the file object
+        mocked_open.return_value.write = mocked_file_write
+        we_a = WatchExpression("a")
+        we_b = WatchExpression("b")
+        we_c = WatchExpression("c")
+        expressions = [we_a, we_b, we_c]
+
+        """
+        The expressions file is cumulative, writing out whatever
+        current set of expressions Watches contains,
+        so we expect to see: [a], [a], [b], [a], [b], [c]
+        """
+        expected_file_log = []
+        for i in range(len(expressions)):
+            for expr in expressions[:i + 1]:
+                expected_file_log.append((f"{str(expr)}\n", ))
+
+        with patch("builtins.open", mocked_open):
+            Watches.add(we_a)
+            Watches.add(we_b)
+            Watches.add(we_c)
+
+        self.assertEqual(len(watch_expressions_file_log), 6)
+        self.assertEqual(watch_expressions_file_log, expected_file_log)
+
+        self.assertIn(we_a, Watches.all())
+        self.assertIn(we_b, Watches.all())
+        self.assertIn(we_c, Watches.all())
+
+    def test_remove_watch(self):
+        we_z = WatchExpression("z")
+        Watches.add(we_z)
+        self.assertTrue(Watches.has(we_z))
+        Watches.remove(we_z)
+        self.assertFalse(Watches.has(we_z))
+        self.assertEqual(len(Watches.all()), 0)

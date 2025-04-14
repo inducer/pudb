@@ -590,7 +590,7 @@ from pudb.ui_tools import (
     labelled_value,
     make_hotkey_markup,
 )
-from pudb.var_view import FrameVarInfoKeeper
+from pudb.var_view import FrameVarInfoKeeper, Watches, WatchExpression
 
 
 # {{{ display setup
@@ -1042,11 +1042,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "m":
                 iinfo.show_methods = not iinfo.show_methods
             elif key == "delete":
-                fvi = self.get_frame_var_info(read_only=False)
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
-                        break
+                Watches.remove(var.watch_expr)
 
             self.update_var_view(focus_index=focus_index)
 
@@ -1159,13 +1155,15 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.access_level = "all"
 
                 if var.watch_expr is not None:
-                    var.watch_expr.expression = watch_edit.get_edit_text()
+                    # Remove old expression and add new one, to avoid rehashing
+                    Watches.remove(var.watch_expr)
+                    var.watch_expr = WatchExpression(
+                        watch_edit.get_edit_text())
+                    Watches.add(var.watch_expr)
 
             elif result == "del":
-                for i, watch_expr in enumerate(fvi.watches):
-                    if watch_expr is var.watch_expr:
-                        del fvi.watches[i]
-                        break
+                # Remove saved expression
+                Watches.remove(var.watch_expr)
 
             self.update_var_view()
 
@@ -1183,11 +1181,11 @@ class DebuggerUI(FrameVarInfoKeeper):
                         ("Cancel", False),
                         ], title="Add Watch Expression"):
 
-                from pudb.var_view import WatchExpression
-                we = WatchExpression(watch_edit.get_edit_text())
-                fvi = self.get_frame_var_info(read_only=False)
-                fvi.watches.append(we)
-                self.update_var_view()
+                # Add new watch expression, if not empty
+                watch_text = watch_edit.get_edit_text()
+                if watch_text and watch_text.strip():
+                    Watches.add(WatchExpression(watch_text))
+                    self.update_var_view()
 
         self.var_list.listen("\\", change_var_state)
         self.var_list.listen(" ", change_var_state)
