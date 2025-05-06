@@ -49,7 +49,7 @@ def fermat(n):
     """
 
     # source: "Fermat's last Python script"
-    # https://earthboundkid.jottit.com/fermat.py
+    # https://web.archive.org/web/20200815095147/https://earthboundkid.jottit.com/fermat.py
     # :)
 
     for x in range(100):
