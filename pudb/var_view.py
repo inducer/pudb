@@ -212,7 +212,9 @@ class WatchEvalError:
 
 # {{{ widget
 
-class VariableWidget(urwid.FlowWidget):
+class VariableWidget(urwid.Widget):
+    _sizing = frozenset([urwid.Sizing.FLOW])
+
     PREFIX = "| "
 
     def __init__(self, parent, var_label, value_str, id_path,
