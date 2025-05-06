@@ -36,6 +36,11 @@ dependencies = [
     "packaging>=20.0",
     "pygments>=2.7.4",
     "urwid>=2.4",
+
+    # https://github.com/urwid/urwid/issues/1017
+    "urwid; python_version >= '3.9'",
+    "urwid!=3.0.0; python_version < '3.9'",
+
     "urwid_readline",
 ]
 
