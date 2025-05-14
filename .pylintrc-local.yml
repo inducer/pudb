@@ -4,3 +4,4 @@
   - IPython
   - py.test
   - pytest
+  - msvcrt

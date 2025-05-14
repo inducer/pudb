@@ -140,8 +140,12 @@ class SignalWrap(urwid.WidgetWrap):
 
 # {{{ debugger-specific stuff
 
-class StackFrame(urwid.FlowWidget):
+class StackFrame(urwid.Widget):
+    _sizing = frozenset([urwid.Sizing.FLOW])
+
     def __init__(self, is_current, name, class_name, filename, line):
+        super().__init__()
+
         self.is_current = is_current
         self.name = name
         self.class_name = class_name
@@ -184,8 +188,12 @@ class StackFrame(urwid.FlowWidget):
         return key
 
 
-class BreakpointFrame(urwid.FlowWidget):
+class BreakpointFrame(urwid.Widget):
+    _sizing = frozenset([urwid.Sizing.FLOW])
+
     def __init__(self, is_current, filename, breakpoint):
+        super().__init__()
+
         self.is_current = is_current
         self.filename = filename
         self.breakpoint = breakpoint

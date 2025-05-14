@@ -30,8 +30,12 @@ import urwid
 TABSTOP = 8
 
 
-class SourceLine(urwid.FlowWidget):
+class SourceLine(urwid.Widget):
+    _sizing = frozenset([urwid.Sizing.FLOW])
+
     def __init__(self, dbg_ui, text, line_nr="", attr=None, has_breakpoint=False):
+        super().__init__()
+
         self.dbg_ui = dbg_ui
         self.text = text
         self.attr = attr

@@ -24,13 +24,17 @@ THE SOFTWARE.
 """
 
 
+import re
 import sys
+from importlib import metadata
 
 from pudb.settings import load_config
 
 
-NUM_VERSION = (2024, 1, 2)
-VERSION = ".".join(str(nv) for nv in NUM_VERSION)
+VERSION = metadata.version("pudb")
+_ver_match = re.match("^([0-9.]+)([a-z0-9]*?)$", VERSION)
+assert _ver_match
+NUM_VERSION = tuple(int(nr) for nr in _ver_match.group(1).split("."))
 __version__ = VERSION
 
 
@@ -197,7 +201,6 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
                     ])),
                 [
                     ("Restart", "restart"),
-                    ("Examine", "examine"),
                     ("Quit", "quit"),
                     ],
                 focus_buttons=True,
@@ -205,16 +208,11 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
                 title="Finished",
                 extra_bindings=[
                     ("q", "quit"),
-                    ("esc", "examine"),
                     ("r", "restart"),
                     ])
 
             if result == "quit":
                 return
-
-            if result == "examine":
-                dbg.post_mortem = True
-                dbg.interaction(None, sys.exc_info(), show_exc_dialog=False)
 
             if result == "restart":
                 break

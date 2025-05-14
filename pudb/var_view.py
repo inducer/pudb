@@ -212,11 +212,15 @@ class WatchEvalError:
 
 # {{{ widget
 
-class VariableWidget(urwid.FlowWidget):
+class VariableWidget(urwid.Widget):
+    _sizing = frozenset([urwid.Sizing.FLOW])
+
     PREFIX = "| "
 
     def __init__(self, parent, var_label, value_str, id_path,
             attr_prefix=None, watch_expr=None, iinfo=None):
+        super().__init__()
+
         assert isinstance(id_path, str)
         self.parent = parent
         self.nesting_level = 0 if parent is None else parent.nesting_level + 1

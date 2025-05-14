@@ -35,7 +35,7 @@ from types import TracebackType
 
 import urwid
 
-from pudb.lowlevel import decode_lines, ui_log
+from pudb.lowlevel import ConsoleSingleKeyReader, decode_lines, ui_log
 from pudb.settings import get_save_config_path, load_config, save_config
 
 
@@ -227,33 +227,6 @@ class Debugger(bdb.Bdb):
             self._tty_file.close()
             self._tty_file = None
 
-    # These (dispatch_line and set_continue) are copied from bdb with the
-    # patch from https://bugs.python.org/issue16482 applied. See
-    # https://github.com/inducer/pudb/pull/90.
-    def dispatch_line(self, frame):
-        if self.stop_here(frame) or self.break_here(frame):
-            self.user_line(frame)
-            if self.quitting:
-                raise bdb.BdbQuit
-            # Do not re-install the local trace when we are finished debugging,
-            # see issues 16482 and 7238.
-            if not sys.gettrace():
-                return None
-        return self.trace_dispatch
-
-    def set_continue(self):
-        # Don't stop except at breakpoints or when finished
-        self._set_stopinfo(self.botframe, None, -1)
-        if not self.breaks:
-            # no breakpoints; run without debugger overhead
-            sys.settrace(None)
-            frame = sys._getframe().f_back
-            while frame:
-                del frame.f_trace
-                if frame is self.botframe:
-                    break
-                frame = frame.f_back
-
     def set_jump(self, frame, line):
         frame.f_lineno = line
 
@@ -279,29 +252,41 @@ class Debugger(bdb.Bdb):
                 as_breakpoint = True
 
         if frame is None:
-            frame = thisframe = sys._getframe().f_back
-        else:
-            thisframe = frame
+            frame = sys._getframe().f_back
+            assert frame is not None
+
         # See pudb issue #52. If this works well enough we should upstream to
         # stdlib bdb.py.
         # self.reset()
 
-        while frame:
-            frame.f_trace = self.trace_dispatch
-            self.botframe = frame
-            frame = frame.f_back
+        if paused:
+            self.enterframe = frame
 
-        thisframe_info = (
-                self.canonic(thisframe.f_code.co_filename), thisframe.f_lineno)
-        if thisframe_info not in self.set_traces or self.set_traces[thisframe_info]:
+            thisframe = frame
+            while thisframe:
+                thisframe.f_trace = self.trace_dispatch
+                self.botframe = thisframe
+                if sys.version_info >= (3, 13):
+                    # save trace flags, to be restored by set_continue
+                    self.frame_trace_lines_opcodes[thisframe] = (  # pylint: disable=no-member
+                        thisframe.f_trace_lines,
+                        thisframe.f_trace_opcodes)
+
+                    # We need f_trace_lines == True for the debugger to work
+                    thisframe.f_trace_lines = True
+
+                thisframe = thisframe.f_back
+
+        frame_info = (self.canonic(frame.f_code.co_filename), frame.f_lineno)
+        if frame_info not in self.set_traces or self.set_traces[frame_info]:
             if as_breakpoint:
-                self.set_traces[thisframe_info] = True
+                self.set_traces[frame_info] = True
                 if self.ui.source_code_provider is not None:
                     self.ui.set_source_code_provider(
                             self.ui.source_code_provider, force_update=True)
 
             if paused:
-                self.set_step()
+                self._set_stopinfo(frame, None)
             else:
                 self.set_continue()
             sys.settrace(self.trace_dispatch)
@@ -460,9 +445,6 @@ class Debugger(bdb.Bdb):
 
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
-        if "__exc_tuple__" in frame.f_locals:
-            del frame.f_locals["__exc_tuple__"]
-
         if self._waiting_for_mainpyfile(frame):
             return
 
@@ -486,7 +468,7 @@ class Debugger(bdb.Bdb):
         if self._waiting_for_mainpyfile(frame):
             return
 
-        if "__exc_tuple__" not in frame.f_locals:
+        if "__exception__" not in frame.f_locals:
             self.interaction(frame)
 
     def _waiting_for_mainpyfile(self, frame):
@@ -502,13 +484,15 @@ class Debugger(bdb.Bdb):
                 return True
         return False
 
-    def user_exception(self, frame, exc_tuple):
+    def user_exception(self, frame, exc_info):
         """This function is called if an exception occurs,
         but only if we are to stop at or just below this level."""
-        frame.f_locals["__exc_tuple__"] = exc_tuple
+
+        exc_type, exc_value, _exc_traceback = exc_info
+        frame.f_locals["__exception__"] = exc_type, exc_value
 
         if not self._wait_for_mainpyfile:
-            self.interaction(frame, exc_tuple)
+            self.interaction(frame, exc_info)
 
     # {{{ entrypoints
 
@@ -742,7 +726,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
             return format_source(
                     debugger_ui, list(decode_lines(lines)), set(breakpoints))
         except Exception:
-            from pudb.lowlevel import format_exception
+            from traceback import format_exception
             debugger_ui.message("Could not load source file '{}':\n\n{}".format(
                 self.file_name, "".join(format_exception(sys.exc_info()))),
                 title="Source Code Load Error")
@@ -785,9 +769,14 @@ class StoppedScreen:
 
     def __enter__(self):
         self.screen.stop()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.screen.start()
+
+    def press_key_to_return(self):
+        with ConsoleSingleKeyReader() as key_reader:
+            key_reader.get_single_key()
 
 
 class DebuggerUI(FrameVarInfoKeeper):
@@ -2040,53 +2029,37 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         # {{{ sidebar sizing
 
-        def max_sidebar(w, size, key):
+        def _set_sidebar_weight(weight: float) -> None:
             from pudb.settings import save_config
 
-            weight = 5
             CONFIG["sidebar_width"] = weight
             save_config(CONFIG)
 
             self.columns.contents[1] = (
                     self.columns.contents[1][0],
-                    (urwid.WEIGHT, weight))
-            self.columns._invalidate()
+                    self.columns.options("weight", weight))
+
+        def max_sidebar(w, size, key):
+            _set_sidebar_weight(5)
 
         def min_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            weight = 1/5
-            CONFIG["sidebar_width"] = weight
-            save_config(CONFIG)
-
-            self.columns.contents[1] = (
-                    self.columns.contents[1][0],
-                    (urwid.WEIGHT, weight))
-            self.columns._invalidate()
+            _set_sidebar_weight(1/5)
 
         def grow_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            weight = self.columns.column_types[1][1]
+            _widget, (_weight_literal, weight, _flag) = self.columns.contents[1]
+            assert weight is not None
 
             if weight < 5:
                 weight *= 1.25
-                CONFIG["sidebar_width"] = weight
-                save_config(CONFIG)
-                self.columns.column_types[1] = urwid.WEIGHT, weight
-                self.columns._invalidate()
+                _set_sidebar_weight(weight)
 
         def shrink_sidebar(w, size, key):
-            from pudb.settings import save_config
-
-            weight = self.columns.column_types[1][1]
+            _widget, (_weight_literal, weight, _flag) = self.columns.contents[1]
+            assert weight is not None
 
             if weight > 1/5:
                 weight /= 1.25
-                CONFIG["sidebar_width"] = weight
-                save_config(CONFIG)
-                self.columns.column_types[1] = urwid.WEIGHT, weight
-                self.columns._invalidate()
+                _set_sidebar_weight(weight)
 
         self.rhs_col_sigwrap.listen("=", max_sidebar)
         self.rhs_col_sigwrap.listen("+", grow_sidebar)
@@ -2098,8 +2071,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         # {{{ top-level listeners
 
         def show_output(w, size, key):
-            with StoppedScreen(self.screen):
-                input("Hit Enter to return:")
+            with StoppedScreen(self.screen) as s:
+                s.press_key_to_return()
 
         def reload_breakpoints_and_redisplay():
             reload_breakpoints()
@@ -2594,7 +2567,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e048"  # noqa
+        WELCOME_LEVEL = "e050"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2610,6 +2583,16 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2025.1:\n\n"
+                    "- Fix compatibility with Urwid 3\n"
+                    "- Allow leaving output screen with single key press "
+                    "(Gerhard Sittig)\n"
+
+                    "\nChanges in version 2024.1.3:\n\n"
+                    "- Switch to hatchling build system\n"
+                    "- Fix compatibility with Python 3.13\n"
+                    "- Fix startup without write permissions (Fergal Armstrong)\n"
 
                     "\nChanges in version 2024.1.2:\n\n"
                     "- Fix separate-terminal debugging (Matt Rixman)\n"

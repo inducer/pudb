@@ -1,6 +1,7 @@
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
+Copyright (C) 2024 Gerhard Sittig
 """
 
 __license__ = """
@@ -27,6 +28,7 @@ THE SOFTWARE.
 import logging
 import sys
 from datetime import datetime
+from enum import Enum, auto
 
 
 logfile = [None]
@@ -280,6 +282,83 @@ def decode_lines(lines):
             yield line.decode(source_enc)
         else:
             yield line
+
+# }}}
+
+
+# {{{ get single key press from console outside of curses
+
+class KeyReadImpl(Enum):
+    INPUT = auto()
+    GETCH = auto()
+    SELECT = auto()
+
+
+_keyread_impl = KeyReadImpl.INPUT
+if sys.platform in ("emscripten", "wasi"):
+    pass
+elif sys.platform in ("win32",):
+    _keyread_impl = KeyReadImpl.GETCH
+else:
+    _keyread_impl = KeyReadImpl.SELECT
+
+
+class ConsoleSingleKeyReader:
+    """
+    Get a single key press from a terminal without a prompt.
+
+    Eliminates the necessity to press ENTER before other input also
+    becomes available. Avoids the accumulation of prompts on the screen
+    as was the case with Python's input() call. Is used in situations
+    where urwid is disabled and curses calls are not available.
+
+    Supports major desktop platforms with special cases (msvcrt getch(),
+    termios and select). Transparently falls back to Python's input()
+    method. Call sites remain simple and straight forward.
+    """
+
+    def __enter__(self):
+        if _keyread_impl == KeyReadImpl.SELECT:
+            import termios
+            import tty
+            self.prev_settings = termios.tcgetattr(sys.stdin)
+            tty.setcbreak(sys.stdin.fileno())
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if _keyread_impl == KeyReadImpl.SELECT:
+            import termios
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.prev_settings)
+
+    def get_single_key(self):
+        if _keyread_impl == KeyReadImpl.GETCH:
+            import msvcrt
+            # https://docs.python.org/3/library/msvcrt.html#msvcrt.getch
+            # Most keys are returned in the first getch() call. Some
+            # special keys (function keys, cursor, keypad) require
+            # another call when the first returned '\0' or '\xe0'.
+            c = msvcrt.getch()
+            if c in ("\x00", "\xe0"):
+                c = msvcrt.getch()
+            return c
+
+        elif _keyread_impl == KeyReadImpl.SELECT:
+            import select
+            rset, _, _ = select.select([sys.stdin], [], [], None)
+            assert sys.stdin in rset
+            return sys.stdin.read(1)
+
+        # Strictly speaking putting the fallback here which requires
+        # pressing ENTER is not correct, this is the "non buffered"
+        # console support code. But it simplifies call sites. And is
+        # easy to tell by users because a prompt is provided. This is
+        # the most portable approach, and backwards compatible with
+        # earlier PuDB releases. It's a most appropriate default for
+        # otherwise unsupported platforms. Or when users choose to
+        # not accept single key presses, or keys other than ENTER.
+        else:
+            input("Hit Enter to return:")
+            return None
 
 # }}}
 

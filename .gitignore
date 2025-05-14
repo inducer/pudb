@@ -14,3 +14,6 @@ traceback*txt
 .coverage
 coverage.xml
 tags
+
+doc/_build
+doc/README.rst
