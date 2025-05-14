@@ -193,7 +193,7 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
                 urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
                     "Your PuDB session has ended.\n\n%s"
                     "Would you like to quit PuDB or restart your program?\n"
-                    "You may hit 'q' to quit."
+                    "You may hit 'q' to quit or 'r' to restart."
                     % status_msg),
                     urwid.Text("\n\nIf you decide to restart, this command "
                     "will be run prior to actually restarting:"),
@@ -208,6 +208,7 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
                 title="Finished",
                 extra_bindings=[
                     ("q", "quit"),
+                    ("r", "restart"),
                     ])
 
             if result == "quit":
