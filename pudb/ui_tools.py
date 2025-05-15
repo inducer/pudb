@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import urwid
 from urwid import calc_text_pos, calc_width
 
@@ -175,7 +177,7 @@ class StackFrame(urwid.Widget):
         attr = [(apfx+"frame name", 4+len(self.name))]
 
         if self.class_name is not None:
-            text += " [%s]" % self.class_name
+            text += f" [{self.class_name}]"
             attr.append((apfx+"frame class", len(self.class_name)+2))
 
         loc = " %s:%d" % (self.filename, self.line)

@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -32,7 +35,7 @@ from pudb.settings import load_config
 
 
 VERSION = metadata.version("pudb")
-_ver_match = re.match("^([0-9.]+)([a-z0-9]*?)$", VERSION)
+_ver_match = re.match(r"^([0-9.]+)([a-z0-9]*?)$", VERSION)
 assert _ver_match
 NUM_VERSION = tuple(int(nr) for nr in _ver_match.group(1).split("."))
 __version__ = VERSION
@@ -141,7 +144,7 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
         if run_as_module:
             sys.argv = args
         else:
-            sys.argv = [mainpyfile] + args
+            sys.argv = [mainpyfile, *args]
 
     # replace pudb's dir with script's dir in front of module search path.
     from pathlib import Path
@@ -177,7 +180,7 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
                 except SystemExit:
                     se = sys.exc_info()[1]
                     status_msg = "The debuggee exited normally with " \
-                            "status code %s.\n\n" % se.code
+                            f"status code {se.code}.\n\n"
         except Exception:
             dbg.post_mortem = True
             dbg.interaction(None, sys.exc_info())
@@ -191,10 +194,9 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
 
             result = dbg.ui.call_with_ui(dbg.ui.dialog,
                 urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
-                    "Your PuDB session has ended.\n\n%s"
+                    f"Your PuDB session has ended.\n\n{status_msg}"
                     "Would you like to quit PuDB or restart your program?\n"
-                    "You may hit 'q' to quit."
-                    % status_msg),
+                    "You may hit 'q' to quit."),
                     urwid.Text("\n\nIf you decide to restart, this command "
                     "will be run prior to actually restarting:"),
                     urwid.AttrMap(pre_run_edit, "input", "focused input")

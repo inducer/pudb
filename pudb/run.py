@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 COMMAND = {"zsh": "{_command_names -e}"}
 PREAMBLE = {
     "zsh": """\
@@ -101,7 +104,7 @@ def main(**kwargs):
     else:
         from os.path import exists
         if not exists(mainpyfile):
-            print("Error: %s does not exist" % mainpyfile, file=sys.stderr)
+            print(f"Error: {mainpyfile} does not exist", file=sys.stderr)
             sys.exit(1)
 
         from pudb import runscript

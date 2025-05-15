@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -42,9 +45,7 @@ def setlogfile(destfile):
     logfile[0] = destfile
     with open(destfile, "a") as openfile:
         openfile.write(
-            "\n*** Pudb session error log started at {date} ***\n".format(
-                date=datetime.now()
-            ))
+            f"\n*** Pudb session error log started at {datetime.now()} ***\n")
 
 
 class TerminalOrStreamHandler(logging.StreamHandler):
@@ -61,7 +62,7 @@ class TerminalOrStreamHandler(logging.StreamHandler):
             if logfile is not None:
                 message = self.format(record)
                 with open(logfile, "a") as openfile:
-                    openfile.write("\n%s\n" % message)
+                    openfile.write(f"\n{message}\n")
             elif _have_debugger():
                 dbg = _get_debugger()
                 message = self.format(record)

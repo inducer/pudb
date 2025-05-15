@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -32,6 +35,7 @@ from collections import deque
 from functools import partial
 from itertools import count
 from types import TracebackType
+from typing import ClassVar
 
 import urwid
 
@@ -184,7 +188,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 # {{{ debugger interface
 
 class Debugger(bdb.Bdb):
-    _current_debugger = []
+    _current_debugger: ClassVar[list[Debugger]] = []
 
     def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
                  _continue_at_start=False, tty_file=None, **kwargs):
@@ -518,8 +522,7 @@ class Debugger(bdb.Bdb):
         # user_call for details).
         self._wait_for_mainpyfile = True
         self.mainpyfile = self.canonic(filename)
-        statement = 'exec(compile(open("{}").read(), "{}", "exec"))'.format(
-                filename, filename)
+        statement = f'exec(compile(open("{filename}").read(), "{filename}", "exec"))'
 
         # Set up an interrupt handler
         from pudb import set_interrupt_handler
@@ -731,7 +734,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
                 self.file_name, "".join(format_exception(sys.exc_info()))),
                 title="Source Code Load Error")
             return [SourceLine(debugger_ui,
-                "Error while loading '%s'." % self.file_name)]
+                f"Error while loading '{self.file_name}'.")]
 
 
 class DirectSourceCodeProvider(SourceCodeProvider):
@@ -746,7 +749,7 @@ class DirectSourceCodeProvider(SourceCodeProvider):
                 and self.code is other.code)
 
     def identifier(self):
-        return "<source code of function %s>" % self.function_name
+        return f"<source code of function {self.function_name}>"
 
     def get_source_identifier(self):
         return None
@@ -869,7 +872,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             dq = partial(deque, maxlen=5000)
             try:
                 # Load global history if present
-                with open(path, "r") as histfile:
+                with open(path) as histfile:
                     return dq(histfile.read().splitlines())
             except FileNotFoundError:
                 return dq()
@@ -1236,7 +1239,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             except Exception:
                 from traceback import format_exception
                 self.message("Exception happened when trying to edit the file:"
-                             "\n\n%s" % ("".join(format_exception(*sys.exc_info()))),
+                             "\n\n{}".format("".join(format_exception(*sys.exc_info()))),
                     title="File Edit Error")
                 return
 
@@ -1497,9 +1500,9 @@ class DebuggerUI(FrameVarInfoKeeper):
                             self.debugger.stack[self.debugger.curindex][0], lineno
                         self.debugger.set_step()
                     except ValueError as e:
-                        self.message("""\
+                        self.message(f"""\
 Error with jump. Note that jumping only works on the topmost stack frame.
-(The error was: %s)""" % (e.args[0],))
+(The error was: {e.args[0]})""")
 
                     # Update UI. end() will run past the line
                     self.set_current_line(lineno, self.source_code_provider)
@@ -1653,7 +1656,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 result = [urwid.AttrMap(SelectableText(mod),
                         None, "focused selectable")
                         for mod in modules if filt_string in mod]
-                new_mod_text.set_text("<<< IMPORT MODULE '%s' >>>" % filt_string)
+                new_mod_text.set_text(f"<<< IMPORT MODULE '{filt_string}' >>>")
                 result.append(new_mod_entry)
                 return result
 
@@ -1732,7 +1735,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                         import importlib
                         importlib.reload(mod)
 
-                        self.message("'%s' was successfully reloaded." % mod_name)
+                        self.message(f"'{mod_name}' was successfully reloaded.")
 
                         if self.source_code_provider is not None:
                             self.source_code_provider.clear_cache()
@@ -1820,7 +1823,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             except Exception as e:
                 # Jedi sometimes produces errors. Ignore them.
                 self.add_cmdline_content(
-                        "Could not tab complete (Jedi error: '%s')" % e,
+                        f"Could not tab complete (Jedi error: '{e}')",
                         "command line error")
                 return
 
@@ -2153,8 +2156,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     else:
                         if "pudb_shell" not in shell.custom_shell_dict:
                             runner = fallback(
-                                "%s does not contain a function named pudb_shell at "
-                                "the module level." % CONFIG["shell"]
+                                "{} does not contain a function named pudb_shell at "
+                                "the module level.".format(CONFIG["shell"])
                             )
                         else:
                             runner = shell.custom_shell_dict["pudb_shell"]
@@ -2183,7 +2186,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         def quit(w, size, key):
             with open(self.cmdline_history_path, "w") as history:
-                history.write("\n".join((self.cmdline_history)))
+                history.write("\n".join(self.cmdline_history))
             self.debugger.set_quit()
             end()
 
@@ -2347,10 +2350,10 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             extra_bindings = []
 
         class ResultSetter:
-            def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
+            def __init__(subself, res):  # noqa: N805 # pylint: disable=no-self-argument
                 subself.res = res
 
-            def __call__(subself, btn):  # noqa: N805, E501 # pylint: disable=no-self-argument
+            def __call__(subself, btn):  # noqa: N805 # pylint: disable=no-self-argument
                 self.quit_event_loop = [subself.res]
 
         Attr = urwid.AttrMap  # noqa
@@ -2394,10 +2397,10 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 w])
 
         class ResultSettingEventHandler:
-            def __init__(subself, res):  # noqa: N805, E501 # pylint: disable=no-self-argument
+            def __init__(subself, res):  # noqa: N805 # pylint: disable=no-self-argument
                 subself.res = res
 
-            def __call__(subself, w, size, key):  # noqa: N805, E501 # pylint: disable=no-self-argument
+            def __call__(subself, w, size, key):  # noqa: N805 # pylint: disable=no-self-argument
                 self.quit_event_loop = [subself.res]
 
         w = SignalWrap(w)
@@ -2508,7 +2511,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             with open(filename, "w") as outf:
                 outf.write(error_info)
 
-            self.message("Traceback saved as %s." % filename, title="Success")
+            self.message(f"Traceback saved as {filename}.", title="Success")
 
         except Exception:
             from traceback import format_exception
@@ -2571,7 +2574,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
-            self.message("Welcome to PudB %s!\n\n"
+            self.message(f"Welcome to PudB {VERSION}!\n\n"
                     "PuDB is a full-screen, console-based visual debugger for "
                     "Python.  Its goal is to provide all the niceties of modern "
                     "GUI-based debuggers in a more lightweight and "
@@ -2830,8 +2833,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "\nChanges in version 0.93:\n\n"
                     "- Stored preferences (no more pesky IPython prompt!)\n"
                     "- Themes\n"
-                    "- Line numbers (optional)\n"
-                    % VERSION)
+                    "- Line numbers (optional)\n")
             from pudb.settings import save_config
             save_config(CONFIG)
             self.run_edit_config()
@@ -2871,9 +2873,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         from pudb import VERSION
         caption = [(None,
-            "PuDB %s - ?:help  n:next  s:step into  b:breakpoint  "
-            "!:python command line"
-            % VERSION)]
+            f"PuDB {VERSION} - ?:help  n:next  s:step into  b:breakpoint  "
+            "!:python command line")]
 
         if self.debugger.post_mortem:
             if show_exc_dialog and exc_tuple is not None:
@@ -2981,7 +2982,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     from pudb.lowlevel import ui_log
                     message = "Failed to determine class name"
                     ui_log.exception(message)
-                    class_name = "!! %s !!" % message
+                    class_name = f"!! {message} !!"
 
             return StackFrame(i == self.debugger.curindex,
                     code.co_name, class_name,

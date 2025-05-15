@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -439,39 +442,47 @@ def edit_config(ui, conf_dict):
     # }}}
 
     lb_contents = (
-            [heading]
-            + [urwid.AttrMap(urwid.Text("General:\n"), "group head")]
-            + [cb_line_numbers]
-            + [cb_prompt_on_quit]
-            + [hide_cmdline_win]
-
-            + [urwid.AttrMap(urwid.Text("\nShell:\n"), "group head")]
-            + [shell_info]
-            + shell_rbs
-
-            + [urwid.AttrMap(urwid.Text("\nTheme:\n"), "group head")]
-            + theme_rbs
-
-            + [urwid.AttrMap(urwid.Text("\nStack Order:\n"), "group head")]
-            + [stack_info]
-            + stack_rbs
-
-            + [urwid.AttrMap(urwid.Text("\nVariable Stringifier:\n"), "group head")]
-            + [stringifier_info]
-            + stringifier_rbs
-
-            + [urwid.AttrMap(urwid.Text("\nVariables Attribute Visibility:\n"),
-                "group head")]
-            + [default_variables_access_level_info]
-            + default_variables_access_level_rbs
-
-            + [urwid.AttrMap(urwid.Text("\nWrap Variables:\n"), "group head")]
-            + [cb_wrap_variables]
-            + [wrap_variables_info]
-
-            + [urwid.AttrMap(urwid.Text("\nDisplay driver:\n"), "group head")]
-            + [display_info]
-            + display_rbs
+            [heading,
+                urwid.AttrMap(
+                              urwid.Text("General:\n"),
+                              "group head"),
+                cb_line_numbers,
+                cb_prompt_on_quit,
+                hide_cmdline_win,
+                urwid.AttrMap(
+                              urwid.Text("\nShell:\n"),
+                              "group head"),
+                shell_info,
+                *shell_rbs,
+                urwid.AttrMap(
+                              urwid.Text("\nTheme:\n"),
+                              "group head"),
+                *theme_rbs,
+                urwid.AttrMap(
+                                          urwid.Text("\nStack Order:\n"),
+                                          "group head"),
+                stack_info,
+                *stack_rbs,
+                urwid.AttrMap(
+                              urwid.Text("\nVariable Stringifier:\n"),
+                              "group head"),
+                stringifier_info,
+                *stringifier_rbs,
+                urwid.AttrMap(
+                              urwid.Text("\nVariables Attribute Visibility:\n"),
+                              "group head"),
+                default_variables_access_level_info,
+                *default_variables_access_level_rbs,
+                urwid.AttrMap(
+                              urwid.Text("\nWrap Variables:\n"),
+                              "group head"),
+                cb_wrap_variables,
+                wrap_variables_info,
+                urwid.AttrMap(
+                              urwid.Text("\nDisplay driver:\n"),
+                              "group head"),
+                display_info,
+                *display_rbs]
             )
 
     lb = urwid.ListBox(urwid.SimpleListWalker(lb_contents))
@@ -611,7 +622,7 @@ def save_breakpoints(bp_list):
     for bp in bp_list:
         line = "b %s:%d" % (bp[0], bp[1])
         if bp[2]:
-            line += ", %s" % bp[2]
+            line += f", {bp[2]}"
         line += "\n"
         histfile.write(line)
     histfile.close()

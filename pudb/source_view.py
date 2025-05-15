@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -92,9 +95,9 @@ class SourceLine(urwid.Widget):
 
         text = self.text
         if not attrs and self.attr is not None:
-            attr = self.attr + [("source", None)]
+            attr = [*self.attr, ("source", None)]
         else:
-            attr = [(" ".join(attrs+["source"]), None)]
+            attr = [(" ".join([*attrs, "source"]), None)]
 
         from urwid.util import apply_target_encoding, trim_text_attr_cs
 
@@ -107,9 +110,10 @@ class SourceLine(urwid.Widget):
             line_prefix = self.line_nr
 
         line_prefix = crnt+bp+line_prefix
-        line_prefix_attr = [("current line marker", 1),
-                            ("breakpoint marker", 1)] \
-                + line_prefix_attr
+        line_prefix_attr = [
+            ("current line marker", 1),
+             ("breakpoint marker", 1),
+             *line_prefix_attr]
 
         # assume rendered width is same as len
         line_prefix_len = len(line_prefix)
@@ -246,7 +250,7 @@ else:
     #       one of several translation operations at the
     #       beginning of add_snippet().
     #
-    ATTR_MAP = {  # noqa: N806
+    ATTR_MAP = {
         t.Token: "source",
         t.Keyword.Namespace: "namespace",
         t.Token.Argument: "argument",
@@ -274,7 +278,7 @@ else:
 
     # Token translation table. Maps token types and their
     # associated strings to new token types.
-    ATTR_TRANSLATE = {  # noqa: N806
+    ATTR_TRANSLATE = {
             t.Keyword: {
                 "class": t.Token.Keyword2,
                 "def": t.Token.Keyword2,
@@ -325,7 +329,7 @@ else:
                     ttype = ttype.parent
                 else:
                     raise RuntimeError(
-                            "untreated token type: %s" % str(ttype))
+                            f"untreated token type: {ttype!s}")
 
             attr = ATTR_MAP[ttype]
 

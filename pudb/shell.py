@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+
 try:
-    import bpython  # noqa
+    import bpython
     # Access a property to verify module exists in case
     # there's a demand loader wrapping module imports
     # See https://github.com/inducer/pudb/issues/177

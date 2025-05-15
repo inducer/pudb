@@ -80,12 +80,12 @@ def pudb_stringifier(obj):
 # Example usage
 
 
-class FastString(object):
+class FastString:
     def __str__(self):
         return "This was fast to compute."
 
 
-class SlowString(object):
+class SlowString:
     def __str__(self):
         time.sleep(10)  # Return the string value after ten seconds
         return "This was slow to compute."
