@@ -131,3 +131,26 @@ Ned = "Ned"
 [tool.typos.files]
 extend-exclude = [
 ]
+
+[tool.basedpyright]
+reportImplicitStringConcatenation = "none"
+reportUnnecessaryIsInstance = "none"
+reportUnusedCallResult = "none"
+reportExplicitAny = "none"
+
+# This reports even cycles that are qualified by 'if TYPE_CHECKING'. Not what
+# we care about at this moment.
+# https://github.com/microsoft/pyright/issues/746
+reportImportCycles = "none"
+
+pythonVersion = "3.8"
+pythonPlatform = "All"
+
+[[tool.basedpyright.executionEnvironments]]
+root = "examples"
+reportUnknownArgumentType = "hint"
+reportUnknownMemberType = "hint"
+reportUnknownVariableType = "hint"
+reportMissingImports = "hint"
+reportMissingTypeStubs = "hint"
+
