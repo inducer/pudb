@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 
@@ -28,7 +30,7 @@ def pudb(line):
     args = args[1:]
     if not os.path.isfile(path):
         from IPython.core.error import UsageError
-        raise UsageError("%%pudb: file %s does not exist" % path)
+        raise UsageError(f"%pudb: file {path} does not exist")
 
     from pudb import runscript
     runscript(path, args)

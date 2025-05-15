@@ -5,6 +5,8 @@
 .. autofunction:: debugger
 .. autofunction:: debug_remote_on_single_rank
 """
+from __future__ import annotations
+
 
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
@@ -46,9 +48,15 @@ from typing import Any, Callable
 from pudb.debugger import Debugger
 
 
-__all__ = ["PUDB_RDB_HOST", "PUDB_RDB_PORT", "PUDB_RDB_REVERSE",
-           "default_port", "debugger", "set_trace",
-           "debug_remote_on_single_rank"]
+__all__ = [
+    "PUDB_RDB_HOST",
+    "PUDB_RDB_PORT",
+    "PUDB_RDB_REVERSE",
+    "debug_remote_on_single_rank",
+    "debugger",
+    "default_port",
+    "set_trace",
+]
 
 default_port = 6899
 
@@ -203,36 +211,36 @@ class RemoteDebugger(Debugger):
         return client, (address, self.port)
 
     def get_reverse_socket_client(self, host, port):
-        _sock = socket.socket()
+        sock = socket.socket()
         try:
-            _sock.connect((host, port))
-            _sock.setblocking(1)
+            sock.connect((host, port))
+            sock.setblocking(1)
         except OSError as exc:
             if exc.errno == errno.ECONNREFUSED:
                 raise ValueError(CONN_REFUSED.format(self=self)) from exc
             raise exc
-        return _sock, _sock.getpeername()
+        return sock, sock.getpeername()
 
     def get_socket_client(self, host, port, search_limit):
-        _sock, this_port = self.get_avail_port(host, port, search_limit)
-        _sock.setblocking(1)
-        _sock.listen(1)
-        return _sock, (host, this_port)
+        sock, this_port = self.get_avail_port(host, port, search_limit)
+        sock.setblocking(1)
+        sock.listen(1)
+        return sock, (host, this_port)
 
     def get_avail_port(self, host, port, search_limit=100, skew=+0):
         this_port = None
         for i in range(search_limit):
-            _sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            _sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             this_port = port + i
             try:
-                _sock.bind((host, this_port))
+                sock.bind((host, this_port))
             except OSError as exc:
                 if exc.errno in [errno.EADDRINUSE, errno.EINVAL]:
                     continue
                 raise
             else:
-                return _sock, this_port
+                return sock, this_port
         else:
             raise Exception(NO_AVAILABLE_PORT.format(self=self))
 

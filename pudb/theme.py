@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = """
 Copyright (C) 2009-2017 Andreas Kloeckner
 Copyright (C) 2014-2017 Aaron Meurer
@@ -24,7 +27,6 @@ THE SOFTWARE.
 """
 
 from dataclasses import astuple, dataclass, replace
-from typing import Optional
 
 from pudb.lowlevel import ui_log
 from pudb.themes import THEMES
@@ -41,9 +43,9 @@ class PaletteEntry:
     name: str
     foreground: str = "default"
     background: str = "default"
-    mono: Optional[str] = None
-    foreground_high: Optional[str] = None
-    background_high: Optional[str] = None
+    mono: str | None = None
+    foreground_high: str | None = None
+    background_high: str | None = None
 
     def handle_256_colors(self):
         if self.foreground.lower().strip().startswith("h"):
@@ -296,8 +298,8 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             with open(fname) as inf:
                 exec(compile(inf.read(), fname, "exec"), symbols)
         except FileNotFoundError:
-            ui_log.error("Unable to locate custom theme file {!r}"
-                         .format(theme))
+            ui_log.error(f"Unable to locate custom theme file {theme!r}"
+                         )
             return None
         except Exception:
             ui_log.exception("Error when importing theme:")

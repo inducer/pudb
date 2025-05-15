@@ -4,7 +4,7 @@ from collections import namedtuple
 Color = namedtuple("Color", ["red", "green", "blue", "alpha"])
 
 
-class MyClass(object):
+class MyClass:
     def __init__(self, a, b):
         self.a = a
         self.b = b
@@ -59,7 +59,7 @@ def fermat(n):
                     yield x, y, z
 
 
-print("SF %s" % simple_func(10))
+print(f"SF {simple_func(10)}")
 
 for i in fermat(2):
     print(i)

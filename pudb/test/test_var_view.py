@@ -34,9 +34,15 @@ def test_get_stringifier():
         numpy_values = [np.float32(5), np.zeros(5)]
 
     for value in [
-            A, A2, A(), A2(), "lól".encode(), "lól",
-            1233123, ["lól".encode(), "lól"],
-            ] + numpy_values:
+            A,
+            A2,
+            A(),
+            A2(),
+            "lól".encode(),
+            "lól",
+            1233123,
+            ["lól".encode(), "lól"],
+            *numpy_values]:
         for display_type in STRINGIFIERS:
             iinfo = InspectInfo()
             iinfo.display_type = display_type
@@ -203,12 +209,12 @@ class BaseValueWalkerTestCase(unittest.TestCase):
         # Build out list of expected view contents according to container type.
         expected = [(label, self.value_string(container))]
         if isinstance(container, PudbMapping):
-            expected.extend([(f"[{repr(key)}]", repr(container[key]))
+            expected.extend([(f"[{key!r}]", repr(container[key]))
                              for key in container.keys()]
                             or [self.EMPTY_ITEM])
             self.class_counts["mappings"] += 1
         elif isinstance(container, PudbSequence):
-            expected.extend([(f"[{repr(index)}]", repr(entry))
+            expected.extend([(f"[{index!r}]", repr(entry))
                              for index, entry in enumerate(container)]
                             or [self.EMPTY_ITEM])
             self.class_counts["sequences"] += 1
@@ -252,7 +258,7 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
             0,
             1,
             -1234567890412345243,
-            float(4.2),
+            4.2,
             float("inf"),
             complex(1.3, -1),
 
@@ -289,7 +295,7 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
             0,
             1,
             -1234567890412345243,
-            float(4.2),
+            4.2,
             float("inf"),
             complex(1.3, -1),
 
