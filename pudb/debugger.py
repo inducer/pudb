@@ -262,24 +262,22 @@ class Debugger(bdb.Bdb):
         # See pudb issue #52. If this works well enough we should upstream to
         # stdlib bdb.py.
         # self.reset()
+        self.enterframe = frame
 
-        if paused:
-            self.enterframe = frame
+        thisframe = frame
+        while thisframe:
+            thisframe.f_trace = self.trace_dispatch
+            self.botframe = thisframe
+            if sys.version_info >= (3, 13):
+                # save trace flags, to be restored by set_continue
+                self.frame_trace_lines_opcodes[thisframe] = (  # pylint: disable=no-member
+                    thisframe.f_trace_lines,
+                    thisframe.f_trace_opcodes)
 
-            thisframe = frame
-            while thisframe:
-                thisframe.f_trace = self.trace_dispatch
-                self.botframe = thisframe
-                if sys.version_info >= (3, 13):
-                    # save trace flags, to be restored by set_continue
-                    self.frame_trace_lines_opcodes[thisframe] = (  # pylint: disable=no-member
-                        thisframe.f_trace_lines,
-                        thisframe.f_trace_opcodes)
+                # We need f_trace_lines == True for the debugger to work
+                thisframe.f_trace_lines = True
 
-                    # We need f_trace_lines == True for the debugger to work
-                    thisframe.f_trace_lines = True
-
-                thisframe = thisframe.f_back
+            thisframe = thisframe.f_back
 
         frame_info = (self.canonic(frame.f_code.co_filename), frame.f_lineno)
         if frame_info not in self.set_traces or self.set_traces[frame_info]:
