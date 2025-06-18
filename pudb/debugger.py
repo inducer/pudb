@@ -731,7 +731,7 @@ class FileSourceCodeProvider(SourceCodeProvider):
         except Exception:
             from traceback import format_exception
             debugger_ui.message("Could not load source file '{}':\n\n{}".format(
-                self.file_name, "".join(format_exception(sys.exc_info()))),
+                self.file_name, "".join(format_exception(*sys.exc_info()))),
                 title="Source Code Load Error")
             return [SourceLine(debugger_ui,
                 f"Error while loading '{self.file_name}'.")]
