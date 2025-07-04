@@ -40,6 +40,8 @@ nitpick_ignore_regex = [
     ["py:class", r"P.kwargs"],
     ["py:class", r"ResultT"],
     ["py:class", r"FrameType"],
+    ["py:class", r"TracebackType"],
+    ["py:class", r"OptExcInfo"],
 ]
 
 

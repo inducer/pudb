@@ -4,6 +4,8 @@
 .. autofunction:: set_trace
 .. autofunction:: debugger
 .. autofunction:: debug_remote_on_single_rank
+.. autofunction:: post_mortem
+.. autofunction:: pm
 """
 from __future__ import annotations
 
@@ -52,7 +54,7 @@ from typing import (
 
 from typing_extensions import ParamSpec
 
-from pudb.debugger import Debugger, ExcInfo
+from pudb.debugger import Debugger, OptExcInfo
 
 
 if TYPE_CHECKING:
@@ -72,6 +74,8 @@ __all__ = [
     "debug_remote_on_single_rank",
     "debugger",
     "default_port",
+    "pm",
+    "post_mortem",
     "set_trace",
 ]
 
@@ -80,6 +84,7 @@ default_port = 6899
 PUDB_RDB_HOST = os.environ.get("PUDB_RDB_HOST") or "127.0.0.1"
 PUDB_RDB_PORT = int(os.environ.get("PUDB_RDB_PORT") or default_port)
 PUDB_RDB_REVERSE = bool(os.environ.get("PUDB_RDB_REVERSE"))
+
 
 #: Holds the currently active debugger.
 _current = [None]
@@ -318,6 +323,22 @@ def set_trace(
     return debugger(
         term_size=term_size, host=host, port=port, reverse=reverse
     ).set_trace(frame)
+
+
+def post_mortem(
+            exc_tuple: OptExcInfo | TracebackType | None = None,
+            term_size: tuple[int, int] | None = None,
+            host: str = PUDB_RDB_HOST,
+            port: int = PUDB_RDB_PORT,
+            reverse: bool = PUDB_RDB_REVERSE
+        ):
+    """Start a debugger on a given traceback object."""
+    dbg = debugger(term_size=term_size, host=host, port=port, reverse=reverse)
+    dbg.reset()
+    dbg.interaction(None, exc_tuple or sys.exc_info())
+
+
+pm = post_mortem
 
 
 def debug_remote_on_single_rank(
