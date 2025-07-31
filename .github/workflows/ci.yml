@@ -9,6 +9,10 @@ on:
     schedule:
         - cron:  '17 3 * * 0'
 
+concurrency:
+    group: ${{ github.head_ref || github.ref_name }}
+    cancel-in-progress: true
+
 jobs:
     ruff:
         name: Ruff
