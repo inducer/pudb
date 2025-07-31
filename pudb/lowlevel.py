@@ -32,28 +32,39 @@ import logging
 import sys
 from datetime import datetime
 from enum import Enum, auto
+from typing import TYPE_CHECKING, TypeVar, cast
+
+from typing_extensions import override
 
 
-logfile = [None]
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Sequence
+    from types import CodeType
+
+
+logfile: list[str | None] = [None]
 
 
 def getlogfile():
     return logfile[0]
 
 
-def setlogfile(destfile):
+def setlogfile(destfile: str):
     logfile[0] = destfile
     with open(destfile, "a") as openfile:
         openfile.write(
             f"\n*** Pudb session error log started at {datetime.now()} ***\n")
 
 
+# once we've dropped Py3.8 support, use this instead:
+# class TerminalOrStreamHandler(logging.StreamHandler[TextIOWrapper]):
 class TerminalOrStreamHandler(logging.StreamHandler):
     """
     Logging handler that sends errors either to the terminal window or to
     stderr, depending on whether the debugger is active.
     """
-    def emit(self, record):
+    @override
+    def emit(self, record: logging.LogRecord):
         from pudb import _get_debugger, _have_debugger
         logfile = getlogfile()
 
@@ -98,7 +109,7 @@ ui_log, settings_log = _init_loggers()
 
 # {{{ breakpoint validity
 
-def generate_executable_lines_for_code(code):
+def generate_executable_lines_for_code(code: CodeType) -> Iterable[int]:
     if sys.version_info >= (3, 10):
         for _start, _end, lineno in code.co_lines():
             if lineno is not None:
@@ -117,24 +128,24 @@ def generate_executable_lines_for_code(code):
             yield lineno
 
 
-def get_executable_lines_for_codes_recursive(codes):
-    codes = codes[:]
+def get_executable_lines_for_codes_recursive(codes: Sequence[CodeType]):
+    codes = list(codes)
 
     from types import CodeType
 
-    execable_lines = set()
+    execable_lines: set[int] = set()
 
     while codes:
         code = codes.pop()
         execable_lines |= set(generate_executable_lines_for_code(code))
         codes.extend(const
-                for const in code.co_consts
+                for const in code.co_consts  # pyright: ignore[reportAny]
                 if isinstance(const, CodeType))
 
     return execable_lines
 
 
-def get_executable_lines_for_file(filename):
+def get_executable_lines_for_file(filename: str):
     # inspired by rpdb2
 
     from linecache import getlines
@@ -143,7 +154,7 @@ def get_executable_lines_for_file(filename):
     return get_executable_lines_for_codes_recursive(codes)
 
 
-def get_breakpoint_invalid_reason(filename, lineno):
+def get_breakpoint_invalid_reason(filename: str, lineno: int):
     # simple logic stolen from pdb
     import linecache
     line = linecache.getline(filename, lineno)
@@ -159,7 +170,7 @@ def get_breakpoint_invalid_reason(filename, lineno):
         return "No executable statement found in line."
 
 
-def lookup_module(filename):
+def lookup_module(filename: str):
     """Helper function for break/clear parsing -- may be overridden.
 
     lookupmodule() translates (possibly incomplete) file or module name
@@ -201,7 +212,12 @@ cookie_re = re.compile(br"^\s*#.*coding[:=]\s*([-\w.]+)")
 from codecs import BOM_UTF8, lookup
 
 
-def detect_encoding(line_iter):
+StrOrBytesT = TypeVar("StrOrBytesT", str, bytes, "str | bytes")
+
+
+def detect_encoding(
+            line_iter: Iterator[StrOrBytesT]
+        ) -> tuple[str | None, Sequence[StrOrBytesT]]:
     """
     The detect_encoding() function is used to detect the encoding that should
     be used to decode a Python source file. It requires one argument, line_iter,
@@ -226,7 +242,7 @@ def detect_encoding(line_iter):
         except StopIteration:
             return ""
 
-    def find_cookie(line):
+    def find_cookie(line: bytes):
         try:
             line_string = line
         except UnicodeDecodeError:
@@ -265,14 +281,14 @@ def detect_encoding(line_iter):
     if not second:
         return "utf-8", [first]
 
-    encoding = find_cookie(second)
+    encoding = find_cookie(cast("bytes", second))
     if encoding:
         return encoding, [first, second]
 
     return "utf-8", [first, second]
 
 
-def decode_lines(lines):
+def decode_lines(lines: Iterable[bytes | str]) -> Iterable[str]:
     line_iter = iter(lines)
     source_enc, detection_read_lines = detect_encoding(line_iter)
 
@@ -282,7 +298,7 @@ def decode_lines(lines):
         if hasattr(line, "decode") and source_enc is not None:
             yield line.decode(source_enc)
         else:
-            yield line
+            yield cast("str", line)
 
 # }}}
 

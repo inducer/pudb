@@ -31,16 +31,29 @@ import bdb
 import gc
 import os
 import sys
+from abc import ABC, abstractmethod
 from collections import deque
 from functools import partial
 from itertools import count
-from types import TracebackType
-from typing import ClassVar
+from os.path import splitext
+from types import FrameType, ModuleType, TracebackType
+from typing import TYPE_CHECKING, Any, ClassVar, TextIO, TypeVar, cast, final
 
 import urwid
+from typing_extensions import ParamSpec, override
 
 from pudb.lowlevel import ConsoleSingleKeyReader, decode_lines, ui_log
 from pudb.settings import get_save_config_path, load_config, save_config
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from pudb.source_view import SourceLine
+
+
+P = ParamSpec("P")
+ResultT = TypeVar("ResultT")
 
 
 CONFIG = load_config()
@@ -185,13 +198,157 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
+def mod_exists(mod: ModuleType):
+    if not hasattr(mod, "__file__"):
+        return False
+    if mod.__file__ is None:
+        return False
+    filename = mod.__file__
+
+    base, ext = splitext(filename)
+    ext = ext.lower()
+
+    from os.path import exists
+
+    if ext == ".pyc":
+        return exists(base+".py")
+    else:
+        return ext == ".py"
+
+
+def pick_module(ui: DebuggerUI, w, size, key):
+    import sys
+
+    new_mod_text = SelectableText("-- update me --")
+    new_mod_entry = urwid.AttrMap(new_mod_text,
+            None, "focused selectable")
+
+    def build_filtered_mod_list(filt_string: str = ""):
+        modules = sorted(name
+                # mod_exists may change the size of sys.modules,
+                # causing this to crash. Copy to a list.
+                for name, mod in list(sys.modules.items())
+                if mod_exists(mod))
+
+        result = [urwid.AttrMap(SelectableText(mod),
+                None, "focused selectable")
+                for mod in modules if filt_string in mod]
+        new_mod_text.set_text(f"<<< IMPORT MODULE '{filt_string}' >>>")
+        result.append(new_mod_entry)
+        return result
+
+    def show_mod(mod: ModuleType):
+        assert mod.__file__ is not None
+        filename = ui.debugger.canonic(mod.__file__)
+
+        base, ext = splitext(filename)
+        if ext == ".pyc":
+            ext = ".py"
+            filename = base+".py"
+
+        ui.set_source_code_provider(
+                FileSourceCodeProvider(ui.debugger, filename))
+        ui.source_list.set_focus(0)
+
+    class FilterEdit(urwid.Edit):
+        def keypress(self, size, key):
+            result = urwid.Edit.keypress(self, size, key)
+
+            if result is None:
+                mod_list[:] = build_filtered_mod_list(
+                        self.get_edit_text())
+
+            return result
+
+    filt_edit = FilterEdit([("label", "Filter: ")],
+            ui.last_module_filter)
+
+    mod_list = urwid.SimpleListWalker(
+            build_filtered_mod_list(filt_edit.get_edit_text()))
+    lb = urwid.ListBox(mod_list)
+
+    w = urwid.Pile([
+        (urwid.PACK, urwid.AttrMap(filt_edit, "input", "focused input")),
+        (1, urwid.SolidFill()),
+        urwid.AttrMap(lb, "selectable")])
+
+    while True:
+        result = ui.dialog(w, [
+            ("OK", True),
+            ("Cancel", False),
+            ("Reload", "reload"),
+
+            ], title="Pick Module")
+        ui.last_module_filter = filt_edit.get_edit_text()
+
+        if result is True:
+            pos = lb.focus_position
+            widget = lb.focus
+            base_widget = cast("SelectableText", widget)
+            if widget is new_mod_entry:
+                new_mod_name = filt_edit.get_edit_text()
+                try:
+                    __import__(str(new_mod_name))
+                except Exception:
+                    from traceback import format_exception
+
+                    ui.message(
+                            "Could not import module '{}':\n\n{}".format(
+                                new_mod_name, "".join(
+                                    format_exception(*sys.exc_info()))),
+                            title="Import Error")
+                else:
+                    show_mod(__import__(str(new_mod_name)))
+                    break
+            else:
+                show_mod(sys.modules[cast("str", base_widget.get_text()[0])])
+                break
+        elif result is False:
+            break
+        elif result == "reload":
+            pos = lb.focus_position
+            widget = lb.focus
+            base_widget = cast("SelectableText", widget)
+            if widget is not new_mod_entry:
+                mod_name = cast("str", base_widget.get_text()[0])
+                mod = sys.modules[mod_name]
+                import importlib
+                importlib.reload(mod)
+
+                ui.message(f"'{mod_name}' was successfully reloaded.")
+
+                if ui.source_code_provider is not None:
+                    ui.source_code_provider.clear_cache()
+
+                assert ui.source_code_provider
+                ui.set_source_code_provider(ui.source_code_provider,
+                        force_update=True)
+
+                pos = ui.stack_list._w.focus_position
+                ui.debugger.set_frame_index(
+                        ui.translate_ui_stack_index(pos))
 # {{{ debugger interface
+
 
 class Debugger(bdb.Bdb):
     _current_debugger: ClassVar[list[Debugger]] = []
+    ui: DebuggerUI
 
-    def __init__(self, stdin=None, stdout=None, term_size=None, steal_output=False,
-                 _continue_at_start=False, tty_file=None, **kwargs):
+    botframe: FrameType | None
+    enterframe: FrameType | None  # pyright: ignore[reportUninitializedInstanceVariable]
+
+    steal_output: bool
+    _continue_at_start__setting: bool
+    _tty_file: TextIO | None
+
+    def __init__(self,
+                stdin: TextIO | None = None,
+                stdout: TextIO | None = None,
+                term_size: tuple[int, int] | None = None,
+                steal_output: bool = False,
+                _continue_at_start: bool = False,
+                tty_file: TextIO | None = None,
+                **kwargs: Any):
 
         if Debugger._current_debugger:
             raise ValueError("a Debugger instance already exists")
@@ -231,10 +388,15 @@ class Debugger(bdb.Bdb):
             self._tty_file.close()
             self._tty_file = None
 
-    def set_jump(self, frame, line):
-        frame.f_lineno = line
+    def set_jump(self, frame: FrameType, line: int):
+        frame.f_lineno = line  # pyright: ignore[reportAttributeAccessIssue]
 
-    def set_trace(self, frame=None, as_breakpoint=None, paused=True):
+    @override
+    def set_trace(self,
+                frame: FrameType | None = None,
+                as_breakpoint: bool | None = None,
+                paused: bool = True,
+            ):
         """Start debugging from `frame`.
 
         If frame is not specified, debugging starts from caller's frame.
@@ -584,6 +746,7 @@ class Debugger(bdb.Bdb):
 
 from pudb.ui_tools import (
     BreakpointFrame,
+    SearchController,
     SelectableText,
     SignalWrap,
     StackFrame,
@@ -654,25 +817,43 @@ if curses is not None:
 
 # {{{ source code providers
 
-class SourceCodeProvider:
-    def __ne__(self, other):
-        return not (self == other)
+class SourceCodeProvider(ABC):
+    @abstractmethod
+    def identifier(self) -> str:
+        ...
+
+    @abstractmethod
+    def get_source_identifier(self) -> str | None:
+        ...
+
+    @abstractmethod
+    def clear_cache(self):
+        ...
+
+    @abstractmethod
+    def get_lines(self, debugger_ui: DebuggerUI) -> Sequence[SourceLine]:
+        ...
 
 
 class NullSourceCodeProvider(SourceCodeProvider):
-    def __eq__(self, other):
+    @override
+    def __eq__(self, other: object):
         return type(self) is type(other)
 
+    @override
     def identifier(self):
         return "<no source code>"
 
+    @override
     def get_source_identifier(self):
         return None
 
+    @override
     def clear_cache(self):
         pass
 
-    def get_lines(self, debugger_ui):
+    @override
+    def get_lines(self, debugger_ui: DebuggerUI):
         from pudb.source_view import SourceLine
         return [
                 SourceLine(debugger_ui, "<no source code available>"),
@@ -693,23 +874,31 @@ class NullSourceCodeProvider(SourceCodeProvider):
 
 
 class FileSourceCodeProvider(SourceCodeProvider):
-    def __init__(self, debugger, file_name):
+    file_name: str
+
+    def __init__(self, debugger: Debugger, file_name: str):
         self.file_name = debugger.canonic(file_name)
 
-    def __eq__(self, other):
-        return type(self) is type(other) and self.file_name == other.file_name
+    @override
+    def __eq__(self, other: object):
+        c_other = cast("FileSourceCodeProvider", other)
+        return type(self) is type(other) and self.file_name == c_other.file_name
 
+    @override
     def identifier(self):
         return self.file_name
 
+    @override
     def get_source_identifier(self):
         return self.file_name
 
+    @override
     def clear_cache(self):
         from linecache import clearcache
         clearcache()
 
-    def get_lines(self, debugger_ui):
+    @override
+    def get_lines(self, debugger_ui: DebuggerUI):
         from pudb.source_view import SourceLine, format_source
 
         if self.file_name == "<string>":
@@ -735,27 +924,34 @@ class FileSourceCodeProvider(SourceCodeProvider):
                 f"Error while loading '{self.file_name}'.")]
 
 
+@final
 class DirectSourceCodeProvider(SourceCodeProvider):
-    def __init__(self, func_name, code):
+    def __init__(self, func_name: str, code: str):
         self.function_name = func_name
         self.code = code
 
-    def __eq__(self, other):
+    @override
+    def __eq__(self, other: object):
+        c_other = cast("DirectSourceCodeProvider", other)
         return (
                 type(self) is type(other)
-                and self.function_name == other.function_name
-                and self.code is other.code)
+                and self.function_name == c_other.function_name
+                and self.code is c_other.code)
 
-    def identifier(self):
+    @override
+    def identifier(self) -> str:
         return f"<source code of function {self.function_name}>"
 
-    def get_source_identifier(self):
+    @override
+    def get_source_identifier(self) -> str | None:
         return None
 
+    @override
     def clear_cache(self):
         pass
 
-    def get_lines(self, debugger_ui):
+    @override
+    def get_lines(self, debugger_ui: DebuggerUI) -> Sequence[SourceLine]:
         from pudb.source_view import format_source
 
         lines = self.code.splitlines(True)
@@ -781,6 +977,12 @@ class StoppedScreen:
 
 
 class DebuggerUI(FrameVarInfoKeeper):
+    debugger: Debugger
+    search_controller: SearchController
+    last_module_filter: str
+    source_code_provider: SourceCodeProvider | None
+    source: urwid.SimpleListWalker[SourceLine]
+
     # {{{ constructor
 
     def __init__(self, dbg, stdin, stdout, term_size):
@@ -1160,7 +1362,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.access_level = "all"
 
                 if var.watch_expr is not None:
-                    var.watch_expr.expression = watch_edit.get_edit_text()
+                    var.watch_expr.expression = watch_edit.get_edit_text()  # pyright: ignore[reportPossiblyUnboundVariable]
 
             elif result == "del":
                 for i, watch_expr in enumerate(fvi.watches):
@@ -1279,7 +1481,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         # {{{ breakpoint listeners
 
-        def set_breakpoint_source(bp):
+        def set_breakpoint_source(bp: bdb.Breakpoint):
             bp_source_identifier = \
                     self.source_code_provider.get_source_identifier()
             if (bp.file
@@ -1446,6 +1648,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Cannot currently set a breakpoint here--"
                         "source code does not correspond to a file location. "
                         "(perhaps this is generated code)")
+                    return
 
                 from pudb.lowlevel import get_breakpoint_invalid_reason
                 invalid_reason = get_breakpoint_invalid_reason(
@@ -1480,6 +1683,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                         "Cannot jump here--"
                         "source code does not correspond to a file location. "
                         "(perhaps this is generated code)")
+                    return
 
                 from pudb.lowlevel import get_breakpoint_invalid_reason
                 invalid_reason = get_breakpoint_invalid_reason(
@@ -1618,132 +1822,6 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "Cannot currently set a breakpoint here--"
                     "source code does not correspond to a file location. "
                     "(perhaps this is generated code)")
-
-        def pick_module(w, size, key):
-            import sys
-            from os.path import splitext
-
-            def mod_exists(mod):
-                if not hasattr(mod, "__file__"):
-                    return False
-                if mod.__file__ is None:
-                    return False
-                filename = mod.__file__
-
-                base, ext = splitext(filename)
-                ext = ext.lower()
-
-                from os.path import exists
-
-                if ext == ".pyc":
-                    return exists(base+".py")
-                else:
-                    return ext == ".py"
-
-            new_mod_text = SelectableText("-- update me --")
-            new_mod_entry = urwid.AttrMap(new_mod_text,
-                    None, "focused selectable")
-
-            def build_filtered_mod_list(filt_string=""):
-                modules = sorted(name
-                        # mod_exists may change the size of sys.modules,
-                        # causing this to crash. Copy to a list.
-                        for name, mod in list(sys.modules.items())
-                        if mod_exists(mod))
-
-                result = [urwid.AttrMap(SelectableText(mod),
-                        None, "focused selectable")
-                        for mod in modules if filt_string in mod]
-                new_mod_text.set_text(f"<<< IMPORT MODULE '{filt_string}' >>>")
-                result.append(new_mod_entry)
-                return result
-
-            def show_mod(mod):
-                filename = self.debugger.canonic(mod.__file__)
-
-                base, ext = splitext(filename)
-                if ext == ".pyc":
-                    ext = ".py"
-                    filename = base+".py"
-
-                self.set_source_code_provider(
-                        FileSourceCodeProvider(self.debugger, filename))
-                self.source_list.set_focus(0)
-
-            class FilterEdit(urwid.Edit):
-                def keypress(self, size, key):
-                    result = urwid.Edit.keypress(self, size, key)
-
-                    if result is None:
-                        mod_list[:] = build_filtered_mod_list(
-                                self.get_edit_text())
-
-                    return result
-
-            filt_edit = FilterEdit([("label", "Filter: ")],
-                    self.last_module_filter)
-
-            mod_list = urwid.SimpleListWalker(
-                    build_filtered_mod_list(filt_edit.get_edit_text()))
-            lb = urwid.ListBox(mod_list)
-
-            w = urwid.Pile([
-                (urwid.FLOW, urwid.AttrMap(filt_edit, "input", "focused input")),
-                (urwid.FIXED, 1, urwid.SolidFill()),
-                urwid.AttrMap(lb, "selectable")])
-
-            while True:
-                result = self.dialog(w, [
-                    ("OK", True),
-                    ("Cancel", False),
-                    ("Reload", "reload"),
-
-                    ], title="Pick Module")
-                self.last_module_filter = filt_edit.get_edit_text()
-
-                if result is True:
-                    pos = lb.focus_position
-                    widget = lb.focus
-                    if widget is new_mod_entry:
-                        new_mod_name = filt_edit.get_edit_text()
-                        try:
-                            __import__(str(new_mod_name))
-                        except Exception:
-                            from traceback import format_exception
-
-                            self.message(
-                                    "Could not import module '{}':\n\n{}".format(
-                                        new_mod_name, "".join(
-                                            format_exception(*sys.exc_info()))),
-                                    title="Import Error")
-                        else:
-                            show_mod(__import__(str(new_mod_name)))
-                            break
-                    else:
-                        show_mod(sys.modules[widget.base_widget.get_text()[0]])
-                        break
-                elif result is False:
-                    break
-                elif result == "reload":
-                    pos = lb.focus_position
-                    widget = lb.focus
-                    if widget is not new_mod_entry:
-                        mod_name = widget.base_widget.get_text()[0]
-                        mod = sys.modules[mod_name]
-                        import importlib
-                        importlib.reload(mod)
-
-                        self.message(f"'{mod_name}' was successfully reloaded.")
-
-                        if self.source_code_provider is not None:
-                            self.source_code_provider.clear_cache()
-
-                        self.set_source_code_provider(self.source_code_provider,
-                                force_update=True)
-
-                        pos = self.stack_list._w.focus_position
-                        self.debugger.set_frame_index(
-                                self.translate_ui_stack_index(pos))
 
         def helpmain(w, size, key):
             help(HELP_HEADER + HELP_MAIN + HELP_SIDE + HELP_LICENSE)
@@ -1985,7 +2063,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.top.listen(CONFIG["hotkeys_toggle_cmdline_focus"], toggle_cmdline_focus)
 
         # {{{ command line sizing
-        def set_cmdline_default_size(weight):
+        def set_cmdline_default_size(weight: float):
             from pudb.settings import save_config
 
             self.cmdline_weight = weight
@@ -2078,6 +2156,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         def reload_breakpoints_and_redisplay():
             reload_breakpoints()
             curr_line = self.current_line
+            assert self.source_code_provider
             self.set_source_code_provider(self.source_code_provider,
                                           force_update=True)
             if curr_line is not None:
@@ -2331,19 +2410,28 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         else:
             raise ValueError("invalid value for 'current_stack_frame' pref")
 
-    def message(self, msg, title="Message", **kwargs):
-        self.call_with_ui(self.dialog,
+    def message(self,
+                msg: str,
+                title: str = "Message",
+               extra_bindings: Sequence[tuple[str, Callable[..., None]]] | None = None,
+            ):
+        return self.call_with_ui(self.dialog,
                 urwid.ListBox(urwid.SimpleListWalker([urwid.Text(msg)])),
-                [("OK", True)], title=title, **kwargs)
+                [("OK", True)], title=title, extra_bindings=extra_bindings)
 
     def run_edit_config(self):
         from pudb.settings import edit_config, save_config
         edit_config(self, CONFIG)
         save_config(CONFIG)
 
-    def dialog(self, content, buttons_and_results,
-            title=None, bind_enter_esc=True, focus_buttons=False,
-            extra_bindings=None):
+    def dialog(self,
+                content: urwid.Widget,
+                buttons_and_results: Sequence[tuple[str, bool | str] | None],
+                title: str | None = None,
+                bind_enter_esc: bool = True,
+                focus_buttons: bool = False,
+                extra_bindings: Sequence[tuple[str, Callable[..., None]]] | None = None,
+            ) -> bool | str:
         if extra_bindings is None:
             extra_bindings = []
 
@@ -2368,7 +2456,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             content.listen("enter", enter)
             content.listen("esc", esc)
 
-        button_widgets = []
+        button_widgets: list[urwid.Widget] = []
         for btn_descr in buttons_and_results:
             if btn_descr is None:
                 button_widgets.append(urwid.Text(""))
@@ -2532,7 +2620,11 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         if self.show_count == 0:
             self.screen.stop()
 
-    def call_with_ui(self, f, *args, **kwargs):
+    def call_with_ui(self,
+                f: Callable[P, ResultT],
+                *args: P.args,
+                **kwargs: P.kwargs
+            ):
         import warnings
 
         def myshowwarning(
@@ -2557,7 +2649,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     # {{{ event loop
 
-    def event_loop(self, toplevel=None):
+    def event_loop(self, toplevel: urwid.Widget | None = None):
         prev_quit_loop = self.quit_event_loop
 
         try:
@@ -2891,7 +2983,9 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.caption.set_text(caption)
         self.event_loop()
 
-    def set_source_code_provider(self, source_code_provider, force_update=False):
+    def set_source_code_provider(self,
+                source_code_provider: SourceCodeProvider,
+                force_update: bool = False):
         if self.source_code_provider != source_code_provider or force_update:
             self.source[:] = source_code_provider.get_lines(self)
             self.source_code_provider = source_code_provider

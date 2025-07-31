@@ -29,8 +29,46 @@ THE SOFTWARE.
 import os
 import sys
 from configparser import ConfigParser
+from typing import TYPE_CHECKING, Literal, TypedDict, cast
 
 from pudb.lowlevel import get_breakpoint_invalid_reason, lookup_module, settings_log
+
+
+if TYPE_CHECKING:
+    from bdb import Breakpoint
+    from collections.abc import Sequence
+
+    from urwid import CheckBox
+
+    from pudb.debugger import DebuggerUI
+    from pudb.var_view import Stringifier, VarAccessLevel
+
+
+class ConfDict(TypedDict):
+    shell: str
+    theme: str
+    line_numbers: bool
+    seen_welcome: str
+    sidebar_width: float
+    variables_weight: float
+    stack_weight: float
+    breakpoints_weight: float
+    current_stack_frame: Literal["top", "bottom"]
+    stringifier: Stringifier
+    custom_theme: str
+    custom_stringifier: str
+    custom_shell: str
+    wrap_variables: bool
+    default_variables_access_level: VarAccessLevel
+    display: str
+    prompt_on_quit: bool
+    hide_cmdline_win: bool
+    cmdline_height: float
+    hotkeys_code: str
+    hotkeys_variables: str
+    hotkeys_stack: str
+    hotkeys_breakpoints: str
+    hotkeys_toggle_cmdline_focus: str
 
 
 # see https://github.com/inducer/pudb/pull/453 for context
@@ -67,7 +105,7 @@ SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
 BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
 
 
-_config_ = [None]
+_config_: list[ConfDict | None] = [None]
 
 
 def load_config():
@@ -81,20 +119,21 @@ def load_config():
 
     cparser = ConfigParser()
 
-    conf_dict = {}
+    conf_dict: ConfDict = {}  # pyright: ignore[reportAssignmentType]
     try:
         cparser.read([
             join(cdir, XDG_CONF_RESOURCE, CONF_FILE_NAME)
             for cdir in XDG_CONFIG_DIRS if isdir(cdir)])
 
         if cparser.has_section(CONF_SECTION):
-            conf_dict.update(dict(cparser.items(CONF_SECTION)))
+            conf_dict.update(cast("ConfDict",
+                                  cast("object", dict(cparser.items(CONF_SECTION)))))
     except Exception:
         settings_log.exception("Failed to load config")
 
     conf_dict.setdefault("shell", "internal")
     conf_dict.setdefault("theme", "classic")
-    conf_dict.setdefault("line_numbers", "False")
+    conf_dict.setdefault("line_numbers", False)
     conf_dict.setdefault("seen_welcome", "a")
 
     conf_dict.setdefault("sidebar_width", 0.5)
@@ -110,14 +149,14 @@ def load_config():
     conf_dict.setdefault("custom_stringifier", "")
     conf_dict.setdefault("custom_shell", "")
 
-    conf_dict.setdefault("wrap_variables", "True")
+    conf_dict.setdefault("wrap_variables", True)
     conf_dict.setdefault("default_variables_access_level", "public")
 
     conf_dict.setdefault("display", "auto")
 
-    conf_dict.setdefault("prompt_on_quit", "True")
+    conf_dict.setdefault("prompt_on_quit", True)
 
-    conf_dict.setdefault("hide_cmdline_win", "False")
+    conf_dict.setdefault("hide_cmdline_win", False)
 
     # hotkeys
     conf_dict.setdefault("hotkeys_code", "C")
@@ -126,9 +165,9 @@ def load_config():
     conf_dict.setdefault("hotkeys_breakpoints", "B")
     conf_dict.setdefault("hotkeys_toggle_cmdline_focus", "ctrl x")
 
-    def normalize_bool_inplace(name):
+    def normalize_bool_inplace(name: str):
         try:
-            if conf_dict[name].lower() in ["0", "false", "off"]:
+            if conf_dict[name].lower() in ["0", "false", "off"]:  # pyright: ignore[reportUnknownMemberType]
                 conf_dict[name] = False
             else:
                 conf_dict[name] = True
@@ -144,7 +183,7 @@ def load_config():
     return conf_dict
 
 
-def save_config(conf_dict):
+def save_config(conf_dict: ConfDict):
     # This may not raise, as it is called during import.
 
     from os.path import join
@@ -166,7 +205,7 @@ def save_config(conf_dict):
         settings_log.exception("Failed to save config")
 
 
-def edit_config(ui, conf_dict):
+def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
     import urwid
 
     old_conf_dict = conf_dict.copy()
@@ -177,7 +216,7 @@ def edit_config(ui, conf_dict):
 
     def _update_line_numbers():
         for sl in ui.source:
-            sl._invalidate()
+            sl._invalidate()  # pyright: ignore[reportPrivateUsage]
 
     def _update_prompt_on_quit():
         pass
@@ -199,9 +238,13 @@ def edit_config(ui, conf_dict):
     def _update_wrap_variables():
         ui.update_var_view()
 
-    def _update_config(check_box, new_state, option_newvalue):
+    def _update_config(
+                check_box: CheckBox,
+                new_state: bool,
+                option_newvalue: tuple[str, str | None]
+            ):
         option, newvalue = option_newvalue
-        new_conf_dict = {option: newvalue}
+        new_conf_dict: ConfDict = cast("ConfDict", cast("object", {option: newvalue}))
         if option == "theme":
             # only activate if the new state of the radio button is 'on'
             if new_state:
@@ -210,7 +253,7 @@ def edit_config(ui, conf_dict):
                     lb.set_focus(lb_contents.index(theme_edit_list_item))
                     return
 
-                conf_dict.update(theme=newvalue)
+                conf_dict.update({"theme": newvalue})
                 _update_theme()
 
         elif option == "line_numbers":
@@ -241,13 +284,14 @@ def edit_config(ui, conf_dict):
                     lb.set_focus(lb_contents.index(stringifier_edit_list_item))
                     return
 
-                conf_dict.update(stringifier=newvalue)
+                conf_dict["stringifier"] = cast("Stringifier", newvalue)
                 _update_stringifier()
 
         elif option == "default_variables_access_level":
             # only activate if the new state of the radio button is 'on'
             if new_state:
-                conf_dict.update(default_variables_access_level=newvalue)
+                conf_dict.update(
+                    default_variables_access_level=cast("VarAccessLevel", newvalue))
                 _update_default_variables_access_level()
 
         elif option == "wrap_variables":
@@ -504,7 +548,9 @@ def edit_config(ui, conf_dict):
         # Ditto for custom stringifiers
         if stringifier_rb_group[-1].state:
             newvalue = stringifier_edit.get_edit_text()
-            conf_dict.update(stringifier=newvalue, custom_stringifier=newvalue)
+            conf_dict.update(
+                    stringifier=cast("Stringifier", newvalue),
+                    custom_stringifier=newvalue)
             _update_stringifier()
 
         if shell_rb_group[-1].state:
@@ -609,7 +655,7 @@ def load_breakpoints():
     return parse_breakpoints(lines)
 
 
-def save_breakpoints(bp_list):
+def save_breakpoints(bp_list: Sequence[Breakpoint]):
     """
     :arg bp_list: a list of `bdb.Breakpoint` objects
     """
@@ -618,8 +664,8 @@ def save_breakpoints(bp_list):
         return
 
     histfile = open(get_breakpoints_file_name(), "w")
-    bp_list = {(bp.file, bp.line, bp.cond) for bp in bp_list}
-    for bp in bp_list:
+    bps = {(bp.file, bp.line, bp.cond) for bp in bp_list}
+    for bp in bps:
         line = "b %s:%d" % (bp[0], bp[1])
         if bp[2]:
             line += f", {bp[2]}"
