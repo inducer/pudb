@@ -25,13 +25,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-
-
 import re
 import sys
 from importlib import metadata
+from typing import TYPE_CHECKING, Any, TypeVar
+
+from typing_extensions import ParamSpec
 
 from pudb.settings import load_config
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+    from types import TracebackType
+
+    from pudb.debugger import Debugger
+
+
+P = ParamSpec("P")
+ResultT = TypeVar("ResultT")
 
 
 VERSION = metadata.version("pudb")
@@ -72,7 +84,7 @@ def _tty_override():
     return os.environ.get("PUDB_TTY")
 
 
-def _open_tty(tty_path):
+def _open_tty(tty_path: str):
     import io
     import os
     tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))
@@ -119,19 +131,32 @@ def runmodule(*args, **kwargs):
     runscript(*args, **kwargs)
 
 
-def runscript(mainpyfile, steal_output=False, _continue_at_start=False,
-              **kwargs):
+def runscript(
+            mainpyfile: str,
+            steal_output: bool = False,
+            _continue_at_start: bool = False,
+            args: Sequence[str] | None = None,
+            pre_run: str = "",
+            run_as_module: bool = False,
+        ):
     try:
         dbg = _get_debugger(
             steal_output=steal_output,
             _continue_at_start=_continue_at_start,
         )
-        _runscript(mainpyfile, dbg, **kwargs)
+        _runscript(mainpyfile, dbg,
+                   args=args, pre_run=pre_run, run_as_module=run_as_module)
     finally:
         dbg.__del__()
 
 
-def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
+def _runscript(
+            mainpyfile: str,
+            dbg: Debugger,
+            args: Sequence[str] | None = None,
+            pre_run: str = "",
+            run_as_module: bool = False,
+        ):
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
@@ -228,7 +253,11 @@ def _runscript(mainpyfile, dbg, args=None, pre_run="", run_as_module=False):
     sys.path = prev_sys_path
 
 
-def runstatement(statement, globals=None, locals=None):
+def runstatement(
+            statement: str,
+            globals: dict[str, Any] | None = None,
+            locals: Mapping[str, Any] | None = None
+        ):
     return _get_debugger().run(statement, globals, locals)
 
 
@@ -236,11 +265,15 @@ def runeval(expression, globals=None, locals=None):
     return _get_debugger().runeval(expression, globals, locals)
 
 
-def runcall(*args, **kwargs):
-    return _get_debugger().runcall(*args, **kwargs)
+def runcall(
+            func: Callable[P, ResultT],
+            *args: P.args,
+            **kwargs: P.kwargs
+        ) -> ResultT | None:
+    return _get_debugger().runcall(func, *args, **kwargs)
 
 
-def set_trace(paused=True):
+def set_trace(paused: bool = True):
     """
     Start the debugger
 
@@ -324,11 +357,16 @@ def set_interrupt_handler(interrupt_signal=None):
                 stacklevel=2)
 
 
-def post_mortem(tb=None, e_type=None, e_value=None):
+def post_mortem(
+            tb: TracebackType | None = None,
+            e_type: type[BaseException] | None = None,
+            e_value: BaseException | None = None):
     if tb is None:
         import sys
         exc_info = sys.exc_info()
     else:
+        assert e_type is not None
+        assert e_value is not None
         exc_info = (e_type, e_value, tb)
 
     dbg = _get_debugger()

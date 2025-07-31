@@ -25,11 +25,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-
-
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, ClassVar
 
 import urwid
+from typing_extensions import override
 
 
 if TYPE_CHECKING:
@@ -42,39 +42,40 @@ if TYPE_CHECKING:
 TABSTOP = 8
 
 
+@dataclass
 class SourceLine(urwid.Widget):
-    _sizing = frozenset([urwid.Sizing.FLOW])
+    _sizing: ClassVar[frozenset[urwid.Sizing]] = frozenset([urwid.Sizing.FLOW])
 
-    def __init__(self, dbg_ui, text, line_nr="", attr=None, has_breakpoint=False):
-        super().__init__()
+    dbg_ui: DebuggerUI
+    text: str
+    line_nr: str = ""
+    attr: Sequence[tuple[str, int | None]] | None = None
+    has_breakpoint: bool = False
+    is_current: bool = False
+    highlight: bool = False
 
-        self.dbg_ui = dbg_ui
-        self.text = text
-        self.attr = attr
-        self.line_nr = line_nr
-        self.has_breakpoint = has_breakpoint
-        self.is_current = False
-        self.highlight = False
-
+    @override
     def selectable(self):
         return True
 
-    def set_current(self, is_current):
+    def set_current(self, is_current: bool):
         self.is_current = is_current
         self._invalidate()
 
-    def set_highlight(self, highlight):
+    def set_highlight(self, highlight: bool):
         self.highlight = highlight
         self._invalidate()
 
-    def set_breakpoint(self, has_breakpoint):
+    def set_breakpoint(self, has_breakpoint: bool):
         self.has_breakpoint = has_breakpoint
         self._invalidate()
 
+    @override
     def rows(self, size, focus=False):
         return 1
 
-    def render(self, size, focus=False):
+    @override
+    def render(self, size: tuple[int, int], focus: bool = False):
         from pudb.debugger import CONFIG
         render_line_nr = CONFIG["line_numbers"]
 
@@ -82,7 +83,7 @@ class SourceLine(urwid.Widget):
         hscroll = self.dbg_ui.source_hscroll_start
 
         # attrs is a list of words like "focused" and "breakpoint"
-        attrs = []
+        attrs: list[str] = []
 
         if self.is_current:
             crnt = ">"

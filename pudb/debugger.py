@@ -37,10 +37,10 @@ from functools import partial
 from itertools import count
 from os.path import splitext
 from types import FrameType, ModuleType, TracebackType
-from typing import TYPE_CHECKING, Any, ClassVar, TextIO, TypeVar, cast, final
+from typing import TYPE_CHECKING, Any, ClassVar, Mapping, TextIO, TypeVar, cast, final
 
 import urwid
-from typing_extensions import ParamSpec, override
+from typing_extensions import ParamSpec, TypeAlias, override
 
 from pudb.lowlevel import ConsoleSingleKeyReader, decode_lines, ui_log
 from pudb.settings import get_save_config_path, load_config, save_config
@@ -54,6 +54,9 @@ if TYPE_CHECKING:
 
 P = ParamSpec("P")
 ResultT = TypeVar("ResultT")
+
+ExcInfo: TypeAlias = "tuple[type[BaseException], BaseException, TracebackType]"
+OptExcInfo: TypeAlias = "ExcInfo | tuple[None, None, None]"
 
 
 CONFIG = load_config()
@@ -335,12 +338,19 @@ class Debugger(bdb.Bdb):
     _current_debugger: ClassVar[list[Debugger]] = []
     ui: DebuggerUI
 
+    # FIXME: Explain the distinction between these two
     botframe: FrameType | None
+    bottom_frame: FrameType | None
+
     enterframe: FrameType | None  # pyright: ignore[reportUninitializedInstanceVariable]
 
     steal_output: bool
     _continue_at_start__setting: bool
     _tty_file: TextIO | None
+
+    curindex: int  # pyright: ignore[reportUninitializedInstanceVariable]
+
+    current_line: SourceLine  # pyright: ignore[reportUninitializedInstanceVariable]
 
     def __init__(self,
                 stdin: TextIO | None = None,
@@ -490,7 +500,7 @@ class Debugger(bdb.Bdb):
     def do_clear(self, arg):
         self.clear_bpbynumber(int(arg))
 
-    def set_frame_index(self, index):
+    def set_frame_index(self, index: int):
         self.curindex = index
         if index < 0 or index >= len(self.stack):
             return
@@ -501,7 +511,8 @@ class Debugger(bdb.Bdb):
 
         import linecache
         if not linecache.getlines(filename):
-            code = self.curframe.f_globals.get("_MODULE_SOURCE_CODE")
+            code = cast("str | None",
+                        self.curframe.f_globals.get("_MODULE_SOURCE_CODE"))
             if code is not None:
                 self.ui.set_current_line(lineno,
                         DirectSourceCodeProvider(
@@ -554,7 +565,10 @@ class Debugger(bdb.Bdb):
 
         return stack, index
 
-    def interaction(self, frame, exc_tuple=None, show_exc_dialog=True):
+    def interaction(self,
+                frame: FrameType | None,
+                exc_tuple: TracebackType | OptExcInfo | None = None,
+                show_exc_dialog: bool = True):
         if exc_tuple is None:
             tb = None
         elif isinstance(exc_tuple, TracebackType):
@@ -600,7 +614,8 @@ class Debugger(bdb.Bdb):
     def get_stack_situation_id(self):
         return str(id(self.stack[self.curindex][0].f_code))
 
-    def user_call(self, frame, argument_list):
+    @override
+    def user_call(self, frame: FrameType, argument_list: None):
         """This method is called when there is the remote possibility
         that we ever need to stop in this function."""
         if self._wait_for_mainpyfile:
@@ -608,7 +623,8 @@ class Debugger(bdb.Bdb):
         if self.stop_here(frame):
             self.interaction(frame)
 
-    def user_line(self, frame):
+    @override
+    def user_line(self, frame: FrameType):
         """This function is called when we stop or break at this line."""
         if self._waiting_for_mainpyfile(frame):
             return
@@ -714,7 +730,11 @@ class Debugger(bdb.Bdb):
 
         self.run(code)
 
-    def runstatement(self, statement, globals=None, locals=None):
+    def runstatement(self,
+                statement: str,
+                globals: dict[str, Any] | None = None,
+                locals: Mapping[str, Any] | None = None
+            ):
         try:
             return self.run(statement, globals, locals)
         except Exception:
@@ -723,7 +743,11 @@ class Debugger(bdb.Bdb):
             raise
 
     @override
-    def runeval(self, expression, globals=None, locals=None):
+    def runeval(self,
+                expression: str,
+                globals: dict[str, Any] | None = None,
+                locals: Mapping[str, Any] | None = None
+            ):
         try:
             return super().runeval(expression, globals, locals)
         except Exception:
@@ -989,6 +1013,8 @@ class DebuggerUI(FrameVarInfoKeeper):
     last_module_filter: str
     source_code_provider: SourceCodeProvider | None
     source: urwid.SimpleListWalker[SourceLine]
+
+    current_exc_tuple: OptExcInfo | None  # pyright: ignore[reportUninitializedInstanceVariable]
 
     # {{{ constructor
 
@@ -1714,6 +1740,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 (The error was: {e.args[0]})""")
 
                     # Update UI. end() will run past the line
+                    assert self.source_code_provider is not None
                     self.set_current_line(lineno, self.source_code_provider)
                     self.update_stack()
 
@@ -2420,7 +2447,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
     def message(self,
                 msg: str,
                 title: str = "Message",
-               extra_bindings: Sequence[tuple[str, Callable[..., None]]] | None = None,
+               extra_bindings: Sequence[tuple[str, str | bool]] | None = None,
             ):
         return self.call_with_ui(self.dialog,
                 urwid.ListBox(urwid.SimpleListWalker([urwid.Text(msg)])),
@@ -2437,7 +2464,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 title: str | None = None,
                 bind_enter_esc: bool = True,
                 focus_buttons: bool = False,
-                extra_bindings: Sequence[tuple[str, Callable[..., None]]] | None = None,
+                extra_bindings: Sequence[tuple[str, bool | str]] | None = None,
             ) -> bool | str:
         if extra_bindings is None:
             extra_bindings = []
@@ -2524,7 +2551,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         if palette:
             screen.register_palette(palette)
 
-    def show_exception_dialog(self, exc_tuple):
+    def show_exception_dialog(self, exc_tuple: OptExcInfo):
         from traceback import format_exception
 
         desc = (
@@ -2541,13 +2568,13 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             exit_loop_on_ok=True,
         )
 
-    def show_internal_exc_dlg(self, exc_tuple):
+    def show_internal_exc_dlg(self, exc_tuple: OptExcInfo):
         try:
             self._show_internal_exc_dlg(exc_tuple)
         except Exception:
             ui_log.exception("Error while showing error dialog")
 
-    def _show_internal_exc_dlg(self, exc_tuple):
+    def _show_internal_exc_dlg(self, exc_tuple: OptExcInfo):
         from traceback import format_exception
 
         from pudb import VERSION
@@ -2577,8 +2604,11 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             title="Pudb Internal Exception Encountered",
         )
 
-    def _show_exception_dialog(self, description, error_info, title,
-                               exit_loop_on_ok=False):
+    def _show_exception_dialog(self,
+                description: str,
+                error_info: str,
+                title: str,
+                exit_loop_on_ok: bool = False):
         res = self.dialog(
             urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
                 "\n\n".join([description, error_info])
@@ -2592,7 +2622,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         if res == "save":
             self._save_traceback(error_info)
 
-    def _save_traceback(self, error_info):
+    def _save_traceback(self, error_info: str):
         try:
             from os.path import exists
             filename = next(
@@ -2965,7 +2995,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     # {{{ debugger-facing interface
 
-    def interaction(self, exc_tuple, show_exc_dialog=True):
+    def interaction(self, exc_tuple: OptExcInfo | None, show_exc_dialog: bool = True):
         self.current_exc_tuple = exc_tuple
 
         from pudb import VERSION
@@ -3012,7 +3042,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             if changed_file:
                 self.source_list.set_focus_valign("middle")
 
-    def set_current_line(self, line, source_code_provider):
+    def set_current_line(self, line: int, source_code_provider: SourceCodeProvider):
         """Updates the UI to show the line currently being executed."""
 
         if self.current_line is not None:

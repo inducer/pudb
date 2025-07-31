@@ -42,15 +42,21 @@ import errno
 import os
 import socket
 import sys
-from typing import TYPE_CHECKING, Callable, ClassVar, TextIO, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    ClassVar,
+    TextIO,
+    TypeVar,
+)
 
 from typing_extensions import ParamSpec
 
-from pudb.debugger import Debugger
+from pudb.debugger import Debugger, ExcInfo
 
 
 if TYPE_CHECKING:
-    from types import FrameType
+    from types import FrameType, TracebackType
 
     from mpi4py import MPI
 
@@ -144,6 +150,9 @@ class RemoteDebugger(Debugger):
     _handle: TextIO
     remote_addr: str
 
+    host: str  # pyright: ignore[reportUninitializedInstanceVariable]
+    port: int  # pyright: ignore[reportUninitializedInstanceVariable]
+
     def __init__(
         self,
         host: str = PUDB_RDB_HOST,
@@ -229,14 +238,14 @@ class RemoteDebugger(Debugger):
             self.ident = f"{self.me}:{self.port}"
             self.say(BANNER.format(self=self))
             client, address = self._sock.accept()
-        client.setblocking(1)
+        client.setblocking(True)
         return client, (address, self.port)
 
     def get_reverse_socket_client(self, host: str, port: int):
         sock = socket.socket()
         try:
             sock.connect((host, port))
-            sock.setblocking(1)
+            sock.setblocking(True)
         except OSError as exc:
             if exc.errno == errno.ECONNREFUSED:
                 raise ValueError(CONN_REFUSED.format(self=self)) from exc
@@ -245,7 +254,7 @@ class RemoteDebugger(Debugger):
 
     def get_socket_client(self, host: str, port: int, search_limit: int):
         sock, this_port = self.get_avail_port(host, port, search_limit)
-        sock.setblocking(1)
+        sock.setblocking(True)
         sock.listen(1)
         return sock, (host, this_port)
 
@@ -270,7 +279,7 @@ class RemoteDebugger(Debugger):
         print(m, file=self.out)
 
     def close_remote_session(self):
-        self.stdin, self.stdout = sys.stdin, sys.stdout = self._prev_handles
+        sys.stdin, sys.stdout = self._prev_handles
         self._handle.close()
         self._client.close()
         if self._sock:
