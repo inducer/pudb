@@ -327,8 +327,9 @@ def pick_module(ui: DebuggerUI, w, size, key):
                 pos = ui.stack_list._w.focus_position
                 ui.debugger.set_frame_index(
                         ui.translate_ui_stack_index(pos))
-# {{{ debugger interface
 
+
+# {{{ debugger interface
 
 class Debugger(bdb.Bdb):
     _current_debugger: ClassVar[list[Debugger]] = []
@@ -721,6 +722,7 @@ class Debugger(bdb.Bdb):
             self.interaction(None, sys.exc_info())
             raise
 
+    @override
     def runeval(self, expression, globals=None, locals=None):
         try:
             return super().runeval(expression, globals, locals)
@@ -729,9 +731,14 @@ class Debugger(bdb.Bdb):
             self.interaction(None, sys.exc_info())
             raise
 
-    def runcall(self, *args, **kwargs):
+    @override
+    def runcall(self,
+                func: Callable[P, ResultT],
+                *args: P.args,
+                **kwargs: P.kwargs
+            ) -> ResultT | None:
         try:
-            return super().runcall(*args, **kwargs)
+            return super().runcall(func, *args, **kwargs)
         except Exception:
             self.post_mortem = True
             self.interaction(None, sys.exc_info())
