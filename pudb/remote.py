@@ -37,15 +37,26 @@ THE SOFTWARE.
 
 # mostly stolen from celery.contrib.rdb
 
-
 import atexit
 import errno
 import os
 import socket
 import sys
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Callable, ClassVar, TextIO, TypeVar
+
+from typing_extensions import ParamSpec
 
 from pudb.debugger import Debugger
+
+
+if TYPE_CHECKING:
+    from types import FrameType
+
+    from mpi4py import MPI
+
+
+P = ParamSpec("P")
+ResultT = TypeVar("ResultT")
 
 
 __all__ = [
@@ -109,14 +120,14 @@ class TelnetCharacters:
         This class is not intended to be instantiated.
     """
     # Telnet protocol characters
-    IAC = b"\xff"  # "Interpret As Command"
-    DO = b"\xfd"
-    WILL = b"\xfb"
+    IAC: ClassVar[bytes] = b"\xff"  # "Interpret As Command"
+    DO: ClassVar[bytes] = b"\xfd"
+    WILL: ClassVar[bytes] = b"\xfb"
 
     # Telnet protocol options codes
     # These ones all come from arpa/telnet.h
-    ECHO = b"\x01"  # echo
-    SGA = b"\x03"  # suppress go ahead
+    ECHO: ClassVar[bytes] = b"\x01"  # echo
+    SGA: ClassVar[bytes] = b"\x03"  # suppress go ahead
 
 
 class RemoteDebugger(Debugger):
@@ -124,18 +135,23 @@ class RemoteDebugger(Debugger):
     .. automethod:: __init__
     """
 
-    me = "pudb"
-    _prev_outs = None
-    _sock = None
+    me: ClassVar[str] = "pudb"
+
+    _sock: socket.socket | None = None
+    _client: socket.socket
+    _prev_handles: tuple[TextIO, TextIO]
+    out: TextIO
+    _handle: TextIO
+    remote_addr: str
 
     def __init__(
         self,
-        host=PUDB_RDB_HOST,
-        port=PUDB_RDB_PORT,
-        port_search_limit=100,
-        out=sys.stdout,
-        term_size=None,
-        reverse=PUDB_RDB_REVERSE,
+        host: str = PUDB_RDB_HOST,
+        port: int = PUDB_RDB_PORT,
+        port_search_limit: int = 100,
+        out: TextIO = sys.stdout,
+        term_size: tuple[int, int]  | None = None,
+        reverse: bool = PUDB_RDB_REVERSE,
     ):
         """
         :arg term_size: A two-tuple ``(columns, rows)``, or *None*. If *None*,
@@ -149,11 +165,12 @@ class RemoteDebugger(Debugger):
         self.out = out
 
         if term_size is None:
-            term_size = os.environ.get("PUDB_TERM_SIZE")
-            if term_size is not None:
-                term_size = tuple(map(int, term_size.split("x")))
-                if len(term_size) != 2:
+            term_size_str = os.environ.get("PUDB_TERM_SIZE")
+            if term_size_str is not None:
+                term_size_tup = tuple(map(int, term_size_str.split("x")))
+                if len(term_size_tup) != 2:
                     raise ValueError("PUDB_TERM_SIZE should have two dimensions")
+                term_size = term_size_tup
             else:
                 try:
                     s = os.get_terminal_size()
@@ -194,7 +211,12 @@ class RemoteDebugger(Debugger):
             self, stdin=self._handle, stdout=self._handle, term_size=term_size
         )
 
-    def get_client(self, host, port, search_limit=100, reverse=False):
+    def get_client(self,
+                host: str,
+                port: int,
+                search_limit: int = 100,
+                reverse: bool = False
+            ) -> tuple[socket.socket, tuple[str, int]]:
         if reverse:
             self.host, self.port = host, port
             client, address = self.get_reverse_socket_client(host, port)
@@ -210,7 +232,7 @@ class RemoteDebugger(Debugger):
         client.setblocking(1)
         return client, (address, self.port)
 
-    def get_reverse_socket_client(self, host, port):
+    def get_reverse_socket_client(self, host: str, port: int):
         sock = socket.socket()
         try:
             sock.connect((host, port))
@@ -221,13 +243,13 @@ class RemoteDebugger(Debugger):
             raise exc
         return sock, sock.getpeername()
 
-    def get_socket_client(self, host, port, search_limit):
+    def get_socket_client(self, host: str, port: int, search_limit: int):
         sock, this_port = self.get_avail_port(host, port, search_limit)
         sock.setblocking(1)
         sock.listen(1)
         return sock, (host, this_port)
 
-    def get_avail_port(self, host, port, search_limit=100, skew=+0):
+    def get_avail_port(self, host: str, port: int, search_limit: int = 100):
         this_port = None
         for i in range(search_limit):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -244,7 +266,7 @@ class RemoteDebugger(Debugger):
         else:
             raise Exception(NO_AVAILABLE_PORT.format(self=self))
 
-    def say(self, m):
+    def say(self, m: str):
         print(m, file=self.out)
 
     def close_remote_session(self):
@@ -257,7 +279,7 @@ class RemoteDebugger(Debugger):
 
 
 def debugger(
-    term_size=None,
+    term_size: tuple[int, int] | None = None,
     host=PUDB_RDB_HOST,
     port=PUDB_RDB_PORT,
     reverse=PUDB_RDB_REVERSE
@@ -274,11 +296,11 @@ def debugger(
 
 
 def set_trace(
-    frame=None,
-    term_size=None,
-    host=PUDB_RDB_HOST,
-    port=PUDB_RDB_PORT,
-    reverse=PUDB_RDB_REVERSE
+    frame: FrameType | None = None,
+    term_size: tuple[int, int] | None = None,
+    host: str = PUDB_RDB_HOST,
+    port: int = PUDB_RDB_PORT,
+    reverse: bool = PUDB_RDB_REVERSE
 ):
     """Set breakpoint at current location, or a specified frame"""
     if frame is None:
@@ -289,8 +311,12 @@ def set_trace(
     ).set_trace(frame)
 
 
-def debug_remote_on_single_rank(comm: Any, rank: int, func: Callable,
-                                *args: Any, **kwargs: Any) -> None:
+def debug_remote_on_single_rank(
+            comm: MPI.Intracomm,
+            rank: int,
+            func: Callable[P, ResultT],
+            *args: P.args,
+            **kwargs: P.kwargs) -> None:
     """Run a remote debugger on a single rank of an ``mpi4py`` application.
     *func* will be called on rank *rank* running in a :class:`RemoteDebugger`,
     and will be called normally on all other ranks.

@@ -25,4 +25,23 @@ release = version
 intersphinx_mapping = {
         "python": ("https://docs.python.org/3", None),
         "urwid": ("https://urwid.org/", None),
+        "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
         }
+
+
+sphinxconfig_missing_reference_aliases = {
+    "MPI.Intracomm": "obj:mpi4py.MPI.Intracomm",
+}
+
+
+nitpick_ignore_regex = [
+    ["py:class", r"P"],
+    ["py:class", r"P.args"],
+    ["py:class", r"P.kwargs"],
+    ["py:class", r"ResultT"],
+    ["py:class", r"FrameType"],
+]
+
+
+def setup(app) -> None:
+    app.connect("missing-reference", process_autodoc_missing_reference)  # noqa: F821

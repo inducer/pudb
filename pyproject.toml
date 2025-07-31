@@ -145,6 +145,10 @@ reportExplicitAny = "none"
 # https://github.com/microsoft/pyright/issues/746
 reportImportCycles = "none"
 
+ignore = [
+    "doc/conf.py",
+]
+
 pythonVersion = "3.8"
 pythonPlatform = "All"
 

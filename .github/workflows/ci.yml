@@ -44,7 +44,9 @@ jobs:
                 . ./ci-support-v0
                 build_py_project_in_venv
                 pip install basedpyright
-                pip install numpy pytest ipython ptpython
+                sudo apt update
+                sudo apt -y install libopenmpi-dev
+                pip install numpy pytest ipython ptpython mpi4py
                 basedpyright
 
     pylint:
