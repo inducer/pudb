@@ -27,7 +27,16 @@ THE SOFTWARE.
 """
 
 
+from typing import TYPE_CHECKING
+
 import urwid
+
+
+if TYPE_CHECKING:
+    from bdb import Breakpoint
+    from collections.abc import Collection, Sequence
+
+    from pudb.debugger import DebuggerUI
 
 
 TABSTOP = 8
@@ -219,7 +228,11 @@ class ArgumentParser:
 try:
     import pygments  # noqa
 except ImportError:
-    def format_source(debugger_ui, lines, breakpoints):
+    def format_source(
+                debugger_ui: DebuggerUI,
+                lines: Sequence[str],
+                breakpoints: Collection[int],
+            ) -> list[SourceLine]:
         lineno_format = "%%%dd " % (len(str(len(lines))))
         return [
             SourceLine(
@@ -291,7 +304,14 @@ else:
                 },
             }
 
-    class UrwidFormatter(Formatter):
+    class UrwidFormatter(Formatter[str]):
+        result: list[SourceLine]
+        current_line: str
+        current_attr: list[tuple[str, int]]
+        debugger_ui: DebuggerUI
+        lineno_format: str
+        breakpoints: Sequence[Breakpoint]
+
         def __init__(self, debugger_ui, lineno_format, breakpoints, **options):
             Formatter.__init__(self, **options)
             self.current_line = ""
@@ -364,7 +384,11 @@ else:
             if self.current_line:
                 self.shipout_line()
 
-    def format_source(debugger_ui, lines, breakpoints):
+    def format_source(
+                debugger_ui: DebuggerUI,
+                lines: Sequence[str],
+                breakpoints: Collection[int],
+            ) -> list[SourceLine]:
         lineno_format = "%%%dd " % (len(str(len(lines))))
         formatter = UrwidFormatter(debugger_ui, lineno_format, breakpoints)
         highlight(

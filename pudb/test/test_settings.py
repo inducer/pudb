@@ -30,5 +30,5 @@ def test_save_breakpoints(mocker):
     mock_open = mocker.mock_open()
     mocker.patch.object(builtins, "open", mock_open)
 
-    save_breakpoints(mock_breakpoints)
+    save_breakpoints(mock_breakpoints)  # pyright: ignore[reportArgumentType]
     mock_open.assert_called_with("saved-breakpoints", "w")

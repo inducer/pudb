@@ -41,6 +41,8 @@ dependencies = [
     "urwid!=3.0.0; python_version < '3.9'",
 
     "urwid_readline",
+
+    "typing_extensions >= 4.13",
 ]
 
 [project.optional-dependencies]

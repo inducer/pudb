@@ -26,25 +26,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-
 # {{{ constants and imports
 
 import inspect
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sized
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
 import urwid
+from typing_extensions import TypeAlias, override
 
 from pudb.lowlevel import ui_log
 from pudb.ui_tools import text_width
 
 
-try:
+if TYPE_CHECKING:
     import numpy
     HAVE_NUMPY = 1
-except ImportError:
-    HAVE_NUMPY = 0
+else:
+    try:
+        import numpy
+        HAVE_NUMPY = 1
+    except ImportError:
+        HAVE_NUMPY = 0
 
 # }}}
 
@@ -183,7 +189,27 @@ class FrameVarInfo:
                     id_path, InspectInfo())
 
 
+VarAccessLevel: TypeAlias = Literal["private", "public"]
+Stringifier: TypeAlias = Literal[
+    "default",
+    "type",
+    "repr",
+    "str",
+    "id",
+]
+
+IdPath: TypeAlias = "tuple[str, ...]"
+
+
 class InspectInfo:
+    show_detail: bool
+    display_type: Stringifier
+    highlighted: bool
+    repeated_at_top: bool
+    access_level: VarAccessLevel
+    show_methods: bool
+    wrap: bool
+
     def __init__(self):
         # Do not globalize: cyclic import
         from pudb.debugger import CONFIG
@@ -197,9 +223,9 @@ class InspectInfo:
         self.wrap = CONFIG["wrap_variables"]
 
 
+@dataclass(frozen=True)
 class WatchExpression:
-    def __init__(self, expression):
-        self.expression = expression
+    expression: str
 
 
 class WatchEvalError:
@@ -212,12 +238,28 @@ class WatchEvalError:
 # {{{ widget
 
 class VariableWidget(urwid.Widget):
-    _sizing = frozenset([urwid.Sizing.FLOW])
+    _sizing: ClassVar[frozenset[str]] = frozenset([urwid.Sizing.FLOW])
 
-    PREFIX = "| "
+    PREFIX: ClassVar[str] = "| "
 
-    def __init__(self, parent, var_label, value_str, id_path,
-            attr_prefix=None, watch_expr=None, iinfo=None):
+    parent: VariableWidget | None
+    nesting_level: int
+    var_label: str | None
+    value_str: str | None
+    id_path: IdPath
+    attr_prefix: str
+    watch_expr: str | None
+    wrap: bool
+
+    def __init__(self,
+                parent: VariableWidget | None,
+                var_label: str | None,
+                value_str: str | None,
+                id_path: IdPath,
+                attr_prefix: str | None = None,
+                watch_expr: str | None = None,
+                iinfo: InspectInfo | None = None
+            ):
         super().__init__()
 
         assert isinstance(id_path, str)
@@ -263,6 +305,7 @@ class VariableWidget(urwid.Widget):
             for i in range(fulllines + bool(rest))]
         return [firstline] + [self.prefix + "  " + i for i in restlines]
 
+    @override
     def rows(self, size: tuple[int], focus: bool = False) -> int:
         """
         :param size: (maxcol,) the number of columns available to this widget
@@ -277,6 +320,7 @@ class VariableWidget(urwid.Widget):
         else:
             return 1
 
+    @override
     def render(self, size: tuple[int], focus: bool = False) -> urwid.Canvas:
         """
         :param size: (maxcol,) the number of columns available to this widget
@@ -349,6 +393,7 @@ class VariableWidget(urwid.Widget):
                         (apfx+"value", text_width(self.value_str)),
                         ]]
         else:
+            assert self.var_label is not None
             text = [self.prefix + self.var_label]
 
             attr = [[(apfx+"label", lprefix + text_width(self.var_label)), ]]
@@ -400,7 +445,7 @@ STR_SAFE_TYPES = get_str_safe_types()
 # }}}
 
 
-def default_stringifier(value):
+def default_stringifier(value: object):
     if isinstance(value, BASIC_TYPES):
         return repr(value)
 
@@ -422,7 +467,7 @@ def default_stringifier(value):
         try:
             # (E.g.) Mock objects will pretend to have this
             # and return nonsense.
-            result = value.safely_stringify_for_pudb()
+            result = cast("str", value.safely_stringify_for_pudb())  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
         except Exception:
             message = "safely_stringify_for_pudb call failed"
             ui_log.exception(message)
@@ -443,21 +488,21 @@ def default_stringifier(value):
     return str(type(value).__name__)
 
 
-def type_stringifier(value):
+def type_stringifier(value: object):
     return str(type(value).__name__)
 
 
-def id_stringifier(obj):
+def id_stringifier(obj: object):
     return f"{id(obj):#x}"
 
 
-def error_stringifier(_):
+def error_stringifier(_: object) -> str:
     return "ERROR: Invalid custom stringifier file."
 
 
 custom_stringifier_dict = {}
 
-STRINGIFIERS = {
+STRINGIFIERS: dict[Stringifier, Callable[[object], str]] = {
     "default": default_stringifier,
     "type": type_stringifier,
     "repr": repr,
@@ -466,7 +511,7 @@ STRINGIFIERS = {
 }
 
 
-def get_stringifier(iinfo: InspectInfo) -> Callable:
+def get_stringifier(iinfo: InspectInfo) -> Callable[[object], str]:
     """
     :return: a function that turns an object into a Unicode text object.
     """
