@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 TABSTOP = 8
 
 
-@dataclass
+@dataclass(eq=False)
 class SourceLine(urwid.Widget):
     _sizing: ClassVar[frozenset[urwid.Sizing]] = frozenset([urwid.Sizing.FLOW])
 
