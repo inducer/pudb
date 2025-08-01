@@ -2298,7 +2298,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         def quit(w, size, key):
             with open(self.cmdline_history_path, "w") as history:
                 history.write("\n".join(self.cmdline_history))
-            self.debugger.set_quit()
+            sys.settrace(None)
             end()
 
         def do_edit_config(w, size, key):
