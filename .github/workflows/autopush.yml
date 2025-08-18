@@ -10,7 +10,7 @@ jobs:
         if: startsWith(github.repository, 'inducer/')
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v4
+        -   uses: actions/checkout@v5
         -   run: |
                 curl -L -O https://tiker.net/ci-support-v0
                 . ./ci-support-v0
