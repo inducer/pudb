@@ -248,7 +248,7 @@ class VariableWidget(urwid.Widget):
     value_str: str | None
     id_path: IdPath
     attr_prefix: str
-    watch_expr: str | None
+    watch_expr: WatchExpression | None
     wrap: bool
 
     def __init__(self,
@@ -257,7 +257,7 @@ class VariableWidget(urwid.Widget):
                 value_str: str | None,
                 id_path: IdPath,
                 attr_prefix: str | None = None,
-                watch_expr: str | None = None,
+                watch_expr: WatchExpression | None = None,
                 iinfo: InspectInfo | None = None
             ):
         super().__init__()
