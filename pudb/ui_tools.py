@@ -18,7 +18,7 @@ def text_width(txt):
     return calc_width(txt, 0, len(txt))
 
 
-def encode_like_urwid(s):
+def encode_like_urwid(s: str):
     from urwid.display import escape
     from urwid.util import _target_encoding
 
@@ -26,8 +26,7 @@ def encode_like_urwid(s):
     # https://github.com/urwid/urwid/blob/2cc54891965283faf9113da72202f5d405f90fa3/urwid/util.py#L126-L128
 
     s = s.replace(escape.SI+escape.SO, "")  # remove redundant shifts
-    s = s.encode(_target_encoding, "replace")
-    return s
+    return s.encode(_target_encoding, "replace")
 
 
 def make_canvas(txt, attr, maxcol, fill_attr=None):
