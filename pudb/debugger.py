@@ -444,7 +444,7 @@ class Debugger(bdb.Bdb):
             self.botframe = thisframe
             if sys.version_info >= (3, 13):
                 # save trace flags, to be restored by set_continue
-                self.frame_trace_lines_opcodes[thisframe] = (
+                self.frame_trace_lines_opcodes[thisframe] = (  # pylint: disable=no-member
                     thisframe.f_trace_lines,
                     thisframe.f_trace_opcodes)
 
@@ -2692,7 +2692,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e052"  # noqa
+        WELCOME_LEVEL = "e053"  # noqa
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION
@@ -2708,6 +2708,10 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "If you're new here, welcome! The help screen "
                     "(invoked by hitting '?' after this message) should get you "
                     "on your way.\n"
+
+                    "\nChanges in version 2025.1.2:\n\n"
+                    "- Fix module picking\n"
+                    "- Work towards improved type checking coverage\n"
 
                     "\nChanges in version 2025.1.1:\n\n"
                     "- Fix a call to format_exception (Lumír 'Frenzy' Balhar)\n"
@@ -2979,7 +2983,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.screen.draw_screen(self.size, canvas)
                 keys = self.screen.get_input()
 
-                for k in keys:
+                for k in keys:  # pylint: disable=not-an-iterable
                     if k == "window resize":
                         self.size = self.screen.get_cols_rows()
                     else:
