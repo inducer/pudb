@@ -813,7 +813,7 @@ class FrameVarInfoKeeper:
     def get_frame_var_info(self, read_only, ssid=None):
         if ssid is None:
             # self.debugger set by subclass
-            ssid = self.debugger.get_stack_situation_id()  # pylint: disable=no-member
+            ssid = self.debugger.get_stack_situation_id()
         if read_only:
             return self.frame_var_info.get(ssid, FrameVarInfo())
         else:
