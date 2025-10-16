@@ -444,7 +444,7 @@ class Debugger(bdb.Bdb):
             self.botframe = thisframe
             if sys.version_info >= (3, 13):
                 # save trace flags, to be restored by set_continue
-                self.frame_trace_lines_opcodes[thisframe] = (  # pylint: disable=no-member
+                self.frame_trace_lines_opcodes[thisframe] = (
                     thisframe.f_trace_lines,
                     thisframe.f_trace_opcodes)
 
@@ -2979,7 +2979,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.screen.draw_screen(self.size, canvas)
                 keys = self.screen.get_input()
 
-                for k in keys:  # pylint: disable=not-an-iterable
+                for k in keys:
                     if k == "window resize":
                         self.size = self.screen.get_cols_rows()
                     else:
