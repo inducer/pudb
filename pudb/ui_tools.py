@@ -164,9 +164,20 @@ class SignalWrap(urwid.WidgetWrap[WrappedWidget]):  # pyright: ignore[reportInva
 # {{{ debugger-specific stuff
 
 class StackFrame(urwid.Widget):
-    _sizing = frozenset([urwid.Sizing.FLOW])
+    _sizing: ClassVar[frozenset[urwid.Sizing]] = frozenset([urwid.Sizing.FLOW])
 
-    def __init__(self, is_current, name, class_name, filename, line):
+    is_current: bool
+    name: str
+    class_name: str | None
+    filename: str
+    line: int
+
+    def __init__(self,
+                is_current: bool,
+                name: str,
+                class_name: str | None,
+                filename: str,
+                line: int):
         super().__init__()
 
         self.is_current = is_current
@@ -175,13 +186,17 @@ class StackFrame(urwid.Widget):
         self.filename = filename
         self.line = line
 
+    @override
     def selectable(self):
         return True
 
-    def rows(self, size, focus=False):
+    @override
+    def rows(self, size: UrwidSize, focus: bool = False):
         return 1
 
-    def render(self, size, focus=False):
+    @override
+    def render(self, size: UrwidSize, focus: bool = False):
+        assert size  # FIXME?
         maxcol = size[0]
         if focus:
             apfx = "focused "
@@ -207,7 +222,8 @@ class StackFrame(urwid.Widget):
 
         return make_canvas([text], [attr], maxcol, apfx+"frame location")
 
-    def keypress(self, size, key):
+    @override
+    def keypress(self, size: UrwidSize, key: str):
         return key
 
 
