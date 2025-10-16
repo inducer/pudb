@@ -1,7 +1,0 @@
-- arg: ignored-modules
-  val:
-  - bpython
-  - IPython
-  - py.test
-  - pytest
-  - msvcrt
