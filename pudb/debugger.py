@@ -33,6 +33,7 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from collections import deque
+from dataclasses import dataclass
 from functools import partial
 from itertools import count
 from os.path import splitext
@@ -219,7 +220,7 @@ def mod_exists(mod: ModuleType):
         return ext == ".py"
 
 
-def pick_module(ui: DebuggerUI, w, size, key):
+def pick_module(ui: DebuggerUI, w: urwid.Widget, _size: UrwidSize, _key: str):
     import sys
 
     new_mod_text = SelectableText("-- update me --")
@@ -777,15 +778,17 @@ class Debugger(bdb.Bdb):
 
 from pudb.ui_tools import (
     BreakpointFrame,
+    EventListener,
     SearchController,
     SelectableText,
     SignalWrap,
     StackFrame,
+    UrwidSize,
     focus_widget_in_container,
     labelled_value,
     make_hotkey_markup,
 )
-from pudb.var_view import FrameVarInfoKeeper
+from pudb.var_view import FrameVarInfoKeeper, VariableWidget, WatchExpression
 
 
 # {{{ display setup
@@ -1013,6 +1016,9 @@ class DebuggerUI(FrameVarInfoKeeper):
     last_module_filter: str
     source_code_provider: SourceCodeProvider | None
     source: urwid.SimpleListWalker[SourceLine]
+    show_count: int
+    current_line: SourceLine | None
+    quit_event_loop: object
 
     current_exc_tuple: OptExcInfo | None  # pyright: ignore[reportUninitializedInstanceVariable]
 
@@ -1241,7 +1247,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             except IndexError:
                 return
 
-            var = self.var_list._w.focus
+            var = cast("VariableWidget | None", self.var_list._w.focus)  # pyright: ignore[reportPrivateUsage]
             if var is None:
                 return
 
@@ -1287,7 +1293,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.update_var_view(focus_index=focus_index)
 
         def edit_inspector_detail(w, size, key):
-            var = self.var_list._w.focus
+            var = cast("VariableWidget | None", self.var_list._w.focus)  # pyright: ignore[reportPrivateUsage]
 
             if var is None:
                 return
@@ -1395,7 +1401,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                     iinfo.access_level = "all"
 
                 if var.watch_expr is not None:
-                    var.watch_expr.expression = watch_edit.get_edit_text()  # pyright: ignore[reportPossiblyUnboundVariable]
+                    var.watch_expr = WatchExpression(watch_edit.get_edit_text())   # pyright: ignore[reportPossiblyUnboundVariable]
 
             elif result == "del":
                 for i, watch_expr in enumerate(fvi.watches):
@@ -1638,7 +1644,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             self.debugger.save_breakpoints()
             self.quit_event_loop = True
 
-        def next_line(w, size, key):
+        def next_line(_w: urwid.Widget, _size: UrwidSize, _key: str):
             if self.debugger.post_mortem:
                 self.message("Post-mortem mode: Can't modify state.")
             else:
@@ -1874,7 +1880,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.source_sigwrap.listen(".", search_next)
 
         self.source_sigwrap.listen("b", toggle_breakpoint)
-        self.source_sigwrap.listen("m", pick_module)
+        self.source_sigwrap.listen("m", partial(pick_module, self))
 
         self.source_sigwrap.listen("H", move_stack_top)
         self.source_sigwrap.listen("u", move_stack_up)
@@ -2447,7 +2453,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
     def message(self,
                 msg: str,
                 title: str = "Message",
-               extra_bindings: Sequence[tuple[str, str | bool]] | None = None,
+                extra_bindings: Sequence[
+                    tuple[str, str | EventListener[urwid.Widget]]] | None = None,
             ):
         return self.call_with_ui(self.dialog,
                 urwid.ListBox(urwid.SimpleListWalker([urwid.Text(msg)])),
@@ -2460,21 +2467,15 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     def dialog(self,
                 content: urwid.Widget,
-                buttons_and_results: Sequence[tuple[str, bool | str] | None],
+                buttons_and_results: Sequence[tuple[str, object] | None],
                 title: str | None = None,
                 bind_enter_esc: bool = True,
                 focus_buttons: bool = False,
-                extra_bindings: Sequence[tuple[str, bool | str]] | None = None,
-            ) -> bool | str:
+                extra_bindings: Sequence[
+                    tuple[str, str | EventListener[urwid.Widget]]] | None = None,
+            ) -> object:
         if extra_bindings is None:
             extra_bindings = []
-
-        class ResultSetter:
-            def __init__(subself, res):  # noqa: N805 # pylint: disable=no-self-argument
-                subself.res = res
-
-            def __call__(subself, btn):  # noqa: N805 # pylint: disable=no-self-argument
-                self.quit_event_loop = [subself.res]
 
         Attr = urwid.AttrMap  # noqa
 
@@ -2482,10 +2483,10 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             content = SignalWrap(content)
 
             def enter(w, size, key):
-                self.quit_event_loop = [True]
+                self.quit_event_loop = True
 
             def esc(w, size, key):
-                self.quit_event_loop = [False]
+                self.quit_event_loop = False
 
             content.listen("enter", enter)
             content.listen("esc", esc)
@@ -2497,7 +2498,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             else:
                 btn_text, btn_result = btn_descr
                 button_widgets.append(
-                        Attr(urwid.Button(btn_text, ResultSetter(btn_result)),
+                        Attr(urwid.Button(btn_text,
+                                    OnButtonEventLoopResultSetter(self, btn_result)),
                             "button", "focused button"))
 
         w = urwid.Columns([
@@ -2516,19 +2518,12 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 (urwid.FIXED, 1, urwid.SolidFill()),
                 w])
 
-        class ResultSettingEventHandler:
-            def __init__(subself, res):  # noqa: N805 # pylint: disable=no-self-argument
-                subself.res = res
-
-            def __call__(subself, w, size, key):  # noqa: N805 # pylint: disable=no-self-argument
-                self.quit_event_loop = [subself.res]
-
         w = SignalWrap(w)
         for key, binding in extra_bindings:
-            if isinstance(binding, str):
-                w.listen(key, ResultSettingEventHandler(binding))
-            else:
+            if callable(binding):
                 w.listen(key, binding)
+            else:
+                w.listen(key, ResultSettingEventHandler(self, binding))
 
         w = urwid.LineBox(w)
 
@@ -2540,7 +2535,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 )
         w = Attr(w, "background")
 
-        return self.event_loop(w)[0]
+        return self.event_loop(w)
 
     @staticmethod
     def setup_palette(screen):
@@ -2686,7 +2681,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     # {{{ event loop
 
-    def event_loop(self, toplevel: urwid.Widget | None = None):
+    def event_loop(self, toplevel: urwid.Widget | None = None) -> object:
         prev_quit_loop = self.quit_event_loop
 
         try:
@@ -3138,5 +3133,23 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.set_cmdline_state(not CONFIG["hide_cmdline_win"])
 
     # }}}
+
+
+@dataclass(frozen=True)
+class OnButtonEventLoopResultSetter:
+    ui: DebuggerUI
+    res: object
+
+    def __call__(self, btn: urwid.Button):
+        self.ui.quit_event_loop = self.res
+
+
+@dataclass(frozen=True)
+class ResultSettingEventHandler:
+    ui: DebuggerUI
+    res: object
+
+    def __call__(self, w: urwid.Widget, size: UrwidSize, key: str):
+        self.ui.quit_event_loop = self.res
 
 # vim: foldmethod=marker:expandtab:softtabstop=4
