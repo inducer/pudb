@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from typing import Callable, ClassVar, Hashable, Literal, Sequence, TypeVar
+
 import urwid
-from urwid import calc_text_pos, calc_width
+from typing_extensions import TypeAlias, override
+from urwid import Widget, calc_text_pos, calc_width
 
 
 # generic urwid helpers -------------------------------------------------------
@@ -29,10 +32,15 @@ def encode_like_urwid(s: str):
     return s.encode(_target_encoding, "replace")
 
 
-def make_canvas(txt, attr, maxcol, fill_attr=None):
-    processed_txt = []
-    processed_attr = []
-    processed_cs = []
+def make_canvas(
+            txt: Sequence[str],
+            attr: Sequence[Sequence[tuple[Hashable | None, int]]],
+            maxcol: int,
+            fill_attr: str | None = None
+        ):
+    processed_txt: list[bytes] = []
+    processed_attr: list[list[tuple[Hashable | None, int]]] = []
+    processed_cs: list[list[tuple[Literal["U", "0"] | None, int]]] = []
 
     for line, line_attr in zip(txt, attr):
         # filter out zero-length attrs
