@@ -54,12 +54,14 @@ completion = [
 pudb = "pudb.run:main"
 
 [tool.hatch.build.targets.sdist]
-include = [
-    "/pudb",
-    "/doc",
-    "/try-the-debugger.sh",
-    "/debug_me.py",
-    "/examples",
+exclude = [
+    "/.github",
+    "/.gitlab-ci.yml",
+    "/.mailmap",
+    "*~",
+    "/.basedpyright",
+    "/.coveragerc",
+    "/.editorconfig",
 ]
 
 [tool.ruff]
