@@ -118,16 +118,30 @@ class SelectableText(urwid.Text):
         return key
 
 
-class SignalWrap(urwid.WidgetWrap):
-    def __init__(self, w, is_preemptive=False):
-        urwid.WidgetWrap.__init__(self, w)
+UrwidSize: TypeAlias = "tuple[()] | tuple[int] | tuple[int, int]"
+WrappedWidget = TypeVar("WrappedWidget", bound=Widget, covariant=True)
+EventListener: TypeAlias = Callable[
+        ["SignalWrap[WrappedWidget]", UrwidSize, str],
+        "str | None"]
+
+
+# pyright ignore to paper over variance disagreement with urwid
+class SignalWrap(urwid.WidgetWrap[WrappedWidget]):  # pyright: ignore[reportInvalidTypeArguments]
+    event_listeners: list[tuple[str | None, EventListener[WrappedWidget]]]
+    is_preemptive: bool
+
+    def __init__(self, w: WrappedWidget, is_preemptive: bool = False):
+        super().__init__(w)
         self.event_listeners = []
         self.is_preemptive = is_preemptive
 
-    def listen(self, mask, handler):
+    def listen(self, mask: str | None, handler: EventListener[WrappedWidget]):
         self.event_listeners.append((mask, handler))
 
-    def keypress(self, size, key):
+    @override
+    def keypress(self,
+                size: UrwidSize,
+                key: str):
         result = key
 
         if self.is_preemptive:
