@@ -111,10 +111,12 @@ def focus_widget_in_container(container, widget) -> None:
 
 
 class SelectableText(urwid.Text):
+    @override
     def selectable(self):
         return True
 
-    def keypress(self, size, key):
+    @override
+    def keypress(self, size: UrwidSize, key: str):
         return key
 
 
