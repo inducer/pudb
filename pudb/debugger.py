@@ -2483,14 +2483,16 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             content = SignalWrap(content)
 
             def enter(w, size, key):
-                self.quit_event_loop = True
+                self.quit_event_loop = (True,)
 
             def esc(w, size, key):
-                self.quit_event_loop = False
+                self.quit_event_loop = (False,)
 
             content.listen("enter", enter)
             content.listen("esc", esc)
 
+        # Results get wrapped in tuples because the main loop considers the truthiness
+        # of the value. Once wrapped in a tuple, (False,) is still truthy.
         button_widgets: list[urwid.Widget] = []
         for btn_descr in buttons_and_results:
             if btn_descr is None:
@@ -2499,7 +2501,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 btn_text, btn_result = btn_descr
                 button_widgets.append(
                         Attr(urwid.Button(btn_text,
-                                    OnButtonEventLoopResultSetter(self, btn_result)),
+                                    OnButtonEventLoopResultSetter(self, (btn_result,))),
                             "button", "focused button"))
 
         w = urwid.Columns([
@@ -2523,7 +2525,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             if callable(binding):
                 w.listen(key, binding)
             else:
-                w.listen(key, ResultSettingEventHandler(self, binding))
+                w.listen(key, ResultSettingEventHandler(self, (binding,)))
 
         w = urwid.LineBox(w)
 
@@ -2535,7 +2537,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 )
         w = Attr(w, "background")
 
-        return self.event_loop(w)
+        return cast("tuple[object]", self.event_loop(w))[0]
 
     @staticmethod
     def setup_palette(screen):
