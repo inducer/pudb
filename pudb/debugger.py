@@ -255,8 +255,10 @@ def pick_module(ui: DebuggerUI, w: urwid.Widget, _size: UrwidSize, _key: str):
         ui.source_list.set_focus(0)
 
     class FilterEdit(urwid.Edit):
-        def keypress(self, size, key):
-            result = urwid.Edit.keypress(self, size, key)
+        @override
+        def keypress(self, size: UrwidSize, key: str):
+            # type ignore because of urwid annotation bug
+            result = urwid.Edit.keypress(self, size, key)  # pyright: ignore[reportArgumentType]
 
             if result is None:
                 mod_list[:] = build_filtered_mod_list(
@@ -285,10 +287,11 @@ def pick_module(ui: DebuggerUI, w: urwid.Widget, _size: UrwidSize, _key: str):
             ], title="Pick Module")
         ui.last_module_filter = filt_edit.get_edit_text()
 
+        widget = cast("urwid.AttrMap[SelectableText]", lb.focus)
         if result is True:
             pos = lb.focus_position
-            widget = lb.focus
-            base_widget = cast("SelectableText", widget)
+            base_widget = widget.base_widget
+            assert isinstance(base_widget, SelectableText)
             if widget is new_mod_entry:
                 new_mod_name = filt_edit.get_edit_text()
                 try:
@@ -311,8 +314,8 @@ def pick_module(ui: DebuggerUI, w: urwid.Widget, _size: UrwidSize, _key: str):
             break
         elif result == "reload":
             pos = lb.focus_position
-            widget = lb.focus
-            base_widget = cast("SelectableText", widget)
+            base_widget = widget.base_widget
+            assert isinstance(base_widget, SelectableText)
             if widget is not new_mod_entry:
                 mod_name = cast("str", base_widget.get_text()[0])
                 mod = sys.modules[mod_name]
