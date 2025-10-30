@@ -36,9 +36,8 @@ dependencies = [
     "pygments>=2.7.4",
     "urwid>=2.4",
 
-    # https://github.com/urwid/urwid/issues/1017
-    "urwid; python_version >= '3.9'",
-    "urwid!=3.0.0; python_version < '3.9'",
+    # https://github.com/inducer/pudb/issues/707#issuecomment-3468269346
+    "urwid>=2.5.1",
 
     "urwid_readline",
 
