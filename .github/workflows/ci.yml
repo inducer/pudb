@@ -68,25 +68,6 @@ jobs:
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
                 . ./build-and-test-py-project.sh
 
-    pytest_coverage:
-        name: Pytest with Coverage Test
-        runs-on: ubuntu-latest
-        steps:
-        -   uses: actions/checkout@v5
-        -
-            uses: actions/setup-python@v6
-            with:
-                python-version: '3.x'
-        -   name: "Main Script"
-            run: |
-                EXTRA_INSTALL="numpy"
-                REQUIREMENTS_TXT=requirements.dev.txt
-                PYTEST_FLAGS="--cov=pudb"
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
-                . ./build-and-test-py-project.sh
-            env:
-                COVERAGE: ${{ secrets.COVERAGE }}
-
     docs:
         name: Documentation
         runs-on: ubuntu-latest
