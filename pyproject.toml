@@ -33,7 +33,10 @@ classifiers = [
 dependencies = [
     "jedi>=0.18,<1",
     "packaging>=20.0",
-    "pygments>=2.7.4",
+
+    # https://github.com/inducer/pudb/issues/710
+    "pygments>=2.19",
+
     "urwid>=2.4",
 
     # https://github.com/inducer/pudb/issues/707#issuecomment-3468269346
