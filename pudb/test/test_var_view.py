@@ -280,7 +280,7 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
                                        label=str(label),
                                        value=value)
 
-        expected = [(str(_label), repr(x)) for _label, x in enumerate(values)]
+        expected = [(str(label_), repr(x)) for label_, x in enumerate(values)]
         received = self.walked_values()
         self.assertListEqual(expected, received)
 
