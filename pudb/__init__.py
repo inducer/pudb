@@ -63,6 +63,8 @@ class PudbShortcuts:
             set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
+        return None
+
     @property
     def go(self):
         dbg = _get_debugger()
@@ -71,6 +73,8 @@ class PudbShortcuts:
         if isinstance(threading.current_thread(), threading._MainThread):
             set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back, paused=False)
+
+        return None
 
 
 import builtins
