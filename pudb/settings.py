@@ -29,6 +29,7 @@ THE SOFTWARE.
 import os
 import sys
 from configparser import ConfigParser
+from functools import partial
 from typing import TYPE_CHECKING, Literal, TypedDict, cast
 
 from pudb.lowlevel import get_breakpoint_invalid_reason, lookup_module, settings_log
@@ -307,18 +308,21 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
         "configurations settings will not be saved.\n")
 
     cb_line_numbers = urwid.CheckBox("Show Line Numbers",
-            bool(conf_dict["line_numbers"]), on_state_change=_update_config,
-                user_data=("line_numbers", None))
+            bool(conf_dict["line_numbers"]),
+            on_state_change=partial(
+                _update_config, option_newvalue=("line_numbers", None)))
 
     cb_prompt_on_quit = urwid.CheckBox("Prompt before quitting",
-            bool(conf_dict["prompt_on_quit"]), on_state_change=_update_config,
-                user_data=("prompt_on_quit", None))
+            bool(conf_dict["prompt_on_quit"]),
+            on_state_change=partial(
+                _update_config, option_newvalue=("prompt_on_quit", None)))
 
     hide_cmdline_win = urwid.CheckBox("Hide command line"
             f"({conf_dict['hotkeys_toggle_cmdline_focus']}) window "
                                       "when not in use",
-            bool(conf_dict["hide_cmdline_win"]), on_state_change=_update_config,
-                user_data=("hide_cmdline_win", None))
+            bool(conf_dict["hide_cmdline_win"]),
+            on_state_change=partial(
+                _update_config, option_newvalue=("hide_cmdline_win", None)))
 
     # {{{ shells
 
@@ -336,8 +340,9 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
                 conf_dict["shell"] == name)
             for name in shells]+[
                 urwid.RadioButton(shell_rb_group, "Custom:",
-                not known_shell, on_state_change=_update_config,
-                user_data=("shell", None)),
+                not known_shell,
+                on_state_change=partial(
+                    _update_config, option_newvalue=("shell", None))),
                 shell_edit_list_item,
                 urwid.Text("\nTo use a custom shell, see examples/shell.py "
                     "in the pudb distribution. Enter the full path to a "
@@ -361,12 +366,14 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
     theme_edit_list_item = urwid.AttrMap(theme_edit, "input", "focused input")
     theme_rbs = [
             urwid.RadioButton(theme_rb_group, name,
-                conf_dict["theme"] == name, on_state_change=_update_config,
-                user_data=("theme", name))
+                conf_dict["theme"] == name,
+                on_state_change=partial(
+                    _update_config, option_newvalue=("theme", name)))
             for name in THEMES]+[
                 urwid.RadioButton(theme_rb_group, "Custom:",
-                    not known_theme, on_state_change=_update_config,
-                    user_data=("theme", None)),
+                    not known_theme,
+                    on_state_change=partial(
+                        _update_config, option_newvalue=("theme", None))),
                 theme_edit_list_item,
                 urwid.Text("\nTo use a custom theme, see examples/theme.py in the "
                     "pudb distribution. Enter the full path to a file like it in "
@@ -385,8 +392,8 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
     stack_rbs = [
             urwid.RadioButton(stack_rb_group, name,
                 conf_dict["current_stack_frame"] == name,
-                on_state_change=_update_config,
-                user_data=("current_stack_frame", name))
+                on_state_change=partial(
+                    _update_config, option_newvalue=("current_stack_frame", name)))
             for name in stack_opts
             ]
 
@@ -410,13 +417,14 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
     stringifier_rbs = [
             urwid.RadioButton(stringifier_rb_group, name,
                 conf_dict["stringifier"] == name,
-                on_state_change=_update_config,
-                user_data=("stringifier", name))
+                on_state_change=partial(
+                    _update_config, option_newvalue=("stringifier", name)))
             for name in stringifier_opts
             ]+[
                 urwid.RadioButton(stringifier_rb_group, "Custom:",
-                    not known_stringifier, on_state_change=_update_config,
-                    user_data=("stringifier", None)),
+                    not known_stringifier,
+                    on_state_change=partial(
+                        _update_config, option_newvalue=("stringifier", None))),
                 stringifier_edit_list_item,
                 urwid.Text("\nTo use a custom stringifier, see "
                     "examples/stringifier.py in the pudb distribution. Enter the "
@@ -444,8 +452,9 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
     default_variables_access_level_rbs = [
             urwid.RadioButton(default_variables_access_level_rb_group, name,
                 conf_dict["default_variables_access_level"] == name,
-                on_state_change=_update_config,
-                user_data=("default_variables_access_level", name))
+                on_state_change=partial(
+                    _update_config,
+                    option_newvalue=("default_variables_access_level", name)))
             for name in default_variables_access_level_opts
             ]
 
@@ -454,8 +463,9 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
     # {{{ wrap variables
 
     cb_wrap_variables = urwid.CheckBox("Wrap variables",
-            bool(conf_dict["wrap_variables"]), on_state_change=_update_config,
-                user_data=("wrap_variables", None))
+            bool(conf_dict["wrap_variables"]),
+            on_state_change=partial(
+                _update_config, option_newvalue=("wrap_variables", None)))
 
     wrap_variables_info = urwid.Text("\nNote that you can change this option on "
                                      "a per-variable basis by selecting the "
