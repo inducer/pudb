@@ -1540,6 +1540,8 @@ class DebuggerUI(FrameVarInfoKeeper):
                 pos = self.bp_list._w.focus_position
                 bp = bp_list[pos]
                 delete_breakpoint(bp)
+            else:
+                self.message("Cannot delete, no breakpoint set.")
 
         def delete_breakpoint(bp):
             err = self.debugger.clear_break(bp.file, bp.line)
@@ -1551,21 +1553,23 @@ class DebuggerUI(FrameVarInfoKeeper):
                 set_breakpoint_source(bp)
 
         def enable_disable_breakpoint(w, size, key):
-            pos = self.bp_list._w.focus_position
             bp_entry = self.bp_list._w.focus
             if bp_entry is None:
+                self.message("Cannot enable/disable, no breakpoint set.")
                 return
+            pos = self.bp_list._w.focus_position
             bp = self._get_bp_list()[pos]
             bp.enabled = not bp.enabled
             self.update_breakpoints()
             set_breakpoint_source(bp)
 
         def examine_breakpoint(w, size, key):
-            pos = self.bp_list._w.focus_position
             bp_entry = self.bp_list._w.focus
 
             if bp_entry is None:
+                self.message("Cannot examine, no breakpoint set.")
                 return
+            pos = self.bp_list._w.focus_position
 
             bp = self._get_bp_list()[pos]
 
@@ -1620,14 +1624,15 @@ class DebuggerUI(FrameVarInfoKeeper):
             set_breakpoint_source(bp)
 
         def show_breakpoint(w, size, key):
-            pos = self.bp_list._w.focus_position
             bp_entry = self.bp_list._w.focus
-
             if bp_entry is not None:
+                pos = self.bp_list._w.focus_position
                 bp = self._get_bp_list()[pos]
                 self.show_line(bp.line,
                         FileSourceCodeProvider(self.debugger, bp.file))
                 self.columns.focus_position = 0
+            else:
+                self.message("Cannot show breakpoint location, no breakpoint set.")
 
         self.bp_list.listen("enter", show_breakpoint)
         self.bp_list.listen("d", handle_delete_breakpoint)
