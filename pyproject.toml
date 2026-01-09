@@ -95,6 +95,9 @@ extend-ignore = [
 
     # TODO
     "UP031", # format specifiers instead of % format
+
+    # Agree in principle, but this is a bigger change...
+    "RUF067", # no code in __init__
 ]
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
