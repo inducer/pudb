@@ -37,7 +37,7 @@ from pudb.lowlevel import get_breakpoint_invalid_reason, lookup_module, settings
 
 if TYPE_CHECKING:
     from bdb import Breakpoint
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
     from urwid import CheckBox
 
@@ -102,8 +102,8 @@ def get_save_config_path():
 CONF_SECTION = "pudb"
 CONF_FILE_NAME = "pudb.cfg"
 
-SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]
-BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]
+SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]  # noqa: UP031
+BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]  # noqa: UP031
 
 
 _config_: list[ConfDict | None] = [None]
@@ -585,10 +585,10 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
 
 # {{{ breakpoint saving
 
-def parse_breakpoints(lines):
+def parse_breakpoints(lines: Iterable[str]):
     # b [ (filename:lineno | function) [, "condition"] ]
 
-    breakpoints = []
+    breakpoints: list[tuple[str, int, bool, str | None, str | None]] = []
     for arg in lines:
         if not arg:
             continue
@@ -646,13 +646,13 @@ def load_breakpoints():
     """
     from os.path import isdir, join
 
-    file_names = []
+    file_names: list[str] = []
     for cdir in XDG_CONFIG_DIRS:
         if isdir(cdir):
             for name in [SAVED_BREAKPOINTS_FILE_NAME, BREAKPOINTS_FILE_NAME]:
                 file_names.append(join(cdir, XDG_CONF_RESOURCE, name))
 
-    lines = []
+    lines: list[str] = []
     for fname in file_names:
         try:
             rc_file = open(fname)
@@ -673,12 +673,11 @@ def save_breakpoints(bp_list: Sequence[Breakpoint]):
     if not save_path:
         return
 
-    histfile = open(get_breakpoints_file_name(), "w")
-    bps = {(bp.file, bp.line, bp.cond) for bp in bp_list}
-    for bp in bps:
-        line = "b %s:%d" % (bp[0], bp[1])
-        if bp[2]:
-            line += f", {bp[2]}"
+    histfile = open(save_path, "w")
+    for bp_file, bp_line, bp_cond in {(bp.file, bp.line, bp.cond) for bp in bp_list}:
+        line = f"b {bp_file}:{bp_line}"
+        if bp_cond:
+            line += f", {bp_cond}"
         line += "\n"
         histfile.write(line)
     histfile.close()

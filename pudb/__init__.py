@@ -191,7 +191,7 @@ def _runscript(
             from subprocess import call
             retcode = call(pre_run, close_fds=True, shell=True)
             if retcode:
-                print("*** WARNING: pre-run process exited with code %d." % retcode)
+                print(f"*** WARNING: pre-run process exited with code {retcode}.")
                 input("[Hit Enter]")
 
         status_msg = ""
@@ -302,7 +302,7 @@ def _interrupt_handler(signum, frame):
     _get_debugger().set_trace(frame, as_breakpoint=False)
 
 
-def set_interrupt_handler(interrupt_signal=None):
+def set_interrupt_handler(interrupt_signal: int | None = None):
     """
     Set up an interrupt handler, to activate PuDB when Python receives the
     signal `interrupt_signal`.  By default it is SIGINT (i.e., Ctrl-c).
@@ -337,9 +337,9 @@ def set_interrupt_handler(interrupt_signal=None):
         if old_handler is None:
             # This is the documented meaning of getsignal()->None.
             old_handler = "not installed from python"
-        return warn("A non-default handler for signal %d is already installed (%s). "
-                "Skipping pudb interrupt support."
-                % (interrupt_signal, old_handler),
+        return warn("A non-default handler for signal "
+                f"{interrupt_signal} is already installed ({old_handler}). "
+                "Skipping pudb interrupt support.",
                 stacklevel=2)
 
     import threading
@@ -356,9 +356,9 @@ def set_interrupt_handler(interrupt_signal=None):
         import sys
         from traceback import format_exception
         from warnings import warn
-        warn("setting interrupt handler on signal %d failed: %s"
-                % (interrupt_signal, "".join(format_exception(*sys.exc_info()))),
-                stacklevel=2)
+        exc_str = "".join(format_exception(*sys.exc_info()))
+        warn("setting interrupt handler on signal "
+             f"{interrupt_signal} failed: {exc_str}", stacklevel=2)
 
 
 def post_mortem(

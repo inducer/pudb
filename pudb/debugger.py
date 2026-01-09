@@ -2632,7 +2632,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             from os.path import exists
             filename = next(
                 fname for n in count()
-                for fname in ["traceback-%d.txt" % n if n else "traceback.txt"]
+                for fname in [f"traceback-{n}.txt" if n else "traceback.txt"]
                 if not exists(fname)
             )
 

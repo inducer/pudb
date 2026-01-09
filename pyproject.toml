@@ -93,9 +93,6 @@ extend-ignore = [
     "E402", # module level import not at the top of file
     "N818", # error suffix in exception names
 
-    # TODO
-    "UP031", # format specifiers instead of % format
-
     # Agree in principle, but this is a bigger change...
     "RUF067", # no code in __init__
 ]
