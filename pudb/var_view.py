@@ -573,7 +573,7 @@ class ValueWalker(ABC):
             container should be added. If no continuation item was added,
             continue adding entries from the container.
         """
-        cont_id_path = "%s.cont-%d" % (id_path, count)
+        cont_id_path = f"{id_path}.cont-{count}"
         if not self.frame_var_info.get_inspect_info(
                 cont_id_path, read_only=True).show_detail:
             if length > 0:

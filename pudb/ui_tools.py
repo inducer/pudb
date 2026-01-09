@@ -218,7 +218,7 @@ class StackFrame(urwid.Widget):
             text += f" [{self.class_name}]"
             attr.append((apfx+"frame class", len(self.class_name)+2))
 
-        loc = " %s:%d" % (self.filename, self.line)
+        loc = f" {self.filename}:{self.line}"
         text += loc
         attr.append((apfx+"frame location", len(loc)))
 

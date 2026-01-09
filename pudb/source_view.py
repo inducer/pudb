@@ -234,7 +234,7 @@ except ImportError:
                 lines: Sequence[str],
                 breakpoints: Collection[int],
             ) -> list[SourceLine]:
-        lineno_format = "%%%dd " % (len(str(len(lines))))
+        lineno_format = f"%{len(str(len(lines)))}d "
         return [
             SourceLine(
                 debugger_ui,
@@ -390,7 +390,7 @@ else:
                 lines: Sequence[str],
                 breakpoints: Collection[int],
             ) -> list[SourceLine]:
-        lineno_format = "%%%dd " % (len(str(len(lines))))
+        lineno_format = f"%{len(str(len(lines)))}d "
         formatter = UrwidFormatter(debugger_ui, lineno_format, breakpoints)
         highlight(
             "".join(line.expandtabs(TABSTOP) for line in lines),
