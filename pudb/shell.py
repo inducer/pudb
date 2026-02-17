@@ -96,7 +96,7 @@ def run_classic_shell(globals, locals, message=""):
     except ImportError:
         have_readline = False
 
-    if getattr(sys, "__interactivehook__"):
+    if getattr(sys, "__interactivehook__", None):
         sys.__interactivehook__()
 
     if have_readline:
