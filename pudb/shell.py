@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 
 try:
     import bpython
@@ -95,10 +96,13 @@ def run_classic_shell(globals, locals, message=""):
     except ImportError:
         have_readline = False
 
+    if getattr(sys, "__interactivehook__"):
+        sys.__interactivehook__()
+
     if have_readline:
         readline.set_completer(
                 rlcompleter.Completer(ns).complete)
-        readline.parse_and_bind("tab: complete")
+
         readline.clear_history()
         try:
             readline.read_history_file(hist_file)
