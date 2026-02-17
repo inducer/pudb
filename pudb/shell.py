@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 
+
 try:
     import bpython
     # Access a property to verify module exists in case
@@ -98,6 +99,7 @@ def run_classic_shell(globals, locals, message=""):
 
     if getattr(sys, "__interactivehook__", None):
         sys.__interactivehook__()
+        del sys.__interactivehook__
 
     if have_readline:
         readline.set_completer(
