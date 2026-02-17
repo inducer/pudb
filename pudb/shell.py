@@ -98,7 +98,13 @@ def run_classic_shell(globals, locals, message=""):
     if have_readline:
         readline.set_completer(
                 rlcompleter.Completer(ns).complete)
-        readline.parse_and_bind("tab: complete")
+        # Configure tab completion for both readline and editline
+        # editline (used by uv and python-build-standalone) requires different config
+        if hasattr(readline, "backend") and readline.backend == "editline":
+            # libedit uses "^I" instead of "tab"
+            readline.parse_and_bind("bind ^I rl_complete")
+        else:
+            readline.parse_and_bind("tab: complete")
         readline.clear_history()
         try:
             readline.read_history_file(hist_file)
