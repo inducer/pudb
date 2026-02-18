@@ -74,9 +74,11 @@ SHELL_FIRST_TIME = [True]
 def run_classic_shell(globals, locals, message=""):
     if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
+        interactivehook = getattr(sys, "__interactivehook__", None)
         SHELL_FIRST_TIME.pop()
     else:
         banner = ""
+        interactivehook = None
 
     if message:
         banner = f"{message}\n{banner}"
@@ -97,9 +99,8 @@ def run_classic_shell(globals, locals, message=""):
     except ImportError:
         have_readline = False
 
-    if getattr(sys, "__interactivehook__", None):
-        sys.__interactivehook__()
-        del sys.__interactivehook__
+    if interactivehook:
+        interactivehook()
 
     if have_readline:
         readline.set_completer(
