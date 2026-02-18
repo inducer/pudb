@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 
 try:
     import bpython
@@ -72,9 +74,11 @@ SHELL_FIRST_TIME = [True]
 def run_classic_shell(globals, locals, message=""):
     if SHELL_FIRST_TIME:
         banner = "Hit Ctrl-D to return to PuDB."
+        interactivehook = getattr(sys, "__interactivehook__", None)
         SHELL_FIRST_TIME.pop()
     else:
         banner = ""
+        interactivehook = None
 
     if message:
         banner = f"{message}\n{banner}"
@@ -95,10 +99,13 @@ def run_classic_shell(globals, locals, message=""):
     except ImportError:
         have_readline = False
 
+    if interactivehook:
+        interactivehook()
+
     if have_readline:
         readline.set_completer(
                 rlcompleter.Completer(ns).complete)
-        readline.parse_and_bind("tab: complete")
+
         readline.clear_history()
         try:
             readline.read_history_file(hist_file)
