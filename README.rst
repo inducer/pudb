@@ -66,6 +66,8 @@ Features
 * Should work with Python 3.6 and newer. (Versions 2019.2 and older continue
   to support Python 2.7.)
 
+* Windows is not supported.
+
 Links
 -----
 
