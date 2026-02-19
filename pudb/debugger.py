@@ -510,6 +510,14 @@ class Debugger(bdb.Bdb):
             return
 
         self.curframe, lineno = self.stack[index]
+        # f_locals is a write-through proxy, meaning we can update local
+        # variables in the shell and those changes will be reflected in the
+        # running program. However, every time curframe.f_locals is accessed,
+        # it gets reset to a snapshot of its original value. So we need to
+        # save a copy of it to avoid this (this is the same trick used by
+        # pdb). See https://peps.python.org/pep-0558/ and the discussion on
+        # #571 for more details.
+        self.curframe_locals = self.curframe.f_locals
 
         filename = self.curframe.f_code.co_filename
 
@@ -1911,8 +1919,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
             from pudb.shell import SetPropagatingDict
             return SetPropagatingDict(
-                    [curframe.f_locals, curframe.f_globals],
-                    curframe.f_locals)
+                    [self.debugger.curframe_locals, curframe.f_globals],
+                    self.debugger.curframe_locals)
 
         def cmdline_tab_complete(w, size, key):
             try:
@@ -2039,6 +2047,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 sys.stdin = prev_sys_stdin
                 sys.stdout = prev_sys_stdout
                 sys.stderr = prev_sys_stderr
+
+            self.update_var_view()
 
         def cmdline_history_browse(direction):
             # Browsing the command line history can be illustrated by moving up/down
@@ -2287,7 +2297,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                         else:
                             runner = shell.custom_shell_dict["pudb_shell"]
 
-                runner(curframe.f_globals, curframe.f_locals)
+                runner(curframe.f_globals, self.debugger.curframe_locals)
 
             self.update_var_view()
 
@@ -3083,7 +3093,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     def update_var_view(self, locals=None, globals=None, focus_index=None):
         if locals is None:
-            locals = self.debugger.curframe.f_locals
+            locals = self.debugger.curframe_locals
         if globals is None:
             globals = self.debugger.curframe.f_globals
 
