@@ -1,5 +1,5 @@
 def debugged_function(x):
-    return x + fail  # noqa: F821
+    return x + 1/0
 
 
 from pudb.remote import debugger

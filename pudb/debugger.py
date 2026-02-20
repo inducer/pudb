@@ -202,6 +202,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
+def bool_only(x: object) -> bool:
+    assert isinstance(x, bool)
+    return x
+
+
 def mod_exists(mod: ModuleType):
     if not hasattr(mod, "__file__"):
         return False
@@ -791,7 +796,12 @@ from pudb.ui_tools import (
     labelled_value,
     make_hotkey_markup,
 )
-from pudb.var_view import FrameVarInfoKeeper, VariableWidget, WatchExpression
+from pudb.var_view import (
+    FrameVarInfoKeeper,
+    VarAccessLevel,
+    VariableWidget,
+    WatchExpression,
+)
 
 
 # {{{ display setup
@@ -1280,7 +1290,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             elif key == "@":
                 iinfo.repeated_at_top = not iinfo.repeated_at_top
             elif key == "*":
-                levels = ["public", "private", "all", "public"]
+                levels: list[VarAccessLevel] = ["public", "private", "all", "public"]
                 iinfo.access_level = levels[levels.index(iinfo.access_level)+1]
             elif key == "w":
                 iinfo.wrap = not iinfo.wrap
@@ -1377,11 +1387,11 @@ class DebuggerUI(FrameVarInfoKeeper):
             result = self.dialog(lb, buttons, title=title)
 
             if result is True:
-                iinfo.show_detail = expanded_checkbox.get_state()
-                iinfo.wrap = wrap_checkbox.get_state()
-                iinfo.highlighted = highlighted_checkbox.get_state()
-                iinfo.repeated_at_top = repeated_at_top_checkbox.get_state()
-                iinfo.show_methods = show_methods_checkbox.get_state()
+                iinfo.show_detail = bool_only(expanded_checkbox.get_state())
+                iinfo.wrap = bool_only(wrap_checkbox.get_state())
+                iinfo.highlighted = bool_only(highlighted_checkbox.get_state())
+                iinfo.repeated_at_top = bool_only(repeated_at_top_checkbox.get_state())
+                iinfo.show_methods = bool_only(show_methods_checkbox.get_state())
 
                 if rb_show_default.get_state():
                     iinfo.display_type = "default"
