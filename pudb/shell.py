@@ -185,7 +185,6 @@ def _update_ipython_ns(shell, globals, locals):
     except AttributeError:
         class DummyMod:
             """A dummy module used for IPython's interactive namespace."""
-            pass
 
         user_module = DummyMod()
         user_module.__dict__ = globals

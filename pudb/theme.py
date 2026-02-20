@@ -296,7 +296,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             from os.path import expanduser, expandvars
             fname = expanduser(expandvars(theme))
             with open(fname) as inf:
-                exec(compile(inf.read(), fname, "exec"), symbols)
+                exec(compile(inf.read(), fname, "exec"), symbols)  # noqa: S102
         except FileNotFoundError:
             ui_log.error(f"Unable to locate custom theme file {theme!r}"
                          )
@@ -310,13 +310,12 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
     for style_name in set(INHERITANCE_MAP.keys()).union(BASE_STYLES.keys()):
         set_style(palette_dict, style_name, inheritance_overrides)
 
-    palette_list = [
+    return [
         astuple(entry)
         for entry in palette_dict.values()
         if isinstance(entry, PaletteEntry)
     ]
 
-    return palette_list
 
 # }}}
 

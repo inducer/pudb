@@ -1257,7 +1257,7 @@ class DebuggerUI(FrameVarInfoKeeper):
             iinfo = get_inspect_info(var.id_path)
             focus_index = None
 
-            if key == "enter" or key == "\\" or key == " ":
+            if key in {"enter", "\\", " "}:
                 iinfo.show_detail = not iinfo.show_detail
             elif key == "h":
                 focus_index = collapse_current(var, pos, iinfo)
@@ -2243,7 +2243,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             with StoppedScreen(self.screen):
                 curframe = self.debugger.curframe
 
-                import pudb.shell as shell
+                from pudb import shell
                 if CONFIG["shell"] == "ipython" and shell.have_ipython():
                     runner = shell.run_ipython_shell
                 elif CONFIG["shell"] == "ipython_kernel" and shell.have_ipython():
@@ -2268,7 +2268,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                             from os.path import expanduser, expandvars
                             cshell_fname = expanduser(expandvars(CONFIG["shell"]))
                             with open(cshell_fname) as inf:
-                                exec(compile(inf.read(), cshell_fname, "exec"),
+                                exec(compile(inf.read(), cshell_fname, "exec"),  # noqa: S102
                                         shell.custom_shell_dict,
                                         shell.custom_shell_dict)
                     except FileNotFoundError:
@@ -2393,7 +2393,9 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 # Something went wrong--oh well. Nobody will die if their
                 # 256 color support breaks. Just carry on without it.
                 # https://github.com/inducer/pudb/issues/78
-                pass
+                ui_log.warning(
+                        "Curses failed to initialize. "
+                        "Support for 256 colors will not be available.")
             else:
                 color_support = curses.tigetnum("colors")
 
@@ -2616,7 +2618,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 exit_loop_on_ok: bool = False):
         res = self.dialog(
             urwid.ListBox(urwid.SimpleListWalker([urwid.Text(
-                "\n\n".join([description, error_info])
+                f"{description}\n\n{error_info}"
             )])),
             title=title,
             buttons_and_results=[

@@ -53,7 +53,7 @@ def setlogfile(destfile: str):
     logfile[0] = destfile
     with open(destfile, "a") as openfile:
         openfile.write(
-            f"\n*** Pudb session error log started at {datetime.now()} ***\n")
+            f"\n*** Pudb session error log started at {datetime.now()} ***\n")  # noqa: DTZ005
 
 
 # once we've dropped Py3.8 support, use this instead:

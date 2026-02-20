@@ -55,7 +55,7 @@ __version__ = VERSION
 
 class PudbShortcuts:
     @property
-    def db(self):
+    def db(self):  # noqa: RUF066
         dbg = _get_debugger()
 
         import threading
@@ -63,18 +63,14 @@ class PudbShortcuts:
             set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back)
 
-        return None
-
     @property
-    def go(self):
+    def go(self):  # noqa: RUF066
         dbg = _get_debugger()
 
         import threading
         if isinstance(threading.current_thread(), threading._MainThread):
             set_interrupt_handler()
         dbg.set_trace(sys._getframe().f_back, paused=False)
-
-        return None
 
 
 import builtins
@@ -91,7 +87,7 @@ def _tty_override():
 def _open_tty(tty_path: str):
     import io
     import os
-    tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))
+    tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))  # noqa: SIM115
     term_size = os.get_terminal_size(tty_file.fileno())
 
     return tty_file, term_size
@@ -109,9 +105,8 @@ def _get_debugger(**kwargs):
             kwargs.setdefault("tty_file", tty_file)
 
         from pudb.debugger import Debugger
-        dbg = Debugger(**kwargs)
+        return Debugger(**kwargs)
 
-        return dbg
     else:
         return Debugger._current_debugger[0]
 
@@ -329,8 +324,8 @@ def set_interrupt_handler(interrupt_signal: int | None = None):
     import signal
     old_handler = signal.getsignal(interrupt_signal)
 
-    if old_handler is not signal.default_int_handler \
-            and old_handler != signal.SIG_DFL and old_handler != _interrupt_handler:
+    if (old_handler is not signal.default_int_handler
+                and old_handler not in (signal.SIG_DFL, _interrupt_handler)):
         # Since we don't currently have support for a non-default signal handlers,
         # let's avoid undefined-behavior territory and just show a warning.
         from warnings import warn

@@ -95,6 +95,9 @@ extend-ignore = [
 
     # Agree in principle, but this is a bigger change...
     "RUF067", # no code in __init__
+
+    "BLE001",
+    "TRY300",
 ]
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -111,10 +114,10 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.per-file-ignores]
 "pudb/themes/*.py" = ["I002"]
-"debug_me.py" = ["I002"]
-"doc/conf.py" = ["I002"]
+"debug_me.py" = ["I002", "T100"]
+"doc/conf.py" = ["I002", "S102"]
 "examples/*.py" = ["I002"]
-"pudb/test/*.py" = ["I002"]
+"pudb/test/*.py" = ["I002", "S102"]
 "manual-tests/*.py" = ["I002"]
 
 [tool.pytest.ini_options]

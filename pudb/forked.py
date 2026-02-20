@@ -30,7 +30,7 @@ def set_trace(paused=True, frame=None, term_size=None):
                 term_size = (80, 24)
 
     Debugger(
-        stdin=open("/dev/stdin"),
-        stdout=open("/dev/stdout", "w"),
+        stdin=open("/dev/stdin"),  # noqa: SIM115
+        stdout=open("/dev/stdout", "w"),  # noqa: SIM115
         term_size=term_size,
     ).set_trace(frame, paused=paused)
