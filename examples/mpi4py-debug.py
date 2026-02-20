@@ -11,7 +11,7 @@ from pudb.remote import debug_remote_on_single_rank
 
 
 def debugged_function(x):
-    return x + fail  # noqa: F821
+    return x + 1/0
 
 
 # debug 'debugged_function' on rank 0

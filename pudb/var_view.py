@@ -33,13 +33,17 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sized
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Literal, cast
+from typing import TYPE_CHECKING, ClassVar, Iterator, Literal, cast
 
 import urwid
 from typing_extensions import TypeAlias, override
 
 from pudb.lowlevel import ui_log
 from pudb.ui_tools import text_width
+
+
+if TYPE_CHECKING:
+    from pudb.debugger import Debugger
 
 
 if TYPE_CHECKING:
@@ -71,7 +75,7 @@ class PudbCollection(ABC):  # noqa: B024
         return NotImplemented
 
     @classmethod
-    def entries(cls, collection, label: str):
+    def entries(cls, collection, label: str | None):
         """
         :yield: ``(label, entry, id_path_ext)`` tuples for each entry in the
         collection.
@@ -103,7 +107,7 @@ class PudbSequence(ABC):  # noqa: B024
         return NotImplemented
 
     @classmethod
-    def entries(cls, sequence, label: str):
+    def entries(cls, sequence, label: str | None):
         """
         :yield: ``(label, entry, id_path_ext)`` tuples for each entry in the
         sequence.
@@ -135,6 +139,9 @@ class PudbMapping(ABC):  # noqa: B024
                 pass
         return NotImplemented
 
+    if TYPE_CHECKING:
+        def __iter__(self) -> Iterator[object]: ...
+
     @classmethod
     def _safe_key_repr(cls, key):
         try:
@@ -143,7 +150,7 @@ class PudbMapping(ABC):  # noqa: B024
             return f"!! repr error on key with id: {id(key):#x} !!"
 
     @classmethod
-    def entries(cls, mapping, label: str):
+    def entries(cls, mapping, label: str | None):
         """
         :yield: ``(label, entry, id_path_ext)`` tuples for each entry in the
         mapping.
@@ -176,6 +183,9 @@ CONTAINER_CLASSES = (
 # {{{ data
 
 class FrameVarInfo:
+    id_path_to_iinfo: dict[IdPath, InspectInfo]
+    watches: list[WatchExpression]
+
     def __init__(self):
         self.id_path_to_iinfo = {}
         self.watches = []
@@ -189,7 +199,7 @@ class FrameVarInfo:
                     id_path, InspectInfo())
 
 
-VarAccessLevel: TypeAlias = Literal["private", "public"]
+VarAccessLevel: TypeAlias = Literal["private", "public", "all"]
 Stringifier: TypeAlias = Literal[
     "default",
     "type",
@@ -203,7 +213,7 @@ IdPath: TypeAlias = "tuple[str, ...]"
 
 class InspectInfo:
     show_detail: bool
-    display_type: Stringifier
+    display_type: Stringifier | str
     highlighted: bool
     repeated_at_top: bool
     access_level: VarAccessLevel
@@ -504,7 +514,7 @@ def error_stringifier(_: object) -> str:
 
 custom_stringifier_dict = {}
 
-STRINGIFIERS: dict[Stringifier, Callable[[object], str]] = {
+STRINGIFIERS: dict[str, Callable[[object], str]] = {
     "default": default_stringifier,
     "type": type_stringifier,
     "repr": repr,
@@ -556,8 +566,10 @@ def get_stringifier(iinfo: InspectInfo) -> Callable[[object], str]:
 # {{{ tree walking
 
 class ValueWalker(ABC):
-    EMPTY_LABEL = "<empty>"
-    CONTINUATION_LABEL = "[...]"
+    EMPTY_LABEL: ClassVar[str] = "<empty>"
+    CONTINUATION_LABEL: ClassVar[str] = "[...]"
+
+    frame_var_info: FrameVarInfo
 
     def __init__(self, frame_var_info):
         self.frame_var_info = frame_var_info
@@ -588,8 +600,11 @@ class ValueWalker(ABC):
             return True
         return False
 
-    def walk_container(self, parent: VariableWidget, label: str,
-                       value, id_path: str | None = None):
+    def walk_container(self,
+                parent: VariableWidget,
+                label: str | None,
+                value: object,
+                id_path: str | None = None):
         try:
             container_cls = next(cls for cls in CONTAINER_CLASSES
                                  if isinstance(value, cls))
@@ -623,8 +638,8 @@ class ValueWalker(ABC):
     def walk_attributes(self,
                 parent: VariableWidget | None,
                 label: str | None,
-                value: str | None,
-                id_path: IdPath,
+                value: object,
+                id_path: str,
                 iinfo: InspectInfo):
         try:
             keys = dir(value)
@@ -653,8 +668,14 @@ class ValueWalker(ABC):
                     f".{key}", attr_value,
                     f"{id_path}.{key}")
 
-    def walk_value(self, parent, label, value, id_path=None, attr_prefix=None):
+    def walk_value(self,
+                parent: VariableWidget | None,
+                label: str | None,
+                value: object,
+                id_path: str | None = None,
+                attr_prefix: str | None = None):
         if id_path is None:
+            assert label is not None
             id_path = label
 
         assert isinstance(id_path, str)
@@ -774,7 +795,11 @@ class TopAndMainVariableWalker(ValueWalker):
 SEPARATOR = urwid.AttrMap(urwid.Text(""), "variable separator")
 
 
-def make_var_view(frame_var_info, locals, globals):
+def make_var_view(
+            frame_var_info: FrameVarInfo,
+            locals: dict[str, object],
+            globals: dict[str, object]
+        ):
     vars = list(locals.keys())
     vars.sort(key=str.lower)
 
@@ -814,12 +839,16 @@ def make_var_view(frame_var_info, locals, globals):
 
 
 class FrameVarInfoKeeper:
+    frame_var_info: dict[str, FrameVarInfo]
+
+    # self.debugger set by subclass
+    debugger:  Debugger  # pyright: ignore[reportUninitializedInstanceVariable]
+
     def __init__(self):
         self.frame_var_info = {}
 
-    def get_frame_var_info(self, read_only, ssid=None):
+    def get_frame_var_info(self, read_only: bool, ssid: str | None = None):
         if ssid is None:
-            # self.debugger set by subclass
             ssid = self.debugger.get_stack_situation_id()
         if read_only:
             return self.frame_var_info.get(ssid, FrameVarInfo())
