@@ -66,7 +66,7 @@ class PudbCollection(ABC):  # noqa: B024
                     any("__contains__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
         return NotImplemented
 
@@ -98,7 +98,7 @@ class PudbSequence(ABC):  # noqa: B024
                     any("__getitem__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
         return NotImplemented
 
@@ -131,7 +131,7 @@ class PudbMapping(ABC):  # noqa: B024
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                     any("keys" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
         return NotImplemented
 
@@ -150,7 +150,7 @@ class PudbMapping(ABC):  # noqa: B024
         """
         assert isinstance(mapping, cls)
         try:
-            for key in mapping.keys():
+            for key in mapping:
                 key_repr = cls._safe_key_repr(key)
                 yield (key_repr, mapping[key], f"[{key_repr}]")
         except Exception as error:
@@ -432,11 +432,13 @@ def get_str_safe_types():
     return (
         *[
             getattr(types, s)
-            for s in ("BuiltinFunctionType BuiltinMethodType  ClassType "
-                 "CodeType FileType FrameType FunctionType GetSetDescriptorType "
-                 "LambdaType MemberDescriptorType MethodType ModuleType "
-                 "SliceType TypeType TracebackType UnboundMethodType XRangeType"
-            ).split() if hasattr(types, s)],
+            for s in [
+                "BuiltinFunctionType", "BuiltinMethodType", "ClassType",
+                "CodeType", "FileType", "FrameType", "FunctionType",
+                "GetSetDescriptorType", "LambdaType", "MemberDescriptorType",
+                "MethodType", "ModuleType", "SliceType", "TypeType",
+                "TracebackType", "UnboundMethodType", "XRangeType"
+            ] if hasattr(types, s)],
          WatchEvalError)
 
 
@@ -525,7 +527,7 @@ def get_stringifier(iinfo: InspectInfo) -> Callable[[object], str]:
                 from os.path import expanduser, expandvars
                 custom_stringifier_fname = expanduser(expandvars(iinfo.display_type))
                 with open(custom_stringifier_fname) as inf:
-                    exec(compile(inf.read(), custom_stringifier_fname, "exec"),
+                    exec(compile(inf.read(), custom_stringifier_fname, "exec"),  # noqa: S102
                             custom_stringifier_dict,
                             custom_stringifier_dict)
         except FileNotFoundError:
@@ -618,7 +620,12 @@ class ValueWalker(ABC):
 
         return True
 
-    def walk_attributes(self, parent, label, value, id_path, iinfo):
+    def walk_attributes(self,
+                parent: VariableWidget | None,
+                label: str | None,
+                value: str | None,
+                id_path: IdPath,
+                iinfo: InspectInfo):
         try:
             keys = dir(value)
         except Exception:
@@ -629,9 +636,9 @@ class ValueWalker(ABC):
             if iinfo.access_level == "public":
                 if key.startswith("_"):
                     continue
-            elif iinfo.access_level == "private":
-                if key.startswith("__") and key.endswith("__"):
-                    continue
+            elif (iinfo.access_level == "private"
+                    and key.startswith("__") and key.endswith("__")):
+                continue
 
             try:
                 with warnings.catch_warnings():

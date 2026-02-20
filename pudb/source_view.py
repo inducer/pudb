@@ -99,9 +99,8 @@ class SourceLine(urwid.Widget):
 
         if focus:
             attrs.append("focused")
-        elif self.highlight:
-            if not self.has_breakpoint:
-                attrs.append("highlighted")
+        elif self.highlight and not self.has_breakpoint:
+            attrs.append("highlighted")
 
         text = self.text
         if not attrs and self.attr is not None:
@@ -334,9 +333,8 @@ else:
                 ttype = new_ttype
 
             # Translate tokens
-            if ttype in ATTR_TRANSLATE:
-                if s in ATTR_TRANSLATE[ttype]:
-                    ttype = ATTR_TRANSLATE[ttype][s]
+            if ttype in ATTR_TRANSLATE and s in ATTR_TRANSLATE[ttype]:
+                ttype = ATTR_TRANSLATE[ttype][s]
 
             # Translate dunder method tokens
             # NOTE: leaves "Magic" name tokens alone

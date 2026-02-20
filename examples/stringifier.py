@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 This file shows how you can define a custom stringifier for PuDB.
 

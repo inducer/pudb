@@ -129,7 +129,7 @@ def generate_containerlike_class():
     }
 
     # Deliberately starting from 0
-    for r in range(0, len(methods) + 1):
+    for r in range(len(methods) + 1):
         for selected_methods in sorted(
                 map(sorted, itertools.combinations(methods, r))):
 
@@ -210,7 +210,7 @@ class BaseValueWalkerTestCase(unittest.TestCase):
         expected = [(label, self.value_string(container))]
         if isinstance(container, PudbMapping):
             expected.extend([(f"[{key!r}]", repr(container[key]))
-                             for key in container.keys()]
+                             for key in container]
                             or [self.EMPTY_ITEM])
             self.class_counts["mappings"] += 1
         elif isinstance(container, PudbSequence):

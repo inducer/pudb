@@ -254,7 +254,7 @@ class RemoteDebugger(Debugger):
         except OSError as exc:
             if exc.errno == errno.ECONNREFUSED:
                 raise ValueError(CONN_REFUSED.format(self=self)) from exc
-            raise exc
+            raise
         return sock, sock.getpeername()
 
     def get_socket_client(self, host: str, port: int, search_limit: int):
@@ -277,8 +277,7 @@ class RemoteDebugger(Debugger):
                 raise
             else:
                 return sock, this_port
-        else:
-            raise Exception(NO_AVAILABLE_PORT.format(self=self))
+        raise RuntimeError(NO_AVAILABLE_PORT.format(self=self))
 
     def say(self, m: str):
         print(m, file=self.out)

@@ -121,23 +121,23 @@ class SelectableText(urwid.Text):
 
 
 UrwidSize: TypeAlias = "tuple[()] | tuple[int] | tuple[int, int]"
-WrappedWidget = TypeVar("WrappedWidget", bound=Widget, covariant=True)
+WrappedWidget_co = TypeVar("WrappedWidget_co", bound=Widget, covariant=True)
 EventListener: TypeAlias = Callable[
-        ["SignalWrap[WrappedWidget]", UrwidSize, str],
+        ["SignalWrap[WrappedWidget_co]", UrwidSize, str],
         "str | None"]
 
 
 # pyright ignore to paper over variance disagreement with urwid
-class SignalWrap(urwid.WidgetWrap[WrappedWidget]):  # pyright: ignore[reportInvalidTypeArguments]
-    event_listeners: list[tuple[str | None, EventListener[WrappedWidget]]]
+class SignalWrap(urwid.WidgetWrap[WrappedWidget_co]):  # pyright: ignore[reportInvalidTypeArguments]
+    event_listeners: list[tuple[str | None, EventListener[WrappedWidget_co]]]
     is_preemptive: bool
 
-    def __init__(self, w: WrappedWidget, is_preemptive: bool = False):
+    def __init__(self, w: WrappedWidget_co, is_preemptive: bool = False):
         super().__init__(w)
         self.event_listeners = []
         self.is_preemptive = is_preemptive
 
-    def listen(self, mask: str | None, handler: EventListener[WrappedWidget]):
+    def listen(self, mask: str | None, handler: EventListener[WrappedWidget_co]):
         self.event_listeners.append((mask, handler))
 
     @override
