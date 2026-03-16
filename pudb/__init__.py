@@ -138,11 +138,11 @@ def runscript(
             pre_run: str = "",
             run_as_module: bool = False,
         ):
+    dbg = _get_debugger(
+        steal_output=steal_output,
+        _continue_at_start=_continue_at_start,
+    )
     try:
-        dbg = _get_debugger(
-            steal_output=steal_output,
-            _continue_at_start=_continue_at_start,
-        )
         _runscript(mainpyfile, dbg,
                    args=args, pre_run=pre_run, run_as_module=run_as_module)
     finally:
