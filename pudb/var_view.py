@@ -553,8 +553,7 @@ def get_stringifier(iinfo: InspectInfo) -> Callable[[object], str]:
             if "pudb_stringifier" not in custom_stringifier_dict:
                 ui_log.error(f"{iinfo.display_type} does not contain a function "
                              "named pudb_stringifier at the module level.")
-                return lambda value: str(
-                        "ERROR: Invalid custom stringifier file: "
+                return lambda value: ("ERROR: Invalid custom stringifier file: "
                         "pudb_stringifier not defined.")
             else:
                 return (lambda value:
