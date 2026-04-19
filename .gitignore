@@ -17,3 +17,5 @@ tags
 
 doc/_build
 doc/README.rst
+
+.venv
