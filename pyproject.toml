@@ -55,6 +55,13 @@ completion = [
 [project.scripts]
 pudb = "pudb.run:main"
 
+[tool.hatch.envs.dev]
+dependencies = [
+    "basedpyright",
+    "ruff",
+    "types-Pygments",
+]
+
 [tool.hatch.build.targets.sdist]
 exclude = [
     "/.github",
