@@ -256,7 +256,7 @@ class VariableWidget(urwid.Widget):
     nesting_level: int
     var_label: str | None
     value_str: str | None
-    id_path: IdPath
+    id_path: str
     attr_prefix: str
     watch_expr: WatchExpression | None
     wrap: bool
@@ -265,7 +265,7 @@ class VariableWidget(urwid.Widget):
                 parent: VariableWidget | None,
                 var_label: str | None,
                 value_str: str | None,
-                id_path: IdPath,
+                id_path: str,
                 attr_prefix: str | None = None,
                 watch_expr: WatchExpression | None = None,
                 iinfo: InspectInfo | None = None
@@ -574,7 +574,13 @@ class ValueWalker(ABC):
         self.frame_var_info = frame_var_info
 
     @abstractmethod
-    def add_item(self, parent, var_label, value_str, id_path, attr_prefix=None):
+    def add_item(self,
+                parent: VariableWidget | None,
+                var_label: str,
+                value_str: str | None,
+                id_path: str,
+                attr_prefix: str | None = None
+            ):
         pass
 
     def add_continuation_item(self, parent: VariableWidget, id_path: str,
@@ -669,7 +675,7 @@ class ValueWalker(ABC):
 
     def walk_value(self,
                 parent: VariableWidget | None,
-                label: str | None,
+                label: str,
                 value: object,
                 id_path: str | None = None,
                 attr_prefix: str | None = None):
@@ -739,7 +745,7 @@ class WatchValueWalker(ValueWalker):
 
 
 class TopAndMainVariableWalker(ValueWalker):
-    def __init__(self, frame_var_info):
+    def __init__(self, frame_var_info: FrameVarInfo):
         ValueWalker.__init__(self, frame_var_info)
 
         self.main_widget_list = []
@@ -748,7 +754,7 @@ class TopAndMainVariableWalker(ValueWalker):
         self.top_id_path_prefixes = []
 
     @staticmethod
-    def _should_repeat_at_top(id_path, tipp) -> bool:
+    def _should_repeat_at_top(id_path: str | None, tipp: str) -> bool:
         """
         :return: True if the id_path is a child path of tipp
         """
@@ -770,7 +776,7 @@ class TopAndMainVariableWalker(ValueWalker):
             attr_prefix = "highlighted var"
 
         repeated_at_top = iinfo.repeated_at_top
-        if repeated_at_top and id_path is not None:
+        if repeated_at_top and id_path is not None:  # pyright: ignore[reportUnnecessaryComparison]
             self.top_id_path_prefixes.append(id_path)
 
         for tipp in self.top_id_path_prefixes:
