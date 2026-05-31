@@ -213,7 +213,7 @@ def run_ipython_shell_v11(globals, locals):
         from IPython.frontend.terminal.ipapp import load_default_config
     # XXX: in the future it could be useful to load a 'pudb' config for the
     # user (if it exists) that could contain the user's macros and other
-    # niceities.
+    # niceties.
     config = load_default_config()
     shell = TerminalInteractiveShell.instance(config=config,
             banner2=banner)
