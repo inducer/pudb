@@ -119,7 +119,7 @@ def generate_executable_lines_for_code(code: CodeType) -> Iterable[int]:
         yield lineno
         # See https://github.com/python/cpython/blob/master/Objects/lnotab_notes.txt
 
-        for line_incr in code.co_lnotab[1::2]:
+        for line_incr in code.co_lnotab[1::2]:  # pyright: ignore[reportDeprecated]
             # NB: This code is specific to Python 3.6 and higher
             # https://github.com/python/cpython/blob/v3.6.0/Objects/lnotab_notes.txt
             if line_incr >= 0x80:
