@@ -540,7 +540,7 @@ class Debugger(bdb.Bdb):
         self.ui.stack_list._w.set_focus(self.ui.translate_ui_stack_index(index))
 
     @staticmethod
-    def open_file_to_edit(filename, line_number):
+    def open_file_to_edit(filename: str, line_number: int):
         if not os.path.isfile(filename):
             raise FileNotFoundError(f"'{filename}' not found or is not a file.")
 
@@ -549,8 +549,16 @@ class Debugger(bdb.Bdb):
 
         editor = os.environ.get("EDITOR", "nano")
 
+        if "zed" in editor:
+            cmdline_tail = [f"{filename}:{line_number}"]
+        else:
+            cmdline_tail = [f"+{line_number}", filename]
+
+        import shlex
         import subprocess
-        subprocess.call([editor, f"+{line_number}", filename], shell=False)
+        subprocess.call([
+            *shlex.split(editor),
+            *cmdline_tail], shell=False)
 
         return filename
 
@@ -1478,7 +1486,7 @@ class DebuggerUI(FrameVarInfoKeeper):
 
         self.stack_list.listen("enter", examine_frame)
 
-        def open_file_editor(file_name, line_number):
+        def open_file_editor(file_name: str, line_number: int):
             file_changed = False
 
             try:
