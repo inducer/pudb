@@ -2352,6 +2352,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                     "Cannot edit the current file--"
                     "source code does not correspond to a file location. "
                     "(perhaps this is generated code)")
+                return
+
             open_file_editor(source_identifier, pos+1)
 
         self.top.listen("o", show_output)
