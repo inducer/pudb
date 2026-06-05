@@ -168,7 +168,10 @@ def load_config():
 
     def normalize_bool_inplace(name: str):
         try:
-            if conf_dict[name].lower() in ["0", "false", "off"]:  # pyright: ignore[reportUnknownMemberType]
+            val = conf_dict[name]
+            if isinstance(val, bool):
+                return
+            if val.lower() in ["0", "false", "off"]:  # pyright: ignore[reportUnknownMemberType]
                 conf_dict[name] = False
             else:
                 conf_dict[name] = True
