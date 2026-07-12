@@ -51,7 +51,9 @@ def get_argparse_parser():
         dest="_continue_at_start",
         help="Let the script run until an exception occurs or a breakpoint is hit",
     )
-    parser.add_argument("-s", "--steal-output", action="store_true")
+    parser.add_argument("-s", "--steal-output", action="store_true",
+                        help="Redirect the debugged program's stdout/stderr "
+                             "into pudb (note: not yet implemented)")
 
     # note: we're implementing -m as a boolean flag, mimicking pdb's behavior,
     # and makes it possible without much fuss to support cases like:
