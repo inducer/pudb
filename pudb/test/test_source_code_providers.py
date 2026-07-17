@@ -1,4 +1,4 @@
-import pytest  # noqa: F401
+import pytest  # ruff:ignore[unused-import]
 
 from pudb.debugger import (
     DirectSourceCodeProvider,

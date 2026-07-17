@@ -61,7 +61,7 @@ else:
 
 # {{{ abstract base classes for containers
 
-class PudbCollection(ABC):  # noqa: B024
+class PudbCollection(ABC):  # ruff:ignore[abstract-base-class-without-abstract-method]
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbCollection:
@@ -70,7 +70,7 @@ class PudbCollection(ABC):  # noqa: B024
                     any("__contains__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:  # noqa: S110
+            except Exception:  # ruff:ignore[try-except-pass]
                 pass
         return NotImplemented
 
@@ -93,7 +93,7 @@ class PudbCollection(ABC):  # noqa: B024
         return len(collection)
 
 
-class PudbSequence(ABC):  # noqa: B024
+class PudbSequence(ABC):  # ruff:ignore[abstract-base-class-without-abstract-method]
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbSequence:
@@ -102,7 +102,7 @@ class PudbSequence(ABC):  # noqa: B024
                     any("__getitem__" in b.__dict__ for b in c.__mro__),
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:  # noqa: S110
+            except Exception:  # ruff:ignore[try-except-pass]
                 pass
         return NotImplemented
 
@@ -125,7 +125,7 @@ class PudbSequence(ABC):  # noqa: B024
         return len(sequence)
 
 
-class PudbMapping(ABC):  # noqa: B024
+class PudbMapping(ABC):  # ruff:ignore[abstract-base-class-without-abstract-method]
     @classmethod
     def __subclasshook__(cls, c):
         if cls is PudbMapping:
@@ -135,7 +135,7 @@ class PudbMapping(ABC):  # noqa: B024
                     any("__iter__" in b.__dict__ for b in c.__mro__),
                     any("keys" in b.__dict__ for b in c.__mro__),
                 ])
-            except Exception:  # noqa: S110
+            except Exception:  # ruff:ignore[try-except-pass]
                 pass
         return NotImplemented
 
@@ -537,7 +537,7 @@ def get_stringifier(iinfo: InspectInfo) -> Callable[[object], str]:
                 from os.path import expanduser, expandvars
                 custom_stringifier_fname = expanduser(expandvars(iinfo.display_type))
                 with open(custom_stringifier_fname) as inf:
-                    exec(compile(inf.read(), custom_stringifier_fname, "exec"),  # noqa: S102
+                    exec(compile(inf.read(), custom_stringifier_fname, "exec"),  # ruff:ignore[exec-builtin]
                             custom_stringifier_dict,
                             custom_stringifier_dict)
         except FileNotFoundError:

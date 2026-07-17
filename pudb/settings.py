@@ -102,8 +102,8 @@ def get_save_config_path():
 CONF_SECTION = "pudb"
 CONF_FILE_NAME = "pudb.cfg"
 
-SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]  # noqa: UP031
-BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]  # noqa: UP031
+SAVED_BREAKPOINTS_FILE_NAME = "saved-breakpoints-%d.%d" % sys.version_info[:2]  # ruff:ignore[printf-string-formatting]
+BREAKPOINTS_FILE_NAME = "breakpoints-%d.%d" % sys.version_info[:2]  # ruff:ignore[printf-string-formatting]
 
 
 _config_: list[ConfDict | None] = [None]

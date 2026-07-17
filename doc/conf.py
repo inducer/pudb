@@ -46,4 +46,4 @@ nitpick_ignore_regex = [
 
 
 def setup(app) -> None:
-    app.connect("missing-reference", process_autodoc_missing_reference)  # noqa: F821
+    app.connect("missing-reference", process_autodoc_missing_reference)  # ruff:ignore[undefined-name]
