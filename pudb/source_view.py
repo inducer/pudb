@@ -226,7 +226,7 @@ class ArgumentParser:
 
 
 try:
-    import pygments  # noqa
+    import pygments  # ruff:ignore[unused-import]
 except ImportError:
     def format_source(
                 debugger_ui: DebuggerUI,

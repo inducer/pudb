@@ -24,16 +24,16 @@ def simple_func(x):
     x += 1
 
     s = range(20)
-    z = None  # noqa: F841
-    w = ()  # noqa: F841
+    z = None  # ruff:ignore[unused-variable]
+    w = ()  # ruff:ignore[unused-variable]
 
-    y = {i: i**2 for i in s}  # noqa: F841
+    y = {i: i**2 for i in s}  # ruff:ignore[unused-variable]
 
-    k = set(range(5, 99))  # noqa: F841
-    c = Color(137, 214, 56, 88)  # noqa: F841
+    k = set(range(5, 99))  # ruff:ignore[unused-variable]
+    c = Color(137, 214, 56, 88)  # ruff:ignore[unused-variable]
 
     try:
-        x.invalid  # noqa: B018
+        x.invalid  # ruff:ignore[useless-expression]
     except AttributeError:
         pass
 

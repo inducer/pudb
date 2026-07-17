@@ -1,5 +1,5 @@
 def f():
-    fail  # noqa: B018, F821
+    fail  # ruff:ignore[useless-expression, undefined-name]
 
 
 try:

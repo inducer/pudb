@@ -140,7 +140,7 @@ def generate_containerlike_class():
                 @classmethod
                 def name(cls):
                     return "ContainerlikeClass:{}".format(
-                            ":".join(selected_methods))  # noqa: B023
+                            ":".join(selected_methods))  # ruff:ignore[function-uses-loop-variable]
 
             for method in selected_methods:
                 func = method_factory(method)

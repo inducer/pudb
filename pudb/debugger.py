@@ -1942,7 +1942,9 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 return
 
             try:
-                from packaging.version import parse as LooseVersion  # noqa: N812
+                from packaging.version import (
+                    parse as LooseVersion,  # ruff:ignore[lowercase-imported-as-non-lowercase]
+                )
             except ImportError:
                 from distutils.version import LooseVersion
 
@@ -2286,7 +2288,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                             from os.path import expanduser, expandvars
                             cshell_fname = expanduser(expandvars(CONFIG["shell"]))
                             with open(cshell_fname) as inf:
-                                exec(compile(inf.read(), cshell_fname, "exec"),  # noqa: S102
+                                exec(compile(inf.read(), cshell_fname, "exec"),  # ruff:ignore[exec-builtin]
                                         shell.custom_shell_dict,
                                         shell.custom_shell_dict)
                     except FileNotFoundError:
@@ -2323,7 +2325,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             def __init__(self, idx):
                 self.idx = idx
 
-            def __call__(subself, w, size, key):  # noqa # pylint: disable=no-self-argument
+            def __call__(subself, w, size, key):  # ruff:ignore[invalid-first-argument-name-for-method] # pylint: disable=no-self-argument
                 focus_widget_in_container(self.columns, self.rhs_col_sigwrap)
                 self.rhs_col.focus_position = subself.idx
 
@@ -2507,7 +2509,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         if extra_bindings is None:
             extra_bindings = []
 
-        Attr = urwid.AttrMap  # noqa
+        Attr = urwid.AttrMap  # ruff:ignore[non-lowercase-variable-in-function]
 
         if bind_enter_esc:
             content = SignalWrap(content)
@@ -2717,14 +2719,14 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         prev_quit_loop = self.quit_event_loop
 
         try:
-            import pygments  # noqa
+            import pygments  # ruff:ignore[unused-import]
         except ImportError:
             if not hasattr(self, "pygments_message_shown"):
                 self.pygments_message_shown = True
                 self.message("Package 'pygments' not found. "
                         "Syntax highlighting disabled.")
 
-        WELCOME_LEVEL = "e056"  # noqa
+        WELCOME_LEVEL = "e056"  # ruff:ignore[non-lowercase-variable-in-function]
         if CONFIG["seen_welcome"] < WELCOME_LEVEL:
             CONFIG["seen_welcome"] = WELCOME_LEVEL
             from pudb import VERSION

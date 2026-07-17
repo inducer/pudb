@@ -296,7 +296,7 @@ def get_palette(may_use_fancy_formats: bool, theme: str = "classic") -> list:
             from os.path import expanduser, expandvars
             fname = expanduser(expandvars(theme))
             with open(fname) as inf:
-                exec(compile(inf.read(), fname, "exec"), symbols)  # noqa: S102
+                exec(compile(inf.read(), fname, "exec"), symbols)  # ruff:ignore[exec-builtin]
         except FileNotFoundError:
             ui_log.error(f"Unable to locate custom theme file {theme!r}"
                          )

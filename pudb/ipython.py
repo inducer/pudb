@@ -46,7 +46,7 @@ def debugger(self, force=False):
         return
 
     if not hasattr(sys, "last_traceback"):
-        error("No traceback has been produced, nothing to debug.")  # noqa: LOG015
+        error("No traceback has been produced, nothing to debug.")  # ruff:ignore[root-logger-call]
         return
 
     from pudb import pm

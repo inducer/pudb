@@ -21,7 +21,7 @@
 # Note, be sure to test your theme in both curses and raw mode (see the bottom
 # of the preferences window). Curses mode will be used with screen or tmux.
 
-palette.update({  # noqa: F821
-    "source": (add_setting("black", "underline"), "dark green"),  # noqa: F821
+palette.update({  # ruff:ignore[undefined-name]
+    "source": (add_setting("black", "underline"), "dark green"),  # ruff:ignore[undefined-name]
     "comment": ("h250", "default")
     })

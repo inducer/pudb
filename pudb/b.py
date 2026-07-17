@@ -5,10 +5,10 @@ import sys
 from pudb import _get_debugger, set_interrupt_handler
 
 
-def __myimport__(name, *args, **kwargs):  # noqa: N807
+def __myimport__(name, *args, **kwargs):  # ruff:ignore[dunder-function-name]
     if name == "pudb.b":
         set_trace()
-    return __origimport__(name, *args, **kwargs)  # noqa: F821 # pylint: disable=undefined-variable
+    return __origimport__(name, *args, **kwargs)  # ruff:ignore[undefined-name] # pylint: disable=undefined-variable
 
 
 # Will only be run on first import

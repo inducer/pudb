@@ -55,7 +55,7 @@ __version__ = VERSION
 
 class PudbShortcuts:
     @property
-    def db(self):  # noqa: RUF066
+    def db(self):  # ruff:ignore[property-without-return]
         dbg = _get_debugger()
 
         import threading
@@ -64,7 +64,7 @@ class PudbShortcuts:
         dbg.set_trace(sys._getframe().f_back)
 
     @property
-    def go(self):  # noqa: RUF066
+    def go(self):  # ruff:ignore[property-without-return]
         dbg = _get_debugger()
 
         import threading
@@ -87,7 +87,7 @@ def _tty_override():
 def _open_tty(tty_path: str):
     import io
     import os
-    tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))  # noqa: SIM115
+    tty_file = io.TextIOWrapper(open(tty_path, "r+b", buffering=0))  # ruff:ignore[open-file-with-context-handler]
     term_size = os.get_terminal_size(tty_file.fileno())
 
     return tty_file, term_size
@@ -120,7 +120,7 @@ def _have_debugger():
         return False
 
 
-import signal  # noqa
+import signal  # ruff:ignore[unsorted-imports]
 DEFAULT_SIGNAL = signal.SIGINT
 del signal
 

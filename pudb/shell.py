@@ -8,7 +8,7 @@ try:
     # Access a property to verify module exists in case
     # there's a demand loader wrapping module imports
     # See https://github.com/inducer/pudb/issues/177
-    bpython.__version__  # noqa: B018
+    bpython.__version__  # ruff:ignore[useless-expression]
 except ImportError:
     HAVE_BPYTHON = False
 else:
@@ -141,7 +141,7 @@ def have_ipython():
         # Access a property to verify module exists in case
         # there's a demand loader wrapping module imports
         # See https://github.com/inducer/pudb/issues/177
-        IPython.core  # noqa: B018
+        IPython.core  # ruff:ignore[useless-expression]
     except (ImportError, ValueError):
         # Old IPythons versions (0.12?) may fail to import with
         # ValueError: fallback required, but not specified
