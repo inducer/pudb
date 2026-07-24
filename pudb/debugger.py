@@ -3050,8 +3050,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
         from pudb import VERSION
         caption = [(None,
-            f"PuDB {VERSION} - ?:help  n:next  s:step into  b:breakpoint  "
-            "!:python command line")]
+            (f"PuDB {VERSION} - ?:help  n:next  s:step into  b:breakpoint  "
+            "!:python command line"))]
 
         if self.debugger.post_mortem:
             if show_exc_dialog and exc_tuple is not None:
