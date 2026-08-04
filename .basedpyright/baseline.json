@@ -3018,6 +3018,14 @@
                 }
             },
             {
+                "code": "reportAbstractUsage",
+                "range": {
+                    "startColumn": 32,
+                    "endColumn": 63,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportUnannotatedClassAttribute",
                 "range": {
                     "startColumn": 13,
@@ -11558,15 +11566,7 @@
         ],
         "./pudb/ipython.py": [
             {
-                "code": "reportAttributeAccessIssue",
-                "range": {
-                    "startColumn": 20,
-                    "endColumn": 31,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnknownVariableType",
+                "code": "reportPrivateImportUsage",
                 "range": {
                     "startColumn": 20,
                     "endColumn": 31,
@@ -11670,18 +11670,10 @@
                 }
             },
             {
-                "code": "reportUnknownVariableType",
+                "code": "reportAttributeAccessIssue",
                 "range": {
-                    "startColumn": 0,
-                    "endColumn": 2,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnknownMemberType",
-                "range": {
-                    "startColumn": 0,
-                    "endColumn": 12,
+                    "startColumn": 13,
+                    "endColumn": 21,
                     "lineCount": 1
                 }
             }
@@ -12856,54 +12848,6 @@
                 }
             },
             {
-                "code": "reportUnknownMemberType",
-                "range": {
-                    "startColumn": 8,
-                    "endColumn": 20,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportAttributeAccessIssue",
-                "range": {
-                    "startColumn": 16,
-                    "endColumn": 20,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnknownParameterType",
-                "range": {
-                    "startColumn": 4,
-                    "endColumn": 19,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportAttributeAccessIssue",
-                "range": {
-                    "startColumn": 28,
-                    "endColumn": 40,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnknownVariableType",
-                "range": {
-                    "startColumn": 28,
-                    "endColumn": 40,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportUnknownVariableType",
-                "range": {
-                    "startColumn": 15,
-                    "endColumn": 27,
-                    "lineCount": 1
-                }
-            },
-            {
                 "code": "reportUnknownParameterType",
                 "range": {
                     "startColumn": 26,
@@ -13224,10 +13168,10 @@
                 }
             },
             {
-                "code": "reportOptionalOperand",
+                "code": "reportOperatorIssue",
                 "range": {
                     "startColumn": 7,
-                    "endColumn": 24,
+                    "endColumn": 36,
                     "lineCount": 1
                 }
             },
@@ -13360,7 +13304,7 @@
                 }
             },
             {
-                "code": "reportAttributeAccessIssue",
+                "code": "reportUnknownVariableType",
                 "range": {
                     "startColumn": 24,
                     "endColumn": 36,
@@ -13368,10 +13312,10 @@
                 }
             },
             {
-                "code": "reportUnknownVariableType",
+                "code": "reportUnknownArgumentType",
                 "range": {
-                    "startColumn": 24,
-                    "endColumn": 36,
+                    "startColumn": 46,
+                    "endColumn": 52,
                     "lineCount": 1
                 }
             },
