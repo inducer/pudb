@@ -167,27 +167,31 @@ def run_ipython_shell_v10(globals, locals):
     else:
         banner = ""
 
-    # avoid IPython's namespace litter
-    ns = locals.copy()
+    # Comprehensions execute in the global namespace, so it must also contain
+    # the frame's locals.
+    ns = SetPropagatingDict([locals, globals], locals)
 
     from IPython.Shell import IPShell
-    IPShell(argv=[], user_ns=ns, user_global_ns=globals) \
+    IPShell(argv=[], user_ns=ns, user_global_ns=ns) \
             .mainloop(banner=banner)
 
 
 def _update_ipython_ns(shell, globals, locals):
     """Update the IPython 0.11 namespace at every visit"""
 
-    shell.user_ns = locals.copy()
+    # Code inside comprehensions and generator expressions resolves names in
+    # the global namespace. Use one combined namespace so frame locals remain
+    # visible there as well.
+    shell.user_ns = SetPropagatingDict([locals, globals], locals)
 
     try:
-        shell.user_global_ns = globals
+        shell.user_global_ns = shell.user_ns
     except AttributeError:
         class DummyMod:
             """A dummy module used for IPython's interactive namespace."""
 
         user_module = DummyMod()
-        user_module.__dict__ = globals
+        user_module.__dict__ = shell.user_ns
         shell.user_module = user_module
 
     shell.init_history()
