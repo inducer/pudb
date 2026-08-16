@@ -3244,9 +3244,9 @@
             {
                 "code": "reportArgumentType",
                 "range": {
-                    "startColumn": 16,
-                    "endColumn": 80,
-                    "lineCount": 3
+                    "startColumn": 46,
+                    "endColumn": 17,
+                    "lineCount": 6
                 }
             },
             {
@@ -8642,6 +8642,22 @@
                 }
             },
             {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 36,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 12,
+                    "endColumn": 36,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportUnknownParameterType",
                 "range": {
                     "startColumn": 24,
@@ -10322,6 +10338,22 @@
                 }
             },
             {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 8,
+                    "endColumn": 33,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 8,
+                    "endColumn": 33,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportUnknownMemberType",
                 "range": {
                     "startColumn": 54,
@@ -10342,6 +10374,22 @@
                 "range": {
                     "startColumn": 31,
                     "endColumn": 37,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 8,
+                    "endColumn": 33,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 8,
+                    "endColumn": 33,
                     "lineCount": 1
                 }
             },
@@ -10596,9 +10644,9 @@
             {
                 "code": "reportArgumentType",
                 "range": {
-                    "startColumn": 12,
-                    "endColumn": 84,
-                    "lineCount": 1
+                    "startColumn": 26,
+                    "endColumn": 13,
+                    "lineCount": 4
                 }
             },
             {
