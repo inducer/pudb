@@ -146,7 +146,7 @@ def runscript(
         _runscript(mainpyfile, dbg,
                    args=args, pre_run=pre_run, run_as_module=run_as_module)
     finally:
-        dbg.__del__()
+        del dbg
 
 
 def _runscript(

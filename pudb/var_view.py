@@ -537,7 +537,7 @@ def get_stringifier(iinfo: InspectInfo) -> Callable[[object], str]:
                 from os.path import expanduser, expandvars
                 custom_stringifier_fname = expanduser(expandvars(iinfo.display_type))
                 with open(custom_stringifier_fname) as inf:
-                    exec(compile(inf.read(), custom_stringifier_fname, "exec"),  # ruff:ignore[exec-builtin]
+                    exec(compile(inf.read(), custom_stringifier_fname, "exec"),
                             custom_stringifier_dict,
                             custom_stringifier_dict)
         except FileNotFoundError:
@@ -631,7 +631,7 @@ class ValueWalker(ABC):
 
             entry_id_path = f"{id_path}{id_path_ext}"
             self.walk_value(parent,
-                            "[{}]".format(entry_label if entry_label else ""),
+                            "[{}]".format(entry_label or ""),
                             entry, entry_id_path)
 
         if is_empty:
