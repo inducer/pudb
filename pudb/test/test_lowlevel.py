@@ -91,12 +91,6 @@ def test_executable_lines():
         1,
         335
     }
-    if sys.version_info < (3, 10):
-        # if co_lines is unavailable, we appear to see these
-        expected.update([
-            128,  # bogus,
-            255,  # bogus,
-        ])
     if sys.version_info >= (3, 11):
         # See https://github.com/python/cpython/pull/94562 and
         # https://peps.python.org/pep-0626/

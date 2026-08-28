@@ -46,7 +46,6 @@ import socket
 import sys
 from typing import (
     TYPE_CHECKING,
-    Callable,
     ClassVar,
     TextIO,
     TypeVar,
@@ -58,6 +57,7 @@ from pudb.debugger import Debugger, OptExcInfo
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from types import FrameType, TracebackType
 
     from mpi4py import MPI
