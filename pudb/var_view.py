@@ -31,12 +31,12 @@ THE SOFTWARE.
 import inspect
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sized
+from collections.abc import Callable, Iterator, Sized
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Iterator, Literal, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, TypeAlias, cast
 
 import urwid
-from typing_extensions import TypeAlias, override
+from typing_extensions import override
 
 from pudb.lowlevel import ui_log
 from pudb.ui_tools import text_width

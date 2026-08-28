@@ -569,11 +569,11 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
             newvalue = shell_edit.get_edit_text()
             conf_dict.update(shell=newvalue, custom_shell=newvalue)
         else:
-            for shell, shell_rb in zip(shells, shell_rbs):
+            for shell, shell_rb in zip(shells, shell_rbs, strict=True):
                 if shell_rb.get_state():
                     conf_dict["shell"] = shell
 
-        for display, display_rb in zip(displays, display_rbs):
+        for display, display_rb in zip(displays, display_rbs, strict=True):
             if display_rb.get_state():
                 conf_dict["display"] = display
 

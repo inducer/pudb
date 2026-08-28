@@ -356,7 +356,7 @@ class ValueWalkerTest(BaseValueWalkerTestCase):
                 generate_containerlike_class()):
             label = containerlike_class.name()
             value = containerlike_class(zip(string.ascii_lowercase,
-                                            range(3, 10)))
+                                            range(3, 10), strict=False))
             self.assert_walks_contents(container=value, label=label)
             class_count = cls_idx + 1
 

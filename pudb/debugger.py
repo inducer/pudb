@@ -38,17 +38,17 @@ from functools import partial
 from itertools import count
 from os.path import splitext
 from types import FrameType, ModuleType, TracebackType
-from typing import TYPE_CHECKING, Any, ClassVar, Mapping, TextIO, TypeVar, cast, final
+from typing import TYPE_CHECKING, Any, ClassVar, TextIO, TypeAlias, TypeVar, cast, final
 
 import urwid
-from typing_extensions import ParamSpec, TypeAlias, override
+from typing_extensions import ParamSpec, override
 
 from pudb.lowlevel import ConsoleSingleKeyReader, decode_lines, ui_log
 from pudb.settings import get_save_config_path, load_config, save_config
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Mapping, Sequence
 
     from pudb.source_view import SourceLine
 
@@ -1975,7 +1975,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             chopped_completions = [i.complete for i in completions]
 
             def common_prefix(a, b):
-                for i, (a_i, b_i) in enumerate(zip(a, b)):
+                for i, (a_i, b_i) in enumerate(zip(a, b, strict=False)):
                     if a_i != b_i:
                         return a[:i]
 

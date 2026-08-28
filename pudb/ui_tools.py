@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Callable, ClassVar, Hashable, Literal, Sequence, TypeVar
+from collections.abc import Callable, Hashable, Sequence
+from typing import ClassVar, Literal, TypeAlias, TypeVar
 
 import urwid
-from typing_extensions import TypeAlias, override
+from typing_extensions import override
 from urwid import Widget, calc_text_pos, calc_width
 
 
@@ -42,7 +43,7 @@ def make_canvas(
     processed_attr: list[list[tuple[Hashable | None, int]]] = []
     processed_cs: list[list[tuple[Literal["U", "0"] | None, int]]] = []
 
-    for line, line_attr in zip(txt, attr):
+    for line, line_attr in zip(txt, attr, strict=True):
         # filter out zero-length attrs
         line_attr = [(aname, la) for aname, la in line_attr if la > 0]
 
@@ -124,7 +125,7 @@ UrwidSize: TypeAlias = "tuple[()] | tuple[int] | tuple[int, int]"
 WrappedWidget_co = TypeVar("WrappedWidget_co", bound=Widget, covariant=True)
 EventListener: TypeAlias = Callable[
         ["SignalWrap[WrappedWidget_co]", UrwidSize, str],
-        "str | None"]
+        str | None]
 
 
 # pyright ignore to paper over variance disagreement with urwid
