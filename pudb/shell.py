@@ -1,6 +1,14 @@
 from __future__ import annotations
 
 import sys
+from collections import UserDict
+from typing import TYPE_CHECKING, TypeVar
+
+from typing_extensions import override
+
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, MutableMapping, Sequence
 
 
 try:
@@ -31,7 +39,11 @@ else:
 
 # {{{ combined locals/globals dict
 
-class SetPropagatingDict(dict):
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+class SetPropagatingDict(UserDict[K, V]):
     """
     Combine dict into one, with assignments affecting a target dict
 
@@ -47,19 +59,25 @@ class SetPropagatingDict(dict):
     debugger is inside a function frame.
 
     """
-    def __init__(self, source_dicts, target_dict):
-        dict.__init__(self)
+    target_dict: MutableMapping[K, V]
+
+    def __init__(self,
+            source_dicts: Sequence[Mapping[K, V]],
+            target_dict: MutableMapping[K, V]):
+        super().__init__()
         for s in source_dicts[::-1]:
             self.update(s)
 
         self.target_dict = target_dict
 
-    def __setitem__(self, key, value):
-        dict.__setitem__(self, key, value)
+    @override
+    def __setitem__(self, key: K, value: V):
+        super().__setitem__(key, value)
         self.target_dict[key] = value
 
-    def __delitem__(self, key):
-        dict.__delitem__(self, key)
+    @override
+    def __delitem__(self, key: K):
+        super().__delitem__(key)
         del self.target_dict[key]
 
 # }}}

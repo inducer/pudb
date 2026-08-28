@@ -36,6 +36,8 @@ sphinxconfig_missing_reference_aliases = {
 
 nitpick_ignore_regex = [
     ["py:class", r"P"],
+    ["py:class", r"K"],
+    ["py:class", r"V"],
     ["py:class", r"P.args"],
     ["py:class", r"P.kwargs"],
     ["py:class", r"ResultT"],

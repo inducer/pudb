@@ -2288,7 +2288,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                             from os.path import expanduser, expandvars
                             cshell_fname = expanduser(expandvars(CONFIG["shell"]))
                             with open(cshell_fname) as inf:
-                                exec(compile(inf.read(), cshell_fname, "exec"),  # ruff:ignore[exec-builtin]
+                                exec(compile(inf.read(), cshell_fname, "exec"),
                                         shell.custom_shell_dict,
                                         shell.custom_shell_dict)
                     except FileNotFoundError:

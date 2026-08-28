@@ -53,7 +53,7 @@ def setlogfile(destfile: str):
     logfile[0] = destfile
     with open(destfile, "a") as openfile:
         openfile.write(
-            f"\n*** Pudb session error log started at {datetime.now()} ***\n")  # ruff:ignore[call-datetime-now-without-tzinfo]
+            f"\n*** Pudb session error log started at {datetime.now()} ***\n")
 
 
 # once we've dropped Py3.8 support, use this instead:
@@ -314,7 +314,7 @@ class KeyReadImpl(Enum):
 _keyread_impl = KeyReadImpl.INPUT
 if sys.platform in ("emscripten", "wasi"):
     pass
-elif sys.platform in ("win32",):
+elif sys.platform == "win32":
     _keyread_impl = KeyReadImpl.GETCH
 else:
     _keyread_impl = KeyReadImpl.SELECT
