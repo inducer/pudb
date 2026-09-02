@@ -2035,7 +2035,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
             sys.stderr = sys.stdout = StringIO()
             try:
                 eval(compile(cmd, "<pudb command line>", "single"),
-                     cmdline_get_namespace())
+                     {}, cmdline_get_namespace())
             except Exception:
                 tp, val, tb = sys.exc_info()
 
