@@ -65,10 +65,9 @@ class SetPropagatingDict(UserDict[K, V]):
             source_dicts: Sequence[Mapping[K, V]],
             target_dict: MutableMapping[K, V]):
         super().__init__()
+        self.target_dict = target_dict
         for s in source_dicts[::-1]:
             self.update(s)
-
-        self.target_dict = target_dict
 
     @override
     def __setitem__(self, key: K, value: V):
