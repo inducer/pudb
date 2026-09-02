@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from collections import UserDict
 from typing import TYPE_CHECKING, TypeVar
 
 from typing_extensions import override
@@ -43,7 +42,9 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-class SetPropagatingDict(UserDict[K, V]):
+# This really *has* to be a dict, otherwise it will not work with
+# exec() and InteractiveConsole.
+class SetPropagatingDict(dict[K, V]):  # ruff: ignore[subclass-builtin]
     """
     Combine dict into one, with assignments affecting a target dict
 
