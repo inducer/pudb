@@ -10874,6 +10874,22 @@
                 }
             },
             {
+                "code": "reportAny",
+                "range": {
+                    "startColumn": 44,
+                    "endColumn": 56,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportAny",
+                "range": {
+                    "startColumn": 44,
+                    "endColumn": 56,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportUnknownVariableType",
                 "range": {
                     "startColumn": 31,
@@ -15959,6 +15975,22 @@
             }
         ],
         "./pudb/themes/utils.py": [
+            {
+                "code": "reportAny",
+                "range": {
+                    "startColumn": 36,
+                    "endColumn": 48,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportAny",
+                "range": {
+                    "startColumn": 36,
+                    "endColumn": 48,
+                    "lineCount": 1
+                }
+            },
             {
                 "code": "reportUnknownParameterType",
                 "range": {
