@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Hashable, Sequence
-from typing import ClassVar, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Literal, TypeAlias, TypeVar, cast
 
 import urwid
 from typing_extensions import override
 from urwid import Widget, calc_text_pos, calc_width
+
+
+if TYPE_CHECKING:
+    from pudb.debugger import DebuggerUI
 
 
 # generic urwid helpers -------------------------------------------------------
@@ -277,7 +281,7 @@ class BreakpointFrame(urwid.Widget):
 
 
 class SearchController:
-    def __init__(self, ui):
+    def __init__(self, ui: DebuggerUI):
         self.ui = ui
         self.highlight_line = None
 
@@ -296,7 +300,7 @@ class SearchController:
     def hide_search_ui(self):
         self.search_box = None
         del self.ui.lhs_col.contents[0]
-        self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[0])
+        self.ui.lhs_col.focus_position = 0
 
     def open_search_ui(self):
         lhs_col = self.ui.lhs_col
@@ -308,15 +312,21 @@ class SearchController:
             self.search_AttrMap = urwid.AttrMap(
                     self.search_box, "search box")
 
-            lhs_col.item_types.insert(
-                    0, ("flow", None))
-            lhs_col.widget_list.insert(0, self.search_AttrMap)
+            # urwid's Pile.contents annotation rejects concrete widgets like AttrMap.
+            lhs_col.contents.insert(
+                    0, (self.search_AttrMap, lhs_col.options(urwid.PACK)))  # pyright: ignore[reportArgumentType]
             self.ui.reset_cmdline_size()
 
-        self.ui.columns.set_focus(lhs_col)
-        lhs_col.set_focus(self.search_AttrMap)
+        focus_widget_in_container(self.ui.columns, lhs_col)
+        focus_widget_in_container(lhs_col, self.search_AttrMap)
 
-    def perform_search(self, dir, s=None, start=None, update_search_start=False):
+    def perform_search(
+                self,
+                dir: int,
+                s: str | None = None,
+                start: int | None = None,
+                update_search_start: bool = False,
+            ):
         self.cancel_highlight()
 
         # self.ui.lhs_col.set_focus(self.ui.lhs_col.widget_list[1])
@@ -331,7 +341,7 @@ class SearchController:
             self.last_search_string = s
 
         if start is None:
-            start = self.search_start
+            start = cast("int", self.search_start)
 
         case_insensitive = s.lower() == s
 
