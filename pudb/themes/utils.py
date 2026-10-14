@@ -1,7 +1,7 @@
 import urwid
 
 
-may_use_fancy_formats = not hasattr(urwid.escape, "_fg_attr_xterm")
+may_use_fancy_formats = not hasattr(urwid.display.escape, "_fg_attr_xterm")
 
 
 def add_setting(color, setting):

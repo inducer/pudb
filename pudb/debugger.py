@@ -2159,8 +2159,8 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 weight /= 1.25
                 set_cmdline_default_size(weight)
 
-        def cmdline_results_scroll(w, size, key):
-            size = self.cmdline_pile.get_item_size(size, 1, True)
+        def cmdline_results_scroll(w: urwid.Widget, size: UrwidSize, key: str):
+            size = self.cmdline_pile.get_rows_sizes(size, True)[2][1]
             self.cmdline_list.keypress(size, key.lstrip("shift "))
 
         self.cmdline_sigwrap.listen("=", max_cmdline)
@@ -2573,7 +2573,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
 
     @staticmethod
     def setup_palette(screen):
-        may_use_fancy_formats = not hasattr(urwid.escape, "_fg_attr_xterm")
+        may_use_fancy_formats = not hasattr(urwid.display.escape, "_fg_attr_xterm")
 
         from pudb.theme import get_palette
         palette = get_palette(may_use_fancy_formats, CONFIG["theme"])
