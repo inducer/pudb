@@ -569,7 +569,8 @@ def edit_config(ui: DebuggerUI, conf_dict: ConfDict):
             newvalue = shell_edit.get_edit_text()
             conf_dict.update(shell=newvalue, custom_shell=newvalue)
         else:
-            for shell, shell_rb in zip(shells, shell_rbs, strict=True):
+            # shell_rbs also holds the custom-shell widgets after the named shells
+            for shell, shell_rb in zip(shells, shell_rbs[:len(shells)], strict=True):
                 if shell_rb.get_state():
                     conf_dict["shell"] = shell
 
