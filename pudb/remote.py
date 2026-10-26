@@ -40,6 +40,7 @@ THE SOFTWARE.
 # mostly stolen from celery.contrib.rdb
 
 import atexit
+import codecs
 import errno
 import os
 import socket
@@ -51,7 +52,7 @@ from typing import (
     TypeVar,
 )
 
-from typing_extensions import ParamSpec
+from typing_extensions import ParamSpec, override
 
 from pudb.debugger import Debugger, OptExcInfo
 
@@ -141,6 +142,14 @@ class TelnetCharacters:
     SGA: ClassVar[bytes] = b"\x03"  # suppress go ahead
 
 
+class _RemoteStream(codecs.StreamReaderWriter):
+    @override
+    def fileno(self) -> int:
+        # Python 3.12+ protocol checks do not see methods forwarded by __getattr__.
+        # Urwid uses such a check to decide whether to monitor the input stream.
+        return self.stream.fileno()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType, reportAttributeAccessIssue]
+
+
 class RemoteDebugger(Debugger):
     """
     .. automethod:: __init__
@@ -202,9 +211,7 @@ class RemoteDebugger(Debugger):
 
         # makefile ignores encoding if there's no buffering.
         raw_sock_file = self._client.makefile("rwb", 0)
-        import codecs
-
-        sock_file = codecs.StreamReaderWriter(
+        sock_file = _RemoteStream(
             raw_sock_file, codecs.getreader("utf-8"), codecs.getwriter("utf-8"))
 
         self._handle = sys.stdin = sys.stdout = sock_file
