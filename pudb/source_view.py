@@ -34,7 +34,7 @@ from typing_extensions import override
 
 if TYPE_CHECKING:
     from bdb import Breakpoint
-    from collections.abc import Collection, Sequence
+    from collections.abc import Collection, Hashable, Sequence
 
     from pudb.debugger import DebuggerUI
 
@@ -70,15 +70,16 @@ class SourceLine(urwid.Widget):
         self.has_breakpoint = has_breakpoint
         self._invalidate()
 
-    @override
-    def rows(self, size, focus=False):
+    def rows(self, size: tuple[int], focus: bool = False):
         return 1
 
     @override
-    def render(self, size: tuple[int, int], focus: bool = False):
+    def render(self, size: tuple[()] | tuple[int] | tuple[int, int],
+               focus: bool = False):
         from pudb.debugger import CONFIG
         render_line_nr = CONFIG["line_numbers"]
 
+        assert len(size) == 1
         maxcol = size[0]
         hscroll = self.dbg_ui.source_hscroll_start
 
@@ -112,7 +113,7 @@ class SourceLine(urwid.Widget):
 
         # build line prefix ---------------------------------------------------
         line_prefix = ""
-        line_prefix_attr = []
+        line_prefix_attr: list[tuple[Hashable, int]] = []
 
         if render_line_nr and self.line_nr:
             line_prefix_attr = [("line number", len(self.line_nr))]
@@ -135,7 +136,7 @@ class SourceLine(urwid.Widget):
         # shipout, encoding ---------------------------------------------------
         cs = []
         encoded_text_segs = []
-        encoded_attr = []
+        encoded_attr: list[tuple[Hashable, int]] = []
 
         i = 0
         for seg_attr, seg_len in attr:

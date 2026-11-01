@@ -1624,7 +1624,7 @@ class DebuggerUI(FrameVarInfoKeeper):
                 ], title="Edit Breakpoint")
 
             if result is True:
-                bp.enabled = enabled_checkbox.get_state()
+                bp.enabled = enabled_checkbox.get_state() is True
                 bp.ignore = int(ign_count_edit.value())
                 cond = cond_edit.get_edit_text()
                 if cond:
