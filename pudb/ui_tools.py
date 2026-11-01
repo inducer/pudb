@@ -197,13 +197,12 @@ class StackFrame(urwid.Widget):
     def selectable(self):
         return True
 
-    @override
-    def rows(self, size: UrwidSize, focus: bool = False):
+    def rows(self, size: tuple[int], focus: bool = False):
         return 1
 
     @override
     def render(self, size: UrwidSize, focus: bool = False):
-        assert size  # FIXME?
+        assert len(size) == 1
         maxcol = size[0]
         if focus:
             apfx = "focused "
@@ -253,7 +252,8 @@ class BreakpointFrame(urwid.Widget):
     def rows(self, size, focus=False):
         return 1
 
-    def render(self, size, focus=False):
+    def render(self, size: UrwidSize, focus: bool = False):
+        assert len(size) == 1
         maxcol = size[0]
         if focus:
             apfx = "focused "
@@ -312,9 +312,8 @@ class SearchController:
             self.search_AttrMap = urwid.AttrMap(
                     self.search_box, "search box")
 
-            # urwid's Pile.contents annotation rejects concrete widgets like AttrMap.
             lhs_col.contents.insert(
-                    0, (self.search_AttrMap, lhs_col.options(urwid.PACK)))  # pyright: ignore[reportArgumentType]
+                    0, (self.search_AttrMap, lhs_col.options(urwid.PACK)))
             self.ui.reset_cmdline_size()
 
         focus_widget_in_container(self.ui.columns, lhs_col)

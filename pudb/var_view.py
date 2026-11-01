@@ -315,7 +315,6 @@ class VariableWidget(urwid.Widget):
             for i in range(fulllines + bool(rest))]
         return [firstline] + [self.prefix + "  " + i for i in restlines]
 
-    @override
     def rows(self, size: tuple[int], focus: bool = False) -> int:
         """
         :param size: (maxcol,) the number of columns available to this widget
@@ -331,7 +330,8 @@ class VariableWidget(urwid.Widget):
             return 1
 
     @override
-    def render(self, size: tuple[int], focus: bool = False) -> urwid.Canvas:
+    def render(self, size: tuple[()] | tuple[int] | tuple[int, int],
+               focus: bool = False) -> urwid.Canvas:
         """
         :param size: (maxcol,) the number of columns available to this widget
         :param focus: True if this widget or one of its children is in focus
@@ -340,6 +340,7 @@ class VariableWidget(urwid.Widget):
         """
         from pudb.ui_tools import make_canvas
 
+        assert len(size) == 1
         maxcol = size[0]
         if focus:
             apfx = "focused "+self.attr_prefix+" "
