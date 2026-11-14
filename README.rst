@@ -61,7 +61,6 @@ Features
 
 * Ability to control the debugger from a separate terminal.
 
-* IPython integration (see `wiki <http://wiki.tiker.net/PuDB>`_)
 
 * Should work with Python 3.6 and newer. (Versions 2019.2 and older continue
   to support Python 2.7.)
