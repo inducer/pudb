@@ -1165,9 +1165,11 @@ class DebuggerUI(FrameVarInfoKeeper):
         self.cmdline_weight = float(CONFIG.get("cmdline_height", 1))
         self.lhs_col = urwid.Pile([
             (urwid.WEIGHT, 5, self.source_attr),
-            (urwid.WEIGHT, self.cmdline_weight if self.cmdline_on else 0,
-                self.cmdline_sigwrap),
             ])
+        if self.cmdline_on:
+            self.lhs_col.contents.append((
+                self.cmdline_sigwrap,
+                self.lhs_col.options(urwid.WEIGHT, self.cmdline_weight)))
 
         # }}}
 
@@ -2454,23 +2456,27 @@ Error with jump. Note that jumping only works on the topmost stack frame.
         self.set_cmdline_state(True)
 
     def reset_cmdline_size(self):
-        self.lhs_col.contents[-1] = (
-                self.lhs_col.contents[-1][0],
-                (urwid.WEIGHT, self.cmdline_weight if self.cmdline_on else 0))
+        if self.cmdline_on:
+            self.set_cmdline_size()
 
-    def set_cmdline_size(self, weight=None):
-        if weight is None:
-            weight = self.cmdline_weight
-
+    def set_cmdline_size(self):
         self.lhs_col.contents[-1] = (
-                self.lhs_col.contents[-1][0],
-                (urwid.WEIGHT, weight))
-        self.lhs_col._invalidate()
+                self.cmdline_sigwrap,
+                self.lhs_col.options(urwid.WEIGHT, self.cmdline_weight))
 
     def set_cmdline_state(self, state_on):
-        if state_on != self.cmdline_on:
-            self.cmdline_on = state_on
-            self.set_cmdline_size(None if state_on else 0)
+        if state_on == self.cmdline_on:
+            return
+
+        self.cmdline_on = state_on
+        if state_on:
+            self.lhs_col.contents.append((
+                self.cmdline_sigwrap,
+                self.lhs_col.options(urwid.WEIGHT, self.cmdline_weight)))
+        else:
+            if self.lhs_col.focus is self.cmdline_sigwrap:
+                focus_widget_in_container(self.lhs_col, self.source_attr)
+            del self.lhs_col.contents[-1]
 
     def translate_ui_stack_index(self, index):
         # note: self-inverse
