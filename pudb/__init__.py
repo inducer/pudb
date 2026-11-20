@@ -146,7 +146,8 @@ def runscript(
         _runscript(mainpyfile, dbg,
                    args=args, pre_run=pre_run, run_as_module=run_as_module)
     finally:
-        del dbg
+        # not "del dbg": this unregisters the debugger and closes its tty
+        dbg.__del__()  # ruff:ignore[unnecessary-dunder-call]
 
 
 def _runscript(
