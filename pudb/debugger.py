@@ -396,10 +396,14 @@ class Debugger(bdb.Bdb):
         self._current_debugger.append(self)
 
     def __del__(self):
+        self.close()
+
+    def close(self):
         # according to https://stackoverflow.com/a/1481512/1054322, the garbage
         # collector cannot be relied on to  call this, so we call it explicitly
         # in a finally (see __init__.py:runscript). But then, the garbage
-        # collector *might* call it, so it should tolerate being called twice.
+        # collector *might* call it (via __del__), so it should tolerate being called
+        # twice.
 
         if self._current_debugger:
             assert self._current_debugger == [self]
