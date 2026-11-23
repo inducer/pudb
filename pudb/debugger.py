@@ -2464,7 +2464,7 @@ Error with jump. Note that jumping only works on the topmost stack frame.
                 self.cmdline_sigwrap,
                 self.lhs_col.options(urwid.WEIGHT, self.cmdline_weight))
 
-    def set_cmdline_state(self, state_on):
+    def set_cmdline_state(self, state_on: bool):
         if state_on == self.cmdline_on:
             return
 
