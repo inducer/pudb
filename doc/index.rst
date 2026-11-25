@@ -13,6 +13,7 @@ Table of Contents
     starting
     usage
     shells
+    configuration
     misc
     🚀 Github <https://github.com/inducer/pudb>
     💾 Download Releases <https://pypi.org/project/pudb>
