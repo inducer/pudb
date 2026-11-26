@@ -575,7 +575,7 @@ class Debugger(bdb.Bdb):
             self.set_frame_index(self.curindex+1)
 
     def get_shortened_stack(self, frame, tb):
-        if tb is not None:
+        if tb is not None and self.post_mortem:
             frame = None
         stack, index = self.get_stack(frame, tb)
 
